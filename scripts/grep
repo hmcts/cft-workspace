@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Ripgrep wrapper that searches across all cloned repos with sensible CFT excludes.
+# Anything you'd pass to rg works — just `scripts/grep "Notice of Change"` etc.
+
+source "$(dirname "$0")/lib/_common.sh"
+
+command -v rg >/dev/null || die "ripgrep (rg) not installed"
+
+cd "$WORKSPACE_ROOT"
+
+# Search apps/ libs/ platops/ — never the workspace's own .git or scaffolding.
+exec rg \
+    --hidden \
+    --glob '!**/.git' \
+    --glob '!**/node_modules' \
+    --glob '!**/build' \
+    --glob '!**/.gradle' \
+    --glob '!**/target' \
+    --glob '!**/dist' \
+    --glob '!**/coverage' \
+    --glob '!**/.terraform' \
+    --glob '!**/*.lock' \
+    --glob '!**/yarn.lock' \
+    --glob '!**/package-lock.json' \
+    --glob '!**/gradle/wrapper/gradle-wrapper.jar' \
+    "$@" \
+    apps libs platops 2>/dev/null

@@ -1,0 +1,81 @@
+# cft-workspace manifest
+#
+# Lists every HMCTS repo this workspace pulls in. Format:
+#
+#   repos:
+#     <local-path>:
+#       url: <org>/<repo>      # required; cloned via git@github.com:<url>.git
+#       ref: <branch>          # optional; defaults to the repo's default branch
+#       depth: <int>           # optional; 0 = full clone (default)
+#
+# All clones use SSH. Run scripts/bootstrap to clone missing entries; scripts/sync
+# to fast-forward existing clones; scripts/add-repo to append a new entry safely.
+
+defaults:
+  org: hmcts
+  ref: default      # use the repo's default branch unless overridden
+  depth: 0
+
+repos:
+
+  # ─── apps/ccd — Core Case Data platform ──────────────────────────────────
+  apps/ccd/ccd-data-store-api:           { url: hmcts/ccd-data-store-api }
+  apps/ccd/ccd-definition-store-api:     { url: hmcts/ccd-definition-store-api }
+  apps/ccd/ccd-admin-web:                { url: hmcts/ccd-admin-web }
+  apps/ccd/ccd-test-definitions:         { url: hmcts/ccd-test-definitions }
+  apps/ccd/aac-manage-case-assignment:   { url: hmcts/aac-manage-case-assignment }
+  # ccd-case-management-web is archived; superseded by rpx-xui-webapp.
+
+  # ─── apps/xui — Caseworker UI (eXUI / Manage Cases / Manage Organisations) ──
+  apps/xui/rpx-xui-webapp:               { url: hmcts/rpx-xui-webapp }
+  apps/xui/rpx-xui-manage-organisations: { url: hmcts/rpx-xui-manage-organisations }
+  apps/xui/rpx-xui-common-lib:           { url: hmcts/rpx-xui-common-lib }
+
+  # ─── apps/idam — Identity & Access Management ───────────────────────────
+  apps/idam/idam-api:                    { url: hmcts/idam-api }
+  apps/idam/idam-web-public:             { url: hmcts/idam-web-public }
+
+  # ─── apps/payment — Fees & Pay ──────────────────────────────────────────
+  apps/payment/ccpay-payment-app:        { url: hmcts/ccpay-payment-app }
+
+  # ─── apps/rd — Reference Data ───────────────────────────────────────────
+  apps/rd/rd-professional-api:           { url: hmcts/rd-professional-api }
+  apps/rd/rd-location-ref-api:           { url: hmcts/rd-location-ref-api }
+
+  # ─── apps/dm — Document Management ──────────────────────────────────────
+  apps/dm/document-management-store-app: { url: hmcts/document-management-store-app }
+
+  # ─── apps/wa — Work Allocation ──────────────────────────────────────────
+  apps/wa/wa-task-management-api:        { url: hmcts/wa-task-management-api }
+
+  # ─── apps/bulk-scan — Bulk Scan ─────────────────────────────────────────
+  apps/bulk-scan/bulk-scan-processor:    { url: hmcts/bulk-scan-processor }
+
+  # ─── apps/dtsse — DTS shared engineering ───────────────────────────────
+  apps/dtsse/expressjs-monorepo-template: { url: hmcts/expressjs-monorepo-template }
+
+  # ─── apps/nfdiv — No-Fault Divorce service team ────────────────────────
+  apps/nfdiv/nfdiv-frontend:             { url: hmcts/nfdiv-frontend }
+  apps/nfdiv/nfdiv-case-api:             { url: hmcts/nfdiv-case-api }
+  # nfdiv-ccd-definitions and nfdiv-shared-infrastructure are archived;
+  # nfdiv has moved to decentralised CCD (definitions live in nfdiv-case-api).
+
+  # ─── apps/pcs — Possession Claims Service team ─────────────────────────
+  apps/pcs/pcs-api:                      { url: hmcts/pcs-api }
+  apps/pcs/pcs-frontend:                 { url: hmcts/pcs-frontend }
+
+  # ─── libs/ — widely-used Java/Node clients & starters ──────────────────
+  libs/ccd-config-generator:             { url: hmcts/dtsse-ccd-config-generator }
+  libs/payments-java-client:             { url: hmcts/payments-java-client }
+  libs/rse-cft-lib:                      { url: hmcts/rse-cft-lib }
+  libs/properties-volume-nodejs:         { url: hmcts/properties-volume-nodejs }
+  libs/rse-idam-simulator:               { url: hmcts/rse-idam-simulator }
+  libs/service-auth-provider-java-client: { url: hmcts/service-auth-provider-java-client }
+
+  # ─── platops/ — flux, jenkins shared library, AKS pipelines ────────────
+  platops/cnp-flux-config:               { url: hmcts/cnp-flux-config }
+  platops/cnp-jenkins-library:           { url: hmcts/cnp-jenkins-library }
+  platops/cnp-jenkins-config:            { url: hmcts/cnp-jenkins-config }
+  platops/cnp-aks-pipelines:             { url: hmcts/cnp-aks-pipelines }
+  platops/cnp-core-infrastructure:       { url: hmcts/cnp-core-infrastructure }
+  platops/hmcts.github.io:               { url: hmcts/hmcts.github.io }

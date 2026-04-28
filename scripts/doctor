@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Health check for the cft-workspace.
+#
+# Usage:
+#   scripts/doctor             # full report
+#   scripts/doctor --quiet     # one line per failing check, exit 0 if all pass
+
+source "$(dirname "$0")/lib/_common.sh"
+
+QUIET=0
+[[ "${1:-}" == "--quiet" ]] && QUIET=1
+
+cd "$WORKSPACE_ROOT"
+
+PASS=0
+FAIL=0
+
+check() {
+    local name="$1"; shift
+    local out
+    if out=$("$@" 2>&1); then
+        PASS=$((PASS+1))
+        [[ $QUIET -eq 0 ]] && printf '  %s✓%s %s\n' "$C_GREEN" "$C_RESET" "$name"
+    else
+        FAIL=$((FAIL+1))
+        printf '  %s✗%s %s — %s\n' "$C_RED" "$C_RESET" "$name" "$(echo "$out" | head -1)" >&2
+    fi
+}
+
+[[ $QUIET -eq 0 ]] && info "cft-workspace doctor"
+
+# Toolchain
+check "git installed"     command -v git
+check "gh installed"      command -v gh
+check "rg installed"      command -v rg
+check "yq is mikefarah"   bash -c 'yq --version 2>&1 | grep -q mikefarah'
+
+# Auth
+check "gh auth ok"        gh auth status
+check "GitHub SSH ok"     bash -c 'out=$(ssh -T -o BatchMode=yes -o ConnectTimeout=5 git@github.com 2>&1 || true); [[ "$out" == *"successfully authenticated"* ]]'
+
+# Manifest sanity
+check "manifest parses"   yq '.repos | length' "$MANIFEST"
+
+# Per-repo presence and basic git health
+mapfile -t entries < <(manifest_tsv)
+missing=0
+unexpected_branch=0
+dirty=0
+for e in "${entries[@]}"; do
+    IFS=$'\t' read -r path url ref _depth <<< "$e"
+    [[ "$ref" == "-" ]] && ref=""
+    if [[ ! -d "$path/.git" ]]; then
+        missing=$((missing+1))
+        continue
+    fi
+    [[ $(git -C "$path" status --porcelain | wc -l) -gt 0 ]] && dirty=$((dirty+1))
+    cur=$(git -C "$path" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+    def=$(git -C "$path" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+    target="${ref:-$def}"
+    [[ -n "$target" && "$cur" != "$target" ]] && unexpected_branch=$((unexpected_branch+1))
+done
+
+if [[ $missing -eq 0 ]]; then
+    PASS=$((PASS+1))
+    [[ $QUIET -eq 0 ]] && printf '  %s✓%s all manifest repos cloned\n' "$C_GREEN" "$C_RESET"
+else
+    FAIL=$((FAIL+1))
+    printf '  %s✗%s %d manifest repo(s) missing — run scripts/bootstrap\n' "$C_RED" "$C_RESET" "$missing" >&2
+fi
+
+if [[ $QUIET -eq 0 ]]; then
+    [[ $dirty -gt 0 ]] && printf '  %s•%s %d clone(s) have local changes (informational)\n' "$C_DIM" "$C_RESET" "$dirty"
+    [[ $unexpected_branch -gt 0 ]] && printf '  %s•%s %d clone(s) on a non-default branch (informational)\n' "$C_DIM" "$C_RESET" "$unexpected_branch"
+fi
+
+if [[ $QUIET -eq 0 ]]; then
+    if [[ $FAIL -eq 0 ]]; then
+        ok "all $PASS checks passed"
+    else
+        err "$FAIL check(s) failed, $PASS passed"
+    fi
+fi
+
+exit $(( FAIL > 0 ? 1 : 0 ))

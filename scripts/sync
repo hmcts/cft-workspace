@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Fast-forward each clean clone to its remote default (or pinned ref).
+# Skips repos with local changes, on a non-default branch, or with unpushed commits.
+#
+# Usage:
+#   scripts/sync                  # all manifest entries
+#   scripts/sync apps/nfdiv       # only that prefix
+#   scripts/sync -j8              # parallelism
+
+source "$(dirname "$0")/lib/_common.sh"
+
+JOBS=8
+PREFIX=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -j*)  JOBS="${1#-j}"; shift ;;
+        -j)   JOBS="$2"; shift 2 ;;
+        -h|--help) sed -n '2,9p' "$0"; exit 0 ;;
+        *)    PREFIX="$1"; shift ;;
+    esac
+done
+
+cd "$WORKSPACE_ROOT"
+
+mapfile -t entries < <(manifest_tsv "$PREFIX")
+[[ ${#entries[@]} -gt 0 ]] || die "No manifest entries match prefix: $PREFIX"
+
+sync_one() {
+    local path="$1" _url="$2" pinned_ref="$3"
+    [[ "$pinned_ref" == "-" ]] && pinned_ref=""
+    if [[ ! -d "$path/.git" ]]; then
+        printf 'MISS  %s (run scripts/bootstrap)\n' "$path"
+        return 0
+    fi
+
+    local default_branch
+    default_branch=$(git -C "$path" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||') || default_branch=""
+    local target_ref="${pinned_ref:-$default_branch}"
+    [[ -z "$target_ref" ]] && { printf 'SKIP  %s (cannot determine default branch)\n' "$path"; return 0; }
+
+    local current_branch dirty ahead
+    current_branch=$(git -C "$path" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+    dirty=$(git -C "$path" status --porcelain 2>/dev/null | wc -l)
+    ahead=$(git -C "$path" rev-list --count "@{u}..HEAD" 2>/dev/null || echo 0)
+
+    if [[ "$current_branch" != "$target_ref" ]]; then
+        printf 'SKIP  %s (on %s, target %s)\n' "$path" "$current_branch" "$target_ref"
+        return 0
+    fi
+    if [[ "$dirty" -gt 0 ]]; then
+        printf 'SKIP  %s (%s dirty file(s))\n' "$path" "$dirty"
+        return 0
+    fi
+    if [[ "$ahead" -gt 0 ]]; then
+        printf 'SKIP  %s (%s unpushed commit(s))\n' "$path" "$ahead"
+        return 0
+    fi
+
+    if git -C "$path" pull --ff-only --quiet origin "$target_ref" 2>/tmp/cft-sync-$$.err; then
+        printf 'OK    %s\n' "$path"
+    else
+        printf 'ERR   %s — %s\n' "$path" "$(tr -d '\n' </tmp/cft-sync-$$.err)" >&2
+        return 1
+    fi
+}
+export -f sync_one
+
+info "Syncing ${#entries[@]} repo(s) (jobs=$JOBS)…"
+printf '%s\n' "${entries[@]}" | \
+    xargs -P "$JOBS" -I{} bash -c 'IFS=$'\''\t'\'' read -r p u r d <<< "{}"; sync_one "$p" "$u" "$r"'
+
+ok "sync complete"

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Add a new repo to workspace.yaml and clone it.
+#
+# Usage:
+#   scripts/add-repo <local-path> <org/repo> [ref]
+#
+# Examples:
+#   scripts/add-repo apps/civil/civil-service hmcts/civil-service
+#   scripts/add-repo apps/sscs/sscs-tribunals-api hmcts/sscs-tribunals-api main
+
+source "$(dirname "$0")/lib/_common.sh"
+
+[[ $# -ge 2 ]] || { sed -n '2,9p' "$0"; exit 2; }
+
+PATH_REL="$1"
+URL="$2"
+REF="${3:-}"
+
+require_yq
+
+# Reject if already present.
+if yq -e ".repos | has(\"$PATH_REL\")" "$MANIFEST" >/dev/null 2>&1; then
+    die "add-repo: '$PATH_REL' already in $MANIFEST"
+fi
+
+# Append a single line at EOF rather than rewriting the file with yq -i,
+# which would strip the section-header comments we use for navigation.
+line="  ${PATH_REL}: { url: ${URL}"
+[[ -n "$REF" ]] && line+=", ref: ${REF}"
+line+=" }"
+
+# Ensure trailing newline before append.
+[[ -n "$(tail -c1 "$MANIFEST")" ]] && printf '\n' >> "$MANIFEST"
+printf '%s\n' "$line" >> "$MANIFEST"
+
+ok "added: $PATH_REL -> $URL${REF:+ @ $REF}"
+info "Cloning new entry…"
+"$WORKSPACE_ROOT/scripts/bootstrap" "$PATH_REL"

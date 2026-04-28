@@ -1,0 +1,43 @@
+# cft-workspace gitignore
+#
+# This repo tracks scaffolding only. Cloned-in HMCTS repos (under apps/<area>/<repo>,
+# libs/<repo>, platops/<repo>) are external — workspace.yaml lists them; bootstrap
+# clones them. Per-engineer scratch files inside area dirs (DB dumps, TODO notes,
+# scratch SQL) are also not tracked.
+
+# 1) External clones
+/apps/*/*/
+/libs/*/
+/platops/*/
+
+# 2) Everything inside an area dir (apps/<area>/*) is ignored unless re-included.
+/apps/*/*
+!/apps/*/CLAUDE.md
+!/apps/*/README.md
+!/apps/*/.gitkeep
+
+# 3) libs/ and platops/ contain only repo clones; allow only .gitkeep at the top.
+/libs/*
+/platops/*
+!/libs/.gitkeep
+!/platops/.gitkeep
+
+# 4) Workspace-installed tools
+/.bin/
+
+# 5) Local Claude state (workspace publishes settings.json, not local overrides)
+/.claude/scheduled_tasks.lock
+/.claude/settings.local.json
+
+# 6) IDE / OS noise
+.DS_Store
+.idea/
+*.iml
+*.swp
+*~
+
+# 7) Secrets — belt-and-braces (no secret should ever live in a .env file in this repo)
+.env
+.env.local
+*.pem
+*.p12

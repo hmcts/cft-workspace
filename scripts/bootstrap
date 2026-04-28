@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Clone every manifest entry that isn't already on disk. Idempotent.
+#
+# Usage:
+#   scripts/bootstrap              # clone everything missing
+#   scripts/bootstrap apps/nfdiv   # only entries under apps/nfdiv/
+#   scripts/bootstrap -j8          # parallelism (default: 8)
+#
+# Existing clones are NEVER touched — even if they're on a feature branch
+# or have local changes. Use scripts/sync to fast-forward clean clones.
+
+source "$(dirname "$0")/lib/_common.sh"
+
+JOBS=8
+PREFIX=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -j*)  JOBS="${1#-j}"; shift ;;
+        -j)   JOBS="$2"; shift 2 ;;
+        -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+        *)    PREFIX="$1"; shift ;;
+    esac
+done
+
+if ! command -v git >/dev/null; then die "git not found"; fi
+
+# Check SSH auth to GitHub. ssh -T returns 1 even on success ("Hi <user>!"),
+# so we treat exit 1 with the right stderr as success too.
+ssh_check_out=$(ssh -T -o BatchMode=yes -o ConnectTimeout=5 git@github.com 2>&1 || true)
+if [[ "$ssh_check_out" != *"successfully authenticated"* ]]; then
+    err "GitHub SSH auth failed. Add your key to GitHub then retry:"
+    err "  $ssh_check_out"
+    exit 1
+fi
+
+cd "$WORKSPACE_ROOT"
+
+mapfile -t entries < <(manifest_tsv "$PREFIX")
+[[ ${#entries[@]} -gt 0 ]] || die "No manifest entries match prefix: $PREFIX"
+
+clone_one() {
+    local path="$1" url="$2" ref="$3" depth="$4"
+    [[ "$ref" == "-" ]] && ref=""
+    if [[ -d "$path/.git" ]]; then
+        printf '%s skip (already cloned)\n' "$path"
+        return 0
+    fi
+    if [[ -e "$path" ]] && [[ -n "$(ls -A "$path" 2>/dev/null)" ]]; then
+        printf '%s skip (path exists, not a git repo — resolve manually)\n' "$path"
+        return 0
+    fi
+    mkdir -p "$(dirname "$path")"
+    local args=(clone --quiet "$url" "$path")
+    [[ "$depth" != "0" && -n "$depth" ]] && args+=(--depth "$depth")
+    [[ -n "$ref" ]] && args+=(--branch "$ref")
+    if git "${args[@]}" 2>/tmp/cft-clone-$$.err; then
+        printf 'OK  %s\n' "$path"
+    else
+        printf 'ERR %s — %s\n' "$path" "$(tr -d '\n' </tmp/cft-clone-$$.err)" >&2
+        return 1
+    fi
+}
+export -f clone_one
+export C_RESET C_DIM C_BOLD C_RED C_GREEN C_YELLOW C_BLUE
+
+info "Cloning into ${#entries[@]} paths (jobs=$JOBS)…"
+printf '%s\n' "${entries[@]}" | \
+    xargs -P "$JOBS" -I{} bash -c 'IFS=$'\''\t'\'' read -r p u r d <<< "{}"; clone_one "$p" "$u" "$r" "$d"'
+
+ok "bootstrap complete"
