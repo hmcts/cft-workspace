@@ -24,8 +24,8 @@ After it finishes:
 git add workspace.yaml
 git commit -m "add <repo> to manifest"
 
-# Populate per-repo taxonomy
-/generate-repo-claude-md <local-path>
+# Refresh the product's taxonomy (e.g. apps/nfdiv after adding a new nfdiv repo)
+/generate-product-claude-md <product>
 
 # Refresh INDEX.md
 ./scripts/index

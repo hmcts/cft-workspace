@@ -1,0 +1,22 @@
+# Public Repositories
+
+### Public vs Private Repository
+
+Use the links below as a guide to support decision making in relation to code in the open principles and private vs public repository visibility practices.
+
+- [Code in the Open Developer Checklist] (https://tools.hmcts.net/confluence/spaces/DATS/pages/1903995810/1.+Code+in+the+open+Developer+Checklist) – Checklist for developers when working with public repositories.
+
+- [Pre-release Code Checklist] (https://tools.hmcts.net/confluence/spaces/DATS/pages/1903995798/2.+Pre-release+code+checklist) – Steps to validate code is suitable to be released into a public repository.
+
+## Vulnerability reporting
+
+A SECURITY.md file defines a projects vulnerability reporting process, giving researchers a private, responsible disclosure channel instead of public issue trackers. It sets clear expectations around supported versions and response timelines, reduces exploitation risk, builds community trust, and signals security maturity — recognized natively by platforms like GitHub.
+
+The security.md template file can be found in the link below
+
+[security.md] (https://github.com/hmcts/hmcts.github.io/blob/main/security.md)
+
+Use these guidelines to keep your code reliable, secure, and compliant.
+
+
+

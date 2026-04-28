@@ -55,7 +55,7 @@ Try one of:
 /list-integrations work_allocation
 ```
 
-The first two read static state. The latter two consult `INDEX.md` — if it's empty (no per-repo CLAUDE.md generated yet), Claude will offer to run `/generate-repo-claude-md` first.
+The first two read static state. The latter two consult `INDEX.md` — if it's empty (no product CLAUDE.md generated yet), Claude will offer to run `/generate-product-claude-md` first.
 
 ## 5. Working inside a clone
 

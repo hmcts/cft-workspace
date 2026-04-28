@@ -1,0 +1,31 @@
+# APIs
+
+### API Design and implementation
+
+Use the [Zalando RESTful API Guidelines](https://opensource.zalando.com/restful-api-guidelines/) as the reference standard for API design.
+
+The source repository is [zalando/restful-api-guidelines](https://github.com/zalando/restful-api-guidelines).
+
+#### Personal data in URLs
+
+In addition to the Zalando guidelines, HMCTS services **must not** transmit
+[personal data](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/personal-information-what-is-it/what-is-personal-data/what-is-personal-data/)
+in URL paths or query strings. This information can be inadvertently exposed
+via client, network, and server logs.
+
+Where personal data is required, transmit it in the request body or, where
+that is not possible (e.g. GET requests), in HTTP headers.
+
+### Versioning
+
+Use content type negotiation or endpoint naming to version the API.
+
+Do not make backward incompatible changes to existing endpoints.
+
+See the official guidance in the [TGL (Confluence)](https://tools.hmcts.net/confluence/pages/viewpage.action?pageId=1611204737&__ncforminfo=TeykTRO7uMi-mDnly8SmjuKluB1u3rrwwlwGkfYwyuBtTvzhtdiq1QymGuTr5WAl0bULwsGc4_Kv4lvc4ja_Tf4s4wSlGOiC)
+
+### Documentation
+
+Use [OpenAPI](https://swagger.io/specification/) for API documentation.
+
+Maintain a central repository of API documentation.

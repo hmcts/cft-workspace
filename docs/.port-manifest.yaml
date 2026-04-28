@@ -1,0 +1,266 @@
+# Port manifest for content imported from platops/hmcts.github.io into docs/.
+# Used by scripts/doc-drift and the /check-doc-drift skill to detect upstream
+# changes that need porting forward.
+#
+# Each entry maps a target docs/ page to the upstream source file and the
+# upstream commit SHA the target was last reconciled with. To refresh a page:
+#   1. Re-run scripts/port-page on the (new) upstream source
+#   2. Hand-fix any link/image/structure churn
+#   3. Bump the entry's synced_sha to the new upstream HEAD
+#
+# Drop list at the bottom records upstream paths we've decided NOT to port
+# (and why) so /check-doc-drift doesn't keep flagging them as "new upstream".
+
+upstream_repo: platops/hmcts.github.io
+upstream_branch: main
+upstream_path_root: source
+
+# Bookkeeping: when the bulk port last ran end-to-end. Per-entry synced_sha
+# may diverge from this if individual pages have been refreshed since.
+last_full_sync_at: 2026-04-28
+last_full_sync_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+entries:
+
+  # --- tutorials/cnp-onboarding ---
+  - target: tutorials/cnp-onboarding/person.md
+    source: cloud-native-platform/onboarding/person/index.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: tutorials/cnp-onboarding/team-azuread.md
+    source: cloud-native-platform/onboarding/team/azuread.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: tutorials/cnp-onboarding/team-github.md
+    source: cloud-native-platform/onboarding/team/github.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: tutorials/cnp-onboarding/team-jenkins.md
+    source: cloud-native-platform/onboarding/team/jenkins.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: tutorials/cnp-onboarding/team-office365.md
+    source: cloud-native-platform/onboarding/team/office365.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: tutorials/cnp-onboarding/team-slack.md
+    source: cloud-native-platform/onboarding/team/slack.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- how-to/path-to-live ---
+  - target: how-to/path-to-live/front-door.md
+    source: cloud-native-platform/path-to-live/front-door.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    notes: inlined _front-door-config.md partial
+  - target: how-to/path-to-live/load-balancer-configuration.md
+    source: cloud-native-platform/path-to-live/load-balancer-configuration.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/path-to-live/oat.md
+    source: cloud-native-platform/path-to-live/oat.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/path-to-live/public-dns.md
+    source: cloud-native-platform/path-to-live/public-dns.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    notes: inlined _front-door-endpoints.md partial
+  - target: how-to/path-to-live/shutter.md
+    source: cloud-native-platform/path-to-live/shutter.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/path-to-live/tls-certificates.md
+    source: cloud-native-platform/path-to-live/tls-certificates.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- how-to/troubleshooting ---
+  - target: how-to/troubleshooting.md
+    source: cloud-native-platform/troubleshooting/index.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    notes: inlined _clusters.md partial; rewrote absolute-path links to Diátaxis paths
+
+  # --- how-to (CNP guides) ---
+  - target: how-to/afd-waf.md
+    source: cloud-native-platform/guides/afd-waf.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/automated-dependency-updates.md
+    source: cloud-native-platform/guides/automated-dependency-updates.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/connect-via-vpn.md
+    source: cloud-native-platform/guides/connect-via-vpn.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/creating-a-new-subscription.md
+    source: cloud-native-platform/guides/creating-a-new-subscription.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/federated-credentials.md
+    source: cloud-native-platform/guides/federated-credentials.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/flyway-database-migrations.md
+    source: cloud-native-platform/guides/flyway-database-migrations.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/managing-manual-key-vault-secrets.md
+    source: cloud-native-platform/guides/managing-manual-key-vault-secrets.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/postgresql-singleserver-to-flexibleserver-migration-dms.md
+    source: cloud-native-platform/guides/postgresql-singleserver-to-flexibleserver-migration-dms.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/postgresql-singleserver-to-flexibleserver-migration-portal.md
+    source: cloud-native-platform/guides/postgresql-singleserver-to-flexibleserver-migration-portal.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/profile-java-app-in-aks.md
+    source: cloud-native-platform/guides/profile-java-app-in-aks.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/pr-url.md
+    source: cloud-native-platform/guides/pr-url.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/update-redis-with-zone-redundant.md
+    source: cloud-native-platform/guides/update-redis-with-zone-redundant.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- how-to/new-component ---
+  - target: how-to/new-component/elasticsearch.md
+    source: cloud-native-platform/new-component/elasticsearch.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/new-component/feature-flags.md
+    source: cloud-native-platform/new-component/feature-flags.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/new-component/github-repo.md
+    source: cloud-native-platform/new-component/github-repo.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/new-component/gitops-flux.md
+    source: cloud-native-platform/new-component/gitops-flux.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/new-component/helm-chart.md
+    source: cloud-native-platform/new-component/helm-chart.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/new-component/infrastructure-as-code.md
+    source: cloud-native-platform/new-component/infrastructure-as-code.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/new-component/secrets-management.md
+    source: cloud-native-platform/new-component/secrets-management.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- how-to/common-pipeline ---
+  - target: how-to/common-pipeline/overview.md
+    source: cloud-native-platform/common-pipeline/common-pipeline.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/common-pipeline/publish-java-library.md
+    source: cloud-native-platform/common-pipeline/publishing-libraries/java.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/common-pipeline/publish-nodejs-library.md
+    source: cloud-native-platform/common-pipeline/publishing-libraries/nodejs.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- how-to (CNP environments operational) ---
+  - target: how-to/auto-shutdown.md
+    source: cloud-native-platform/environments/auto-shutdown.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/sandbox-cleardown.md
+    source: cloud-native-platform/environments/sandbox-cleardown.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/external-ip-addresses.md
+    source: cloud-native-platform/environments/external-ip-addresses.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- reference (CNP) ---
+  - target: reference/cnp-glossary.md
+    source: cloud-native-platform/glossary/index.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/health-endpoints.md
+    source: cloud-native-platform/health-end-points/index.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/cnp-environments.md
+    source: cloud-native-platform/environments/index.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    notes: replaced auto-nav children loop with hand-written links
+  - target: reference/cnp-standards/apis.md
+    source: cloud-native-platform/standards/apis.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/cnp-standards/db-schema-change.md
+    source: cloud-native-platform/standards/db-schema-change.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/cnp-standards/pull-requests.md
+    source: cloud-native-platform/standards/pull-requests.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- reference (engineering standards) ---
+  - target: reference/standards/angular.md
+    source: standards/standards/angular.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/standards/angular-web-performance.md
+    source: standards/standards/angular-web-performance.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/standards/typescript.md
+    source: standards/standards/typescript.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/standards/java.md
+    source: standards/standards/java.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/standards/cookies.md
+    source: standards/standards/cookies.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/standards/frontend-web-performance.md
+    source: standards/standards/frontend-web-performance.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- reference (engineering practices) ---
+  - target: reference/practices/apis.md
+    source: standards/practices/apis.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/practices/backends.md
+    source: standards/practices/backends.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/practices/certificates.md
+    source: standards/practices/certificates.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/practices/frontend.md
+    source: standards/practices/frontend.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: reference/practices/public-repositories.md
+    source: standards/practices/Public-Repositories.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- reference (technology) ---
+  - target: reference/technology-stack.md
+    source: standards/technology-stack/index.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+  # --- explanation ---
+  - target: explanation/cloud-native-platform.md
+    source: cloud-native-platform/index.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: explanation/principles/coding-in-the-open.md
+    source: standards/principles/coding-in-the-open.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: explanation/principles/continuous-delivery.md
+    source: standards/principles/continuous-delivery.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: explanation/principles/devops.md
+    source: standards/principles/devops.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: explanation/principles/programming.md
+    source: standards/principles/programming.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: explanation/principles/test.md
+    source: standards/principles/test.html.md.erb
+    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+
+# Upstream paths we've decided NOT to port. /check-doc-drift skips these
+# when scanning for "new upstream pages" so they don't get re-flagged each run.
+# To start porting one of these, remove its glob from this list and re-run
+# the drift check — it'll surface as "new upstream" and you can port it.
+dropped:
+  - cjs-common-platform/**          # entire CJS Common Platform section (13 pages)
+  - hmcts-overview/**               # org-context page; >1 year stale
+  - legacy/**                       # 3 stub pages, redirect to Confluence
+  - cloud-native-platform/api-docs/**       # external Swagger redirect only
+  - cloud-native-platform/asking-for-help/**  # Slack channel directory
+  - index.html.md.erb               # site landing page; replaced by docs/README.md
+  # Auto-nav scaffolding pages (gem-rendered; replaced by Diátaxis section READMEs):
+  - cloud-native-platform/common-pipeline/index.html.md.erb
+  - cloud-native-platform/common-pipeline/publishing-libraries/index.html.md.erb
+  - cloud-native-platform/guides/index.html.md.erb
+  - cloud-native-platform/new-component/index.html.md.erb
+  - cloud-native-platform/onboarding/index.html.md.erb
+  - cloud-native-platform/onboarding/team/index.html.md.erb
+  - cloud-native-platform/path-to-live/index.html.md.erb
+  - cloud-native-platform/standards/index.html.md.erb
+  - standards/index.html.md.erb
+  - standards/practices/index.html.md.erb
+  - standards/principles/index.html.md.erb
+  - standards/standards/index.html.md.erb
+  # Partials inlined into their including page (not a separate target):
+  - cloud-native-platform/path-to-live/_front-door-config.md     # inlined into how-to/path-to-live/front-door.md
+  - cloud-native-platform/path-to-live/_front-door-endpoints.md  # inlined into how-to/path-to-live/public-dns.md
+  - cloud-native-platform/troubleshooting/_clusters.md           # inlined into how-to/troubleshooting.md

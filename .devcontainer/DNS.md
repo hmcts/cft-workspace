@@ -18,16 +18,17 @@ Two pieces in this directory:
      "source=/etc,target=/host-etc,type=bind,readonly"
    ]
    ```
-2. **`post-start.sh`** copies the host's current `resolv.conf` over the
-   container's on every container start:
-   ```bash
-   sudo cp --dereference /host-etc/resolv.conf /etc/resolv.conf
-   ```
-   `--dereference` is important — on systemd-resolved hosts (default on
-   Ubuntu), `/etc/resolv.conf` is a symlink to
-   `/run/systemd/resolve/stub-resolv.conf` and we want the resolved file
-   contents, not a dangling symlink into a path that doesn't exist in the
-   container.
+2. **`post-start.sh`** syncs the host's DNS config over the container's on
+   every container start. Two cases:
+   - If `/host-etc/resolv.conf` is a regular file (or a symlink whose target
+     is reachable inside the bind mount), `cp --dereference` copies it
+     directly.
+   - On systemd-resolved hosts (default on Ubuntu), `/etc/resolv.conf` is a
+     relative symlink to `../run/systemd/resolve/stub-resolv.conf`. That
+     target sits outside the `/host-etc` mount, so dereferencing fails. The
+     script falls back to writing `nameserver 127.0.0.53` — which works
+     because `--network=host` makes the host's loopback (and therefore its
+     stub resolver) reachable from inside the container.
 
 If the VPN connects/disconnects mid-session and DNS goes stale, run
 [`refresh-dns.sh`](refresh-dns.sh) to re-copy without restarting the
@@ -40,15 +41,13 @@ container:
 ## Ubuntu hosts: required
 
 On Linux hosts (this repo's expected setup) the host's `/etc/resolv.conf` is
-typically managed by `systemd-resolved` and points at `127.0.0.53`. That stub
-resolver lives in the host's network namespace and is **not reachable from
-inside the container**, so without this fix the container falls back to
-whatever Docker baked into `/etc/resolv.conf` at create time — usually the
-pre-VPN nameservers. Internal HMCTS hosts then NXDOMAIN.
-
-The bind-mount + copy approach replaces those stale entries with the actual
-upstream nameservers the host is using right now (F5's DNS when the VPN is
-up). This is necessary on Ubuntu.
+typically managed by `systemd-resolved` and points at `127.0.0.53`. Because
+this devcontainer uses `--network=host`, the container shares the host's
+network namespace and `127.0.0.53` *is* reachable — so routing DNS through
+the host's stub resolver picks up whatever nameservers the host is currently
+using, including F5's when the VPN is up. Without this sync the container
+keeps whatever Docker baked into `/etc/resolv.conf` at create time, which
+usually misses internal HMCTS hosts entirely (NXDOMAIN).
 
 ## macOS hosts: usually not required
 

@@ -17,14 +17,14 @@ repos:
     depth: <int>        # optional; overrides defaults.depth
 ```
 
-`<local-path>` is the directory the repo gets cloned into, relative to the workspace root. Example: `apps/nfdiv/nfdiv-frontend`. The script tooling uses the path prefix for filtering — pick prefixes that group sensibly (`apps/<area>/<repo>`, `libs/<repo>`, `platops/<repo>`).
+`<local-path>` is the directory the repo gets cloned into, relative to the workspace root. Example: `apps/nfdiv/nfdiv-frontend`. The script tooling uses the path prefix for filtering — pick prefixes that group sensibly (`apps/<product>/<repo>`, `libs/<repo>`, `platops/<repo>`).
 
 ## Conventions
 
 - **SSH only.** All clones use `git@github.com:<org>/<repo>.git`. The manifest does not accept HTTPS URLs.
 - **Default branch by default.** Most entries omit `ref` so each clone tracks the upstream default. Pin a `ref` only when working on a long-running feature branch (e.g. `libs/ccd-config-generator: { ref: noc-part2 }`).
 - **No depth except for huge repos.** `depth: 1` is fine for a Terraform repo you only read; never use shallow clones for repos you might commit to.
-- **Group by section comments.** The manifest is hand-readable — use `# ─── apps/<area> ─────` blocks for navigation. `scripts/add-repo` appends without disrupting these.
+- **Group by section comments.** The manifest is hand-readable — use `# ─── apps/<product> ─────` blocks for navigation. `scripts/add-repo` appends without disrupting these.
 
 ## Adding entries
 

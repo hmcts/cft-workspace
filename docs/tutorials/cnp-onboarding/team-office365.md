@@ -1,0 +1,7 @@
+# Office 365
+
+## Create Office 365 team group
+
+It is recommended that you create an Office 365 group for your team and depending on size possibly one for your dev team as well.
+
+See the Microsoft documentation for [how to create a group](https://support.microsoft.com/en-us/office/create-a-group-in-outlook-04d0c9cf-6864-423c-a380-4fa858f27102#ID0EACAAA=Web).

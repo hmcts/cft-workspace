@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# Detect drift between docs/ and the upstream platops/hmcts.github.io clone.
+#
+# Usage:
+#   scripts/doc-drift            # full check (no upstream pull)
+#   scripts/doc-drift --pull     # fetch + ff-pull upstream first
+#
+# Reads docs/.port-manifest.yaml and reports per-target status:
+#   - in-sync          target's source has no commits since synced_sha
+#   - needs-update     target's source has new commits upstream
+#   - removed-upstream upstream source no longer exists
+#   - new-upstream     upstream has a *.html.md.erb that's not in the manifest
+#                      and isn't covered by a `dropped:` glob
+#
+# Output is structured (one section per status) so the /check-doc-drift skill
+# can parse it. Read-only with respect to docs/ — does not edit any ported page
+# and does not touch the manifest. The skill does the manifest writes after a
+# refresh.
+
+source "$(dirname "$0")/lib/_common.sh"
+
+MANIFEST="$WORKSPACE_ROOT/docs/.port-manifest.yaml"
+UPSTREAM_DIR="$WORKSPACE_ROOT/platops/hmcts.github.io"
+
+[[ -f "$MANIFEST" ]] || die "manifest not found: $MANIFEST"
+[[ -d "$UPSTREAM_DIR/.git" ]] || die "upstream clone not found: $UPSTREAM_DIR"
+
+require_yq
+
+DO_PULL=0
+[[ "${1:-}" == "--pull" ]] && DO_PULL=1
+
+# Refuse to operate on a dirty/branched/unpushed upstream clone — mirrors
+# scripts/sync's contract so we never silently overwrite local upstream work.
+check_upstream_clean() {
+    local default_branch
+    default_branch=$(yq -r '.upstream_branch' "$MANIFEST")
+
+    if ! git -C "$UPSTREAM_DIR" diff --quiet || \
+       ! git -C "$UPSTREAM_DIR" diff --cached --quiet; then
+        die "upstream clone has uncommitted changes — refusing to pull"
+    fi
+
+    local current_branch
+    current_branch=$(git -C "$UPSTREAM_DIR" symbolic-ref --short HEAD 2>/dev/null || echo '')
+    if [[ "$current_branch" != "$default_branch" ]]; then
+        die "upstream clone is on '$current_branch', expected '$default_branch'"
+    fi
+}
+
+if (( DO_PULL )); then
+    check_upstream_clean
+    info "fetching upstream…"
+    git -C "$UPSTREAM_DIR" fetch origin --quiet
+    git -C "$UPSTREAM_DIR" pull --ff-only --quiet origin "$(yq -r '.upstream_branch' "$MANIFEST")"
+fi
+
+UPSTREAM_HEAD=$(git -C "$UPSTREAM_DIR" rev-parse HEAD)
+UPSTREAM_ROOT=$(yq -r '.upstream_path_root' "$MANIFEST")
+
+info "upstream HEAD: $UPSTREAM_HEAD"
+echo
+
+NEEDS_UPDATE=(); IN_SYNC=(); REMOVED=(); NEW_UPSTREAM=()
+
+# ─── per-entry check ────────────────────────────────────────────────────────
+while IFS=$'\t' read -r target source synced_sha; do
+    src_full="$UPSTREAM_DIR/$UPSTREAM_ROOT/$source"
+
+    if [[ ! -f "$src_full" ]]; then
+        REMOVED+=("$target ← $source")
+        continue
+    fi
+
+    commits=$(git -C "$UPSTREAM_DIR" log --oneline "$synced_sha"..HEAD -- "$UPSTREAM_ROOT/$source" 2>/dev/null || echo '')
+
+    if [[ -z "$commits" ]]; then
+        IN_SYNC+=("$target")
+    else
+        NEEDS_UPDATE+=("$target	$source	$synced_sha	$(echo "$commits" | wc -l)")
+    fi
+done < <(yq -r '.entries[] | [.target, .source, .synced_sha] | @tsv' "$MANIFEST")
+
+# ─── new-upstream scan ──────────────────────────────────────────────────────
+# Find *.html.md.erb files in upstream that aren't in `entries` and aren't
+# covered by `dropped:` globs.
+mapfile -t known_sources < <(yq -r '.entries[].source' "$MANIFEST")
+mapfile -t dropped_globs < <(yq -r '.dropped[]' "$MANIFEST")
+
+is_dropped() {
+    local rel="$1" glob
+    for glob in "${dropped_globs[@]}"; do
+        # `**` means "any number of path components" — match prefix only.
+        if [[ "$glob" == *'**' ]]; then
+            local prefix="${glob%\*\*}"
+            [[ "$rel" == "$prefix"* ]] && return 0
+        else
+            [[ "$rel" == "$glob" ]] && return 0
+        fi
+    done
+    return 1
+}
+
+is_known() {
+    local rel="$1" k
+    for k in "${known_sources[@]}"; do
+        [[ "$rel" == "$k" ]] && return 0
+    done
+    return 1
+}
+
+while IFS= read -r src_full; do
+    rel="${src_full#"$UPSTREAM_DIR/$UPSTREAM_ROOT/"}"
+    is_known "$rel" && continue
+    is_dropped "$rel" && continue
+    NEW_UPSTREAM+=("$rel")
+done < <(find "$UPSTREAM_DIR/$UPSTREAM_ROOT" -type f \( -name '*.html.md.erb' -o -name '*.md' \))
+
+# ─── report ─────────────────────────────────────────────────────────────────
+ok "${#IN_SYNC[@]} in-sync"
+echo
+
+if (( ${#NEEDS_UPDATE[@]} )); then
+    warn "${#NEEDS_UPDATE[@]} needs-update:"
+    for line in "${NEEDS_UPDATE[@]}"; do
+        IFS=$'\t' read -r target source sha n <<< "$line"
+        printf '  %s\n' "$target"
+        printf '    upstream: %s\n' "$source"
+        printf '    synced:   %s\n' "$sha"
+        printf '    %s commits behind:\n' "$n"
+        git -C "$UPSTREAM_DIR" log --oneline "$sha"..HEAD -- "$UPSTREAM_ROOT/$source" \
+          | sed 's/^/      /'
+        echo
+    done
+else
+    ok "0 needs-update"
+fi
+
+if (( ${#REMOVED[@]} )); then
+    warn "${#REMOVED[@]} removed-upstream (target should likely be deleted):"
+    printf '  %s\n' "${REMOVED[@]}"
+    echo
+fi
+
+if (( ${#NEW_UPSTREAM[@]} )); then
+    warn "${#NEW_UPSTREAM[@]} new-upstream (consider porting or adding to dropped:):"
+    printf '  %s\n' "${NEW_UPSTREAM[@]}"
+    echo
+fi
+
+# Exit non-zero if there's drift to act on, so the skill / CI can detect it.
+if (( ${#NEEDS_UPDATE[@]} + ${#REMOVED[@]} + ${#NEW_UPSTREAM[@]} )); then
+    exit 1
+fi

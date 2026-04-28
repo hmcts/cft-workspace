@@ -7,7 +7,7 @@ Workspace-level guidance for Claude Code. The user is an HMCTS engineer using th
 This repo (`hmcts/cft-workspace`) tracks **scaffolding only** — devcontainer, scripts, Claude assets, docs, and the manifest. The actual HMCTS source lives in independently-cloned repos under `apps/`, `libs/`, `platops/`. Those clones are gitignored at this level — never `git add` their contents, never assume the workspace repo is a monorepo.
 
 ```
-apps/<area>/<repo>      # CFT apps — both shared platform (ccd/, xui/, idam/, …)
+apps/<product>/<repo>      # CFT apps — both shared platform (ccd/, xui/, idam/, …)
                         # and service-team (nfdiv/, pcs/, …)
 libs/<repo>             # Java/Node clients & shared starters
 platops/<repo>          # flux, dns, jenkins, AKS, plumbing
@@ -41,16 +41,18 @@ These projects build independently but are tightly related at runtime / by domai
 
 When making a change in one repo that another consumes, the dependency is via published artifacts (Jenkins / JitPack) — there is no source-level wiring across these directories.
 
-## Per-repo taxonomy
+## Per-product taxonomy
 
-Each clone is meant to have a generated `CLAUDE.md` whose frontmatter is the structured taxonomy block — `service`, `type`, `ccd_based`, `ccd_config`, `decentralised`, `ccd_features`, `integrations`, `runtime`, `build`. See [`docs/reference/taxonomy.md`](docs/reference/taxonomy.md) for the schema.
+Each product (`apps/<product>/`, `libs/`, `platops/`) carries a generated `CLAUDE.md` whose frontmatter encodes the workspace taxonomy — `service`, `ccd_based`, `ccd_config`, `ccd_features`, `integrations`, `repos`. See [`docs/reference/taxonomy.md`](docs/reference/taxonomy.md) for the schema.
 
-The `/generate-repo-claude-md` command (re-runnable) populates these. `scripts/index` aggregates them into `INDEX.md`. Use `INDEX.md` first when answering "which services use X?" — it's much cheaper than searching every repo.
+The body of each product CLAUDE.md describes the **product** (what it does, how its repos fit together, key integration points) — not per-repo build commands, which stay in each clone's own README/AGENTS.md.
+
+The `/generate-product-claude-md` command (re-runnable) populates these. `scripts/index` aggregates them into `INDEX.md`. Use `INDEX.md` first when answering "which products use X?" — it's much cheaper than searching every clone.
 
 ## Workspace conventions
 
 - **All git remotes are SSH.** Never HTTPS. The manifest spec assumes SSH; bootstrap clones via SSH; new repos added via `scripts/add-repo` use SSH.
-- **Workspace repo never tracks clone contents.** If you find yourself about to `git add apps/<area>/<repo>/<file>`, stop — that's a clone-local change and belongs in that repo's commit history, not the workspace's.
+- **Workspace repo never tracks clone contents.** If you find yourself about to `git add apps/<product>/<repo>/<file>`, stop — that's a clone-local change and belongs in that repo's commit history, not the workspace's.
 - **`scripts/sync` is non-destructive** — it skips dirty / branched / unpushed clones. Treat clone-local WIP as the user's working state.
 - **Add a repo** via `scripts/add-repo <path> <org/repo>`, not by hand-editing `workspace.yaml` and re-running bootstrap (the script keeps the two in sync).
 

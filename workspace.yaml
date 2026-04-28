@@ -47,6 +47,18 @@ repos:
 
   # ─── apps/wa — Work Allocation ──────────────────────────────────────────
   apps/wa/wa-task-management-api:        { url: hmcts/wa-task-management-api }
+  apps/wa/wa-case-event-handler:         { url: hmcts/wa-case-event-handler }
+  apps/wa/wa-ccd-definitions:            { url: hmcts/wa-ccd-definitions }
+  apps/wa/wa-message-cron-service:       { url: hmcts/wa-message-cron-service }
+  apps/wa/wa-performance:                { url: hmcts/wa-performance }
+  apps/wa/wa-post-deployment-ft-tests:   { url: hmcts/wa-post-deployment-ft-tests }
+  apps/wa/wa-reporting-frontend:         { url: hmcts/wa-reporting-frontend }
+  apps/wa/wa-shared-infrastructure:      { url: hmcts/wa-shared-infrastructure }
+  apps/wa/wa-standalone-task-bpmn:       { url: hmcts/wa-standalone-task-bpmn }
+  apps/wa/wa-task-batch-service:         { url: hmcts/wa-task-batch-service }
+  apps/wa/wa-task-configuration-template: { url: hmcts/wa-task-configuration-template }
+  apps/wa/wa-task-monitor:               { url: hmcts/wa-task-monitor }
+  apps/wa/wa-workflow-api:               { url: hmcts/wa-workflow-api }
 
   # ─── apps/bulk-scan — Bulk Scan ─────────────────────────────────────────
   apps/bulk-scan/bulk-scan-processor:    { url: hmcts/bulk-scan-processor }
@@ -63,6 +75,88 @@ repos:
   # ─── apps/pcs — Possession Claims Service team ─────────────────────────
   apps/pcs/pcs-api:                      { url: hmcts/pcs-api }
   apps/pcs/pcs-frontend:                 { url: hmcts/pcs-frontend }
+
+  # ─── apps/civil — Civil service team ───────────────────────────────────
+  apps/civil/civil-camunda-bpmn-definition: { url: hmcts/civil-camunda-bpmn-definition }
+  apps/civil/civil-ccd-definition:       { url: hmcts/civil-ccd-definition }
+  apps/civil/civil-citizen-ui:           { url: hmcts/civil-citizen-ui }
+  apps/civil/civil-operations:           { url: hmcts/civil-operations }
+  apps/civil/civil-orchestrator-service: { url: hmcts/civil-orchestrator-service }
+  apps/civil/civil-performance:          { url: hmcts/civil-performance }
+  apps/civil/civil-rtl-export:           { url: hmcts/civil-rtl-export }
+  apps/civil/civil-sdt:                  { url: hmcts/civil-sdt }
+  apps/civil/civil-sdt-commissioning:    { url: hmcts/civil-sdt-commissioning }
+  apps/civil/civil-sdt-common:           { url: hmcts/civil-sdt-common }
+  apps/civil/civil-sdt-gateway:          { url: hmcts/civil-sdt-gateway }
+  apps/civil/civil-service:              { url: hmcts/civil-service }
+  apps/civil/civil-wa-task-configuration: { url: hmcts/civil-wa-task-configuration }
+  apps/civil/civil-wiremock-mappings:    { url: hmcts/civil-wiremock-mappings }
+
+  # ─── apps/et — Employment Tribunals service team ───────────────────────
+  apps/et/et-ccd-callbacks:              { url: hmcts/et-ccd-callbacks }
+  apps/et/et-ccd-case-migration:         { url: hmcts/et-ccd-case-migration }
+  apps/et/et-cron:                       { url: hmcts/et-cron }
+  apps/et/et-full-system:                { url: hmcts/et-full-system }
+  apps/et/et-full-system-servers:        { url: hmcts/et-full-system-servers }
+  apps/et/et-hearings-api:               { url: hmcts/et-hearings-api }
+  apps/et/et-performance:                { url: hmcts/et-performance }
+  apps/et/et-pet-admin:                  { url: hmcts/et-pet-admin }
+  apps/et/et-pet-api:                    { url: hmcts/et-pet-api }
+  apps/et/et-pet-ccd-export:             { url: hmcts/et-pet-ccd-export }
+  apps/et/et-pet-et1:                    { url: hmcts/et-pet-et1 }
+  apps/et/et-pet-et3:                    { url: hmcts/et-pet-et3 }
+  apps/et/et-shared-infrastructure:      { url: hmcts/et-shared-infrastructure }
+  apps/et/et-slack-alerts:               { url: hmcts/et-slack-alerts }
+  apps/et/et-sya-api:                    { url: hmcts/et-sya-api }
+  apps/et/et-sya-frontend:               { url: hmcts/et-sya-frontend }
+  apps/et/et-syr-frontend:               { url: hmcts/et-syr-frontend }
+  apps/et/et-wa-post-deployment-ft-tests: { url: hmcts/et-wa-post-deployment-ft-tests }
+  apps/et/et-wa-task-configuration:      { url: hmcts/et-wa-task-configuration }
+  apps/et/et-xui-e2e-tests:              { url: hmcts/et-xui-e2e-tests }
+
+  # ─── apps/prl — Private Family Law service team ────────────────────────
+  apps/prl/prl-ccd-case-migration:       { url: hmcts/prl-ccd-case-migration }
+  apps/prl/prl-ccd-definitions:          { url: hmcts/prl-ccd-definitions }
+  apps/prl/prl-cftlib-wa:                { url: hmcts/prl-cftlib-wa }
+  apps/prl/prl-citizen-frontend:         { url: hmcts/prl-citizen-frontend }
+  apps/prl/prl-cos-api:                  { url: hmcts/prl-cos-api }
+  apps/prl/prl-dev-env:                  { url: hmcts/prl-dev-env }
+  apps/prl/prl-dgs-api:                  { url: hmcts/prl-dgs-api }
+  apps/prl/prl-e2e-tests:                { url: hmcts/prl-e2e-tests }
+  apps/prl/prl-performance:              { url: hmcts/prl-performance }
+  apps/prl/prl-shared-infrastructure:    { url: hmcts/prl-shared-infrastructure }
+  apps/prl/prl-wa-task-configuration:    { url: hmcts/prl-wa-task-configuration }
+
+  # ─── apps/probate — Probate service team ───────────────────────────────
+  apps/probate/probate-back-office:      { url: hmcts/probate-back-office }
+  apps/probate/probate-business-service: { url: hmcts/probate-business-service }
+  apps/probate/probate-caveats-frontend: { url: hmcts/probate-caveats-frontend }
+  apps/probate/probate-ccd-data-migration-tool: { url: hmcts/probate-ccd-data-migration-tool }
+  apps/probate/probate-commons:          { url: hmcts/probate-commons }
+  apps/probate/probate-frontend:         { url: hmcts/probate-frontend }
+  apps/probate/probate-orchestrator-service: { url: hmcts/probate-orchestrator-service }
+  apps/probate/probate-performance:      { url: hmcts/probate-performance }
+  apps/probate/probate-shared-infrastructure: { url: hmcts/probate-shared-infrastructure }
+  apps/probate/probate-submit-service:   { url: hmcts/probate-submit-service }
+
+  # ─── apps/sptribs — Special Tribunals service team ─────────────────────
+  apps/sptribs/sptribs-case-api:         { url: hmcts/sptribs-case-api }
+  apps/sptribs/sptribs-dss-update-case-web: { url: hmcts/sptribs-dss-update-case-web }
+  apps/sptribs/sptribs-e2etests:         { url: hmcts/sptribs-e2etests }
+  apps/sptribs/sptribs-frontend:         { url: hmcts/sptribs-frontend }
+  apps/sptribs/sptribs-shared-infrastructure: { url: hmcts/sptribs-shared-infrastructure }
+
+  # ─── apps/sscs — Social Security and Child Support service team ───────
+  apps/sscs/sscs-case-loader:            { url: hmcts/sscs-case-loader }
+  apps/sscs/sscs-ccd-case-migration:     { url: hmcts/sscs-ccd-case-migration }
+  apps/sscs/sscs-common:                 { url: hmcts/sscs-common }
+  apps/sscs/sscs-cor-frontend:           { url: hmcts/sscs-cor-frontend }
+  apps/sscs/sscs-cron-trigger:           { url: hmcts/sscs-cron-trigger }
+  apps/sscs/sscs-post-deployment-ft-tests: { url: hmcts/sscs-post-deployment-ft-tests }
+  apps/sscs/sscs-shared-infrastructure:  { url: hmcts/sscs-shared-infrastructure }
+  apps/sscs/sscs-submit-your-appeal:     { url: hmcts/sscs-submit-your-appeal }
+  apps/sscs/sscs-task-configuration:     { url: hmcts/sscs-task-configuration }
+  apps/sscs/sscs-tribunals-case-api:     { url: hmcts/sscs-tribunals-case-api }
 
   # ─── libs/ — widely-used Java/Node clients & starters ──────────────────
   libs/ccd-config-generator:             { url: hmcts/dtsse-ccd-config-generator }

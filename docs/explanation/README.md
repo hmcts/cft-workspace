@@ -2,7 +2,21 @@
 
 Conceptual background that helps you understand *why* CFT works the way it does. Read these when you need context, not when you have a specific task to do.
 
-Planned topics:
+## Platform
+
+- [Cloud Native Platform](cloud-native-platform.md) _(planned)_ — what CNP is, the principles behind it, and the infrastructure shape.
+
+## Engineering principles
+
+See [`principles/`](principles/README.md).
+
+- [Coding in the open](principles/coding-in-the-open.md) _(planned)_
+- [Continuous delivery](principles/continuous-delivery.md) _(planned)_
+- [DevOps](principles/devops.md) _(planned)_
+- [Programming](principles/programming.md) _(planned)_
+- [Testing](principles/test.md) _(planned)_
+
+## CFT internals (planned)
 
 - **CCD platform** — case data store, definition store, case-type lifecycle, decentralised model.
 - **IDAM token flow** — user vs S2S, token endpoints, how `service-auth-provider-java-client` is used.

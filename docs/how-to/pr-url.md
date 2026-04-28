@@ -1,0 +1,9 @@
+# How to get the test URL for a PR build
+
+## How to get the test URL for a PR build
+
+> You will need to be connected to the HMCTS VPN for this to work.
+
+Click the 'View deployment' deployment button next to the hmcts-jenkins-cnp bot entry on the conversation tab of the PR that you would like to get the URL for.
+<img src="/images/test-url.png"/>
+e.g. [hmcts/pip-frontend#79:](https://github.com/hmcts/pip-frontend/pull/79)

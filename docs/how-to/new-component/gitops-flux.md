@@ -1,0 +1,66 @@
+# GitOps
+
+One of our principles being <b>Everything as Code</b>, we practice [GitOps](https://web.archive.org/web/20221225081356/https://go.weave.works/rs/249-YDT-025/images/eBook_ThePracticalGuideToGitOps.pdf) for application deployment to Kubernetes.
+
+- Git as single source of truth.
+- Declarative Infrastructure and Application deployment through pull requests.
+
+## Flux
+
+[Flux](https://docs.fluxcd.io/) is a tool that automatically ensures that the state of a cluster matches the config in [Git](https://github.com/hmcts/cnp-flux-config). 
+
+- Flux uses GitOps Toolkit, a set of APIs and controllers that make up the runtime for Flux.
+- GOTK (GitOps Toolkit) has 6 main controllers with a specific function to each.
+
+### Source Controller
+
+- A common interface for all other components to download from  sources like Git, Helm repository.
+- Makes source code available as artifacts for other controllers.
+
+### Kustomize Controller
+
+- Reconciles the cluster state from multiple sources (provided by source-controller).
+- It is the main operator which applies all manifests to cluster.
+- Generates manifests with Kustomize (from plain Kubernetes yamls or Kustomize overlays).
+
+### Helm Controller
+
+- The desired state of a Helm release is described through a Kubernetes Custom Resource named `HelmRelease`. 
+- Based on the creation, mutation or removal of a HelmRelease resource in the cluster, Helm actions are performed by the operator.
+
+### Notification Controller
+
+- Handles events emitted by the GitOps toolkit controllers (source, kustomize, helm) and dispatches them to external systems (Slack, Microsoft Teams, Discord, Rocker) based on event severity and involved objects.
+- Can handle events coming from external systems (GitHub, GitLab, Bitbucket, Harbor, Jenkins, etc) and notifies the GitOps toolkit controllers about source changes.
+
+### Image reflector controller
+
+- Scans image repositories and reflects the image metadata in Kubernetes resources.
+
+### Image automation controller
+
+- Updates YAML files based on the latest images scanned, and commits the changes to a given Git repository.
+
+## Application config in flux
+
+1. See [Application Configuration](https://github.com/hmcts/cnp-flux-config#adding-an-app-to-flux) on how to configure and manage your application deployment in various environments.
+2. `HelmRelease` should refer to the charts automatically published to [hmcts-charts repository](https://github.com/hmcts/hmcts-charts) by [Jenkins](helm-chart.md#jenkins). e.g.
+
+    ```
+  chart:
+    spec:
+      chart: ./stable/plum-recipe-backend
+      sourceRef:
+        kind: GitRepository
+        name: hmcts-charts
+        namespace: flux-system
+    ```
+3. Flux configuration should be light, values should be templated within application's chart wherever possible to avoid duplication in each environment. Use `{{ .Values.global.environment }}` to refer to the environment in your chart.
+4. Image automation controller would automatically detect latest images published to ACR and upgrade Helm Release on cluster while committing the change to Git.
+5. <b>To avoid issues</b>, please note that any chart configuration (Environment variables) needed for application needs to be published and updated to Flux config before merging the application code that uses the new config. The change should always be non-breaking.
+6. Make sure you follow [codeowners guidelines](https://github.com/hmcts/cnp-flux-config/blob/master/CODEOWNERS.md#codeowners-guidelines) on the repo.
+
+## Troubleshooting issues
+
+See [troubleshooting section](../troubleshooting/)
+ 

@@ -1,0 +1,71 @@
+# TypeScript
+
+### Linting
+
+Add the recommended [TypeScript rules to ESLint](https://typescript-eslint.io/getting-started).
+
+### tsconfig.json
+
+Enable strict mode in `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true
+  }
+}
+```
+
+### ts-node
+
+Set `--transpileOnly` to lower memory usage when running `ts-node` in production.
+
+```json
+{
+  "scripts": {
+    "start": "ts-node --transpileOnly src/index.ts"
+  }
+}
+```
+
+### Utility types
+
+Use [utility types](https://www.typescriptlang.org/docs/handbook/utility-types.md) to simplify your types.
+
+### Type aliases
+
+Use [type aliases](https://www.typescriptlang.org/docs/handbook/advanced-types.md#type-aliases) to make your types more readable.
+
+```ts
+type User = {
+  id?: string;
+  name: string;
+};
+
+type UserWithId = User & { id: string };
+```
+
+### Apply the rule of least power
+
+Use [the rule of least power](https://en.wikipedia.org/wiki/Rule_of_least_power) to make code more maintainable.
+
+Using more advanced types can prevent users making mistakes, but it can also make the code harder to understand. Use the simplest type that will work for your use case.
+
+When in doubt, [KISS](https://en.wikipedia.org/wiki/KISS_principle) applies.
+
+### Use `unknown` instead of `any`
+
+There are few use cases for `any`. Use `unknown` instead. See the [TypeScript handbook](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-0.md#new-unknown-top-type) for more information.
+
+### Use `?` over `!`
+
+Use the [non-null assertion operator](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.md#non-null-assertion-operator) sparingly. It can be useful when you know a value is not null, but it can also hide bugs.
+
+Where possible, use the [optional chaining operator](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.md#optional-chaining) instead.
+
+### Barrelling
+
+When providing a library, [barrel](https://basarat.gitbook.io/typescript/main-1/barrel) your exports to make the library easier to consume.
+
+Automate the barrelling with [Barrelsby](https://www.npmjs.com/package/barrelsby).
+

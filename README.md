@@ -29,7 +29,7 @@ All clones use **SSH** (`git@github.com:...`). HTTPS is not supported.
 ## Layout
 
 ```
-apps/<area>/<repo>     # all CFT apps — both shared platform (ccd/, xui/, idam/, ...)
+apps/<product>/<repo>     # all CFT apps — both shared platform (ccd/, xui/, idam/, ...)
                        # and service-team (nfdiv/, pcs/, ...) — taxonomy in each
                        # repo's CLAUDE.md frontmatter distinguishes them.
 libs/<repo>            # widely-used Java/Node clients & starters
@@ -60,9 +60,9 @@ The `prefix` argument filters by path prefix — e.g. `./scripts/sync apps/nfdiv
 git add workspace.yaml && git commit -m "add civil-service to manifest"
 ```
 
-## Generating per-repo CLAUDE.md taxonomy
+## Generating per-product CLAUDE.md taxonomy
 
-Each cloned repo gets a `CLAUDE.md` with a structured frontmatter block (service team, type, CCD config style, integrations used, etc.). Generation is run via the `/generate-repo-claude-md` Claude command — re-runnable so the taxonomy stays fresh as repos evolve. After generating, run `./scripts/index` to refresh `INDEX.md`.
+Each product (`apps/<product>/`, `libs/`, `platops/`) gets a `CLAUDE.md` with a structured frontmatter block (service, CCD config, CCD features, integrations, constituent repos) and a product-focused body. Generation is run via the `/generate-product-claude-md` Claude command — re-runnable so the taxonomy stays fresh as products evolve. After generating, run `./scripts/index` to refresh `INDEX.md`.
 
 See [`docs/reference/taxonomy.md`](./docs/reference/taxonomy.md) for the full field list.
 

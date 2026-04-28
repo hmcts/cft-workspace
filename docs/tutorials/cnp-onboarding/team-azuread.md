@@ -1,0 +1,18 @@
+# Microsoft Entra ID
+
+Microsoft Entra ID is used to give you and your team-mates access to specific subscriptions in Azure. When your github user has access to a subscription, you will be able to view, create and modify Azure resources for your team.
+
+## Access to an existing team
+
+Follow the instructions on the [person onboarding guide](person.md#microsoft-entra-id-groups).
+
+## Creating a new team
+
+If you are a new team or just need a group created, then do a pull request to the [azure-access](https://github.com/hmcts/azure-access/blob/master/users/groups.yml) repository and get it approved by Platform Operations.
+
+It should look like:
+
+```yaml
+groups:
+- name: DTS Your Team name
+```

@@ -24,7 +24,7 @@
     },
     "ghcr.io/devcontainers/features/azure-cli:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/dhoeric/features/yq:1": {},
+    "ghcr.io/devcontainer-community/devcontainer-features/yq:1": {},
     "ghcr.io/devcontainers-extra/features/ripgrep:1": {}
   },
   "customizations": {
@@ -45,10 +45,12 @@
     "source=pcs-bashhistory,target=/commandhistory,type=volume",
     "source=pcs-docker,target=/home/vscode/.docker,type=volume",
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.azure,target=/home/vscode/.azure,type=bind,consistency=cached",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached",
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.config/gh,target=/home/vscode/.config/gh,type=bind,consistency=cached",
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached,readonly",
     "source=/etc,target=/host-etc,type=bind,readonly"
   ],
+  "initializeCommand": "mkdir -p ~/.azure ~/.kube ~/.ssh ~/.config/gh",
   "postStartCommand": "bash .devcontainer/post-start.sh",
   "postCreateCommand": "bash .devcontainer/post-create.sh 2>&1 | tee /tmp/post-create.log",
   "remoteUser": "vscode",

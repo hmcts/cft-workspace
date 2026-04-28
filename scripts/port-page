@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Mechanical conversion of a platops/hmcts.github.io source page into a docs/ markdown page.
+#
+# Usage:
+#   scripts/port-page <source-path-rel-to-source/> <target-path-rel-to-docs/>
+#
+# Example:
+#   scripts/port-page \
+#     cloud-native-platform/guides/flyway-database-migrations.html.md.erb \
+#     how-to/flyway-database-migrations.md
+#
+# Conversions applied:
+#   - Strip YAML front-matter; capture `title:` for ERB substitution
+#   - Replace `<%= current_page.data.title %>` with the literal title
+#   - Rewrite `.html` markdown links to `.md` (best-effort; complex Diátaxis
+#     re-targets are left to the manual link-rewrite pass)
+#
+# Caveats:
+#   - Leaves residual `<% … %>` (non-title ERB) in place and warns.
+#   - Does NOT fix link targets that move between Diátaxis sections — review
+#     and fix `(.html)` / cross-section paths manually after running.
+#   - Does NOT copy images; image migration is a separate pass.
+
+source "$(dirname "$0")/lib/_common.sh"
+
+[[ $# -eq 2 ]] || die "usage: scripts/port-page <source-rel> <target-rel>"
+
+src_rel="$1"
+target_rel="$2"
+src_full="$WORKSPACE_ROOT/platops/hmcts.github.io/source/$src_rel"
+target_full="$WORKSPACE_ROOT/docs/$target_rel"
+
+[[ -f "$src_full" ]] || die "source not found: $src_full"
+[[ -e "$target_full" ]] && warn "target exists, will overwrite: docs/$target_rel"
+
+mkdir -p "$(dirname "$target_full")"
+
+awk '
+  BEGIN { in_fm=0; title="" }
+  NR==1 && $0=="---" { in_fm=1; next }
+  in_fm && $0=="---" { in_fm=0; next }
+  in_fm {
+    if (match($0, /^title:[[:space:]]*/)) {
+      title = substr($0, RLENGTH+1)
+      # strip surrounding quotes if present
+      gsub(/^"|"$/, "", title)
+      gsub(/^'\''|'\''$/, "", title)
+      # escape gsub-replacement metacharacters
+      gsub(/\\/, "\\\\", title)
+      gsub(/&/, "\\\\&", title)
+    }
+    next
+  }
+  {
+    line=$0
+    gsub(/<%=[[:space:]]*current_page\.data\.title[[:space:]]*%>/, title, line)
+    print line
+  }
+' "$src_full" \
+  | sed -E 's|\]\(([^)]+)\.html(#[^)]*)?\)|](\1.md\2)|g' \
+  > "$target_full"
+
+if grep -q '<%' "$target_full"; then
+    warn "residual ERB tags in docs/$target_rel — manual cleanup needed"
+fi
+
+if grep -qE '\.html(#|\))' "$target_full"; then
+    warn "residual .html link references in docs/$target_rel — review"
+fi
+
+ok "ported: $src_rel → docs/$target_rel"

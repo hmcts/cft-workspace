@@ -13,7 +13,7 @@ Use this skill when the user asks any of:
 - "Where is X used across the platform?"
 - "Which services do Y?"
 - "Find all references to <symbol> / <config key> / <dependency>."
-- "Compare how <area> and <area> handle <thing>."
+- "Compare how <product> and <product> handle <thing>."
 
 ## When NOT to use
 
@@ -33,6 +33,6 @@ The wrapper passes every flag through to `rg` and only adds the workspace's stan
 
 ## Reading the output
 
-Results are shown as `path:line:match`. Group by repo (the second segment after `apps/<area>/`) when summarising — the user usually cares about which services hit, not raw line counts.
+Results are shown as `path:line:match`. Group by product (the segment after `apps/`) when summarising — the user usually cares about which products hit, not raw line counts.
 
 For large result sets, prefer `-l` (file list) plus a follow-up read of the most relevant files over showing 100 raw match lines.

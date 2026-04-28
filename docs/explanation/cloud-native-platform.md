@@ -1,0 +1,18 @@
+# Cloud Native Platform
+
+The Cloud Native Platform is an Azure based platform that hosts CFT, SDS and Legacy services.
+
+The core principles of the CNP are:
+
+ - open source by default
+ - self-service platform
+ - fully automated
+ - [GitOps](../how-to/new-component/gitops-flux.md)
+ - continuous delivery
+ - microservices
+ - automated testing
+ - devops - ownership and responsibilities
+
+## Infrastructure architecture
+
+![Cloud Native Platform](../images/infrastructure-overview.png)
