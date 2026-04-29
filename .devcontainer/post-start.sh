@@ -36,3 +36,15 @@ if [[ -S "$sock" ]]; then
         sudo groupmod --gid "$sock_gid" docker
     fi
 fi
+
+# Named-volume cache mounts come up root-owned on first start; chown to the
+# container user so Gradle/Maven/npm/Yarn can write to them.
+for d in "$HOME/.gradle" "$HOME/.m2" "$HOME/.npm" "$HOME/.cache/yarn"; do
+    if [[ -d "$d" && "$(stat -c '%u' "$d")" != "$(id -u)" ]]; then
+        sudo chown "$(id -u):$(id -g)" "$d"
+    fi
+done
+
+# Sweep any vscode-server stdio-tunnel orphans left behind by a previous
+# session. See cleanup-vscode-tunnels.sh for why these accumulate.
+bash "$(dirname "$0")/cleanup-vscode-tunnels.sh" || true

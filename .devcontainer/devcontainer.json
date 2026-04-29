@@ -4,9 +4,6 @@
     "dockerfile": "Dockerfile"
   },
   "runArgs": ["--network=host"],
-  "otherPortsAttributes": {
-    "onAutoForward": "ignore"
-  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -14,6 +11,7 @@
         "vscjava.vscode-gradle"
       ],
       "settings": {
+        "remote.autoForwardPorts": false,
         "files.autoSave": "onFocusChange",
         "java.configuration.updateBuildConfiguration": "automatic",
         "java.import.gradle.enabled": true,
@@ -33,7 +31,11 @@
     "source=${localEnv:HOME}/.azure,target=/home/hmcts/.azure,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.kube,target=/home/hmcts/.kube,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.config/gh,target=/home/hmcts/.config/gh,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.ssh,target=/home/hmcts/.ssh,type=bind,consistency=cached,readonly"
+    "source=${localEnv:HOME}/.ssh,target=/home/hmcts/.ssh,type=bind,consistency=cached,readonly",
+    "source=cft-gradle,target=/home/hmcts/.gradle,type=volume",
+    "source=cft-m2,target=/home/hmcts/.m2,type=volume",
+    "source=cft-npm,target=/home/hmcts/.npm,type=volume",
+    "source=cft-yarn,target=/home/hmcts/.cache/yarn,type=volume"
   ],
   "initializeCommand": "mkdir -p ~/.claude ~/.azure ~/.kube ~/.ssh ~/.config/gh && touch ~/.zsh_history ~/.bash_history ~/.claude.json",
   "postStartCommand": "bash .devcontainer/post-start.sh",

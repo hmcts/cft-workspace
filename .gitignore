@@ -28,8 +28,12 @@
 # 5) Local Claude state (workspace publishes settings.json, not local overrides)
 /.claude/scheduled_tasks.lock
 /.claude/settings.local.json
+/.claude/*.env
 
-# 6) IDE / OS noise
+# 6) CCD docs pipeline working state
+/docs/ccd/.work/
+
+# 7) IDE / OS noise
 .DS_Store
 .idea/
 *.iml
@@ -41,3 +45,7 @@
 .env.local
 *.pem
 *.p12
+
+# 8) Local MD files
+
+*.local.md

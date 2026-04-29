@@ -28,6 +28,10 @@ General patterns:
 - **Node/Yarn frontends**: `yarn install`, `yarn start`, `yarn test`, `yarn lint`.
 - Several clones ship `docker-compose.yml` for local dependencies.
 
+## CCD documentation
+
+CCD is the case-data spine of most service-team products in this workspace, and has its own dedicated documentation tree at [`docs/ccd/`](docs/ccd/) covering case-type model, events/callbacks, permissions, decentralisation, documents/CDAM, search, NoC, case flags, work-basket, and more. Maintained by `/generate-ccd-docs`. Companion skills: `/ccd-explain`, `/ccd-find-example`, `/ccd-trace-callback`, `/ccd-doc-drift`.
+
 ## Cross-repo relationships
 
 These projects build independently but are tightly related at runtime / by domain:
@@ -51,7 +55,6 @@ The `/generate-product-claude-md` command (re-runnable) populates these. `script
 
 ## Workspace conventions
 
-- **All git remotes are SSH.** Never HTTPS. The manifest spec assumes SSH; bootstrap clones via SSH; new repos added via `scripts/add-repo` use SSH.
 - **Workspace repo never tracks clone contents.** If you find yourself about to `git add apps/<product>/<repo>/<file>`, stop — that's a clone-local change and belongs in that repo's commit history, not the workspace's.
 - **`scripts/sync` is non-destructive** — it skips dirty / branched / unpushed clones. Treat clone-local WIP as the user's working state.
 - **Add a repo** via `scripts/add-repo <path> <org/repo>`, not by hand-editing `workspace.yaml` and re-running bootstrap (the script keeps the two in sync).

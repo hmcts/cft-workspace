@@ -10,3 +10,7 @@ Documentation for the workspace itself, organised by [Diátaxis](https://diataxi
 | [`explanation/`](explanation/) | Conceptual background. Read when you want context. | "How CCD works", "IDAM token flow" |
 
 Per-repo guidance lives in each clone's `CLAUDE.md` (auto-generated, taxonomy frontmatter + body) — that's a different layer from this directory.
+
+## Topic-specific docs
+
+- [`ccd/`](ccd/) — CCD (Core Case Data) platform docs: case-type model, events, callbacks, permissions, decentralisation, documents, search, NoC, case flags, work-basket, work-allocation. Generated and maintained by `/generate-ccd-docs`. Start at [`ccd/README.md`](ccd/README.md).

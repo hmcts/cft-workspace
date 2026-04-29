@@ -1,0 +1,577 @@
+# Static plan for /generate-ccd-docs
+#
+# Each page lists:
+#   topic       — slug used for --topic filtering and as the frontmatter topic
+#   brief       — one-paragraph writing brief (audience, focus, what to include)
+#   sources     — repo:path hints the topic-writer should consult (filtered from research notes)
+#
+# Source repos for Phase 2 (research) are listed at the bottom under `research_sources`.
+
+pages:
+
+  # --- Tutorials ---
+  docs/ccd/tutorials/first-case-type-config-generator.md:
+    topic: tutorial-config-generator
+    brief: |
+      Walk a reader from zero to a working minimal case type using the ccd-config-generator SDK.
+      Audience: a Java engineer who has cloned a service repo for the first time. Steps must run
+      against the test-projects in libs/ccd-config-generator. End with `./gradlew :test-projects:e2e:check`
+      to demonstrate the pipeline. Assume reader knows Spring Boot but not CCD.
+    sources:
+      - libs/ccd-config-generator/test-projects/e2e
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+
+  docs/ccd/tutorials/first-case-type-json.md:
+    topic: tutorial-json
+    brief: |
+      Walk a reader through writing a CCD case-type definition in JSON form (the older spreadsheet model).
+      Use a minimal subset of files (CaseField, CaseEvent, AuthorisationCaseEvent, CaseTypeTab).
+      Show how it gets imported via ccd-admin-web → ccd-definition-store-api. Audience: someone
+      maintaining a service that hasn't migrated to the SDK.
+    sources:
+      - apps/ccd/ccd-test-definitions/src/main/resources
+      - apps/ccd/ccd-definition-store-api
+
+  docs/ccd/tutorials/running-with-cftlib.md:
+    topic: tutorial-cftlib
+    brief: |
+      Show a service-team engineer how to boot the full CCD stack locally via rse-cft-lib (cftlib),
+      hit a callback in their service from the embedded XUI, and breakpoint-debug it. End with the
+      `bootWithCCD` Gradle task and a successful event submission. Audience: anyone joining a
+      CCD-based service team.
+    sources:
+      - libs/rse-cft-lib
+
+  # --- Explanation ---
+  docs/ccd/explanation/overview.md:
+    topic: overview
+    brief: |
+      The "what is CCD" page. Cover the case-type model (jurisdiction → case type → states, events,
+      tabs, fields, complex types). Use a small example. Aim ~300 lines max. Reader should leave
+      able to read any other page in docs/ccd/ without further setup.
+    sources:
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+      - apps/ccd/ccd-definition-store-api
+
+  docs/ccd/explanation/architecture.md:
+    topic: architecture
+    brief: |
+      Map the runtime: ccd-data-store-api ↔ ccd-definition-store-api ↔ aac-manage-case-assignment
+      ↔ ccd-admin-web ↔ am-role-assignment-service ↔ case-document-am-api ↔ XUI. Include a
+      Mermaid diagram (sequence + components) of a typical event submission. Identify decentralised
+      vs central deployment shapes.
+    sources:
+      - apps/ccd/ccd-data-store-api
+      - apps/ccd/ccd-definition-store-api
+      - apps/ccd/aac-manage-case-assignment
+
+  docs/ccd/explanation/event-model.md:
+    topic: event-model
+    brief: |
+      Explain the lifecycle of a single event: pages, fields shown, mid-event callbacks for page
+      transitions, about_to_start vs about_to_submit vs submitted, state transitions. Contrast with
+      a callback-free event. Audience: someone implementing their first event.
+    sources:
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/explanation/callbacks.md:
+    topic: callbacks
+    brief: |
+      The callback contract — what data-store sends, what the service must return, error semantics
+      (warnings vs errors), idempotency, signing/auth (S2S), timeouts. Covers conventional and
+      decentralised modes.
+    sources:
+      - apps/ccd/ccd-data-store-api
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+
+  docs/ccd/explanation/data-types.md:
+    topic: data-types
+    brief: |
+      The vocabulary of built-in CCD field types — primitives, Document, DynamicList, DynamicRadioList,
+      Collection<T>, OrganisationPolicy, ChangeOrganisationRequest, AddressGlobalUK, FixedList,
+      MultiSelectList, ComplexType, CaseLink, etc. For each, give a short description and an example
+      JSON shape.
+    sources:
+      - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api
+      - apps/ccd/ccd-definition-store-api
+
+  docs/ccd/explanation/permissions.md:
+    topic: permissions
+    brief: |
+      CRUD permissions on the case-type definition: AuthorisationCaseEvent, AuthorisationCaseField,
+      AuthorisationCaseState, AuthorisationCaseType. How role names map (case-worker-XXX, citizen,
+      caseworker-XXX-solicitor). Distinguish from role-assignment / RAM (covered separately in
+      role-assignment.md).
+    sources:
+      - apps/ccd/ccd-definition-store-api
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+
+  docs/ccd/explanation/role-assignment.md:
+    topic: role-assignment
+    brief: |
+      Case-level RBAC: am-role-assignment-service, OrganisationPolicy, RoleAssignment lifecycle,
+      specific access requests, case_assignment flows distinct from NoC. How AAC orchestrates this.
+    sources:
+      - apps/ccd/aac-manage-case-assignment
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+
+  docs/ccd/explanation/decentralisation.md:
+    topic: decentralisation
+    brief: |
+      What "decentralised CCD" means: the service holds case data in its own DB and exposes
+      /ccd-persistence/* endpoints that data-store calls into for read/write. Why it exists
+      (data sovereignty, performance, schema evolution). Sequence diagrams of central vs decentralised
+      reads/writes.
+    sources:
+      - apps/ccd/ccd-data-store-api
+      - libs/ccd-config-generator/sdk/decentralised-runtime
+
+  docs/ccd/explanation/documents-and-cdam.md:
+    topic: documents-and-cdam
+    brief: |
+      How documents flow: upload via case-document-am-api, hash-token returned, referenced in the
+      case data payload, retrieved later. Categories metadata. Distinction from the legacy
+      document-management-store flow.
+    sources:
+      - libs/rse-cft-lib/projects/ccd-case-document-am-api
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/explanation/search-architecture.md:
+    topic: search
+    brief: |
+      Three search surfaces — work-basket inputs/results, global search (SearchCriteria/SearchParty),
+      and query_search (Elasticsearch v2 with SearchInputs/SearchResults). Disentangle them: when
+      to use which, what indexes feed them, what the user sees.
+    sources:
+      - apps/ccd/ccd-data-store-api
+      - apps/ccd/ccd-definition-store-api
+
+  docs/ccd/explanation/notice-of-change.md:
+    topic: notice-of-change
+    brief: |
+      The NoC flow: solicitor identifies themselves, challenge questions, AAC checks, case-access
+      transfer. What lives in the case-type definition (NoCEvent, ChangeOrganisationRequest field)
+      vs what AAC orchestrates. End with a sequence diagram.
+    sources:
+      - apps/ccd/aac-manage-case-assignment
+      - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/NoticeOfChange.java
+
+  docs/ccd/explanation/case-flags.md:
+    topic: case-flags
+    brief: |
+      The case-flag model: party-level vs case-level flags, the Flags complex field, status lifecycle.
+      Cross-link to reasonable-adjustments which uses the same machinery.
+    sources:
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/explanation/work-basket.md:
+    topic: work-basket
+    brief: |
+      Work-basket inputs/results in the definition, what XUI renders from them, common patterns.
+      Contrast with work-allocation (different system; covered separately).
+    sources:
+      - apps/ccd/ccd-definition-store-api
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+
+  docs/ccd/explanation/work-allocation-integration.md:
+    topic: work-allocation
+    brief: |
+      How a CCD-based service produces tasks for wa-task-management-api. The case-event-to-task DMN
+      flow, the message-handler, the role assignment hooks. Include where in the SDK the
+      stream-event integration is configured.
+    sources:
+      - libs/ccd-config-generator/sdk
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/explanation/linked-cases.md:
+    topic: linked-cases
+    brief: |
+      The CaseLink field type, the linked-cases UI flow, what the case-type definition needs to
+      enable it. Short page (~80 lines).
+    sources:
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/explanation/hearings-integration.md:
+    topic: hearings
+    brief: |
+      HMC integration: case fields the service exposes, hmc-cft-hearing-service-api callbacks,
+      what the integration test surface looks like. Short.
+    sources:
+      - libs/ccd-config-generator/sdk
+
+  docs/ccd/explanation/stitching.md:
+    topic: stitching
+    brief: |
+      em-stitching-api integration for document assembly. When services use it, what the data
+      shape looks like.
+    sources:
+      - libs/ccd-config-generator/sdk
+
+  docs/ccd/explanation/translation.md:
+    topic: translation
+    brief: |
+      ts-translation-service callback flow. Where in the case-type definition the service opts in.
+      Short.
+    sources:
+      - libs/ccd-config-generator/sdk
+
+  docs/ccd/explanation/supplementary-data.md:
+    topic: supplementary-data
+    brief: |
+      Supplementary data: what it is, who reads/writes it, its lifecycle vs case data. Short
+      (~60 lines) but precise — this is widely misunderstood.
+    sources:
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/explanation/audit-and-history.md:
+    topic: audit
+    brief: |
+      Event history, case data versions, the audit trail XUI shows. What's stored where.
+    sources:
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/explanation/definition-import.md:
+    topic: definition-import
+    brief: |
+      The deploy path for case-type definitions: ccd-admin-web upload → ccd-definition-store-api
+      validation → ES index seeding → data-store cache invalidation. What goes wrong and how to
+      tell.
+    sources:
+      - apps/ccd/ccd-admin-web
+      - apps/ccd/ccd-definition-store-api
+
+  # --- How-to ---
+  docs/ccd/how-to/add-an-event.md:
+    topic: event-model
+    brief: |
+      End-to-end recipe: add an event called `myEvent` to an existing case type. Cover
+      EventBuilder, page, fields, mid-event callback, about-to-submit callback, permissions,
+      what XUI needs (nothing extra), how to verify with cftlib + curl.
+    sources:
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/add-a-state.md:
+    topic: overview
+    brief: |
+      Add a new state to an existing case type. Cover the State enum, transitions, permissions,
+      tab visibility implications, and verification via cftlib.
+    sources:
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/add-a-tab.md:
+    topic: overview
+    brief: |
+      Add a new tab to a case type. Cover tab fields, ordering, role-based visibility, what
+      caseworkers vs citizens see.
+    sources:
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/add-a-page-mid-event-callback.md:
+    topic: callbacks
+    brief: |
+      Add a multi-page event with a mid-event callback that mutates field values between pages.
+      Show the controller signature, what state to read/write, and how to express conditional fields.
+    sources:
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/add-a-complex-type.md:
+    topic: data-types
+    brief: |
+      Define a ComplexType (e.g. a nested address with extra fields), add it to a case field,
+      reference its sub-fields in pages and tabs.
+    sources:
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/implement-a-callback.md:
+    topic: callbacks
+    brief: |
+      Wire a callback handler in a Spring Boot service. Cover the controller method, input/output
+      shapes, S2S auth, error/warning responses, idempotency, what to do when the callback fails.
+    sources:
+      - libs/ccd-config-generator/test-projects
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/how-to/add-permissions.md:
+    topic: permissions
+    brief: |
+      Grant a new role CRUD on a case field, an event, and a state. Show both SDK form and JSON
+      form. End with a verification curl that demonstrates the role can/can't perform the action.
+    sources:
+      - libs/ccd-config-generator/test-projects
+      - apps/ccd/ccd-test-definitions
+
+  docs/ccd/how-to/store-a-document.md:
+    topic: documents-and-cdam
+    brief: |
+      Upload a document to CDAM, embed the reference in the case data, retrieve it later. Cover
+      the hash-token lifecycle and what categories metadata buys.
+    sources:
+      - libs/rse-cft-lib/projects/ccd-case-document-am-api
+
+  docs/ccd/how-to/enable-global-search.md:
+    topic: search
+    brief: |
+      Add SearchCriteria + SearchParty to a case type, what fields they need, how XUI surfaces
+      Global Search results.
+    sources:
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/enable-work-basket.md:
+    topic: work-basket
+    brief: |
+      Add a work-basket configuration to a case type — inputs and results — so caseworkers can
+      filter their queue.
+    sources:
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/enable-query-search.md:
+    topic: search
+    brief: |
+      Wire SearchInputs / SearchResults for the ES-backed query search. Note the ES index seeding
+      that ccd-definition-store-api performs at deploy time.
+    sources:
+      - apps/ccd/ccd-definition-store-api
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/implement-noc.md:
+    topic: notice-of-change
+    brief: |
+      Implement Notice of Change end-to-end: NoC event, ChallengeQuestion, ChangeOrganisationRequest
+      field, AAC wiring, the role-assignment side effect.
+    sources:
+      - libs/ccd-config-generator/test-projects
+      - apps/ccd/aac-manage-case-assignment
+
+  docs/ccd/how-to/implement-case-flags.md:
+    topic: case-flags
+    brief: |
+      Add case-level and party-level flags. Cover the Flags complex field, the management event,
+      what XUI shows for flag history.
+    sources:
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/implement-reasonable-adjustments.md:
+    topic: case-flags
+    brief: |
+      Reasonable Adjustments uses the case-flags machinery with a constrained vocabulary of flag
+      codes. Show the configuration and how RA flags propagate downstream.
+    sources:
+      - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/decentralise-a-service.md:
+    topic: decentralisation
+    brief: |
+      Migrate a service to decentralised CCD: implement the /ccd-persistence/* endpoints, register
+      with data-store, emit stream events, run the contract tests. End with verification.
+    sources:
+      - libs/ccd-config-generator/sdk/decentralised-runtime
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/how-to/debug-with-cftlib.md:
+    topic: tutorial-cftlib
+    brief: |
+      Practical recipes: attach a debugger to a callback, replay an event from saved JSON, inspect
+      ES indexes, reset a definition without restarting.
+    sources:
+      - libs/rse-cft-lib
+
+  docs/ccd/how-to/publish-definition-to-aat.md:
+    topic: definition-import
+    brief: |
+      How a service-team's case-type definition reaches AAT: pipeline stages, ccd-admin-web
+      upload, troubleshooting common failures.
+    sources:
+      - apps/ccd/ccd-admin-web
+      - apps/ccd/ccd-definition-store-api
+
+  # --- Reference ---
+  docs/ccd/reference/field-types.md:
+    topic: data-types
+    brief: |
+      Exhaustive table of built-in field types. Columns: type name, JSON discriminator, semantics,
+      validation, common pitfalls, link to relevant SDK class.
+    sources:
+      - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type
+      - apps/ccd/ccd-definition-store-api
+
+  docs/ccd/reference/callback-contract.md:
+    topic: callbacks
+    brief: |
+      Request/response JSON schemas for each callback (about_to_start, about_to_submit, submitted,
+      mid_event), including data and case_details shapes, error/warning fields, status codes.
+    sources:
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/reference/decentralised-callbacks.md:
+    topic: decentralisation
+    brief: |
+      The /ccd-persistence/* contract: every endpoint, request/response shape, idempotency
+      requirements, ordering guarantees.
+    sources:
+      - libs/ccd-config-generator/sdk/decentralised-runtime
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/reference/permissions-matrix.md:
+    topic: permissions
+    brief: |
+      Tables of what each CRUD bit allows, role-name conventions, AC permissions distinct from CRUD,
+      precedence when multiple roles match.
+    sources:
+      - apps/ccd/ccd-definition-store-api
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/reference/api-data-store.md:
+    topic: architecture
+    brief: |
+      The data-store v1 + v2 endpoints engineers actually use (start event, submit event, search,
+      retrieve case). Brief — link out to the OpenAPI spec.
+    sources:
+      - apps/ccd/ccd-data-store-api
+
+  docs/ccd/reference/api-definition-store.md:
+    topic: architecture
+    brief: |
+      Definition-store endpoints (import, retrieve case type, validate). Brief.
+    sources:
+      - apps/ccd/ccd-definition-store-api
+
+  docs/ccd/reference/api-aac.md:
+    topic: notice-of-change
+    brief: |
+      AAC endpoints: NoC submit/verify, case-assignment, supplementary-access flows. Request/response
+      shapes.
+    sources:
+      - apps/ccd/aac-manage-case-assignment
+
+  docs/ccd/reference/api-cdam.md:
+    topic: documents-and-cdam
+    brief: |
+      CDAM endpoints: upload, hash-token issue, retrieval. Auth model.
+    sources:
+      - libs/rse-cft-lib/projects/ccd-case-document-am-api
+
+  docs/ccd/reference/config-generator-api.md:
+    topic: data-types
+    brief: |
+      Reference for the SDK builder surface: ConfigBuilder, EventBuilder, FieldCollectionBuilder,
+      NoticeOfChange, RoleBuilder, etc. Method-by-method.
+    sources:
+      - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api
+
+  docs/ccd/reference/json-definition-format.md:
+    topic: tutorial-json
+    brief: |
+      Reference for the JSON definition format: every JSON file (CaseField, CaseEvent, Authorisation*,
+      CaseTypeTab, WorkBasketInputFields, …), columns, allowed values.
+    sources:
+      - apps/ccd/ccd-definition-store-api
+      - apps/ccd/ccd-test-definitions
+
+  docs/ccd/reference/ccd-feature-tokens.md:
+    topic: overview
+    brief: |
+      Cross-link page: each ccd_features token from docs/reference/taxonomy.md gets a one-line
+      description and a link to the explanation page that covers it. Keeps the workspace
+      taxonomy rooted in real prose.
+    sources:
+      - docs/reference/taxonomy.md
+
+  docs/ccd/reference/glossary.md:
+    topic: overview
+    brief: |
+      Single canonical glossary. Every term used elsewhere in docs/ccd/ should resolve here.
+      Built from term mentions during Phase 5 (link). Includes: jurisdiction, case type, event,
+      state, page, tab, dynamic list, complex type, CRUD, AC, RAS, AM, CDAM, AAC, NoC, RAM,
+      decentralised, supplementary data, hash token, …
+    sources: []
+
+# Source repos for Phase 2 — one ccd-source-researcher subagent each.
+# Slugs (the dictionary keys) are used as filenames under docs/ccd/.work/research/<slug>.md.
+research_sources:
+
+  ccd-data-store-api:
+    path: apps/ccd/ccd-data-store-api
+    focus: |
+      callback dispatch, event lifecycle controllers, search dispatch, /ccd-persistence client
+      (decentralised), supplementary data endpoints, audit/history, document URL handling.
+
+  ccd-definition-store-api:
+    path: apps/ccd/ccd-definition-store-api
+    focus: |
+      JSON definition ingestion, validation rules, ES index seeding, the schema for each JSON file
+      (CaseField, CaseEvent, AuthorisationCase*, CaseTypeTab, WorkBasket*, SearchInputs, SearchResults).
+
+  aac-manage-case-assignment:
+    path: apps/ccd/aac-manage-case-assignment
+    focus: |
+      Notice-of-Change submit/verify endpoints, challenge-question evaluation, case-assignment flows
+      (non-NoC), supplementary-access requests, role-assignment side effects.
+
+  ccd-admin-web:
+    path: apps/ccd/ccd-admin-web
+    focus: |
+      Definition import flow, IDAM auth model, what failure modes the UI surfaces.
+
+  ccd-test-definitions:
+    path: apps/ccd/ccd-test-definitions
+    focus: |
+      JSON example mining — which test case types exemplify NoC, case flags, global search, work
+      basket, complex types, permissions. Note paths to the cleanest examples.
+
+  ccd-config-generator:
+    path: libs/ccd-config-generator
+    focus: |
+      The SDK API surface: ConfigBuilder, EventBuilder, FieldCollectionBuilder, NoticeOfChange,
+      RoleBuilder, every built-in type under sdk/type, decentralised-runtime entry points,
+      task-management hooks. Read AGENTS.md.
+
+  rse-cft-lib:
+    path: libs/rse-cft-lib
+    focus: |
+      What cftlib bundles, the CFTLibConfigurer interface, bootWithCCD task, embedded CDAM
+      project shape, IDAM simulator integration.
+
+  test-projects-nfdiv:
+    path: libs/ccd-config-generator/test-projects/nfdiv-case-api
+    focus: SDK usage patterns, callback structure, NoC integration, permissions style.
+
+  test-projects-pcs:
+    path: libs/ccd-config-generator/test-projects/pcs-api
+    focus: Decentralised registration, modern SDK idioms.
+
+  test-projects-sptribs:
+    path: libs/ccd-config-generator/test-projects/sptribs-case-api
+    focus: SDK usage, work-basket and search patterns.
+
+  test-projects-adoption:
+    path: libs/ccd-config-generator/test-projects/adoption-cos-api
+    focus: SDK usage, document handling, complex types.
+
+  test-projects-e2e:
+    path: libs/ccd-config-generator/test-projects/e2e
+    focus: The reference example of a minimal SDK case type. The cleanest example.
+
+  service-nfdiv:
+    path: apps/nfdiv
+    focus: |
+      How a service team uses the SDK: callback controllers, NoC use, permissions, document
+      uploads, integration tests.
+
+  service-pcs:
+    path: apps/pcs
+    focus: "A decentralised CCD service: persistence endpoints, stream events, integration tests."
+
+  service-et:
+    path: apps/et
+    focus: JSON-style definitions plus callback service, NoC implementation.
+
+  service-sscs:
+    path: apps/sscs
+    focus: Hearings + work-allocation integration, JSON definitions.
+
+  service-prl:
+    path: apps/prl
+    focus: Case flags, RA flags, linked cases.

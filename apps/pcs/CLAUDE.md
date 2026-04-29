@@ -1,44 +1,67 @@
+---
+service: pcs
+ccd_based: true
+ccd_config: config-generator
+ccd_features:
+  - decentralised_ccd
+  - global_search
+  - linked_cases
+  - hearings
+  - work_allocation_tasks
+  - query_search
+integrations:
+  - idam
+  - s2s
+  - rd
+  - payment
+  - notify
+  - cftlib
+  - flyway
+repos:
+  - apps/pcs/pcs-api
+  - apps/pcs/pcs-frontend
+---
+
 # Possession Claims Service (PCS)
 
-HMCTS service for handling possession claims. This directory groups two independently-built subprojects that together make up PCS:
+PCS is the HMCTS digital service for mortgage and landlord possession claims, allowing claimants to issue possession claims online and defendants to respond. `pcs-api` is the Spring Boot 3 / Java 21 backend that owns all case data, CCD configuration, and business logic; `pcs-frontend` is the Express/TypeScript citizen-facing web app that guides users through claim issue and defendant response journeys.
 
-- **`pcs-api/`** — Spring Boot 3.5 backend on Java 21, Gradle wrapper, Flyway-managed PostgreSQL. Serves REST endpoints (default port 3206, Swagger at `/swagger-ui.html`) and integrates with CCD, IDAM, S2S, and the Fee Register.
-- **`pcs-frontend/`** — Express + TypeScript user-facing app on Node 18+ (Yarn), default port 3209. Uses Redis-backed sessions, OIDC auth via IDAM, nunjucks templates, and webpack bundling. Calls `pcs-api`.
+## Repos
 
-## Working in this directory
+- `apps/pcs/pcs-api` — Spring Boot REST API, CCD case-type owner (decentralised), PostgreSQL persistence via Flyway, all integrations
+- `apps/pcs/pcs-frontend` — Express + TypeScript / Nunjucks frontend; handles citizen OIDC login, Redis-backed sessions, and calls CCD and pcs-api
 
-Per the workspace root `CLAUDE.md`, each subproject is a standalone repo with its own VCS history and build system. Always `cd` into `pcs-api/` or `pcs-frontend/` before running `./gradlew` / `yarn` commands, and consult that subproject's own `README.md` for the canonical task list.
+## Architecture
 
-## Frontend ↔ CCD ↔ PCS-API communication
+At runtime the frontend (port 3209) authenticates citizens via OIDC against IDAM. For case interactions it calls CCD data-store directly (`ccd.url`, defaulting to port 4452) — not pcs-api — using CCD's standard event lifecycle (GET event-trigger, POST events). For mid-event draft saves the frontend POSTs the full `possessionClaimResponse` DTO to CCD's `/validate` endpoint, which in turn triggers pcs-api's mid-event callback to persist the draft. Non-case endpoints (health, info, fee lookup stubs via Wiremock) are called directly against `api.url` (pcs-api port 3206).
 
-The PCS frontend talks to CCD for all case interactions in the "respond to claim" journey. PCS-API is registered as a decentralised CCD service: CCD invokes PCS-API as a callback whenever it needs to load case data, run mid-event validation, or apply an event submission.
+pcs-api is registered as a **decentralised CCD** service: `ccd { decentralised = true }` in `build.gradle`, and CCD is configured with `CCD_DECENTRALISED_CASE-TYPE-SERVICE-URLS_PCS=http://localhost:3206`. CCD reads and writes case data by calling pcs-api's persistence callbacks rather than its own data store. The CCD case type definition is emitted via the `hmcts.ccd.sdk` Gradle plugin (config-generator pattern), with `CaseType.java` as the root `CCDConfig` entry point.
 
-### Mid-event draft saves → CCD `/validate`
+Local development runs the full CFT stack in-process via `./gradlew bootWithCCD` (rse-cft-lib / cftlib), exposing XUI at port 3000, pcs-api at 3206, Postgres at 6432, IDAM simulator at 5062. The frontend can point at this local stack via `yarn start:dev:pcs-local`.
 
-Each form step's `beforeRedirect` hook sends the current defendant response DTO to **CCD** via:
+## CCD touchpoints
 
-```
-POST {ccd.url}/case-types/{ctid}/validate?pageId=respondToPossessionDraftSavePage
-```
+PCS registers one case type (`PCS`) in jurisdiction `PCS` using the `ccd-config-generator` Java SDK. The `CaseType` class implements `CCDConfig<PCSCase, State, UserRole>` and sets the callback host (`CASE_API_URL`, default `http://localhost:3206`). Registration is decentralised: pcs-api serves the persistence callbacks that CCD delegates storage to.
 
-CCD loads the case from PCS-API (via the decentralised `GET /ccd-persistence/cases` endpoint), merges the request `data` on top, and invokes PCS-API's mid-event callback at `/callbacks/mid-event?page=respondToPossessionDraftSavePage`. PCS-API validates and persists the draft data in its own draft table.
+Wired CCD features: `SearchCriteria` (global search) and `SearchParty` access via `GlobalSearchAccess`; `CaseLink` + `linkedCasesComponentLauncher` fields with a "Linked cases" tab (`linked_cases`); `workBasketResultFields()` configured with case reference and property address (`work_allocation_tasks`); `searchInputFields()`, `searchCasesFields()`, and `searchResultFields()` configured (`query_search`). Hearings integration (`hearings`) is via Azure Service Bus (`hmc-to-cft-aat` topic) and `HmcHearingApi` Feign client pointing at `HMC_API_URL`.
 
-The frontend sends the **full `possessionClaimResponse` DTO** on every save — not a partial/incremental patch. Each step clones the existing DTO from the case data (via `prepareDefendantResponse` / `getDraftDefendantResponse` in `src/main/steps/utils/`), mutates the relevant fields (setting values or deleting stale ones), and sends the complete object back. This means:
+Notable CCD callbacks: mid-event validation at `?pageId=respondToPossessionDraftSavePage` (draft persistence); submitted callbacks on `createPossessionClaim`, `respondPossessionClaim`, `confirmEviction`, `enforceTheOrder`, and linked-case events (`CreateCaseLink`, `MaintainLinkCase`).
 
-- Every save is idempotent — the backend can replace the stored draft wholesale.
-- The frontend is responsible for clearing fields that no longer apply (e.g. deleting a detail text field when the user switches a radio from "yes" to "no").
-- Claimant-entered fields are stripped from the clone before sending so the defendant cannot overwrite them.
+## External integrations
 
-### Final submit → CCD events
+- `idam` — `idam-java-client` v3.0.5; pcs-api holds a system user and OAuth client; frontend uses `openid-client` for OIDC.
+- `s2s` — `service-auth-provider-java-client` v5.3.3; both pcs-api (`pcs_api`) and pcs-frontend (`pcs_frontend`) are registered S2S microservices.
+- `rd` — `rd-professional-api` (`RdProfessionalApi` Feign client at `RD_PROFESSIONAL_API_URL`) and `rd-location-ref-api` (`LocationReferenceApi` at `LOCATION_REF_URL`).
+- `payment` — `payments-java-client` v1.7.0; also `fees-java-client` v0.1.0 for fee lookup against the Fees Register (`FEES_REGISTER_API_URL`).
+- `notify` — `notifications-java-client` v6.0.0; email notifications sent via GOV.UK Notify with retry/back-off scheduling handled by db-scheduler.
+- `cftlib` — `rse-cft-lib` Gradle plugin v0.19 used for `bootWithCCD` local dev task and `cftlibTest` test source set.
+- `flyway` — Flyway migrations under `src/main/resources/db/migration/` (V001–V080+); pcs-api owns the `pcs` PostgreSQL database schema.
 
-The final submission uses CCD's standard two-phase event lifecycle:
+## Notable conventions and quirks
 
-1. **START** — `GET {ccd.url}/cases/{caseId}/event-triggers/respondPossessionClaim` — obtains a one-time event token.
-2. **SUBMIT** — `POST {ccd.url}/cases/{caseId}/events` — sends the event token with minimal/empty data. The PCS-API backend (acting as a CCD callback) loads the persisted draft and applies it during the submitted callback.
-
-### Configuration
-
-- `ccd.url` — CCD Data Store API base URL (used for all case interactions: START/SUBMIT, case search, mid-event validate).
-- `api.url` — PCS-API base URL (still used by the frontend for non-case endpoints such as `/info` and the `pcsApiService`, not for CCD case interactions).
-
-Both are set in `pcs-frontend/config/default.json` and overridden per environment.
+- **Doc assembly** — pcs-api integrates with `doc-assembly-client` (`DocAssemblyService`) to generate PDF documents from Docmosis templates at `DOC_ASSEMBLY_URL`. This is template-based document generation (not em-stitching bundling) and has no taxonomy token — see `doc_assembly.url` in `application.yaml`.
+- **CDAM** — `XUI_DOCUMENTS_API_V2` points at `ccd-case-document-am-api` in cftlib config, but pcs-api does not directly call CDAM; documents are handled through XUI/CCD.
+- **Case type suffix** — The `CASE_TYPE_SUFFIX` env var (typically the PR number) appends to the case type ID and name in preview environments to avoid collisions.
+- **Wiremock in preview** — Adding the `pr-values:wiremock` label to a PR deploys a Wiremock pod pre-configured to proxy and stub external APIs (e.g. Fee Register).
+- **db-scheduler** — Async task scheduling (Notify retries, fee lookups, access code generation) is handled by `db-scheduler-spring-boot-starter` backed by the same PostgreSQL instance.
+- **Pact contract tests** — Both pcs-api and pcs-frontend publish consumer pacts to `pact-broker.platform.hmcts.net`.

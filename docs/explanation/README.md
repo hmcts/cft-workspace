@@ -16,12 +16,16 @@ See [`principles/`](principles/README.md).
 - [Programming](principles/programming.md) _(planned)_
 - [Testing](principles/test.md) _(planned)_
 
+## CCD platform
+
+CCD docs live in their own tree: [`docs/ccd/`](../ccd/). It has its own Diátaxis layout (tutorials, how-to, explanation, reference) and is generated/maintained by the `/generate-ccd-docs` skill. Topics covered include the case-type model, event lifecycle, callbacks, permissions, role assignment, decentralisation, documents/CDAM, search, Notice of Change, case flags, work-basket, work-allocation integration, hearings, and more.
+
+Start at [`docs/ccd/README.md`](../ccd/README.md).
+
 ## CFT internals (planned)
 
-- **CCD platform** — case data store, definition store, case-type lifecycle, decentralised model.
 - **IDAM token flow** — user vs S2S, token endpoints, how `service-auth-provider-java-client` is used.
 - **Flux → AKS deployment** — what `cnp-flux-config` actually does, how a service rolls out from PR to AAT to prod.
-- **Decentralised CCD** — what changed when service teams started owning their case-type definitions.
 - **CFT clusters & environments** — sandbox/AAT/prod, cluster naming, where to look for what.
 
 Pages don't exist yet — add as you find yourself explaining one of these to a teammate the first time.
