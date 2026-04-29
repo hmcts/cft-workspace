@@ -4,6 +4,10 @@
     "dockerfile": "Dockerfile"
   },
   "runArgs": ["--network=host"],
+  "forwardPorts": [],
+  "otherPortsAttributes": {
+    "onAutoForward": "ignore"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -12,6 +16,8 @@
       ],
       "settings": {
         "remote.autoForwardPorts": false,
+        "remote.autoForwardPortsFallback": 0,
+        "remote.restoreForwardedPorts": false,
         "files.autoSave": "onFocusChange",
         "java.configuration.updateBuildConfiguration": "automatic",
         "java.import.gradle.enabled": true,

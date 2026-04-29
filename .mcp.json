@@ -6,15 +6,10 @@
         "run",
         "-i",
         "--rm",
-        "-e", "CONFLUENCE_URL",
-        "-e", "CONFLUENCE_PERSONAL_TOKEN",
+        "--env-file", ".claude/.atlassian.env",
         "-e", "READ_ONLY_MODE=true",
         "ghcr.io/sooperset/mcp-atlassian:latest"
-      ],
-      "env": {
-        "CONFLUENCE_URL": "${CONFLUENCE_URL}",
-        "CONFLUENCE_PERSONAL_TOKEN": "${CONFLUENCE_TOKEN}"
-      }
+      ]
     }
   }
 }
