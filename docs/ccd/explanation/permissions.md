@@ -21,20 +21,40 @@ sources:
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/CaseworkerAccess.java
 examples_extracted_from:
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/CaseworkerAccess.java
-status: reviewed
+status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
+confluence_checked_at: 2026-04-29T00:00:00Z
+confluence:
+  - id: "1285226654"
+    title: "Access Control"
+    space: "RCCD"
+  - id: "207804327"
+    title: "CCD Definition Glossary for Setting up a Service in CCD"
+    space: "RCCD"
+  - id: "1343292362"
+    title: "CRUD Basics"
+    space: "RCCD"
+  - id: "1134527861"
+    title: "CRUD on Complex Types"
+    space: "RCCD"
+  - id: "1254261627"
+    title: "CRUD on Collections"
+    space: "RCCD"
+  - id: "1235783068"
+    title: "Case Roles"
+    space: "RCCD"
 ---
 
 # CCD Permissions
 
 ## TL;DR
 
-- CCD permissions are CRUD grants on four scopes: case type, event, state, and field — defined in the case-type definition spreadsheet or via the config-generator SDK.
-- Each grant maps an **access profile** name (a string like `caseworker-divorce` or `[APPONESOLICITOR]`) to a subset of `C`, `R`, `U`, `D` characters.
-- The four Authorisation sheets are `AuthorisationCaseType`, `AuthorisationCaseEvent`, `AuthorisationCaseState`, and `AuthorisationCaseField`; a fifth sheet `AuthorisationComplexType` handles nested fields.
-- Access profiles are **not** IDAM roles directly — the `RoleToAccessProfiles` sheet maps IDAM JWT roles to named access profiles at runtime.
-- Definition-store stores and validates the grants; `ccd-data-store-api` enforces them at case create/read/update/delete time.
-- This page covers **definition-time** permissions. Role Assignment / AM (runtime case-level grants) is a separate mechanism.
+- CCD permissions are CRUD grants on five scopes: case type, event, state, field, and complex sub-field — defined in the case-type definition spreadsheet (or via the config-generator SDK), validated at import, enforced at runtime by `ccd-data-store-api`.
+- Each grant maps an **access profile** name (e.g. `caseworker-divorce` or a case-role like `[APPONESOLICITOR]`) to a subset of `C`, `R`, `U`, `D` characters; permissions are purely additive across all matching profiles.
+- CRUD letters mean different things per scope: `U` on `AuthorisationCaseEvent` is a no-op, `C` on `AuthorisationCaseState` means "this state may be a final state of a create", and `D` is only enforced at the field-level for collection/complex children.
+- Access profiles are **not** IDAM roles directly — the `RoleToAccessProfiles` sheet maps role-assignment role names (or, via a legacy `idam:<role>` bridge, IDAM JWT roles) to access-profile names; `Authorisation`, `ReadOnly`, and `CaseAccessCategories` columns further filter the mapping.
+- Per source `ColumnName.java:9`, the canonical column is `AccessProfile`; the Confluence Glossary still calls it `UserRole` (accepted as a legacy alias).
+- This page covers **definition-time** permissions. Role Assignment / AM (runtime per-case grants, exclusions, regions, locations) is covered in [Role Assignment](role-assignment.md).
 
 ---
 
@@ -65,7 +85,26 @@ All five tables share the same four boolean columns — `create`, `read`, `updat
 
 In the spreadsheet, the `CRUD` column holds a string composed of the letters `C`, `R`, `U`, `D` in any order and any case. Examples: `"CRUD"`, `"CRU"`, `"R"`.
 
-`AuthorisationParser.parseCrud()` uppercases the string and maps the presence of each character to its corresponding boolean column (`AuthorisationParser.java:37–46`). Import-time validation rejects any string that does not match `^[CRUDcrud\s]{1,5}$` (`CrudValidator.java:12–17`).
+`AuthorisationParser.parseCrud()` uppercases the string and maps the presence of each character to its corresponding boolean column (`AuthorisationParser.java:37–46`). Import-time validation rejects any string that does not match `^[CRUDcrud\s]{1,5}$` (`CrudValidator.java:12–17`). The regex permits embedded whitespace and a length of 1–5 characters; out-of-range strings (e.g. `""`, `"CRUDX"`) are rejected.
+
+### What each bit means per scope
+
+CRUD letters mean different things on different scopes. Most subtle case is `U` on events — it has no effect.
+
+| Scope | C | R | U | D |
+|---|---|---|---|---|
+| `AuthorisationCaseType` | Create cases of this type | Read cases of this type | Modify cases of this type | Not enforced for whole-case delete <!-- CONFLUENCE-ONLY: "D is not yet implemented" at case-type scope per Glossary; verified in source — `CAN_DELETE` is only checked by `CompoundAccessControlService` for compound/collection field-level deletes, not for whole-case deletes --> |
+| `AuthorisationCaseEvent` | Trigger the event | Read the event in the audit history log | **No effect** | Not implemented |
+| `AuthorisationCaseState` | Allow this state to be the *final* state of a create | Read cases in this state | Modify cases in this state | Not implemented |
+| `AuthorisationCaseField` | Set the field's value at create-time | Read the field | Modify the field on an existing case | Clear the field's value (only enforced for collection/complex children — see below) |
+| `AuthorisationComplexType` | Create the sub-field | Read the sub-field | Modify the sub-field | Remove a child / collection item (`CompoundAccessControlService:115,188`) |
+
+Two surprising specifics confirmed by the Confluence Glossary:
+
+- **`U` on `AuthorisationCaseEvent` is meaningless** — the event is either triggerable (`C`) or just visible in audit history (`R`). Setting `U` does nothing.
+- **`C` on `AuthorisationCaseState`** is interpreted as: this state may be set as the *final* state of a create (i.e. a case may end up in this state on creation), not "create cases" generically.
+
+`D` is parsed and persisted into a `delete` boolean on every `*_acl` row, but at runtime only `CompoundAccessControlService` checks `CAN_DELETE`, and only for collection-item / complex-child removal. There is no whole-record delete enforcement on `case_type_acl`, `event_acl`, or `state_acl`.
 
 ---
 
@@ -81,9 +120,40 @@ The `AccessProfile` column in all Authorisation sheets holds an **access profile
 | `[APPONESOLICITOR]` | CCD case role (in brackets) | Solicitor assigned to applicant one on this specific case |
 | `[APPTWOSOLICITOR]` | CCD case role (in brackets) | Solicitor assigned to applicant two on this specific case |
 
-The mapping from IDAM JWT roles to access profile names is declared in the `RoleToAccessProfiles` sheet. `RoleToAccessProfilesEntity` carries the fields `roleName`, `accessProfiles`, `authorisation`, `readOnly`, `disabled`, and `caseAccessCategories` (`RoleToAccessProfilesEntity.java:35–51`).
+The mapping from IDAM JWT roles (or, more correctly, from Role-Assignment role names) to access profile names is declared in the `RoleToAccessProfiles` sheet. `RoleToAccessProfilesEntity` carries the fields `roleName`, `accessProfiles`, `authorisation`, `readOnly`, `disabled`, and `caseAccessCategories` (`RoleToAccessProfilesEntity.java:35–51`).
+
+| Column | Purpose | Notes |
+|---|---|---|
+| `RoleName` | Role name as returned by Role Assignment Service | Required |
+| `AccessProfiles` | Comma-separated list of AccessProfile names to assign if the row matches | At least one required; each profile must be pre-registered as a user-role in definition store |
+| `Authorisation` | Comma-separated authorisation identifiers | Optional; if present, the user's role assignment must include at least one of them for the mapping to apply |
+| `ReadOnly` | Filters by the role assignment's `readonly` flag | Truthy values: T, True, Y, Yes; falsy: NULL, N, No, F, False. If the mapping's ReadOnly is set, the resulting AccessProfile is treated as READONLY (CRUD is constrained to R only) |
+| `CaseAccessCategories` | Comma-separated case-access-category prefixes | Optional, max 1000 chars. For the mapping to apply, the case's `CaseAccessCategory` field must **start with** one of the listed prefixes |
+| `Disabled` | Disables the row | Truthy: T, True, Y, Yes — the mapping is not applied |
+
+<!-- CONFLUENCE-ONLY: ReadOnly truthy-value table and CaseAccessCategories prefix matching not directly verified line-by-line in source for this pass; Glossary is canonical reference. -->
 
 **Important**: the `role_id` FK in all `*_acl` tables points to `AccessProfileEntity` (stored in the `role` table), not to an IDAM role string. The string `reference` column on `AccessProfileEntity` holds the access profile name (`AccessProfileEntity.java:35`).
+
+### Legacy IDAM-as-AccessProfile bridge
+
+Some services still rely on IDAM roles as AccessProfile names directly. To support them, `ccd-data-store-api` synthesises "fake" `RoleToAccessProfiles` entries at runtime — for every IDAM role on the user's JWT it adds an implicit mapping `RoleName=idam:<user_role>` → `AccessProfiles=<user_role>`. Equivalent fake mappings are also generated for every `[CASE_ROLE]` declared in the `CaseRoles` sheet. This means a case-type can use `caseworker-divorce` directly as an access-profile string in `AuthorisationCaseType` without an explicit `RoleToAccessProfiles` row, and it still resolves at runtime — although new services should prefer explicit `RoleToAccessProfiles` rows.
+
+The data-store also uses a regex to identify users that need a *case role* on a specific case to access it (i.e. they don't get organisational/jurisdictional access by default):
+
+```
+.+-solicitor$|^caseworker-.+-localAuthority$|^citizen(-.*)?$|^letter-holder$|.+-panelmember$
+```
+
+Users whose IDAM roles match this regex are implicitly assigned a `[CREATOR]` Case Role on cases they create, with a derived `roleCategory` based on which branch of the regex matched: solicitor / localAuthority → `PROFESSIONAL`; citizen / letter-holder → `CITIZEN`; panelmember → `JUDICIAL`; otherwise `LEGAL_OPERATIONS`.
+
+<!-- CONFLUENCE-ONLY: idam: prefix and CREATOR auto-assignment regex not verified in source on this pass; documented in the canonical Access Control Confluence page (id 1285226654). -->
+
+### Spreadsheet column name caveat
+
+The Confluence Glossary still calls the access-profile column `UserRole` in the four Authorisation tabs. The canonical name is `AccessProfile`; importer source `ColumnName.java:9` declares `ACCESS_PROFILE("AccessProfile", new String[]{"UserRole"})` — so `UserRole` is accepted as a legacy alias but new spreadsheets should use `AccessProfile`.
+
+<!-- DIVERGENCE: Confluence Glossary (id 207804327) labels the column "UserRole" in AuthorisationCaseType / AuthorisationCaseField / AuthorisationCaseEvent / AuthorisationCaseState / AuthorisationComplexType. Source `ColumnName.java:9` shows `AccessProfile` is canonical with `UserRole` as a legacy alias. Source wins. -->
 
 ### Common role name patterns
 
@@ -113,6 +183,24 @@ Semantics of each bit on a field:
 
 If a field has no ACL row for the caller's access profile, the caller cannot see or write the field.
 
+### CRUD on collection fields
+
+When the `CaseFieldID` refers to a collection field (top-level), the bits apply to **collection items**, not the collection container itself:
+
+| Bit | Behaviour | UI |
+|---|---|---|
+| `C` | User may **add** items to the collection | "Add" button greyed out without `C` |
+| `R` | User can see existing items | If only `R` is set, items render read-only |
+| `U` | User can edit elements within items | User must also have `R` to see items to update them |
+| `D` | User can **remove** items | "Remove" button greyed out without `D`; user must also have `R` |
+
+Two important details:
+
+- **Collection-level CRUD is only honoured when the top-level field is a collection.** If a collection appears at a deeper nesting level, CRUD applies to the *top-level* field as normal, not to the deep collection's items.
+- **`R` must be explicit when granting `U` or `D`** — `R` is not implied. A row of `UD` without `R` prevents the user from seeing the items they would otherwise be allowed to update or delete.
+
+<!-- CONFLUENCE-ONLY: collection-item C/R/U/D semantics and "R must be explicit for U/D" rule documented in CRUD on Collections (id 1254261627); behaviour is enforced via CompoundAccessControlService for compound fields. -->
+
 ### AuthorisationComplexType (nested fields)
 
 The `AuthorisationComplexType` sheet adds `list_element_code varchar(1000)` — a dot-notation path to the sub-field, e.g. `applicant.address.postCode` (`V0001__Base_version.sql:307–319`).
@@ -122,6 +210,21 @@ Two additional constraints enforced at import time (`CaseFieldEntityComplexField
 1. A nested path cannot have **higher** access than its parent for the same access profile (`hasLowerAccessThan()`, `Authorisation.java:154–172`).
 2. Every intermediate path segment must also have an explicit ACL row for the same access profile (`CaseFieldEntityComplexFieldACLValidatorImpl.java:96–111`).
 3. Predefined system complex types (e.g. `Address`, `OrderSummary`) cannot have `complex_field_acl` rows at all (`CaseFieldEntityComplexFieldACLValidatorImpl.java:38–49`).
+
+**Runtime quirks**:
+
+- **Omitted children are hidden.** If you don't supply a row for an element of a complex type for a given access profile, that element has *no effective permissions* — it is hidden, even if its parent has full CRUD.
+- **Parent CRUD propagates to undeclared deeper levels.** If you stop declaring at level N for a deeply nested complex type, the children below level N inherit from the deepest declared level for that access profile.
+
+<!-- CONFLUENCE-ONLY: hide-on-omit and parent-propagation behaviours documented in CRUD on Complex Types (id 1134527861). -->
+
+### Markers in Confluence
+
+The Confluence Glossary marks some access-control areas as "in development" or stale. Notable points to be aware of when reading older Confluence:
+
+- **"AuthorisationState (In development)"** in CRUD Basics is stale — the live sheet name is `AuthorisationCaseState` and is fully implemented (`StateACLEntity.java`).
+- **"D (delete) is not yet implemented"** is broadly accurate at case-type, case-event and case-state scopes (no runtime enforcement of whole-record delete via ACL), but **is** enforced at field-level for compound fields (collection-item / complex-child removal) via `CompoundAccessControlService:115,188`.
+- The `RoleToAccessProfiles` tab's `Authorisation` and `CaseAccessCategories` filter columns are recent additions; older spreadsheets may not contain them and the importer treats them as optional.
 
 ---
 
@@ -178,13 +281,27 @@ Access classes are referenced via `@CCD(access = {AosAccess.class})` on `CaseDat
 
 ## Enforcement Model
 
-Definition-store holds and validates the ACL metadata, but does **not** enforce it at runtime. Enforcement happens in `ccd-data-store-api`, which:
+Definition-store holds and validates the ACL metadata, but does **not** enforce it at runtime. Enforcement happens in `ccd-data-store-api`, which (per the canonical Confluence Access Control specification):
 
-1. Reads the case-type definition (including all `acls` arrays) from definition-store's `/api/data/case-type/{id}` response.
-2. Resolves the caller's access profiles from their IDAM JWT and the `RoleToAccessProfiles` mapping.
-3. Filters case fields, events, and states to only those where the resolved profiles have the required CRUD bits.
+1. Calls `GET /am/role-assignments/actors/{actorId}` against `am-role-assignment-service` (cached) to retrieve the user's role assignments.
+2. Filters the role assignments by case attributes — `jurisdiction`, `casetype`, `caseId`, `caseAccessGroupId`, `region`, `location` (in that order), as well as begin/end times and security classification.
+3. Adds synthesised `idam:<role>` pseudo-assignments for any IDAM roles on the JWT that aren't already represented as RAS role assignments — this is the legacy IDAM bridge.
+4. If any remaining role assignment is `EXCLUDED`, drops everything except `BASIC` and `SPECIFIC` grants (so an EXCLUSION reliably blocks access).
+5. Matches the surviving role assignments against `RoleToAccessProfiles` rows (taking `Authorisation`, `ReadOnly`, `CaseAccessCategories` into account) to produce the user's effective AccessProfiles.
+6. Filters case fields, events, and states to only those where the resolved AccessProfiles have the required CRUD bits in the corresponding `*_acl` table. If `READONLY` characteristic is present on the AccessProfile, CRUD is constrained to `R` only.
 
-This means a definition-store import succeeding does not guarantee any runtime access — the data-store enforcement layer applies independently.
+A definition-store import succeeding does not guarantee any runtime access — the data-store enforcement layer applies independently, and a user must hold a matching role assignment with sufficient classification.
+
+### Access metadata returned to ExUI
+
+For internal V2 endpoints used by ExUI Manage Case, `ccd-data-store-api` attaches transient (not persisted) metadata fields to each case so the UI can drive its access-request flows:
+
+- `[ACCESS_GRANTED]` — CSV of grant types that passed filtering (e.g. `STANDARD,SPECIFIC`).
+- `[ACCESS_PROCESS]` — one of `NONE` (user already has access), `CHALLENGED` (a STANDARD role would have matched if region / base location matched the case), or `SPECIFIC` (user must request specific access via case-share/NoC).
+
+For users to ever see `CHALLENGED`, services need a `BASIC` role assignment that returns the case in searches with minimal fields (e.g. case title) — otherwise the case wouldn't appear in the result set at all.
+
+<!-- CONFLUENCE-ONLY: access-metadata fields and CHALLENGED-via-region-mismatch logic per Access Control Confluence page (id 1285226654); not directly grepped in source on this pass. -->
 
 ---
 
@@ -230,10 +347,5 @@ public class CaseworkerAccess implements HasAccessControl {
 
 ## Glossary
 
-| Term | Definition |
-|---|---|
-| Access profile | A string name (e.g. `caseworker-divorce`) used in `*_acl` tables; may be an IDAM role name or a CCD case role like `[APPONESOLICITOR]` |
-| CRUD string | A 1–4 character string (`C`, `R`, `U`, `D` in any order) encoding which operations are permitted |
-| Case role | A dynamic per-case access profile whose name is enclosed in brackets (e.g. `[APPONESOLICITOR]`); assigned via ACA/NoC |
-| `RoleToAccessProfiles` | Definition sheet mapping IDAM JWT role names to the access profile names used in the ACL tables |
-| ACL scope | One of the five granularity levels at which CRUD grants can be set: case type, event, state, field, complex sub-field |
+See [Glossary](../reference/glossary.md) for term definitions used in this page.
+

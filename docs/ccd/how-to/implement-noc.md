@@ -7,19 +7,58 @@ sources:
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/datastore/CaseDetails.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/NoticeOfChangeQuestions.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/VerifyNoCAnswersService.java
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ChallengeAnswerValidator.java
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ApplyNoCDecisionService.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/repository/DefaultDataStoreRepository.java
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/definitionstore/DefinitionStoreApiClientConfig.java
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/errorhandling/noc/NoCValidationError.java
   - aac-manage-case-assignment:src/main/resources/application.yaml
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/NoticeOfChange.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ChangeOrganisationApprovalStatus.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemRequestNoticeOfChange.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemApplyNoticeOfChange.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/client/AssignCaseAccessClient.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseRoleID.java
+  - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java
 examples_extracted_from:
   - apps/nfdiv/nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemRequestNoticeOfChange.java
   - apps/nfdiv/nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseRoleID.java
-status: needs-fix
+status: confluence-augmented
 last_reviewed: "2026-04-29T00:00:00Z"
+confluence_checked_at: "2026-04-29T00:00:00Z"
+confluence:
+  - id: "1380221923"
+    title: "A Guide to Assign Access to cases for professional users: configuration"
+    space: "RCCD"
+  - id: "1452902365"
+    title: "API Operation: Request Notice of Change"
+    space: "ACA"
+  - id: "1457321193"
+    title: "API Operation: Check for Notice of Change Approval"
+    space: "ACA"
+  - id: "1457312216"
+    title: "API Operation: Apply Notice of Change Decision"
+    space: "ACA"
+  - id: "1457308116"
+    title: "ChallengeQuestions and answers API LLD"
+    space: "RCCD"
+  - id: "1460555663"
+    title: "API Operation: Prepare Notice of Change Request"
+    space: "ACA"
+  - id: "1460552966"
+    title: "API Operation: Set Organisation To Remove"
+    space: "ACA"
+  - id: "1791328648"
+    title: "Notice of Change (Devs)"
+    space: "FR"
+  - id: "1444741232"
+    title: "Notice of Change - Case Access API Specification"
+    space: "EUI"
+  - id: "1440512249"
+    title: "12 Notice Of Change (formally Notice of Acting)"
+    space: "RIA"
 ---
 
 # Implement Notice of Change
@@ -27,11 +66,11 @@ last_reviewed: "2026-04-29T00:00:00Z"
 ## TL;DR
 
 - Notice of Change (NoC) lets a solicitor prove they represent a litigant and take over a case role, replacing the previous solicitor.
-- The flow requires: a `ChangeOrganisationRequest` complex field on the case, a `ChallengeQuestion` group named `NoCChallenge` in the definition, two CCD events (`notice-of-change-requested` / `notice-of-change-applied`), and `aac-manage-case-assignment` (AAC) wired as callback handler.
-- AAC owns the NoC endpoints at `POST /noc/noc-requests`, `POST /noc/check-noc-approval`, `POST /noc/apply-decision`, `POST /noc/noc-prepare`, and `POST /noc/set-organisation-to-remove`.
-- On approval, AAC calls `am-role-assignment-service` (AMRAS) to create `CASE`-scoped role assignments for the incoming org's users and removes them for the outgoing org.
-- The `ChangeOrganisationRequest.ApprovalStatus` uses numeric strings: `"0"` = Pending, `"1"` = Approved, `"2"` = Rejected.
-- Case roles involved in NoC must be backed by `OrganisationPolicy` fields — AAC discovers them by scanning case data, not by a fixed field name.
+- The flow requires: a `ChangeOrganisationRequest` complex field on the case, a `ChallengeQuestion` group with ID `NoCChallenge` in the definition, the relevant NoC CCD events (Request to add/replace, optional Request to remove, Approval, Rejection), and `aac-manage-case-assignment` (AAC) wired as callback handler.
+- AAC owns the NoC endpoints at `POST /noc/noc-requests`, `GET /noc/noc-questions`, `POST /noc/verify-noc-answers`, `POST /noc/check-noc-approval`, `POST /noc/apply-decision`, `POST /noc/noc-prepare`, and `POST /noc/set-organisation-to-remove`.
+- On approval, AAC calls the data-store `addCaseUserRoles` / `removeCaseUserRoles` APIs which fan out to `am-role-assignment-service` (AMRAS), creating `CASE`-scoped role assignments for the incoming org's users and removing them for the outgoing org. AAC also appends a `PreviousOrganisations` audit entry and emails the removed users via GOV.UK Notify.
+- The `ChangeOrganisationRequest.ApprovalStatus` field carries numeric-string values from the SDK enum `ChangeOrganisationApprovalStatus`: `"0"` = `NOT_CONSIDERED` (request pending decision), `"1"` = `APPROVED`, `"2"` = `REJECTED`. The `/noc/noc-requests` API response separately reports `approval_status` as `PENDING` / `APPROVED` / `REJECTED`.
+- Litigants must be defined as discrete fields with distinct case roles, never as a collection — CCD cannot scope permissions or NoC to individual elements within a collection. Case roles involved in NoC must be backed by `OrganisationPolicy` fields — AAC discovers the COR field by scanning case data for any node containing both `OrganisationToAdd` and `OrganisationToRemove` children, not by a fixed field name.
 
 ---
 
@@ -55,6 +94,32 @@ private OrganisationPolicy<UserRole> applicant2OrganisationPolicy;
 
 Set `OrgPolicyCaseAssignedRole` to the bracket role that will be managed by NoC (e.g. `[APPONESOLICITOR]`).
 
+**Constraint: litigants must not be a collection.** CCD cannot scope permissions or NoC to individual elements within a collection. Each litigant type that can be represented needs its own top-level or named-complex field with an OrganisationPolicy. For example: `Applicant` + `CaseRoleForApplicant`, `Respondent` + `CaseRoleForRespondent`.
+
+### OrganisationPolicy JSON shapes
+
+Valid:
+
+```json
+{"Organisation": {"OrganisationID": "Y707HZM", "OrganisationName": "FinRem-1-Org"}, "OrgPolicyCaseAssignedRole": "[APPSOLICITOR]"}
+```
+
+```json
+{"OrgPolicyCaseAssignedRole": "[APPSOLICITOR]"}
+```
+
+```json
+{"Organisation": {"OrganisationID": null}, "OrgPolicyCaseAssignedRole": "[APPSOLICITOR]"}
+```
+
+Invalid (empty Organisation object without null OrganisationID):
+
+```json
+{"Organisation": {}, "OrgPolicyCaseAssignedRole": "[APPSOLICITOR]"}
+```
+
+<!-- CONFLUENCE-ONLY: OrganisationPolicy JSON shape validity rules come from the FR "Notice of Change (Devs)" page — not verified against definition-store or data-store schema validation in source. -->
+
 ---
 
 ## Step 2 — Add the ChangeOrganisationRequest field
@@ -73,20 +138,44 @@ private ChangeOrganisationRequest<CaseRoleID> changeOrganisationRequestField;
 
 `AcaSystemUserAccess` restricts write access to the `caseworker-caa` system account so that only AAC can mutate this field.
 
+**Important:** After a NoC completes (approved or rejected), AAC nullifies `ChangeOrganisationRequest.CaseRoleId`. This field **must remain null** between NoC operations — if it is non-null, AAC interprets it as an ongoing NoC request and rejects new requests with error `noc-in-progress` (`NoticeOfChangeQuestions.java:131`, `CaseDetails.java:144-148`). The `ChangeOrganisationRequestField` itself persists on the case between NoC operations; only `CaseRoleId` is cleared.
+
 ---
 
 ## Step 3 — Define the ChallengeQuestion group
 
 In the CCD definition (spreadsheet or JSON), create a challenge question group with tab ID **`NoCChallenge`** — this is hardcoded in AAC (`NoticeOfChangeQuestions.java:39`).
 
-Each question must specify:
-- `QuestionId` — unique within the group
-- `QuestionText` — shown to the solicitor
-- `AnswerFieldType` — field type to compare against
-- `CaseRoleId` — the bracket role this answer identifies (e.g. `[APPONESOLICITOR]`)
-- `FieldIds` — dot-separated path(s) into case data whose value the solicitor must match
+The questions are stored in the **definition store**, not AAC; AAC's `GET /noc/noc-questions?case_id=...` proxies to definition-store endpoint `/api/display/challenge-questions/case-type/{ctid}/question-groups/{id}` with `id=NoCChallenge` (`DefinitionStoreApiClientConfig.java:11`).
 
-Example question (JSON shape):
+### Required columns
+
+Each question must specify:
+
+| Column | Constraints | Notes |
+|---|---|---|
+| `Order` | int, unique within group | display order |
+| `QuestionId` | string, max 70 chars, unique | API exposes as `question_id` |
+| `QuestionText` | non-empty string | shown to the solicitor |
+| `AnswerFieldType` | enum (see below) | type of expected answer |
+| `DisplayContextParameter` | string or null | format string for `Date`/`DateTime` (e.g. `#DATETIMEENTRY(dd-MM-yyyy)`); null otherwise |
+| `CaseRoleId` | bracketed role e.g. `[APPONESOLICITOR]` | role this answer binds to (encoded in `answer_field` as `:[Role]` suffix per Confluence) |
+| `AnswerField` / `FieldIds` | path expression(s) into case data | see grammar below |
+
+`AnswerFieldType` permitted values (from definition-store schema): `Text`, `Date`, `Time`, `DateTime`, `PhoneUK`, `Number`, `Email`, `Postcode`.
+
+### `answer_field` grammar (per ChallengeQuestions LLD)
+
+The API exposes `answer_field` as a comma-separated list of `(template):(case-role)` clauses. Within each clause `${...}` references case-data fields, `|` separates alternatives, and the `:[Role]` suffix binds the answer to a case role:
+
+```
+${OrganisationField.OrganisationName}|${OrganisationField.OrganisationID}:[Claimant],
+${OrganisationField.OrganisationName}|${OrganisationField.OrganisationID}:[Defendant]
+```
+
+The above means: the answer matches if it equals either OrganisationName or OrganisationID, and the matching role is determined by which clause matched.
+
+Most service teams configure simpler single-field answers via the `FieldIds` column on the spreadsheet, e.g.:
 
 ```json
 {
@@ -98,21 +187,37 @@ Example question (JSON shape):
 }
 ```
 
-Answer matching strips whitespace and `-'` characters and is case-insensitive for text fields (`ChallengeAnswerValidator.java:122`). Exactly one `CaseRoleId` must match all answers; zero or multiple matches are rejected.
+### Matching rules
+
+- Whitespace and `-'` characters are stripped from both sides before comparison (`ChallengeAnswerValidator.java:123`).
+- Text comparison is case-insensitive (`RequestNoticeOfChangeService.java:187-191`).
+- Exactly one `CaseRoleId` must match all answers; zero or multiple matches are rejected with error code `answers-not-matched-any-litigant` or `answers-not-identify-litigant`.
+- For `Date`/`DateTime` answers, the user must provide the value formatted per the `DisplayContextParameter`.
 
 ---
 
-## Step 4 — Create the two NoC CCD events
+## Step 4 — Create the NoC CCD events
 
-You need two system-driven events. Grant them only to the system accounts that AAC uses.
+The full ACA design defines **four** distinct events. Most service teams (including nfdiv) collapse them into two by always auto-approving — that's the simpler pattern shown below as 4a/4b. If you need an approver gate, configure all four (4a + 4b + 4c + 4d).
 
-### 4a. `notice-of-change-requested`
+| Event | Default `ApprovalStatus` | About-to-start callback | Submitted callback | Granted to |
+|---|---|---|---|---|
+| **NoC Request — add/replace** | `0` (manual) or `1` (auto) | `/noc/noc-prepare` (optional) | `/noc/check-noc-approval` | `caseworker-caa` only |
+| **NoC Request — remove** | `0` or `1` | `/noc/noc-prepare` | `/noc/check-noc-approval` (and about-to-submit `/noc/set-organisation-to-remove`) | solicitors + HMCTS caseworkers |
+| **NoC Approval** (manual gate) | `1` (forced) | `/noc/apply-decision` | — | `caseworker-approver` + HMCTS approvers |
+| **NoC Rejection** (manual gate) | `2` (forced) | `/noc/apply-decision` | — | `caseworker-approver` + HMCTS approvers |
+
+When the Request event auto-approves (default `ApprovalStatus = 1`), the Submitted callback to `/noc/check-noc-approval` triggers the NoCDecision (Apply) event automatically — no separate Approval event UI is needed.
+
+**Display context caveat:** CCD's Show/Hide does not currently preserve values for complex field type elements. If you hide a COR subfield (e.g. `CaseRoleId`), the value may be lost. Use `READONLY` (or `NEVER_SHOW` in the SDK, which maps to a show-condition that is never satisfied) rather than hiding directly until this is fixed.
+
+### 4a. NoC Request event — `notice-of-change-requested` (auto-approving pattern)
 
 This event captures the `ChangeOrganisationRequest` after AAC verifies the answers. Wire AAC callbacks:
 
 | Callback hook | AAC endpoint |
 |---|---|
-| About-to-start | `POST /noc/noc-prepare` |
+| About-to-start | `POST /noc/noc-prepare` (only required for "remove representation" flows; nfdiv omits) |
 | Submitted | `POST /noc/check-noc-approval` |
 
 Grant `CRU` to `caseworker-caa` only.
@@ -123,13 +228,17 @@ configBuilder.event("notice-of-change-requested")
     .forStates(POST_ISSUE_STATES)
     .name("Notice Of Change Requested")
     .grant(CREATE_READ_UPDATE, ORGANISATION_CASE_ACCESS_ADMINISTRATOR)
-    .aboutToStartCallback(this::aboutToStart)    // calls POST /noc/noc-prepare
+    .aboutToStartCallback(this::aboutToStart)
     .submittedCallback(this::submitted);         // calls POST /noc/check-noc-approval
 ```
 
 See `SystemRequestNoticeOfChange.java:54-81` for the nfdiv reference implementation.
 
-### 4b. `notice-of-change-applied`
+<!-- CONFLUENCE-ONLY: the "About-to-start = POST /noc/noc-prepare" mapping for the Request event is documented in the ACA configuration guide for "remove representation" flows only; for "add/replace" the about-to-start can be a service-side handler. nfdiv's about-to-start does service-specific logic, not /noc/noc-prepare. -->
+
+The default event id used by the SDK (`NoticeOfChange.DEFAULT_REQUEST_EVENT_ID`) is `noc-request`, not `notice-of-change-requested` — nfdiv overrides it. Either id is fine as long as it's used consistently in your config and any Submitted callback URL configured in CCD definition matches.
+
+### 4b. NoCDecision event — `notice-of-change-applied`
 
 This event finalises the change and triggers AMRAS role updates via `POST /noc/apply-decision`.
 
@@ -148,11 +257,48 @@ configBuilder.event("notice-of-change-applied")
     .aboutToStartCallback(this::aboutToStart);   // calls POST /noc/apply-decision
 ```
 
-See `SystemApplyNoticeOfChange.java:63-71` for the nfdiv reference implementation.
+See `SystemApplyNoticeOfChange.java:63-71` for the nfdiv reference implementation. The default SDK event id is `notice-of-change-applied` (`NoticeOfChange.DEFAULT_EVENT_ID`).
+
+### 4c. NoC Approval event (optional — only with manual approver gate)
+
+If you require a human approver (rather than auto-approval), configure a separate event whose role is to default `ApprovalStatus = 1` and trigger `/noc/apply-decision` (so it doubles as the NoCDecision event in this pattern). Grant only to `caseworker-approver` and HMCTS approver roles. Use defaulting on COR.ApprovalStatus and an about-to-start callback to `/noc/apply-decision`.
+
+### 4d. NoC Rejection event (optional — manual approver gate)
+
+Same as Approval but defaults `ApprovalStatus = 2`. Grant only to `caseworker-approver` and HMCTS approver roles. The about-to-start callback to `/noc/apply-decision` will see `ApprovalStatus = Rejected`, nullify the COR, and return without changing role assignments.
+
+<!-- CONFLUENCE-ONLY: the four-event pattern (separate Approval + Rejection events) is the ACA reference design. No service in this workspace currently uses it — nfdiv, et-* and others all use the simpler auto-approve 2-event variant. -->
+
+### Per-Confluence callback wiring summary
+
+The full event-to-callback matrix per ACA configuration guide (page 1380221923) is:
+
+| Event purpose | About-to-start | About-to-submit | Submitted |
+|---|---|---|---|
+| NoC Request (add/replace) | service handler | — | `/noc/check-noc-approval` |
+| NoC Request (remove) | `/noc/noc-prepare` (build CaseRole list) | `/noc/set-organisation-to-remove` | `/noc/check-noc-approval` |
+| NoC Approval | `/noc/apply-decision` | — | — |
+| NoC Rejection | `/noc/apply-decision` | — | — |
 
 ---
 
 ## Step 5 — Wire AAC as the callback host
+
+### How the ExUI NoC flow invokes AAC
+
+When a solicitor initiates NoC from Expert UI, the browser calls ExUI's Node backend at `POST /api/noc/submitNoCEvents`. ExUI then calls AAC at `POST /noc/noc-requests`, which validates the challenge answers and triggers the configured CCD event via the data store. This proxy pattern means the solicitor never directly calls CCD event APIs — AAC acts on their behalf using the `caseworker-caa` system user.
+
+### S2S whitelist
+
+AAC restricts which services may call it via S2S token verification. The default whitelist is configured in `application.yaml:99`:
+
+```
+xui_webapp,ccd_data,finrem_case_orchestration,prl_cos_api,et_cos,et_sya_api
+```
+
+If your service needs to call AAC directly (e.g. from a Feign client in your callback), raise a CCD platform ticket to add your service's S2S name (`MANAGE_CASE_S2S_AUTHORISED_SERVICES`).
+
+### Callback URL configuration
 
 Set the callback base URL in your case type configuration to point at `aac-manage-case-assignment` (port 4454 by default):
 
@@ -215,6 +361,39 @@ curl -X POST https://<amras-host>/am/role-assignments/query \
 ```
 
 Confirm the incoming org's users hold `CASE`-scoped assignments and the outgoing org's users do not.
+
+---
+
+## Error codes
+
+AAC returns structured error codes in its responses. The full set from `NoCValidationError.java`:
+
+| Error code | Meaning |
+|---|---|
+| `noc-in-progress` | An ongoing NoC request already exists (COR.CaseRoleId is non-null) |
+| `no-org-policy` | No OrganisationPolicy exists for one or more roles in the NoC request |
+| `noc-event-unavailable` | No NoC events available for this case type |
+| `multiple-noc-requests-on-user` | Multiple NoC Request events found for the user |
+| `multiple-noc-requests-on-case` | More than one ChangeOrganisationRequest found on the case |
+| `insufficient-privileges` | Insufficient privileges for notice of change request |
+| `case-id-invalid` | Case ID is not a valid 16-digit Luhn number |
+| `case-id-empty` | Case ID is empty |
+| `case-id-invalid-length` | Case ID is not 16 digits long |
+| `answers-empty` | Challenge question answers were not provided |
+| `answers-not-matched-any-litigant` | The answers did not match those for any litigant |
+| `answers-not-identify-litigant` | The answers did not uniquely identify a litigant (matched multiple) |
+| `invalid-case-role` | CaseRole in COR matched none or more than one OrganisationPolicy |
+| `has-represented` | The requestor already represents the litigant identified by the answers |
+| `missing-cor-case-role-id` | CaseRoleID in COR definition is missing |
+| `answers-mismatch-questions` | Number of answers does not match number of questions |
+| `no-answer-provided-for-question` | No answer was provided for a specific question ID |
+
+Additionally, XUI surfaces user-facing messages (from EUI API spec):
+- "Not a valid case reference" — no case with that reference exists
+- "You already have access to the case" — the user's org already holds the matched OrganisationPolicy
+- "Another NoC request has been actioned" — race condition: a concurrent NoC was processed first
+
+<!-- CONFLUENCE-ONLY: XUI user-facing error messages (last three in list) come from EUI spec; not verified in aac-manage-case-assignment source. -->
 
 ---
 
@@ -292,11 +471,5 @@ public class CaseRoleID implements HasRole {
 
 ## Glossary
 
-| Term | Definition |
-|---|---|
-| `ChangeOrganisationRequest` (COR) | CCD complex field type holding the in-flight NoC state: org to add, org to remove, selected case role, approval status, timestamps. |
-| `ChallengeQuestion` | A question in the `NoCChallenge` group used to verify a solicitor's knowledge of the litigant they claim to represent. |
-| AAC / MCA | `aac-manage-case-assignment` — the microservice that owns NoC and case-assignment flows. Runs on port 4454. |
-| AMRAS | `am-role-assignment-service` — stores and evaluates case-scoped role assignments. AAC writes to it on NoC approval. |
-| `caseworker-caa` | The IDAM role (`ORGANISATION_CASE_ACCESS_ADMINISTRATOR`) used by the AAC system account to drive the `notice-of-change-requested` event. |
-| `caseworker-approver` | The IDAM role (`NOC_APPROVER`) used to trigger and approve the `notice-of-change-applied` event. |
+See [Glossary](../reference/glossary.md) for term definitions used in this page.
+

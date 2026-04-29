@@ -109,6 +109,9 @@ Depending on context: (1) the data model used by RAS to persist role assignments
 **RAS** (Role Assignment Service)
 `am-role-assignment-service`. Stores and evaluates role assignments for users and services. The data store queries RAS on every request to determine which roles the caller holds.
 
+**RetainHiddenValue**
+A per-field flag (`RetainHiddenValue=Y` on `CaseEventToFields`, `ComplexTypes`, or `CaseField`) that instructs XUI to include a field's existing value in the submit payload even when its `ShowCondition` is currently false. Without the flag, XUI explicitly sends `null` for hidden fields, which the data store overwrites onto the stored value. The wipe is client-side (XUI), not server-side. Must be paired with a `ShowCondition`; definition-store rejects the combination without one. See [RetainHiddenValue](../explanation/retain-hidden-value.md).
+
 **S2S** (Service-to-Service authentication)
 `service-auth-provider`. Issues short-lived JWT tokens that microservices present to each other (in `ServiceAuthorization` headers) to prove their identity without user credentials.
 

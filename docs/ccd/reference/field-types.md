@@ -44,6 +44,18 @@ confluence:
     title: "CCD Supported Field Types"
     last_modified: "2026-02-17T00:00:00Z"
     space: "RCCD"
+  - id: "1275332156"
+    title: "Customised Date(Time) Display and Entry"
+    last_modified: "2020-02-13T00:00:00Z"
+    space: "RCCD"
+  - id: "1166442774"
+    title: "Collection Table View"
+    last_modified: "2020-02-24T00:00:00Z"
+    space: "RCCD"
+  - id: "221085798"
+    title: "RDM - Display/Referencing metadata, SubComplex, Collection item fields"
+    last_modified: "2018-01-01T00:00:00Z"
+    space: "RCCD"
 confluence_checked_at: "2026-04-29T00:00:00Z"
 ---
 
@@ -80,6 +92,29 @@ CCD field types are declared in the `FieldType` column of the `CaseField` spread
 Notes that apply to most primitives:
 - `Min`/`Max` on `CaseField` set bounds at the top level; for the same primitive used as a sub-field of a Complex type, set them on the element row in `ComplexTypes`.
 - Min/max length validation is **opt-in** — providing a value of length 0 / null does not trigger min-length validation. <!-- CONFLUENCE-ONLY: not verified in source -->
+
+### Default search behaviour per type
+
+The **Search Default Behaviour** column on the canonical Confluence index distinguishes how each primitive matches a search query (independent of any `SearchAlias` keyword variant — see [ES type mappings](#elasticsearch-type-mappings)). Summarised:
+
+| Type | Default match |
+|---|---|
+| `Text` | Fuzzy |
+| `TextArea` | CONTAINS |
+| `Number` | EXACT |
+| `MoneyGBP` | EXACT — pounds-only (any pence) or full pounds + pence |
+| `Date` | EXACT, tolerant of missing day or day+month |
+| `DateTime` | EXACT (subject to entry-format defaulting — see [DisplayContextParameter formats](#displaycontextparameter-formats)) |
+| `PhoneUK` | EXACT |
+| `Email` | EXACT |
+| `Postcode` | EXACT, tolerant with/without spaces |
+| `YesOrNo` | EXACT |
+| `FixedList` / `FixedRadioList` | EXACT |
+| `MultiSelectList` | CONTAINS — matches any selected item |
+| `Document` | EXACT match on `document_filename`, excluding extension |
+| `Label` | n/a — labels not searchable |
+
+<!-- CONFLUENCE-ONLY: the "Default Behaviour" column is a Confluence summary; the data store implements per-type matching via the analyzers configured in `application.yml` and the `keyword` sub-fields used by `SearchAlias`. The column captures the **observed** behaviour at the API surface but is not a single named source-code construct. -->
 
 ## Collection and complex types
 
@@ -362,15 +397,17 @@ Fields with `searchable = false` on `CaseFieldEntity` are excluded from the ES m
 
 | Format | Applies to | Effect |
 |---|---|---|
-| `#TABLE(col1, col2)` | `Collection` fields | Renders collection as a table with named columns |
-| `#DATETIMEDISPLAY(formatstring)` | `Date` / `DateTime` fields | Overrides display format string in read mode |
+| `#TABLE(col1, col2)` | `Collection` fields | Renders collection as a table with named columns. <!-- CONFLUENCE-ONLY: only available in `CaseTypeTab` — not `CaseEventToFields`, `ComplexTypes`, `WorkbasketInputFields`, `WorkbasketResults`, `SearchInputFields`, `SearchResults`. The collapsed view also drives column-based sorting; non-listed sub-fields are only available in the expanded view (`Collection Table View`, Confluence id 1166442774). --> |
+| `#DATETIMEDISPLAY(formatstring)` | `Date` / `DateTime` fields, plus the date-typed metadata fields `[CREATED_DATE]`, `[LAST_MODIFIED_DATE]`, `[LAST_STATE_MODIFIED_DATE]` | Overrides display format string in read mode. Metadata fields are read-only, so only `#DATETIMEDISPLAY` is accepted on them. <!-- CONFLUENCE-ONLY: metadata applicability per `Customised Date(Time) Display and Entry` (Confluence id 1275332156); not modelled in source. --> |
 | `#DATETIMEENTRY(formatstring)` | `Date` / `DateTime` fields | Overrides entry format string; also triggers a date-picker component for `DateTime` fields. The visible elements of the picker depend on the format string. |
 
-Both can be combined, e.g.
+A field can be either entered or displayed in association with a single event, not both, so a given DCP cell carries at most one of `#DATETIMEDISPLAY` / `#DATETIMEENTRY`. Across distinct DCP locations they can be combined, e.g.
 
 ```
 display_context_parameter=#DATETIMEDISPLAY(YY-MM-DD),#DATETIMEENTRY(DD-MM-YY)
 ```
+
+For complex types the format must be defined in advance on the `ComplexTypes` row; the `DisplayContext` of the parent `CaseEventToComplexTypes`/`CaseEventToFields` row chooses which format applies (`Mandatory`/`Optional` ⇒ entry format; `Readonly` ⇒ display format). With no DCP for the chosen mode the default format is used. <!-- CONFLUENCE-ONLY: behaviour documented on Confluence id 1275332156, not directly modelled in the SDK. -->
 
 The format string follows Java [`DateTimeFormatter`](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html) patterns. Common letters:
 
@@ -389,6 +426,10 @@ The format string follows Java [`DateTimeFormatter`](https://docs.oracle.com/jav
 | `[…]` | optional section |
 
 `#` `{` `}` are reserved for future use.
+
+When used as an **entry** formatter, `D` (day-of-year) and `Y` (week-based-year) are rejected at definition import — both clash with the platform's "missing element ⇒ defaults" rule (a missing year defaults to `1970`, a missing day to `01`) and would silently corrupt stored data. Both remain valid as **display** formatters. Time-zone characters are likewise rejected on entry, and `Date` fields additionally reject any time character on entry. <!-- CONFLUENCE-ONLY: rule lives on Confluence id 1275332156 ("Customised Date(Time) Display and Entry"), not modelled directly in the SDK or definition-store source as a single dedicated validator. -->
+
+Search consequences (entry formatter): CCD search uses exact match. The entry format applied on `Workbasket`/`Search` input tabs must be the **same** as the format used on every `CaseEventToFields` row for the same `CaseFieldID`, and must not be changed after data has been written, otherwise users will fail to find existing cases. Apply entry formatters only to **new** Date/DateTime fields. <!-- CONFLUENCE-ONLY: search-format consistency rule documented on Confluence id 1275332156. -->
 
 ## Metadata fields
 
@@ -413,6 +454,19 @@ The data store models metadata in `MetaData.java` (`uk.gov.hmcts.ccd.data.casede
 
 Confluence additionally lists `[JURISDICTION_DESC]`, `[CASE_TYPE_DESC]`, `[STATE_DESC]`, `[CREATED_DATETIME]`, and `[LAST_MODIFIED_DATETIME]` and notes them as "not currently implemented". <!-- CONFLUENCE-ONLY: these references are not in `MetaData.CaseField`; they may be resolved by the display layer (e.g. label markdown) or be planned future work. -->
 
+### Referencing sub-fields and collection items
+
+Beyond bare `[METADATA]` references, layout/result sheets accept two further reference forms (per Confluence id 221085798):
+
+| Form | Example | Usable in |
+|---|---|---|
+| `Complex.SubField` (dot path) | `PersonAddress.Postcode`, `applicant.primaryAddress.AddressLine1` | `SearchResultFields`, `WorkBasketResultFields`, `AuthorisationCaseField`, `CaseTypeTab`, `CaseEventToField` (readonly only); editable form only on `CaseEventToField` |
+| `Collection(<index>).…` | `AliasNames(1).FirstName`, `defendants(1).Address.AddressLine1` | Same set; readonly variants for display, editable variant in `CaseEventToField` |
+| `Collection.…` (no index) | `defendants.Address.AddressLine1` | Result/search tabs — renders the named element across all items |
+| `CaseLink-rooted path` | `financialSettlement.outcomeDate` | Cross-case lookup — must start with a `CaseLink` field; resolves the linked case and returns the named element |
+
+<!-- CONFLUENCE-ONLY: dot/index/cross-link reference forms are documented on Confluence id 221085798 and are not directly modelled in any single SDK class — they are resolved by the data store / front-end layout pipeline at render time. -->
+
 ## See also
 
 - [Data types](../explanation/data-types.md) — conceptual explanation of how CCD's type system works
@@ -421,12 +475,5 @@ Confluence additionally lists `[JURISDICTION_DESC]`, `[CASE_TYPE_DESC]`, `[STATE
 
 ## Glossary
 
-| Term | Definition |
-|---|---|
-| `FieldType` | The type discriminator string stored in the `FieldType` column of the `CaseField` sheet and in `field_type.reference` in the DB |
-| `ListValue<T>` | SDK wrapper class that adds an `id` UUID and a `value` sub-object around every item in a `Collection` field |
-| `base_field_type_id` | Foreign key on `FieldTypeEntity` pointing to the built-in primitive type that a user-defined `FixedList` or `Complex` type extends |
-| `DisplayContextParameter` | Annotation string on a field row (e.g. `#TABLE(...)`, `#DATETIMEDISPLAY(...)`) that modifies rendering behaviour without changing stored type |
-| `ccdIgnoredTypes` | Definition-store config (`application.yml`) listing types that are excluded from Elasticsearch indexing — currently `Label`, `CasePaymentHistoryViewer`, `CaseHistoryViewer`, `WaysToPay`, `FlagLauncher`, `ComponentLauncher` |
-| Marker type | A type with no sub-fields whose only purpose is to instruct ExUI to launch a component (e.g. `FlagLauncher`, `ComponentLauncher`, `WaysToPay`) or render a viewer (`CaseHistoryViewer`, `CasePaymentHistoryViewer`) |
-| Predefined complex type | Platform-provided complex type seeded in `V0001__Base_version.sql` or per-feature migrations; cannot have `AuthorisationComplexType` ACL rows |
+See [Glossary](glossary.md) for term definitions used in this page.
+

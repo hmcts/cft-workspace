@@ -96,6 +96,27 @@ pages:
       - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api
       - apps/ccd/ccd-definition-store-api
 
+  docs/ccd/explanation/retain-hidden-value.md:
+    topic: retain-hidden-value
+    brief: |
+      Explain RetainHiddenValue: a per-field flag that tells data-store to keep a field's value
+      in case data when its ShowCondition evaluates to false, instead of wiping it on submit.
+      Audience: a service-team engineer who has been bitten by silent data loss in a branching
+      wizard. Cover: the default wipe behaviour and *why* CCD wipes by default (cleaning up
+      stale conditional answers); how RetainHiddenValue inverts that; the hard rule that the
+      field must also carry a ShowCondition (HiddenFieldsValidator); the propagation rules
+      inside ComplexType and Collection<T> (parent-hidden vs child-hidden, and what happens
+      to siblings); interaction with mid-event callbacks (callback writes survive even without
+      the flag, but only if the field is still in the response payload); how about_to_submit
+      sees the data; what audit/history records. Include the "I changed my mind back" worked
+      example. End with the failure-mode catalogue: data loss on uncovered branches, validator
+      rejecting RetainHiddenValue without ShowCondition, accidental retention of sensitive
+      fields when permissions change.
+    sources:
+      - apps/ccd/ccd-definition-store-api
+      - apps/ccd/ccd-data-store-api
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+
   docs/ccd/explanation/permissions.md:
     topic: permissions
     brief: |
@@ -284,6 +305,23 @@ pages:
       reference its sub-fields in pages and tabs.
     sources:
       - libs/ccd-config-generator/test-projects
+
+  docs/ccd/how-to/use-retain-hidden-value.md:
+    topic: retain-hidden-value
+    brief: |
+      Recipe for adding RetainHiddenValue to a field. Show both the SDK form (the FieldBuilder
+      method or fluent API in ccd-config-generator) and the JSON form (CaseEventToFields and
+      ComplexTypes columns). Walk through the canonical use case — a Yes/No toggle that
+      reveals dependent fields, and the user wants their answers to survive a flip back to No.
+      Cover: the mandatory ShowCondition pairing; how to scope the flag to a single event vs
+      across all events that touch the field; how to apply it inside a ComplexType sub-field;
+      how to verify locally with cftlib (toggle the field, save, toggle back, inspect case
+      data via the data-store API). Include a short troubleshooting section: "validator rejects
+      my definition", "value still gets wiped", "value retained but stale on display".
+    sources:
+      - libs/ccd-config-generator/test-projects
+      - apps/ccd/ccd-test-definitions
+      - apps/ccd/ccd-data-store-api
 
   docs/ccd/how-to/implement-a-callback.md:
     topic: callbacks

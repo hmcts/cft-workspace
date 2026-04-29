@@ -38,7 +38,7 @@ Issue 2–4 CQL queries via `mcp__atlassian__confluence_search`. Mix:
 Aggregate results across queries. Dedupe by page ID. Skip:
 - Meeting notes, retros, sprint pages, planning pages
 - Single-paragraph stubs
-- Pages last modified > 2 years ago, **unless** the title indicates this is the canonical reference (e.g. "Defining Definition Files - Common Field Types").
+- Pages last modified > 5 years ago, **unless** the title indicates this is the canonical reference (e.g. "Defining Definition Files - Common Field Types").
 
 Filter to **3–7 most topically relevant**. If the search returns nothing useful, write the summary file with `pages_consulted: []` and exit without changing the page.
 
