@@ -34,7 +34,7 @@ RUN set -eux; \
     \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        gh azure-cli docker-ce-cli docker-buildx-plugin docker-compose-plugin; \
+        gh azure-cli docker-ce-cli docker-buildx-plugin docker-compose-plugin socat; \
     \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
@@ -58,8 +58,7 @@ RUN set -eux; \
     if id vscode >/dev/null 2>&1; then userdel -r vscode 2>/dev/null || true; fi; \
     groupadd --gid ${USER_GID} ${USERNAME}; \
     useradd --uid ${USER_UID} --gid ${USER_GID} --create-home --shell /bin/zsh ${USERNAME}; \
-    getent group docker >/dev/null || groupadd --system docker; \
-    usermod -aG sudo,docker ${USERNAME}; \
+    usermod -aG sudo ${USERNAME}; \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME}; \
     chmod 0440 /etc/sudoers.d/${USERNAME}
 

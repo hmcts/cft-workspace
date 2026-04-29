@@ -23,23 +23,25 @@ if [[ -f "$config" ]] && command -v jq >/dev/null; then
     jq 'del(.credsStore)' "$config" > "$tmp" && mv "$tmp" "$config"
 fi
 
-# Reconcile the docker group's GID with the host's mounted socket so the
-# already-built-in `docker` group membership of $USER actually grants socket
-# access. Retargeting the existing group's GID (rather than creating a new
-# group + adding the user at runtime) means new shells see the right GID
-# immediately — no re-login needed.
-sock=/var/run/docker.sock
-if [[ -S "$sock" ]]; then
-    sock_gid=$(stat -c '%g' "$sock")
-    docker_gid=$(getent group docker | cut -d: -f3)
-    if [[ "$sock_gid" != "$docker_gid" ]]; then
-        sudo groupmod --gid "$sock_gid" docker
-    fi
+# Proxy the host's docker socket (bind-mounted at /var/run/docker-host.sock)
+# to a user-owned /var/run/docker.sock via socat. This sidesteps every
+# variant of the "supplementary group already cached at fork time" problem:
+# the in-container socket is owned by $USER (mode 660), so any process
+# running as the container user can talk to docker without group membership.
+host_sock=/var/run/docker-host.sock
+target_sock=/var/run/docker.sock
+if [[ -S "$host_sock" ]] && ! pgrep -fx "socat UNIX-LISTEN:${target_sock}.*" >/dev/null; then
+    sudo rm -f "$target_sock"
+    sudo nohup socat \
+        "UNIX-LISTEN:${target_sock},fork,mode=660,user=$(id -un),backlog=128" \
+        "UNIX-CONNECT:${host_sock}" \
+        >/tmp/docker-socat.log 2>&1 &
+    disown
 fi
 
 # Named-volume cache mounts come up root-owned on first start; chown to the
 # container user so Gradle/Maven/npm/Yarn can write to them.
-for d in "$HOME/.gradle" "$HOME/.m2" "$HOME/.npm" "$HOME/.cache/yarn"; do
+for d in "$HOME/.gradle" "$HOME/.m2" "$HOME/.npm" "$HOME/.cache" "$HOME/.cache/yarn"; do
     if [[ -d "$d" && "$(stat -c '%u' "$d")" != "$(id -u)" ]]; then
         sudo chown "$(id -u):$(id -g)" "$d"
     fi

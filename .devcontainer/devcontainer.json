@@ -23,7 +23,7 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
   "workspaceFolder": "${localWorkspaceFolder}",
   "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind",
     "source=${localEnv:HOME}/.claude,target=/home/hmcts/.claude,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.claude.json,target=/home/hmcts/.claude.json,type=bind,consistency=cached",
     "source=${localEnv:HOME}/.zsh_history,target=/home/hmcts/.zsh_history,type=bind,consistency=cached",
