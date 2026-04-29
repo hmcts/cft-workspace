@@ -14,7 +14,7 @@ The static page list, per-page writing brief, and source-repo hints live in [`pl
 The skill accepts flags (parse from `$ARGUMENTS`):
 
 - *(no flags)* — run the next-incomplete phase across every page in `plan.yaml`.
-- `--phase <name>` — run a single phase: `scaffold | research | synth | examples | link | review`.
+- `--phase <name>` — run a single phase: `scaffold | research | synth | confluence | examples | link | review`.
 - `--page <path>` — restrict to one page (e.g. `docs/ccd/explanation/case-flags.md`).
 - `--topic <token>` — restrict to all pages tagged with that topic in `plan.yaml`.
 - `--rephase <name>` — discard the named phase's outputs and re-run from there.
@@ -28,7 +28,7 @@ The skill accepts flags (parse from `$ARGUMENTS`):
 pages:
   docs/ccd/explanation/case-flags.md:
     topic: case-flags
-    status: stub | drafted | examples-added | linked | reviewed | needs-fix
+    status: stub | drafted | confluence-augmented | examples-added | linked | reviewed | needs-fix
     sources: [<repo:path>, ...]
     last_run: <iso8601>
 ```
@@ -62,6 +62,20 @@ For each page in scope, spawn one `ccd-topic-writer` subagent (parallel, cap 5).
 
 The subagent rewrites the page with TL;DR + prose, sets frontmatter `status: drafted`, and populates `sources`.
 
+### 3.5. confluence
+
+For each page in scope (drafted or later), spawn one `ccd-confluence-augmenter` subagent (parallel, **cap 10** — Confluence rate-bound, not CPU/token-bound). Each agent:
+
+- Searches HMCTS Confluence (via the `atlassian` MCP — see `.mcp.json` at workspace root) for pages topically relevant to the doc page.
+- Fetches the most relevant 3–7, caches them under `docs/ccd/.work/confluence/<page-slug>/<conf-id>.md`.
+- Reconciles every behavioural claim against source code clones — source wins where the two disagree.
+- Updates the page: expands sections, adds missing ones, flags divergences inline (`<!-- DIVERGENCE: ... -->`) and Confluence-only claims (`<!-- CONFLUENCE-ONLY: ... -->`).
+- Writes a per-page summary at `docs/ccd/.work/confluence/<page-slug>/_summary.md`.
+
+Pages flip to `status: confluence-augmented`. Skips `docs/ccd/README.md` and `docs/ccd/reference/glossary.md` (linker-built).
+
+Requires the Atlassian MCP to be reachable. The agent never writes to Confluence (`READ_ONLY_MODE=true` in `.mcp.json`).
+
 ### 4. examples
 
 Spawn one `ccd-examples-curator` agent (single-instance — it edits many pages). The agent walks `apps/ccd/ccd-test-definitions/` and `libs/ccd-config-generator/test-projects/`, mines real examples per feature, and inlines fenced `json` and/or `java` blocks under an `## Example` heading on each page that needs one. Each block carries a leading comment with the source path.
@@ -94,6 +108,8 @@ The orchestrator collates the review summary and prints which pages need human a
 ## Concurrency
 
 Cap parallel subagents at 5 (matches `generate-product-claude-md`). When spawning, send all calls in a single assistant message with multiple tool uses.
+
+**Exception**: the `confluence` phase caps at 10. The user has confirmed plenty of CPU and tokens; Confluence rate is the binding constraint, and ~10 concurrent ~5-fetch jobs stays under typical self-hosted Confluence rate limits.
 
 ## Don't
 

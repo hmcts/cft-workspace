@@ -9,114 +9,352 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/DynamicList.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/YesOrNo.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/CaseLink.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/CaseLocation.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Organisation.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/OrganisationPolicy.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/PreviousOrganisation.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ChangeOrganisationRequest.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Flags.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagDetail.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagLauncher.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ComponentLauncher.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/WaysToPay.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/SearchCriteria.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/SearchParty.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/TTL.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/OrderSummary.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ListValue.java
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/FieldTypeEntity.java
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/CaseFieldEntity.java
+  - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20230723_4590__CCD-4590_CreateCaseMessage.sql
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20230724_4590__CCD-4590_CreateCaseQueriesCollection.sql
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20220923_3686__CCD-3686__JudicialUser.sql
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_2__GA2_CaseAccessGroup.sql
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_4__GA4_CaseAccessGroups_collection.sql
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/DisplayContextParameterValidator.java
+  - ccd-definition-store-api:elastic-search-support/src/main/resources/application.yml
   - ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java
-status: needs-fix
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/search/MetaData.java
+status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
+confluence:
+  - id: "205906788"
+    title: "CCD Supported Field Types"
+    last_modified: "2026-02-17T00:00:00Z"
+    space: "RCCD"
+confluence_checked_at: "2026-04-29T00:00:00Z"
 ---
 
 # Field Types
 
-CCD field types are declared in the `FieldType` column of the `CaseField` spreadsheet sheet (or the `fieldType` attribute in JSON definitions). The definition-store stores them in the `field_type` table (`FieldTypeEntity`) and pushes ES type mappings for each on import. The ccd-config-generator SDK mirrors every built-in type as a Java class under `uk.gov.hmcts.ccd.sdk.type`.
+CCD field types are declared in the `FieldType` column of the `CaseField` spreadsheet sheet (or the `fieldType` attribute in JSON definitions). The definition-store stores them in the `field_type` table (`FieldTypeEntity`), seeded with the platform's built-ins by `V0001__Base_version.sql` and per-feature migrations (`FieldTypeUtils.java:1–64`). Each base type also gets an Elasticsearch mapping at import time, configured in `elastic-search-support/src/main/resources/application.yml`. The ccd-config-generator SDK mirrors most built-in types as Java classes under `uk.gov.hmcts.ccd.sdk.type`.
 
 ## TL;DR
 
-- Every case field has a `FieldType` which controls rendering, validation, and Elasticsearch mapping.
-- Primitive types (`Text`, `Number`, `Date`, etc.) map directly to scalar JSON values; complex types (`Complex`, `Collection`) nest sub-fields.
-- `FixedList`, `MultiSelectList`, and `FixedRadioList` require a companion `FixedLists` sheet defining the allowed codes.
-- `Collection` items are always wrapped in `ListValue<T>` (fields `id` + `value`) in the JSON representation.
-- `DynamicList` and `DynamicMultiSelectList` are populated at runtime via a callback, not from the definition.
-- Predefined platform complex types (`Address`, `Document`, `Organisation`, etc.) cannot have `AuthorisationComplexType` ACL rows — the import validator blocks it (`CaseFieldEntityComplexFieldACLValidatorImpl.java:38–49`).
+- Every case field has a `FieldType` controlling rendering, validation, and Elasticsearch mapping.
+- Primitives (`Text`, `Number`, `Date`, …) map to scalar JSON; complex types (`Complex`, `Collection`) nest sub-fields; markers (`FlagLauncher`, `ComponentLauncher`, `WaysToPay`, `CaseHistoryViewer`, `CasePaymentHistoryViewer`) carry no data.
+- `Min`/`Max` columns on `CaseField` and `ComplexTypes` apply to length (`Text`/`TextArea`/`Email`/`PhoneUK`/`Postcode`), value (`Number`/`MoneyGBP`), date bounds (`Date`/`DateTime`), or item count (`Collection`/`MultiSelectList`). Validation is **only** applied if a value is provided — `Min` does not enforce required.
+- `FixedList`, `MultiSelectList`, `FixedRadioList` need a `FixedLists` companion sheet; `DynamicList`, `DynamicMultiSelectList`, `DynamicRadioList` are populated at runtime via callbacks.
+- `Collection` items are wrapped in `ListValue<T>` (`{"id": "<uuid>", "value": <item>}`).
+- Several launcher / viewer types (`FlagLauncher`, `ComponentLauncher`, `WaysToPay`, `CaseHistoryViewer`, `CasePaymentHistoryViewer`, `Label`) are excluded from Elasticsearch indexing (`application.yml: ccdIgnoredTypes`).
+- Predefined platform complex types (`AddressUK`, `Document`, `Organisation`, …) cannot have `AuthorisationComplexType` ACL rows — the import validator blocks it.
 
 ## Primitive field types
 
-| Type name | JSON discriminator | Semantics | Elasticsearch mapping | Common pitfalls |
+| Type | JSON shape | Min / Max applies to | Backend regex | Elasticsearch mapping |
 |---|---|---|---|---|
-| `Text` | `"Text"` | Unconstrained Unicode string | `{"type":"text","fields":{"keyword":{"type":"keyword"}}}` | No max-length validation at data-store level; add a `RegularExpression` type if pattern enforcement is needed |
-| `TextArea` | `"TextArea"` | Multi-line text; rendered as `<textarea>` | Same as `Text` | Newlines preserved in storage; strip them if downstream systems cannot handle `\n` |
-| `Number` | `"Number"` | Integer or decimal numeric string | `{"type":"double"}` | Stored as a string in the JSON; comparison in show-conditions uses numeric operators |
-| `Money GBP` | `"Money GBP"` | Pence-precision currency; stored as integer pence | `{"type":"long"}` | Value is in **pence**, not pounds. Display formatting (`£`) is UI-only |
-| `Date` | `"Date"` | ISO 8601 date (`YYYY-MM-DD`) | `{"type":"date","format":"yyyy-MM-dd"}` | Time component is truncated — use `DateTime` if time matters |
-| `DateTime` | `"DateTime"` | ISO 8601 date-time (`YYYY-MM-DD'T'HH:mm:ss.SSS`) | `{"type":"date"}` | Time zone is not stored; treated as UTC |
-| `Email` | `"Email"` | Email address; RFC 5322 format validated by UI | `{"type":"keyword"}` | Data-store does not re-validate format; only the UI enforces it |
-| `PhoneUK` | `"PhoneUK"` | UK telephone number string | `{"type":"keyword"}` | No server-side normalisation; `+44` and `07xxx` formats both accepted |
-| `YesOrNo` | `"YesOrNo"` | Enum: `"Yes"` or `"No"` | `{"type":"keyword"}` | SDK class: `YesOrNo` (`YesOrNo.java`). Show-conditions use string literals `"Yes"`/`"No"`, not booleans |
-| `PostCode` | `"PostCode"` | UK postcode; formatted by UI | `{"type":"keyword"}` | Stored as entered — no normalisation to uppercase or removal of spaces |
-| `Label` | `"Label"` | Display-only text; no stored value | Not indexed | Value is never persisted to case data. Set `DisplayContext = READONLY` |
-| `OrderSummary` | `"OrderSummary"` | Payment order summary (predefined complex type) | Object mapping | SDK class: `OrderSummary.java`. Sub-fields: `paymentReference`, `paymentTotal`, `fees` (collection) |
+| `Text` | `{"type": "string"}` | length (chars) — definable on `CaseField` and on element rows in `ComplexTypes`. **Min/max length cannot be set on a `Text` inside a `Collection`** — wrap it in a Complex type instead. <!-- CONFLUENCE-ONLY: not verified in source --> | none | `text` + `.keyword` sub-field (lowercase normalizer) |
+| `TextArea` | `{"type": "string"}` | length | none | same as `Text` |
+| `Number` | `{"type": "number"}` (stored as string) | numeric value (min ≤ value ≤ max) | none | `double` |
+| `MoneyGBP` | string of pennies, e.g. `"1200"` for £12.00 | value in **pennies** | none | `double` <!-- DIVERGENCE: previous draft claimed `long`, but `application.yml:77` maps `MoneyGBP: defaultDouble`. Source wins. --> |
+| `Date` | `{"type": "string", "format": "date"}` — `YYYY-MM-DD` | earliest / latest date (`dd/mm/yyyy` in `Min`/`Max`) | none | `date` (with `ignore_malformed: true`; no `format` constraint at index level) |
+| `DateTime` | `{"type": "string", "format": "date-time"}` — e.g. `"2020-05-05T15:00:00.000"` | earliest / latest date+time | none | `date` (with `ignore_malformed: true`) |
+| `Email` | `{"type": "string"}` | length | RFC 5322 (Spring Boot 3 onwards uses `jakarta.mail` for validation) <!-- CONFLUENCE-ONLY: not verified in source --> | `keyword` (lowercase normalizer) |
+| `PhoneUK` | `{"type": "string"}` | length | `^(((\+44\s?\d{4}|\(?0\d{4}\)?)\s?\d{3}\s?\d{3})|((\+44\s?\d{3}|\(?0\d{3}\)?)\s?\d{3}\s?\d{4})|((\+44\s?\d{2}|\(?0\d{2}\)?)\s?\d{4}\s?\d{4}))(\s?\#(\d{4}|\d{3}))?$` (`V0001__Base_version.sql:2547–2549`) | `text` + `.keyword` + `phone_number_analyzer` <!-- DIVERGENCE: previous draft claimed plain `keyword`, but `application.yml:19,76` defines `ccdPhoneUK` with `text`+keyword sub-field+phone_number_analyzer. Source wins. --> |
+| `Postcode` | `{"type": "string"}` | length | `^([A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA)$` (`V0001__Base_version.sql:2540–2542`) | `keyword` <!-- DIVERGENCE: the type is registered as `Postcode` (lowercase 'c') in `field_type` and `application.yml`, not `PostCode`. Source wins. --> |
+| `YesOrNo` | `{"type": "string", "enum": ["Yes", "No"]}` | n/a | none | `keyword` |
+| `Label` | not persisted | n/a — display only | n/a | **not indexed** (`application.yml: ccdIgnoredTypes`) |
+
+Notes that apply to most primitives:
+- `Min`/`Max` on `CaseField` set bounds at the top level; for the same primitive used as a sub-field of a Complex type, set them on the element row in `ComplexTypes`.
+- Min/max length validation is **opt-in** — providing a value of length 0 / null does not trigger min-length validation. <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ## Collection and complex types
 
-| Type name | JSON discriminator | Semantics | SDK class | Common pitfalls |
+| Type name | JSON shape | Semantics | SDK class | Common pitfalls |
 |---|---|---|---|---|
-| `Collection` | `"Collection"` | Ordered list of sub-type items. Each item serialises as `{"id":"<uuid>","value":<item>}` | `ListValue<T>` (`ListValue.java`) | Always use `List<ListValue<T>>` in Java model classes. Omitting the `id`/`value` wrapper causes deserialisation failures |
-| `Complex` | `"Complex"` | Structured group of named sub-fields; defined in `ComplexTypes` sheet | Varies — e.g. `Address`, `Document`, `Organisation` | Sub-fields inherit ACL from parent by default; override via `AuthorisationComplexType` sheet (dot-notation path) |
-| `MultiSelectList` | `"MultiSelectList"` | Multiple-choice fixed-list; stored as JSON array of codes | None (array of strings) | Requires a `FixedLists` companion sheet. Empty selection stores `[]`, not `null` |
+| `Collection` | array of `{"id": "<uuid-or-null>", "value": <item>}` | Ordered list. Item type is set on `ListElementCode` for primitives, or via `complex_field_type_id` for complex items. Min/max collection size definable in `Min`/`Max` on `CaseField`/`ComplexTypes`. | `List<ListValue<T>>` (`ListValue.java`) | Always wrap items in `ListValue`. ES search behaves as on the child type. |
+| `Complex` | object with named sub-fields | Defined in `ComplexTypes` sheet. | varies (e.g. `Address`, `Document`) | Sub-fields inherit ACL from parent; override via `AuthorisationComplexType` (dot-notation path). |
+| `MultiSelectList` | `["CODE_A", "CODE_B"]` | Multi-select fixed list. Min/max number of selections definable. | none (array of strings) | Empty selection stores `[]`, not `null`. |
 
 ## Fixed-list types
 
-All three require a companion `FixedLists` sheet row per list code (`ListElementCode` + `ListElement` columns are required — `ColumnName.java:172–173`). The `field_type` table stores the parent type with `base_field_type_id` referencing the appropriate base type (`FieldTypeEntity.java:87–89`).
+All three require a companion `FixedLists` sheet row per list code (`ListElementCode` + `ListElement` columns are required). The `field_type` table stores the parent type with `base_field_type_id` referencing the appropriate base type (`FieldTypeEntity.java:87–89`). Min/max on items is **not** enforced.
 
-| Type name | JSON discriminator | Semantics | Common pitfalls |
+| Type | JSON shape | Semantics | Notes |
 |---|---|---|---|
-| `FixedList` | `"FixedList"` | Single-select dropdown; value stored as the `ListElementCode` string | Changing a code after data exists orphans existing values — plan code stability from the start |
-| `FixedRadioList` | `"FixedRadioList"` | Radio-button variant of `FixedList`; same storage format | UI renders all options simultaneously — keep lists short (≤5 items) |
-| `MultiSelectList` | `"MultiSelectList"` | (See above) | — |
+| `FixedList` | `"<ListElementCode>"` | Single-select dropdown | Changing a code after data exists orphans existing values — plan code stability from the start. |
+| `FixedRadioList` | same as `FixedList` | Radio-button variant | Renders all options simultaneously — keep lists short (≤5 items). |
+| `MultiSelectList` | array of codes | (See above) | — |
+
+`FixedListEdit` ("Either select / enter / select and edit. True Combo box of drop-down list and text field") is documented on Confluence as **not a supported type**; it is not registered in `field_type`. <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ## Dynamic list types
 
-Dynamic lists are populated at runtime via an `aboutToStart` or mid-event callback, not from the definition. The callback must return a `DynamicList` or `DynamicMultiSelectList` value in the case data.
+Dynamic lists are populated at runtime via an `aboutToStart` or mid-event callback. The callback response sets both `value` (selected) and `list_items` (available options); both are persisted with the case data:
 
-| Type name | JSON discriminator | Semantics | SDK class | Common pitfalls |
-|---|---|---|---|---|
-| `DynamicList` | `"DynamicList"` | Single-select list whose options arrive at event-open time | `DynamicList` / `DynamicListElement` (`DynamicList.java`); note: not in `FieldType.java` enum but exists as a platform type and SDK class | The callback must set both `list_items` (available options) and `value` (selected item). Omitting `list_items` renders an empty dropdown |
-| `DynamicMultiSelectList` | `"DynamicMultiSelectList"` | Multi-select variant | `DynamicMultiSelectList.java` | Same callback contract as `DynamicList`; selected items arrive as an array in `value` |
-| `DynamicRadioList` | `"DynamicRadioList"` | Radio-button variant populated at runtime | None (platform type) | Same callback contract; use when option count is small and all should be visible simultaneously |
+```json
+"data": {
+  "ListOfJudges": {
+    "value": { "code": "JUDGESMITH", "label": "Judge Smith" },
+    "list_items": [
+      { "code": "JUDGEJUDY", "label": "Judge Judy" },
+      { "code": "JUDGESMITH", "label": "Judge Smith" }
+    ]
+  }
+}
+```
+
+| Type | SDK class | Variant |
+|---|---|---|
+| `DynamicList` | `DynamicList`, `DynamicListElement` (`DynamicList.java`) | single-select dropdown |
+| `DynamicMultiSelectList` | `DynamicMultiSelectList.java` | multi-select; `value` is an array |
+| `DynamicRadioList` | none (platform type) | radio-button single-select; same callback contract |
+
+ES mapping `ccdDynamicList` indexes `value.code` and `value.label` as `text` + `.keyword`; `list_items` is stored but `enabled: false` (not indexed) (`application.yml:43–60`).
+
+Omitting `list_items` in the callback response renders an empty dropdown.
 
 ## Document type
 
-| Type name | JSON discriminator | Semantics | Sub-fields | Common pitfalls |
-|---|---|---|---|---|
-| `Document` | `"Document"` | Binary document managed by CDAM / Document Management | `document_url`, `document_binary_url`, `document_filename`, `document_hash` | SDK class: `Document.java`. Always store the URL returned by CDAM — never a locally constructed URL. `document_hash` is required for secure document access |
+| Sub-field | Type | Notes |
+|---|---|---|
+| `document_url` | string | URL of CDAM document metadata; access via `/cases/documents/{documentId}` |
+| `document_filename` | string | filename |
+| `document_binary_url` | string | URL of the binary; access via `/cases/documents/{documentId}/binary` |
+| `category_id` | string | Category id when the default (defined via `CaseField`/`ComplexTypes`) is overridden by a user. Must match a categoryId defined for the case type or be `NULL`. |
+| `upload_timestamp` | date-time | When the document was uploaded |
+| `document_hash` | string (hash token) | Required by the data store on save when CDAM secure access is enabled (`CaseDocumentService.java`, `DocumentSanitiser.java: DOCUMENT_HASH = "document_hash"`); not modelled in the SDK `Document` POJO. |
+
+The browser file-extension allow-list per service controls which extensions can be uploaded/viewed (e.g. `.pdf, .docx, .png, .jpg`). <!-- CONFLUENCE-ONLY: configured outside SDK/data-store source -->
+
+`required` (per Confluence): `document_url`, `document_binary_url`, `upload_timestamp`. ES mapping (`ccdDocument`) indexes `document_filename` as `text` and stores `document_url`/`document_binary_url`/`category_id`/`upload_timestamp` (the URL fields with `index: false`) (`application.yml:20–40`).
+
+Search: EXACT match on document filename, excluding extension.
 
 ## Address types
 
-All address types are predefined complex types. They cannot carry `AuthorisationComplexType` ACL rows.
+All address types are predefined complex types and cannot carry `AuthorisationComplexType` ACL rows. Sub-field max lengths (per Confluence) are: `AddressLine1` 150, `AddressLine2/3` 50 each, `PostTown` 50, `County` 50, `PostCode` 14, `Country` 50.
 
-| Type name | SDK class | Semantics |
-|---|---|---|
-| `Address` | `Address.java` | Unvalidated UK address (free-text sub-fields) |
-| `AddressUK` | `AddressUK.java` | Validated UK address; sub-fields: `AddressLine1–3`, `PostTown`, `County`, `PostCode`, `Country` |
-| `AddressGlobal` | `AddressGlobal.java` | International address |
-| `AddressGlobalUK` | `AddressGlobalUK.java` | International address with UK-biased postcode field |
+| Type | JSON discriminator registered? | SDK class | Notes |
+|---|---|---|---|
+| `AddressUK` | yes (`field_type.reference = 'AddressUK'`) | `AddressUK.java` extends `Address` | UK-only with postcode lookup. Sub-fields: `AddressLine1`–`3`, `PostTown`, `County`, `PostCode`, `Country`. |
+| `AddressGlobal` | yes | `AddressGlobal.java` | International. Same sub-fields as `AddressUK`. |
+| `AddressGlobalUK` | yes | `AddressGlobalUK.java` | International with UK-biased postcode lookup. |
+| `Address` | **no** — only the SDK base class | `Address.java` (`@ComplexType(name = "Address", generate = false)`) | <!-- DIVERGENCE: previous draft listed `Address` as a usable type with discriminator `"Address"` and called it "free-text". The platform does **not** register a base type called `Address` in `V0001__Base_version.sql` — only `AddressUK`/`AddressGlobal`/`AddressGlobalUK`. The Java `Address` class exists as a shared superclass for the three. Source wins. --> |
+
+Confluence's `AddressUK` and `AddressGlobalUK` JSON shapes include a `UPRN` (Unique Property Reference Number) sub-field with `maxLength: 12`. <!-- CONFLUENCE-ONLY: no `UPRN` registered in the seed migration `V0001__Base_version.sql` and no field on the SDK `Address`/`AddressUK`/`AddressGlobalUK` classes. May be set by the front-end postcode-lookup component without round-tripping into the type schema. -->
 
 ## Platform / integration complex types
 
-These are provided by the platform and consumed by services that need the corresponding feature. All are predefined; service teams annotate Java model fields with the relevant class from `uk.gov.hmcts.ccd.sdk.type`.
+These are seeded by `V0001__Base_version.sql` (and per-feature migrations under `db/migration/`) and exposed by the SDK in `uk.gov.hmcts.ccd.sdk.type`. All are predefined complex types — services use them by annotating Java fields with the corresponding class.
 
-| Type name | SDK class | Semantics | Notes |
+### `CaseLink`
+
+Reference to another CCD case by 16-digit case reference. The `CaseReference` sub-field is constrained by the `TextCaseReference` base regex `(?:^[0-9]{16}$|^\d{4}-\d{4}-\d{4}-\d{4}$)` (`V0001__Base_version.sql:2682–2692`).
+
+Sub-fields: `CaseReference` (Text, required), `ReasonForLink` (collection of `LinkReason`), `CreatedDateTime` (DateTime), `CaseType` (Text — case type id of the linked case). Search: EXACT match — the linked case must exist.
+
+### `CaseLocation`
+
+Sub-fields: `Region`, `BaseLocation` (both Text). Used by hearing/listing integrations.
+
+### `Region` / `BaseLocation`
+
+Registered as base types (`FieldTypeUtils.java:43–44`) and ES-mapped as `defaultText` (`application.yml:87–88`). Confluence marks both as **in development** — temporarily backed by `String` rather than a fixed list, as an interim solution because the standard `FixedList` baseType cannot have service-customised values. <!-- CONFLUENCE-ONLY: "in development" framing not verified in source — types are seeded and indexed today. -->
+
+### `Organisation`
+
+Sub-fields:
+- `OrganisationID` — required, Id from PRD.
+- `OrganisationName` — **deprecated, do not use**. <!-- CONFLUENCE-ONLY: not flagged as deprecated in source `Organisation.java`. -->
+- `OrganisationAddress` — `AddressGlobalUK`. <!-- CONFLUENCE-ONLY: not modelled on the SDK `Organisation.java` POJO. -->
+
+### `OrganisationPolicy`
+
+Carries the representation of a litigant on a case. Sub-fields (per `OrganisationPolicy.java`):
+- `Organisation` — the representing organisation; `null` if self-represented or no representation.
+- `OrgPolicyCaseAssignedRole` — case role assigned to any solicitor representing this litigant. Service- and case-type-specific; valid values defined on the `CaseRoles` tab of the service's definition file. Should be in square brackets, e.g. `[Claimant]`.
+- `OrgPolicyReference` — text meaningful to the organisation (referred to as "Reference" in some Confluence prose).
+- `PreviousOrganisations` — `Set<PreviousOrganisationCollectionItem>` — history of previous representations.
+- `PrepopulateToUsersOrganisation` — `YesOrNo`.
+- `LastNoCRequestedBy` — email of who requested the most recent NoC. <!-- CONFLUENCE-ONLY: not modelled on the SDK `OrganisationPolicy.java` POJO. -->
+
+Confluence marks `OrgPolicyCaseAssignedRole` as `required`.
+
+### `ChangeOrganisationRequest`
+
+Payload for a Notice of Change request. Sub-fields (per `ChangeOrganisationRequest.java`): `OrganisationToAdd`, `OrganisationToRemove`, `CaseRoleId`, `Reason`, `NotesReason`, `ApprovalStatus` (`ChangeOrganisationApprovalStatus` enum), `RequestTimestamp`, `ApprovalRejectionTimestamp`, `CreatedBy`.
+
+### `PreviousOrganisation`
+
+Used inside `OrganisationPolicy.PreviousOrganisations`. Sub-fields: `FromTimestamp` (DateTime), `ToTimestamp` (DateTime), `OrganisationName` (Text), `OrganisationAddress` (`AddressUK`). Confluence marks this as **in development**. <!-- CONFLUENCE-ONLY: type is registered (`FieldTypeUtils.java:33`) and modelled in the SDK; "in development" framing is dated. -->
+
+### `Flags`
+
+Top-level case-flags container — carries the collection of `FlagDetail`. Services typically configure one `Flags` field per party (set `partyName`/`roleOnCase` in `aboutToSubmit` when the party is added) plus a single case-level `Flags` location.
+
+Sub-fields (per `Flags.java`):
+- `partyName` (Text), `roleOnCase` (Text)
+- `details` — `List<ListValue<FlagDetail>>`
+- `groupId` — UUID; set by the service when creating party/case-level collections that should be linked.
+- `visibility` — `FlagVisibility` enum (`Internal` / `External`).
+
+### `FlagDetail`
+
+Item type for `Flags.details`. Sub-fields (per `FlagDetail.java`):
+
+| Field | Type | Confluence-claimed required | Notes |
 |---|---|---|---|
-| `CaseLink` | `CaseLink.java` | Reference to another CCD case by case reference | `LinkReason.java` carries the optional reason code |
-| `CaseLocation` | `CaseLocation.java` | HMCTS court/region location identifier | Used by hearing/listing integrations |
-| `Organisation` | `Organisation.java` | Reference to a PBA organisation | Sub-fields: `OrganisationID`, `OrganisationName` |
-| `OrganisationPolicy` | `OrganisationPolicy.java` | Organisation + case role assignment for NoC | Sub-fields: `Organisation`, `OrgPolicyCaseAssignedRole`, `OrgPolicyReference` |
-| `ChangeOrganisationRequest` | `ChangeOrganisationRequest.java` | Payload for a Notice of Change organisation-change request | `ChangeOrganisationApprovalStatus` enum tracks approval state |
-| `Flags` | `Flags.java` | Case Flags complex type (`@ComplexType(name="Flags", generate=false)`) | Sub-types: `FlagDetail`, `FlagType`, `FlagVisibility` |
-| `SearchCriteria` | `SearchCriteria.java` | Global Search party/criteria config | `SearchParty.java` is the item type |
-| `TTL` | `TTL.java` | Time-to-live / case retention window | `ttlIncrement` on the event controls automatic extension |
-| `ScannedDocument` | `ScannedDocument.java` | Bulk-scan document reference | Related: `ExceptionRecord`, `BulkScanEnvelope` |
-| `OrderSummary` | `OrderSummary.java` | Payments order summary | Sub-fields: `paymentReference`, `paymentTotal`, `fees` collection of `Fee` |
-| `KeyValue` | `KeyValue.java` | Generic string key-value pair | Useful for metadata maps in collections |
+| `name` / `name_cy` | Text | yes | English / Welsh display name |
+| `subTypeValue` / `subTypeValue_cy` | Text | no | selected value from a flag's value-list |
+| `subTypeKey` | Text | no | key for the value-list |
+| `otherDescription` / `otherDescription_cy` | Text | no | free-text when 'other' selected |
+| `flagComment` / `flagComment_cy` | Text | no | qualifying info |
+| `flagUpdateComment` | Text | no | provided when approving / rejecting / changing |
+| `dateTimeModified` | DateTime (`yyyy-MM-dd'T'HH:mm:ss.SSS'Z'`) | no | last status / requestReason change |
+| `dateTimeCreated` | DateTime (`yyyy-MM-dd'T'HH:mm:ss.SSS'Z'`) | yes | created timestamp |
+| `path` | `List<ListValue<String>>` | yes | path taken to reach the flag, e.g. `["Reasonable adjustment", "Mobility support"]` |
+| `hearingRelevant` | YesOrNo | yes | configured per case type in RefData |
+| `flagCode` | Text | yes | unique RefData identifier |
+| `status` | Text | yes | Active / Inactive |
+| `availableExternally` | YesOrNo | no | externally presentable (e.g. Citizen UI). Absent ⇒ No. |
+
+<!-- CONFLUENCE-ONLY: the "required" column comes from Confluence; `FlagDetail.java` does not annotate any field with `@NotNull` — required-ness is enforced server-side / by ExUI rather than at the POJO level. -->
+
+### `FlagLauncher`
+
+Empty marker type (`FlagLauncher.java`: no fields). Tells ExUI to launch the Flag component. Not indexed in ES (`application.yml: ccdIgnoredTypes`).
+
+### `ComponentLauncher`
+
+Empty marker type (`ComponentLauncher.java`: no fields). Tells ExUI a web component needs to be launched; the specific component is configured per-instance via `DisplayContextParameter` in `CaseEventToFields`, `ComplexTypes`, or `CaseTypeTab`. Not indexed in ES.
+
+### `WaysToPay`
+
+Empty marker (`WaysToPay.java`: `@JsonIgnoreType`, no fields). Triggers ExUI's "ways to pay" component. No case data; not indexed.
+
+### `JudicialUser`
+
+Sub-fields (per migration `V20220923_3686__CCD-3686__JudicialUser.sql`): `idamId` (Text), `personalCode` (Text). No SDK class — annotate a Java field with the predefined complex type name `JudicialUser`. <!-- CONFLUENCE-ONLY: SDK does not currently ship a `JudicialUser` POJO. -->
+
+### `CaseAccessGroup` / `CaseAccessGroups`
+
+`CaseAccessGroup` sub-fields (per `V20231114_2__GA2_CaseAccessGroup.sql`): `caseAccessGroupType` (Text, required) — service identifier; `caseAccessGroupId` (Text, required) — id used by CCD when comparing with role assignments. By convention services should only set caseAccessGroups associated with their own type. <!-- CONFLUENCE-ONLY: SDK does not currently ship POJOs for either type. -->
+
+`CaseAccessGroups` is a collection of `CaseAccessGroup` (`V20231114_4__GA4_CaseAccessGroups_collection.sql`).
+
+### `CaseQueriesCollection` / `CaseMessage` / `caseMessageCollection` / `caseMessages`
+
+Standard base types for storing messages between HMCTS and parties (registered in `V20230723_4590__CCD-4590_CreateCaseMessage.sql` and `V20230724_4590__CCD-4590_CreateCaseQueriesCollection.sql`).
+
+`CaseMessage` sub-fields:
+
+| Field | Type | Confluence required | Notes |
+|---|---|---|---|
+| `id` | Text | yes | a GUID |
+| `subject` | Text | yes (≤255 chars) | |
+| `name` | Text | yes (≤255 chars) | submitter |
+| `body` | Text | yes | message content |
+| `attachments` | Collection of `Document` | no | |
+| `isHearingRelated` | YesOrNo | yes | |
+| `hearingDate` | Date | required iff `isHearingRelated == "Yes"` | |
+| `createdOn` | DateTime | yes | |
+| `createdBy` | Text | yes | IDAM id |
+| `parentId` | Text | no | id of message this replies to; empty for thread-initial |
+
+`CaseQueriesCollection` is a complex type whose `caseMessages` sub-field is a `caseMessageCollection` — i.e. `List<ListValue<CaseMessage>>`.
+
+<!-- CONFLUENCE-ONLY: SDK does not currently ship POJOs for `CaseMessage`/`CaseQueriesCollection`; constraints (max-length 255, conditional-required `hearingDate`) are not modelled in source. -->
+
+### `OrderSummary`
+
+Used to store fees on a payment-event. Retrieved on the payment event's `aboutToStart` callback and persisted with case data.
+
+Sub-fields (per `OrderSummary.java`): `PaymentReference` (Text, optional), `PaymentTotal` (Text, required per Confluence), `Fees` (collection of `Fee`, required per Confluence). <!-- DIVERGENCE: the previous draft used lowercased `paymentReference`/`paymentTotal`. Source uses `@JsonProperty("PaymentReference")` and `@JsonProperty("PaymentTotal")`. Source wins. -->
+
+`Fee` (per `Fee.java`) carries `FeeCode`, `FeeAmount`, `FeeVersion` (all required per Confluence) and `FeeDescription` (optional).
+
+```json
+{
+  "PaymentReference": "RC-1521-1095-0964-3143",
+  "Fees": [
+    { "value": { "FeeAmount": "4545", "FeeCode": "FEE0001", "FeeDescription": "First fee", "FeeVersion": "1" } }
+  ],
+  "PaymentTotal": "5000"
+}
+```
+
+Not searchable in CCD (held in an external system).
+
+### `TTL`
+
+Time-to-live / case retention window. Sub-fields (per `TTL.java`):
+- `SystemTTL` — `LocalDate` (`yyyy-MM-dd`). If absent, the case cannot be deleted.
+- `Suspended` — `YesOrNo`. Empty is treated as `No`.
+- `OverrideTTL` — `LocalDate`. Takes precedence over `SystemTTL` when present.
+
+Implemented natively by CCD; services use the type directly without defining it in `ComplexTypes`. The `ttlIncrement` event property automatically extends `SystemTTL`.
+
+### `SearchCriteria` / `SearchParty`
+
+Global Search configuration. `SearchCriteria` (per `SearchCriteria.java`) sub-fields:
+- `OtherCaseReferences` — `List<ListValue<String>>`.
+- `SearchParties` — `List<ListValue<SearchParty>>`.
+
+`SearchParty` (per `SearchParty.java`) sub-fields: `CollectionFieldName`, `Name`, `EmailAddress`, `AddressLine1`, `PostCode`, `DateOfBirth` (`yyyy-MM-dd`), `DateOfDeath` (`yyyy-MM-dd`).
+
+### `LinkReason`
+
+Single reason for a case link. Sub-fields (per `LinkReason.java`): `Reason` (Text, sourced from RefData via ExUI; supports `Other`); `OtherDescription` (Text, free text when `Other` selected).
+
+### `KeyValue`
+
+Generic string key-value pair (`KeyValue.java`). Useful for metadata maps in collections.
+
+### `ScannedDocument` / `ExceptionRecord` / `BulkScanEnvelope`
+
+Bulk-scan integration types (`ScannedDocument.java`, `ExceptionRecord.java`, `BulkScanEnvelope.java`).
+
+### `CaseHistoryViewer` / `CasePaymentHistoryViewer`
+
+Marker types — placeholders that ExUI replaces with a dedicated component:
+
+| Type | Component |
+|---|---|
+| `CaseHistoryViewer` | Renders the case event history. Only **C** of CRUD applies; no configuration options; field label/hint are ignored (built into the component). |
+| `CasePaymentHistoryViewer` | Renders the case's payment history (calls the Payments API behind the scenes). Viewer requires the IDAM role `payments`. |
+
+Both are excluded from Elasticsearch indexing (`application.yml: ccdIgnoredTypes`).
 
 ## Elasticsearch type mappings
 
-The definition-store pushes an ES mapping for every field on import. `CaseMappingGenerator` generates the `data` object mapping by looking up each field's base type string in `CcdElasticSearchProperties.typeMappings` (`BaseTypeMappingGenerator.java:22–25`). Text fields automatically get a `.keyword` sub-field for sort support; `SearchAliasField` entries get an additional `<name>_keyword` alias (`CaseMappingGenerator.java:118–131`).
+The definition-store pushes an ES mapping per field on import. `CaseMappingGenerator` produces the `data` object mapping by looking up each field's base-type string in the `typeMappings` map (`application.yml:69–90`), with named templates in `elasticMappings` (`application.yml:10–60`):
 
-Fields with `searchable = false` on `CaseFieldEntity` are excluded from the ES mapping entirely. The default is `searchable = true` (`CaseFieldEntity.java:32–88`).
+| Mapping template | Definition |
+|---|---|
+| `defaultText` | `text` + `.keyword` (lowercase normalizer, `ignore_above: 256`) |
+| `defaultKeyword` | `keyword` (lowercase normalizer) |
+| `defaultDouble` | `double` |
+| `defaultLong` | `long` |
+| `defaultDate` | `date` (`ignore_malformed: true`) |
+| `ccdPhoneUK` | `text` + `.keyword` + `phone_number_analyzer` |
+| `ccdDocument` | object with the Document sub-field shape (URLs `index: false`) |
+| `ccdDynamicList` | object with `value.code`/`value.label` indexed; `list_items` `enabled: false` |
+
+Fields with `searchable = false` on `CaseFieldEntity` are excluded from the ES mapping entirely (default is `searchable = true`, `CaseFieldEntity.java:32–88`). `SearchAliasField` entries get an additional `<name>_keyword` alias (`CaseMappingGenerator.java:118–131`). Types in `ccdIgnoredTypes` (`Label`, `CasePaymentHistoryViewer`, `CaseHistoryViewer`, `WaysToPay`, `FlagLauncher`, `ComponentLauncher`) are not indexed at all.
 
 ## DisplayContextParameter formats
 
@@ -125,13 +363,60 @@ Fields with `searchable = false` on `CaseFieldEntity` are excluded from the ES m
 | Format | Applies to | Effect |
 |---|---|---|
 | `#TABLE(col1, col2)` | `Collection` fields | Renders collection as a table with named columns |
-| `#DATETIMEDISPLAY(DD/MM/YYYY)` | `Date` / `DateTime` fields | Overrides display format string |
-| `#DATETIMEENTRY(DD/MM/YYYY)` | `Date` / `DateTime` fields | Overrides entry format string |
+| `#DATETIMEDISPLAY(formatstring)` | `Date` / `DateTime` fields | Overrides display format string in read mode |
+| `#DATETIMEENTRY(formatstring)` | `Date` / `DateTime` fields | Overrides entry format string; also triggers a date-picker component for `DateTime` fields. The visible elements of the picker depend on the format string. |
+
+Both can be combined, e.g.
+
+```
+display_context_parameter=#DATETIMEDISPLAY(YY-MM-DD),#DATETIMEENTRY(DD-MM-YY)
+```
+
+The format string follows Java [`DateTimeFormatter`](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html) patterns. Common letters:
+
+| Letter(s) | Meaning |
+|---|---|
+| `G` / `u` / `y` | era / year / year-of-era |
+| `M` / `L` / `d` / `D` | month-of-year (number/text) / day-of-month / day-of-year |
+| `Q` / `q` / `Y` / `w` / `W` | quarter / week-based-year / week-of-week-based-year / week-of-month |
+| `E` / `e` / `c` / `F` | day-of-week (text/number/localized) / week-of-month |
+| `a` / `h` / `K` / `k` | am-pm / clock-hour-of-am-pm 1-12 / hour-of-am-pm 0-11 / clock-hour 1-24 |
+| `H` / `m` / `s` / `S` | hour 0-23 / minute / second / fraction-of-second |
+| `A` / `n` / `N` | milli-of-day / nano-of-second / nano-of-day |
+| `V` / `z` / `O` / `X` / `x` / `Z` | time-zone ID / name / localized offset / offset variants |
+| `p` | pad next |
+| `'…'` / `''` | escape literal text / single quote |
+| `[…]` | optional section |
+
+`#` `{` `}` are reserved for future use.
+
+## Metadata fields
+
+Metadata fields are case-level attributes the platform exposes alongside user-defined data. They are referenced in the spreadsheet using square brackets, e.g. `[CASE_REFERENCE]` (used as-is in an Excel cell). With Markdown interpolation:
+
+```
+Hey, ${ApplicantFullName}, your CCD reference is ${[CASE_REFERENCE]}
+```
+
+The data store models metadata in `MetaData.java` (`uk.gov.hmcts.ccd.data.casedetails.search.MetaData`), where the `CaseField` enum lists every supported metadata field and its DB column. The reference form is `[<NAME>]`.
+
+| Metadata field | Meaning | Source |
+|---|---|---|
+| `[JURISDICTION]` | Current case's jurisdiction | `MetaData.CaseField.JURISDICTION` |
+| `[CASE_TYPE]` | Current case's case type id | `MetaData.CaseField.CASE_TYPE` |
+| `[STATE]` | Current case's state | `MetaData.CaseField.STATE` |
+| `[CASE_REFERENCE]` | 16-digit universal case ID | `MetaData.CaseField.CASE_REFERENCE` |
+| `[CREATED_DATE]` | Case creation date | `MetaData.CaseField.CREATED_DATE` |
+| `[LAST_MODIFIED_DATE]` | Last modification date | `MetaData.CaseField.LAST_MODIFIED_DATE` |
+| `[LAST_STATE_MODIFIED_DATE]` | Last state-change date | `MetaData.CaseField.LAST_STATE_MODIFIED_DATE` |
+| `[SECURITY_CLASSIFICATION]` | Case security classification | `MetaData.CaseField.SECURITY_CLASSIFICATION` |
+
+Confluence additionally lists `[JURISDICTION_DESC]`, `[CASE_TYPE_DESC]`, `[STATE_DESC]`, `[CREATED_DATETIME]`, and `[LAST_MODIFIED_DATETIME]` and notes them as "not currently implemented". <!-- CONFLUENCE-ONLY: these references are not in `MetaData.CaseField`; they may be resolved by the display layer (e.g. label markdown) or be planned future work. -->
 
 ## See also
 
 - [Data types](../explanation/data-types.md) — conceptual explanation of how CCD's type system works
-- [Add a complex type](../how-to/add-a-complex-type.md) — how to define and use a custom complex type in your case definition
+- [Add a complex type](../how-to/add-a-complex-type.md) — define and use a custom complex type in your case definition
 - [Glossary](glossary.md) — definitions for ListElementCode, DisplayContext, etc.
 
 ## Glossary
@@ -141,4 +426,7 @@ Fields with `searchable = false` on `CaseFieldEntity` are excluded from the ES m
 | `FieldType` | The type discriminator string stored in the `FieldType` column of the `CaseField` sheet and in `field_type.reference` in the DB |
 | `ListValue<T>` | SDK wrapper class that adds an `id` UUID and a `value` sub-object around every item in a `Collection` field |
 | `base_field_type_id` | Foreign key on `FieldTypeEntity` pointing to the built-in primitive type that a user-defined `FixedList` or `Complex` type extends |
-| `DisplayContextParameter` | Annotation string on a field row (e.g. `#TABLE(...)`) that modifies rendering behaviour without changing stored type |
+| `DisplayContextParameter` | Annotation string on a field row (e.g. `#TABLE(...)`, `#DATETIMEDISPLAY(...)`) that modifies rendering behaviour without changing stored type |
+| `ccdIgnoredTypes` | Definition-store config (`application.yml`) listing types that are excluded from Elasticsearch indexing — currently `Label`, `CasePaymentHistoryViewer`, `CaseHistoryViewer`, `WaysToPay`, `FlagLauncher`, `ComponentLauncher` |
+| Marker type | A type with no sub-fields whose only purpose is to instruct ExUI to launch a component (e.g. `FlagLauncher`, `ComponentLauncher`, `WaysToPay`) or render a viewer (`CaseHistoryViewer`, `CasePaymentHistoryViewer`) |
+| Predefined complex type | Platform-provided complex type seeded in `V0001__Base_version.sql` or per-feature migrations; cannot have `AuthorisationComplexType` ACL rows |
