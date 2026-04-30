@@ -1,20 +1,33 @@
 #!/usr/bin/env bash
 # Run on every container start.
 #
-# DNS sync: with --network=host, the container shares the host's loopback,
-# so pointing /etc/resolv.conf at 127.0.0.53 routes lookups through the
-# host's stub resolver (which tracks F5 VPN state). On macOS, Docker
-# Desktop already proxies DNS — `uname` distinguishes the cases.
+# DNS sync: on real Linux hosts, --network=host means the container shares
+# the host's loopback, so pointing /etc/resolv.conf at 127.0.0.53 routes
+# lookups through the host's stub resolver (which tracks F5 VPN state).
+# On macOS/Windows under Docker Desktop, the container runs inside a
+# linuxkit VM (uname -r contains "linuxkit") — Docker Desktop proxies DNS
+# at 192.168.65.7, so 127.0.0.53 must be replaced if it leaked in.
+#
+# Hostname: Docker Desktop sometimes assigns a hostname that doesn't
+# resolve, which makes sudo and other tools log warnings or hang. Add a
+# loopback entry to /etc/hosts when getent can't find it.
 #
 # Docker config: strip credsStore so the daemon socket we mount via
 # --network=host doesn't try to invoke a host-side credential helper that
 # isn't on PATH inside the container.
 set -euo pipefail
 
-if [[ "$(uname -s)" == "Linux" ]]; then
+hostname="$(hostname)"
+if ! getent hosts "$hostname" >/dev/null 2>&1; then
+    echo "127.0.1.1 ${hostname}" | sudo tee -a /etc/hosts >/dev/null
+fi
+
+if [[ "$(uname -s)" == "Linux" && "$(uname -r)" != *linuxkit* ]]; then
     if ! grep -q '127.0.0.53' /etc/resolv.conf 2>/dev/null; then
         echo 'nameserver 127.0.0.53' | sudo tee /etc/resolv.conf >/dev/null
     fi
+elif [[ "$(uname -r)" == *linuxkit* ]] && grep -q '127.0.0.53' /etc/resolv.conf 2>/dev/null; then
+    echo 'nameserver 192.168.65.7' | sudo tee /etc/resolv.conf >/dev/null
 fi
 
 config="$HOME/.docker/config.json"
