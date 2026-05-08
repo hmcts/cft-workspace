@@ -52,6 +52,12 @@ if [[ -S "$host_sock" ]] && ! pgrep -fx "socat UNIX-LISTEN:${target_sock}.*" >/d
     disown
 fi
 
+# Bump inotify limits so monorepo dev loops (multiple tsc --watch + nodemon +
+# vite watchers running in parallel) don't exhaust the host kernel's default
+# 128-instance / 8192-watch ceiling. Requires --privileged in runArgs so /proc/sys
+# is mounted rw. Writes go to the host kernel and persist for its uptime.
+sudo sysctl -w fs.inotify.max_user_instances=512 fs.inotify.max_user_watches=524288 >/dev/null 2>&1 || true
+
 # Named-volume cache mounts come up root-owned on first start; chown to the
 # container user so Gradle/Maven/npm/Yarn can write to them.
 for d in "$HOME/.gradle" "$HOME/.m2" "$HOME/.npm" "$HOME/.cache" "$HOME/.cache/yarn"; do

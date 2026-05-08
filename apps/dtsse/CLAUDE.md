@@ -38,5 +38,5 @@ This is a template, not a live service, so no HMCTS platform integrations (IDAM,
 - Teams initialise a new service by running `./.github/scripts/init.sh`, which prompts for team and product name, replaces all template tokens throughout the codebase, then removes itself.
 - The monorepo uses Prisma with a schema-discovery step (`libs/postgres-prisma/src/collate-schema.ts`) that aggregates per-module Prisma schema files before generating the client — feature modules contribute their own `prisma/` folders.
 - CI uses GitHub Actions (not the HMCTS CNP Jenkins pipeline), so there is no `Jenkinsfile_CNP` or `Jenkinsfile_Pipeline`.
-- Asset compilation uses Vite; the `apps/web` build distinguishes `production` vs `default` export conditions via `NODE_OPTIONS='--conditions=production'`.
+- Workspace libs use the Turborepo "Compiled Package" pattern — `exports.default` points at `dist/index.js` and apps consume the compiled output in both dev and prod. Dev orchestration runs each lib's `tsc --watch` continuously via `turbo run dev` (declared `persistent: true` in `turbo.json`); apps' nodemon ignores `libs/*/src/**` so it only restarts on lib `dist` emits.
 - The `workflow.claude.yml` workflow runs AI-powered security scans via Claude as part of the PR pipeline.

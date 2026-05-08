@@ -3,7 +3,7 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "runArgs": ["--network=host"],
+  "runArgs": ["--network=host", "--privileged"],
   "forwardPorts": [],
   "otherPortsAttributes": {
     "onAutoForward": "ignore"
@@ -15,7 +15,18 @@
         "remote.autoForwardPortsFallback": 0,
         "remote.restoreForwardedPorts": false,
         "files.autoSave": "onFocusChange",
-        "terminal.integrated.defaultProfile.linux": "zsh"
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "files.watcherExclude": {
+          "**/node_modules/**": true,
+          "**/dist/**": true,
+          "**/build/**": true,
+          "**/.yarn/**": true,
+          "**/.turbo/**": true,
+          "**/.gradle/**": true,
+          "**/coverage/**": true,
+          "**/.git/objects/**": true,
+          "**/.git/subtree-cache/**": true
+        }
       }
     }
   },

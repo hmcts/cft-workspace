@@ -58,6 +58,7 @@ Build/release using the shared CNP pipeline. See [`common-pipeline/`](common-pip
 - [PostgreSQL single→flexible migration (Portal)](postgresql-singleserver-to-flexibleserver-migration-portal.md) _(planned)_
 - [Profile a Java app in AKS](profile-java-app-in-aks.md) _(planned)_
 - [PR URL preview environments](pr-url.md) _(planned)_
+- [Publishing container images to ACR from GitHub Actions](publishing-acr-images.md)
 - [Update Redis to zone-redundant](update-redis-with-zone-redundant.md) _(planned)_
 
 ## Environments
