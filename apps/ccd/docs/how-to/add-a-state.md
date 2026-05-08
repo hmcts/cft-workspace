@@ -214,9 +214,9 @@ curl -s "http://localhost:4013/ccd-persistence/cases?case-refs={caseRef}" \
 
 ## See also
 
-- [`docs/ccd/explanation/states-and-transitions.md`](../explanation/states-and-transitions.md) — conceptual overview of the state machine model
-- [`docs/ccd/how-to/add-an-event.md`](add-an-event.md) — full event wiring guide including callbacks
-- [`docs/ccd/reference/permissions.md`](../reference/permissions.md) — permission constants and access class patterns
+- [`apps/ccd/docs/explanation/states-and-transitions.md`](../explanation/states-and-transitions.md) — conceptual overview of the state machine model
+- [`apps/ccd/docs/how-to/add-an-event.md`](add-an-event.md) — full event wiring guide including callbacks
+- [`apps/ccd/docs/reference/permissions.md`](../reference/permissions.md) — permission constants and access class patterns
 
 ## Glossary
 

@@ -15,6 +15,7 @@
 !/apps/*/CLAUDE.md
 !/apps/*/README.md
 !/apps/*/.gitkeep
+!/apps/*/docs/
 
 # 3) libs/ and platops/ contain only repo clones; allow only .gitkeep at the top.
 /libs/*
@@ -31,7 +32,7 @@
 /.claude/*.env
 
 # 6) CCD docs pipeline working state
-/docs/ccd/.work/
+/apps/ccd/docs/.work/
 
 # 7) IDE / OS noise
 .DS_Store

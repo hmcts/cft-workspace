@@ -119,9 +119,9 @@ SSCS uses `rse-cft-lib` (`bootWithCCD`) to run an embedded CCD stack locally, wh
 
 ## See also
 
-- [`docs/ccd/explanation/callbacks.md`](callbacks.md) — how CCD invokes aboutToSubmit/submitted webhooks; same auth model applies to HMC callbacks
-- [`docs/ccd/explanation/work-allocation.md`](work-allocation.md) — parallel feature-flag pattern for WA integration; WA also creates Listing Officer tasks (`ScheduleHMCHearing`) tied to hearing events
-- [`docs/ccd/explanation/case-flags.md`](case-flags.md) — case-flag codes (`PF*`, `RA*`, `SM*`, `CF*`) consumed by the hearings payload
+- [`apps/ccd/docs/explanation/callbacks.md`](callbacks.md) — how CCD invokes aboutToSubmit/submitted webhooks; same auth model applies to HMC callbacks
+- [`apps/ccd/docs/explanation/work-allocation.md`](work-allocation.md) — parallel feature-flag pattern for WA integration; WA also creates Listing Officer tasks (`ScheduleHMCHearing`) tied to hearing events
+- [`apps/ccd/docs/explanation/case-flags.md`](case-flags.md) — case-flag codes (`PF*`, `RA*`, `SM*`, `CF*`) consumed by the hearings payload
 
 ## Glossary
 

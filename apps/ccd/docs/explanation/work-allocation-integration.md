@@ -281,9 +281,9 @@ Onboarding checklist (per WA programme):
 
 ## See also
 
-- [`docs/ccd/explanation/callbacks.md`](callbacks.md) — how `aboutToSubmit` and `submitted` callbacks relate to the event lifecycle before WA messages are published
-- [`docs/ccd/explanation/work-basket.md`](work-basket.md) — how XUI surfaces WA tasks alongside the work-basket views configured in CCD
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions for DMN, outbox pattern, role assignment
+- [`apps/ccd/docs/explanation/callbacks.md`](callbacks.md) — how `aboutToSubmit` and `submitted` callbacks relate to the event lifecycle before WA messages are published
+- [`apps/ccd/docs/explanation/work-basket.md`](work-basket.md) — how XUI surfaces WA tasks alongside the work-basket views configured in CCD
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions for DMN, outbox pattern, role assignment
 
 ## Glossary
 

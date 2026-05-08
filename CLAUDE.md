@@ -30,7 +30,9 @@ General patterns:
 
 ## CCD documentation
 
-CCD is the case-data spine of most service-team products in this workspace, and has its own dedicated documentation tree at [`docs/ccd/`](docs/ccd/) covering case-type model, events/callbacks, permissions, decentralisation, documents/CDAM, search, NoC, case flags, work-basket, and more. Maintained by `/generate-ccd-docs`. Companion skills: `/ccd-explain`, `/ccd-find-example`, `/ccd-trace-callback`, `/ccd-doc-drift`.
+CCD is the case-data spine of most service-team products in this workspace, and has its own dedicated documentation tree at [`apps/ccd/docs/`](apps/ccd/docs/) covering case-type model, events/callbacks, permissions, decentralisation, documents/CDAM, search, NoC, case flags, work-basket, and more. Maintained by `/generate-ccd-docs`. Companion skills: `/ccd-explain`, `/ccd-find-example`, `/ccd-trace-callback`, `/ccd-doc-drift`.
+
+Team-level documentation lives at `apps/<team>/docs/` (CCD is the first; future teams should follow). Workspace-scoped docs (Diátaxis tree, taxonomy reference, etc.) stay under `docs/`.
 
 ## Cross-repo relationships
 

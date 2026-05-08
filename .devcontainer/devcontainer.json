@@ -10,18 +10,11 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": [
-        "vscjava.vscode-java-pack",
-        "vscjava.vscode-gradle"
-      ],
       "settings": {
         "remote.autoForwardPorts": false,
         "remote.autoForwardPortsFallback": 0,
         "remote.restoreForwardedPorts": false,
         "files.autoSave": "onFocusChange",
-        "java.configuration.updateBuildConfiguration": "automatic",
-        "java.import.gradle.enabled": true,
-        "java.compile.nullAnalysis.mode": "disabled",
         "terminal.integrated.defaultProfile.linux": "zsh"
       }
     }

@@ -11,7 +11,7 @@ You may read source repos directly (unlike the topic writer). You may not edit s
 
 ## Inputs
 
-You're given the absolute path to one page (e.g. `docs/ccd/explanation/case-flags.md`).
+You're given the absolute path to one page (e.g. `apps/ccd/docs/explanation/case-flags.md`).
 
 ## Procedure
 

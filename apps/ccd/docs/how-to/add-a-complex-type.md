@@ -252,7 +252,7 @@ The tab builder is available via `ConfigBuilder.tab(tabId, tabLabel)` — see `C
 
 The same dot-path syntax applies to:
 
-- **Show conditions** anywhere in the definition (page-level, tab-level, sub-field-level) — see [`docs/ccd/reference/show-conditions.md`](../reference/show-conditions.md).
+- **Show conditions** anywhere in the definition (page-level, tab-level, sub-field-level) — see [`apps/ccd/docs/reference/show-conditions.md`](../reference/show-conditions.md).
 - **AuthorisationComplexType** rows for per-element CRUD (§5).
 - Search and work-basket input filters.
 
@@ -291,7 +291,7 @@ Example (from Confluence) — Citizen has full CRUD; Court Staff can only update
 | `ApplicantDetails` | `ApplicantAddress` | `RU` | Court Staff |
 | `ApplicantDetails` | `ApplicantAddress.PostCode` | `RU` | Court Staff |
 
-<!-- source: docs/ccd/.work/confluence/how-to-add-a-complex-type/1134527861.md (Confluence "CRUD on Complex Types", RCCD) -->
+<!-- source: apps/ccd/docs/.work/confluence/how-to-add-a-complex-type/1134527861.md (Confluence "CRUD on Complex Types", RCCD) -->
 
 ---
 
@@ -319,7 +319,7 @@ With No (the default):
 - Setting `RetainHiddenValue = Yes` on a parent complex while a sub-element has `RetainHiddenValue = No` is valid; the inverse (parent No, child Yes) is **invalid and fails import**.
 - `RetainHiddenValue = Yes` without an associated `FieldShowCondition` also fails import validation.
 
-<!-- source: docs/ccd/.work/confluence/how-to-add-a-complex-type/1457305822.md (Confluence "Retain Hidden Values", RCCD) -->
+<!-- source: apps/ccd/docs/.work/confluence/how-to-add-a-complex-type/1457305822.md (Confluence "Retain Hidden Values", RCCD) -->
 <!-- CONFLUENCE-ONLY: import-validation rule that RetainHiddenValue=Yes requires a FieldShowCondition is enforced server-side in ccd-definition-store-api but not visible through the SDK at generation time. -->
 
 The SDK exposes this via the `retainHiddenValue` boolean on `mandatory(...)`, `optional(...)`, `readonly(...)` and `complex(...)` — see [`FieldCollection.java`](https://github.com/hmcts/ccd-config-generator).
@@ -351,7 +351,7 @@ When the parent is itself a service-defined complex type, the `ListElementCode` 
 | --- | --- | --- | --- |
 | `Litigant` | `Applicant` | `MyOrgPolicy.OrgPolicyCaseAssignedRole` | `[ApplicantSolicitor]` |
 
-<!-- source: docs/ccd/.work/confluence/how-to-add-a-complex-type/1457315279.md (Confluence "Default Field Values", RCCD) and 1384842314.md ("DefaultValue column on EventToComplexType") -->
+<!-- source: apps/ccd/docs/.work/confluence/how-to-add-a-complex-type/1457315279.md (Confluence "Default Field Values", RCCD) and 1384842314.md ("DefaultValue column on EventToComplexType") -->
 
 ---
 
@@ -430,10 +430,10 @@ public class SimpleCaseData {
 
 ## See also
 
-- [`docs/ccd/reference/field-types.md`](../reference/field-types.md) — full list of CCD primitive types and their Java mappings
-- [`docs/ccd/how-to/add-a-collection-field.md`](../how-to/add-a-collection-field.md) — wrapping a complex type in a `Collection` using `ListValue<T>`
-- [`docs/ccd/explanation/case-type-model.md`](../explanation/case-type-model.md) — how ComplexTypes fit into the overall case-type model
-- [`docs/ccd/reference/show-conditions.md`](../reference/show-conditions.md) — dot-path syntax for sub-field show-conditions
+- [`apps/ccd/docs/reference/field-types.md`](../reference/field-types.md) — full list of CCD primitive types and their Java mappings
+- [`apps/ccd/docs/how-to/add-a-collection-field.md`](../how-to/add-a-collection-field.md) — wrapping a complex type in a `Collection` using `ListValue<T>`
+- [`apps/ccd/docs/explanation/case-type-model.md`](../explanation/case-type-model.md) — how ComplexTypes fit into the overall case-type model
+- [`apps/ccd/docs/reference/show-conditions.md`](../reference/show-conditions.md) — dot-path syntax for sub-field show-conditions
 
 ## Glossary
 

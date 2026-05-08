@@ -10,7 +10,7 @@
 pages:
 
   # --- Tutorials ---
-  docs/ccd/tutorials/first-case-type-config-generator.md:
+  apps/ccd/docs/tutorials/first-case-type-config-generator.md:
     topic: tutorial-config-generator
     brief: |
       Walk a reader from zero to a working minimal case type using the ccd-config-generator SDK.
@@ -21,7 +21,7 @@ pages:
       - libs/ccd-config-generator/test-projects/e2e
       - libs/ccd-config-generator/sdk/ccd-config-generator
 
-  docs/ccd/tutorials/first-case-type-json.md:
+  apps/ccd/docs/tutorials/first-case-type-json.md:
     topic: tutorial-json
     brief: |
       Walk a reader through writing a CCD case-type definition in JSON form (the older spreadsheet model).
@@ -32,7 +32,7 @@ pages:
       - apps/ccd/ccd-test-definitions/src/main/resources
       - apps/ccd/ccd-definition-store-api
 
-  docs/ccd/tutorials/running-with-cftlib.md:
+  apps/ccd/docs/tutorials/running-with-cftlib.md:
     topic: tutorial-cftlib
     brief: |
       Show a service-team engineer how to boot the full CCD stack locally via rse-cft-lib (cftlib),
@@ -43,17 +43,17 @@ pages:
       - libs/rse-cft-lib
 
   # --- Explanation ---
-  docs/ccd/explanation/overview.md:
+  apps/ccd/docs/explanation/overview.md:
     topic: overview
     brief: |
       The "what is CCD" page. Cover the case-type model (jurisdiction → case type → states, events,
       tabs, fields, complex types). Use a small example. Aim ~300 lines max. Reader should leave
-      able to read any other page in docs/ccd/ without further setup.
+      able to read any other page in apps/ccd/docs/ without further setup.
     sources:
       - libs/ccd-config-generator/sdk/ccd-config-generator
       - apps/ccd/ccd-definition-store-api
 
-  docs/ccd/explanation/architecture.md:
+  apps/ccd/docs/explanation/architecture.md:
     topic: architecture
     brief: |
       Map the runtime: ccd-data-store-api ↔ ccd-definition-store-api ↔ aac-manage-case-assignment
@@ -65,7 +65,7 @@ pages:
       - apps/ccd/ccd-definition-store-api
       - apps/ccd/aac-manage-case-assignment
 
-  docs/ccd/explanation/event-model.md:
+  apps/ccd/docs/explanation/event-model.md:
     topic: event-model
     brief: |
       Explain the lifecycle of a single event: pages, fields shown, mid-event callbacks for page
@@ -75,7 +75,7 @@ pages:
       - libs/ccd-config-generator/sdk/ccd-config-generator
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/explanation/callbacks.md:
+  apps/ccd/docs/explanation/callbacks.md:
     topic: callbacks
     brief: |
       The callback contract — what data-store sends, what the service must return, error semantics
@@ -85,7 +85,7 @@ pages:
       - apps/ccd/ccd-data-store-api
       - libs/ccd-config-generator/sdk/ccd-config-generator
 
-  docs/ccd/explanation/data-types.md:
+  apps/ccd/docs/explanation/data-types.md:
     topic: data-types
     brief: |
       The vocabulary of built-in CCD field types — primitives, Document, DynamicList, DynamicRadioList,
@@ -96,7 +96,7 @@ pages:
       - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api
       - apps/ccd/ccd-definition-store-api
 
-  docs/ccd/explanation/retain-hidden-value.md:
+  apps/ccd/docs/explanation/retain-hidden-value.md:
     topic: retain-hidden-value
     brief: |
       Explain RetainHiddenValue: a per-field flag that tells data-store to keep a field's value
@@ -117,7 +117,7 @@ pages:
       - apps/ccd/ccd-data-store-api
       - libs/ccd-config-generator/sdk/ccd-config-generator
 
-  docs/ccd/explanation/permissions.md:
+  apps/ccd/docs/explanation/permissions.md:
     topic: permissions
     brief: |
       CRUD permissions on the case-type definition: AuthorisationCaseEvent, AuthorisationCaseField,
@@ -128,7 +128,7 @@ pages:
       - apps/ccd/ccd-definition-store-api
       - libs/ccd-config-generator/sdk/ccd-config-generator
 
-  docs/ccd/explanation/role-assignment.md:
+  apps/ccd/docs/explanation/role-assignment.md:
     topic: role-assignment
     brief: |
       Case-level RBAC: am-role-assignment-service, OrganisationPolicy, RoleAssignment lifecycle,
@@ -137,7 +137,7 @@ pages:
       - apps/ccd/aac-manage-case-assignment
       - libs/ccd-config-generator/sdk/ccd-config-generator
 
-  docs/ccd/explanation/decentralisation.md:
+  apps/ccd/docs/explanation/decentralisation.md:
     topic: decentralisation
     brief: |
       What "decentralised CCD" means: the service holds case data in its own DB and exposes
@@ -148,7 +148,7 @@ pages:
       - apps/ccd/ccd-data-store-api
       - libs/ccd-config-generator/sdk/decentralised-runtime
 
-  docs/ccd/explanation/documents-and-cdam.md:
+  apps/ccd/docs/explanation/documents-and-cdam.md:
     topic: documents-and-cdam
     brief: |
       How documents flow: upload via case-document-am-api, hash-token returned, referenced in the
@@ -158,7 +158,7 @@ pages:
       - libs/rse-cft-lib/projects/ccd-case-document-am-api
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/explanation/search-architecture.md:
+  apps/ccd/docs/explanation/search-architecture.md:
     topic: search
     brief: |
       Three search surfaces — work-basket inputs/results, global search (SearchCriteria/SearchParty),
@@ -168,7 +168,7 @@ pages:
       - apps/ccd/ccd-data-store-api
       - apps/ccd/ccd-definition-store-api
 
-  docs/ccd/explanation/notice-of-change.md:
+  apps/ccd/docs/explanation/notice-of-change.md:
     topic: notice-of-change
     brief: |
       The NoC flow: solicitor identifies themselves, challenge questions, AAC checks, case-access
@@ -178,7 +178,7 @@ pages:
       - apps/ccd/aac-manage-case-assignment
       - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/NoticeOfChange.java
 
-  docs/ccd/explanation/case-flags.md:
+  apps/ccd/docs/explanation/case-flags.md:
     topic: case-flags
     brief: |
       The case-flag model: party-level vs case-level flags, the Flags complex field, status lifecycle.
@@ -187,7 +187,7 @@ pages:
       - libs/ccd-config-generator/sdk/ccd-config-generator
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/explanation/work-basket.md:
+  apps/ccd/docs/explanation/work-basket.md:
     topic: work-basket
     brief: |
       Work-basket inputs/results in the definition, what XUI renders from them, common patterns.
@@ -196,7 +196,7 @@ pages:
       - apps/ccd/ccd-definition-store-api
       - libs/ccd-config-generator/sdk/ccd-config-generator
 
-  docs/ccd/explanation/work-allocation-integration.md:
+  apps/ccd/docs/explanation/work-allocation-integration.md:
     topic: work-allocation
     brief: |
       How a CCD-based service produces tasks for wa-task-management-api. The case-event-to-task DMN
@@ -206,7 +206,7 @@ pages:
       - libs/ccd-config-generator/sdk
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/explanation/linked-cases.md:
+  apps/ccd/docs/explanation/linked-cases.md:
     topic: linked-cases
     brief: |
       The CaseLink field type, the linked-cases UI flow, what the case-type definition needs to
@@ -215,7 +215,7 @@ pages:
       - libs/ccd-config-generator/sdk/ccd-config-generator
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/explanation/hearings-integration.md:
+  apps/ccd/docs/explanation/hearings-integration.md:
     topic: hearings
     brief: |
       HMC integration: case fields the service exposes, hmc-cft-hearing-service-api callbacks,
@@ -223,7 +223,7 @@ pages:
     sources:
       - libs/ccd-config-generator/sdk
 
-  docs/ccd/explanation/stitching.md:
+  apps/ccd/docs/explanation/stitching.md:
     topic: stitching
     brief: |
       em-stitching-api integration for document assembly. When services use it, what the data
@@ -231,7 +231,7 @@ pages:
     sources:
       - libs/ccd-config-generator/sdk
 
-  docs/ccd/explanation/translation.md:
+  apps/ccd/docs/explanation/translation.md:
     topic: translation
     brief: |
       ts-translation-service callback flow. Where in the case-type definition the service opts in.
@@ -239,7 +239,7 @@ pages:
     sources:
       - libs/ccd-config-generator/sdk
 
-  docs/ccd/explanation/supplementary-data.md:
+  apps/ccd/docs/explanation/supplementary-data.md:
     topic: supplementary-data
     brief: |
       Supplementary data: what it is, who reads/writes it, its lifecycle vs case data. Short
@@ -247,14 +247,14 @@ pages:
     sources:
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/explanation/audit-and-history.md:
+  apps/ccd/docs/explanation/audit-and-history.md:
     topic: audit
     brief: |
       Event history, case data versions, the audit trail XUI shows. What's stored where.
     sources:
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/explanation/definition-import.md:
+  apps/ccd/docs/explanation/definition-import.md:
     topic: definition-import
     brief: |
       The deploy path for case-type definitions: ccd-admin-web upload → ccd-definition-store-api
@@ -265,7 +265,7 @@ pages:
       - apps/ccd/ccd-definition-store-api
 
   # --- How-to ---
-  docs/ccd/how-to/add-an-event.md:
+  apps/ccd/docs/how-to/add-an-event.md:
     topic: event-model
     brief: |
       End-to-end recipe: add an event called `myEvent` to an existing case type. Cover
@@ -274,7 +274,7 @@ pages:
     sources:
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/add-a-state.md:
+  apps/ccd/docs/how-to/add-a-state.md:
     topic: overview
     brief: |
       Add a new state to an existing case type. Cover the State enum, transitions, permissions,
@@ -282,7 +282,7 @@ pages:
     sources:
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/add-a-tab.md:
+  apps/ccd/docs/how-to/add-a-tab.md:
     topic: overview
     brief: |
       Add a new tab to a case type. Cover tab fields, ordering, role-based visibility, what
@@ -290,7 +290,7 @@ pages:
     sources:
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/add-a-page-mid-event-callback.md:
+  apps/ccd/docs/how-to/add-a-page-mid-event-callback.md:
     topic: callbacks
     brief: |
       Add a multi-page event with a mid-event callback that mutates field values between pages.
@@ -298,7 +298,7 @@ pages:
     sources:
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/add-a-complex-type.md:
+  apps/ccd/docs/how-to/add-a-complex-type.md:
     topic: data-types
     brief: |
       Define a ComplexType (e.g. a nested address with extra fields), add it to a case field,
@@ -306,7 +306,7 @@ pages:
     sources:
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/use-retain-hidden-value.md:
+  apps/ccd/docs/how-to/use-retain-hidden-value.md:
     topic: retain-hidden-value
     brief: |
       Recipe for adding RetainHiddenValue to a field. Show both the SDK form (the FieldBuilder
@@ -323,7 +323,7 @@ pages:
       - apps/ccd/ccd-test-definitions
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/how-to/implement-a-callback.md:
+  apps/ccd/docs/how-to/implement-a-callback.md:
     topic: callbacks
     brief: |
       Wire a callback handler in a Spring Boot service. Cover the controller method, input/output
@@ -332,7 +332,7 @@ pages:
       - libs/ccd-config-generator/test-projects
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/how-to/add-permissions.md:
+  apps/ccd/docs/how-to/add-permissions.md:
     topic: permissions
     brief: |
       Grant a new role CRUD on a case field, an event, and a state. Show both SDK form and JSON
@@ -341,7 +341,7 @@ pages:
       - libs/ccd-config-generator/test-projects
       - apps/ccd/ccd-test-definitions
 
-  docs/ccd/how-to/store-a-document.md:
+  apps/ccd/docs/how-to/store-a-document.md:
     topic: documents-and-cdam
     brief: |
       Upload a document to CDAM, embed the reference in the case data, retrieve it later. Cover
@@ -349,7 +349,7 @@ pages:
     sources:
       - libs/rse-cft-lib/projects/ccd-case-document-am-api
 
-  docs/ccd/how-to/enable-global-search.md:
+  apps/ccd/docs/how-to/enable-global-search.md:
     topic: search
     brief: |
       Add SearchCriteria + SearchParty to a case type, what fields they need, how XUI surfaces
@@ -357,7 +357,7 @@ pages:
     sources:
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/enable-work-basket.md:
+  apps/ccd/docs/how-to/enable-work-basket.md:
     topic: work-basket
     brief: |
       Add a work-basket configuration to a case type — inputs and results — so caseworkers can
@@ -365,7 +365,7 @@ pages:
     sources:
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/enable-query-search.md:
+  apps/ccd/docs/how-to/enable-query-search.md:
     topic: search
     brief: |
       Wire SearchInputs / SearchResults for the ES-backed query search. Note the ES index seeding
@@ -374,7 +374,7 @@ pages:
       - apps/ccd/ccd-definition-store-api
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/implement-noc.md:
+  apps/ccd/docs/how-to/implement-noc.md:
     topic: notice-of-change
     brief: |
       Implement Notice of Change end-to-end: NoC event, ChallengeQuestion, ChangeOrganisationRequest
@@ -383,7 +383,7 @@ pages:
       - libs/ccd-config-generator/test-projects
       - apps/ccd/aac-manage-case-assignment
 
-  docs/ccd/how-to/implement-case-flags.md:
+  apps/ccd/docs/how-to/implement-case-flags.md:
     topic: case-flags
     brief: |
       Add case-level and party-level flags. Cover the Flags complex field, the management event,
@@ -391,7 +391,7 @@ pages:
     sources:
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/implement-reasonable-adjustments.md:
+  apps/ccd/docs/how-to/implement-reasonable-adjustments.md:
     topic: case-flags
     brief: |
       Reasonable Adjustments uses the case-flags machinery with a constrained vocabulary of flag
@@ -399,7 +399,7 @@ pages:
     sources:
       - libs/ccd-config-generator/test-projects
 
-  docs/ccd/how-to/decentralise-a-service.md:
+  apps/ccd/docs/how-to/decentralise-a-service.md:
     topic: decentralisation
     brief: |
       Migrate a service to decentralised CCD: implement the /ccd-persistence/* endpoints, register
@@ -408,7 +408,7 @@ pages:
       - libs/ccd-config-generator/sdk/decentralised-runtime
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/how-to/debug-with-cftlib.md:
+  apps/ccd/docs/how-to/debug-with-cftlib.md:
     topic: tutorial-cftlib
     brief: |
       Practical recipes: attach a debugger to a callback, replay an event from saved JSON, inspect
@@ -416,7 +416,7 @@ pages:
     sources:
       - libs/rse-cft-lib
 
-  docs/ccd/how-to/publish-definition-to-aat.md:
+  apps/ccd/docs/how-to/publish-definition-to-aat.md:
     topic: definition-import
     brief: |
       How a service-team's case-type definition reaches AAT: pipeline stages, ccd-admin-web
@@ -426,7 +426,7 @@ pages:
       - apps/ccd/ccd-definition-store-api
 
   # --- Reference ---
-  docs/ccd/reference/field-types.md:
+  apps/ccd/docs/reference/field-types.md:
     topic: data-types
     brief: |
       Exhaustive table of built-in field types. Columns: type name, JSON discriminator, semantics,
@@ -435,7 +435,7 @@ pages:
       - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type
       - apps/ccd/ccd-definition-store-api
 
-  docs/ccd/reference/callback-contract.md:
+  apps/ccd/docs/reference/callback-contract.md:
     topic: callbacks
     brief: |
       Request/response JSON schemas for each callback (about_to_start, about_to_submit, submitted,
@@ -443,7 +443,7 @@ pages:
     sources:
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/reference/decentralised-callbacks.md:
+  apps/ccd/docs/reference/decentralised-callbacks.md:
     topic: decentralisation
     brief: |
       The /ccd-persistence/* contract: every endpoint, request/response shape, idempotency
@@ -452,7 +452,7 @@ pages:
       - libs/ccd-config-generator/sdk/decentralised-runtime
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/reference/permissions-matrix.md:
+  apps/ccd/docs/reference/permissions-matrix.md:
     topic: permissions
     brief: |
       Tables of what each CRUD bit allows, role-name conventions, AC permissions distinct from CRUD,
@@ -461,7 +461,7 @@ pages:
       - apps/ccd/ccd-definition-store-api
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/reference/api-data-store.md:
+  apps/ccd/docs/reference/api-data-store.md:
     topic: architecture
     brief: |
       The data-store v1 + v2 endpoints engineers actually use (start event, submit event, search,
@@ -469,14 +469,14 @@ pages:
     sources:
       - apps/ccd/ccd-data-store-api
 
-  docs/ccd/reference/api-definition-store.md:
+  apps/ccd/docs/reference/api-definition-store.md:
     topic: architecture
     brief: |
       Definition-store endpoints (import, retrieve case type, validate). Brief.
     sources:
       - apps/ccd/ccd-definition-store-api
 
-  docs/ccd/reference/api-aac.md:
+  apps/ccd/docs/reference/api-aac.md:
     topic: notice-of-change
     brief: |
       AAC endpoints: NoC submit/verify, case-assignment, supplementary-access flows. Request/response
@@ -484,14 +484,14 @@ pages:
     sources:
       - apps/ccd/aac-manage-case-assignment
 
-  docs/ccd/reference/api-cdam.md:
+  apps/ccd/docs/reference/api-cdam.md:
     topic: documents-and-cdam
     brief: |
       CDAM endpoints: upload, hash-token issue, retrieval. Auth model.
     sources:
       - libs/rse-cft-lib/projects/ccd-case-document-am-api
 
-  docs/ccd/reference/config-generator-api.md:
+  apps/ccd/docs/reference/config-generator-api.md:
     topic: data-types
     brief: |
       Reference for the SDK builder surface: ConfigBuilder, EventBuilder, FieldCollectionBuilder,
@@ -499,7 +499,7 @@ pages:
     sources:
       - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api
 
-  docs/ccd/reference/json-definition-format.md:
+  apps/ccd/docs/reference/json-definition-format.md:
     topic: tutorial-json
     brief: |
       Reference for the JSON definition format: every JSON file (CaseField, CaseEvent, Authorisation*,
@@ -508,7 +508,7 @@ pages:
       - apps/ccd/ccd-definition-store-api
       - apps/ccd/ccd-test-definitions
 
-  docs/ccd/reference/ccd-feature-tokens.md:
+  apps/ccd/docs/reference/ccd-feature-tokens.md:
     topic: overview
     brief: |
       Cross-link page: each ccd_features token from docs/reference/taxonomy.md gets a one-line
@@ -517,17 +517,17 @@ pages:
     sources:
       - docs/reference/taxonomy.md
 
-  docs/ccd/reference/glossary.md:
+  apps/ccd/docs/reference/glossary.md:
     topic: overview
     brief: |
-      Single canonical glossary. Every term used elsewhere in docs/ccd/ should resolve here.
+      Single canonical glossary. Every term used elsewhere in apps/ccd/docs/ should resolve here.
       Built from term mentions during Phase 5 (link). Includes: jurisdiction, case type, event,
       state, page, tab, dynamic list, complex type, CRUD, AC, RAS, AM, CDAM, AAC, NoC, RAM,
       decentralised, supplementary data, hash token, …
     sources: []
 
 # Source repos for Phase 2 — one ccd-source-researcher subagent each.
-# Slugs (the dictionary keys) are used as filenames under docs/ccd/.work/research/<slug>.md.
+# Slugs (the dictionary keys) are used as filenames under apps/ccd/docs/.work/research/<slug>.md.
 research_sources:
 
   ccd-data-store-api:

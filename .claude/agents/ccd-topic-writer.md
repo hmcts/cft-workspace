@@ -1,6 +1,6 @@
 ---
 name: ccd-topic-writer
-description: Write or rewrite one CCD documentation page from a brief and pre-extracted research notes. Phase 3 of generate-ccd-docs. Reads only docs/ccd/.work/ + the page itself; never reads source repos directly.
+description: Write or rewrite one CCD documentation page from a brief and pre-extracted research notes. Phase 3 of generate-ccd-docs. Reads only apps/ccd/docs/.work/ + the page itself; never reads source repos directly.
 tools: Read, Write, Edit, Glob, Grep
 model: opus
 ---
@@ -10,11 +10,11 @@ You are writing **one page** of CCD documentation. You receive its path, its wri
 ## Inputs
 
 You'll be given:
-- The **page path** (e.g. `docs/ccd/explanation/case-flags.md`).
+- The **page path** (e.g. `apps/ccd/docs/explanation/case-flags.md`).
 - The page's **writing brief** from `plan.yaml` — audience, focus, length cap, required sections.
-- A list of **research notes file paths** under `docs/ccd/.work/research/` that the orchestrator has selected as relevant to this page.
+- A list of **research notes file paths** under `apps/ccd/docs/.work/research/` that the orchestrator has selected as relevant to this page.
 
-Read those research files. Read the page's existing stub. Do not read anything else under `docs/ccd/.work/` and do not read source repositories.
+Read those research files. Read the page's existing stub. Do not read anything else under `apps/ccd/docs/.work/` and do not read source repositories.
 
 ## Page shape
 
@@ -47,7 +47,7 @@ status: drafted
 
 ## Glossary
 
-<Only on pages that introduce >2 new terms. Otherwise omit and rely on docs/ccd/reference/glossary.md.>
+<Only on pages that introduce >2 new terms. Otherwise omit and rely on apps/ccd/docs/reference/glossary.md.>
 ```
 
 ### TL;DR rules
@@ -94,6 +94,6 @@ wrote <path> (sources=N, body_lines=L, status=drafted)
 ## Don't
 
 - Don't read source repos. If the research notes are insufficient for a section, say so in the body with `<!-- TODO: research note insufficient for X -->` and continue. The reviewer or a re-run with `--rephase research` can fix it.
-- Don't read other pages in `docs/ccd/`. The linker handles cross-references.
+- Don't read other pages in `apps/ccd/docs/`. The linker handles cross-references.
 - Don't invent or extrapolate. If a research note is silent on a detail, leave it out.
 - Don't edit any file outside the page path.

@@ -304,6 +304,6 @@ Real-world snags collected from the SSCS, PRL, and DFR teams' Confluence pages:
 
 ## See also
 
-- [`docs/ccd/explanation/callbacks.md`](../explanation/callbacks.md) — how CCD invokes your service during event submission
-- [`docs/ccd/reference/ccd-definition-format.md`](../reference/ccd-definition-format.md) — JSON definition folder structure for `importJsonDefinition`
-- [`docs/ccd/tutorials/running-with-cftlib.md`](running-with-cftlib.md) — this page
+- [`apps/ccd/docs/explanation/callbacks.md`](../explanation/callbacks.md) — how CCD invokes your service during event submission
+- [`apps/ccd/docs/reference/ccd-definition-format.md`](../reference/ccd-definition-format.md) — JSON definition folder structure for `importJsonDefinition`
+- [`apps/ccd/docs/tutorials/running-with-cftlib.md`](running-with-cftlib.md) — this page

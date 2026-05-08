@@ -161,5 +161,5 @@ public class CaseLink {
 
 ## See also
 
-- [`docs/ccd/explanation/case-flags.md`](case-flags.md) — case flags feature, also built on standard CCD complex types
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — CCD terminology including CaseLink, ListValue, ComplexType
+- [`apps/ccd/docs/explanation/case-flags.md`](case-flags.md) — case flags feature, also built on standard CCD complex types
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — CCD terminology including CaseLink, ListValue, ComplexType

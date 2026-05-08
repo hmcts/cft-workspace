@@ -86,7 +86,7 @@ examples_extracted_from:
    MyJurisdiction_MyCase   applicantLastName    Applicant surname  2
    ```
 
-   `[CASE_REFERENCE]` is a metadata field and does not need a `ListElementCode`. See [`docs/ccd/explanation/work-basket.md`](../explanation/work-basket.md) for the full list of metadata identifiers.
+   `[CASE_REFERENCE]` is a metadata field and does not need a `ListElementCode`. See [`apps/ccd/docs/explanation/work-basket.md`](../explanation/work-basket.md) for the full list of metadata identifiers.
 
 3. Populate **WorkBasketResultFields**. Each row is one result column:
 
@@ -164,7 +164,7 @@ MyJurisdiction_MyCase   applicantLastName    Surname              caseworker-jud
 - Different roles can have different `DisplayOrder` for the same `CaseFieldID`, achieving role-specific column ordering.
 - For `ResultsOrdering` specifically, a global (blank-role) row can supply the `1:` priority while role-specific rows supply `2:` — but you cannot have two `1:...` rows that both apply to the same role.
 
-See [`docs/ccd/explanation/work-basket.md`](../explanation/work-basket.md) for the per-role semantics in more depth.
+See [`apps/ccd/docs/explanation/work-basket.md`](../explanation/work-basket.md) for the per-role semantics in more depth.
 
 ## Verify
 
@@ -254,9 +254,9 @@ This sorts the work basket primarily by `createdDate` (newest first), then alpha
 
 ## See also
 
-- [`docs/ccd/reference/definition-sheets.md`](../reference/definition-sheets.md) — full column reference for all definition sheets
-- [`docs/ccd/explanation/work-basket.md`](../explanation/work-basket.md) — how the work basket relates to search input/result configuration, per-role behaviour, and metadata field references
-- [`docs/ccd/explanation/search-and-workbasket.md`](../explanation/search-and-workbasket.md) — relationship between work basket and the legacy/new search endpoints
+- [`apps/ccd/docs/reference/definition-sheets.md`](../reference/definition-sheets.md) — full column reference for all definition sheets
+- [`apps/ccd/docs/explanation/work-basket.md`](../explanation/work-basket.md) — how the work basket relates to search input/result configuration, per-role behaviour, and metadata field references
+- [`apps/ccd/docs/explanation/search-and-workbasket.md`](../explanation/search-and-workbasket.md) — relationship between work basket and the legacy/new search endpoints
 
 ## Glossary
 

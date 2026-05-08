@@ -48,7 +48,7 @@ How this product registers its CCD case-type definitions:
 
 Opt-in CCD platform features this product enables — usually via CCD definition fields, callbacks, or service config. Universal features (event history, supplementary data) are excluded — they apply to every CCD-based service and don't disambiguate.
 
-> See [`docs/ccd/reference/ccd-feature-tokens.md`](../ccd/reference/ccd-feature-tokens.md) for prose explaining each token, and the wider [`docs/ccd/`](../ccd/) tree for full CCD documentation.
+> See [`apps/ccd/docs/reference/ccd-feature-tokens.md`](../../apps/ccd/docs/reference/ccd-feature-tokens.md) for prose explaining each token, and the wider [`apps/ccd/docs/`](../../apps/ccd/docs/) tree for full CCD documentation.
 
 | Token | Means |
 |---|---|

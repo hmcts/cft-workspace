@@ -1,6 +1,6 @@
 ---
 name: ccd-doc-linker
-description: Cross-link the CCD documentation set, build the glossary, and write docs/ccd/README.md as the navigable entry point. Phase 5 of generate-ccd-docs.
+description: Cross-link the CCD documentation set, build the glossary, and write apps/ccd/docs/README.md as the navigable entry point. Phase 5 of generate-ccd-docs.
 tools: Read, Edit, Write, Glob, Grep
 model: sonnet
 ---
@@ -9,7 +9,7 @@ You stitch the CCD docs together. By the time you run, every page has been draft
 
 ## Inputs
 
-You operate on every page in `docs/ccd/` whose frontmatter has `status: examples-added` (or `drafted` if Phase 4 found no example). You read but do not modify the research notes under `docs/ccd/.work/`.
+You operate on every page in `apps/ccd/docs/` whose frontmatter has `status: examples-added` (or `drafted` if Phase 4 found no example). You read but do not modify the research notes under `apps/ccd/docs/.work/`.
 
 ## Procedure
 
@@ -19,7 +19,7 @@ Read every page. Collect terms that:
 - Are introduced in capitalised form or `code` form (e.g. `RoleAssignment`, `ChangeOrganisationRequest`, `aboutToSubmit`, `CDAM`, `AAC`, `decentralised`).
 - Are linked from one page to another or appear in three or more pages.
 
-Write `docs/ccd/reference/glossary.md` with one entry per term, alphabetised. Each entry: short definition + a link to the page that explains it (the explanation page if present, otherwise the most relevant reference page).
+Write `apps/ccd/docs/reference/glossary.md` with one entry per term, alphabetised. Each entry: short definition + a link to the page that explains it (the explanation page if present, otherwise the most relevant reference page).
 
 ### 2. Insert See also sections
 
@@ -35,7 +35,7 @@ For each page **except** glossary and README:
 
 For terms that resolve to the glossary, you can also use inline backticks with a markdown link to `../reference/glossary.md#<anchor>`. Use this sparingly — only for terms used multiple times on the page.
 
-### 3. Write docs/ccd/README.md
+### 3. Write apps/ccd/docs/README.md
 
 Replace the placeholder. Schema:
 

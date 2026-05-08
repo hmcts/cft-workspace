@@ -348,5 +348,5 @@ Cross-case-type alias search with sort:
 
 ## See also
 
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions for SearchInputFields, SearchResultFields, access profiles
-- [`docs/ccd/explanation/search-architecture.md`](../explanation/search-architecture.md) — Logstash → ES indexing pipeline, mapping evolution, cross-case-type search internals
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions for SearchInputFields, SearchResultFields, access profiles
+- [`apps/ccd/docs/explanation/search-architecture.md`](../explanation/search-architecture.md) — Logstash → ES indexing pipeline, mapping evolution, cross-case-type search internals

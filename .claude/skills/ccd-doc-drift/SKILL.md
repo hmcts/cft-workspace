@@ -1,11 +1,11 @@
 ---
 name: ccd-doc-drift
-description: Detect drift between docs/ccd/ pages and the source files they cite. Reads each page's frontmatter `sources:` list, compares against current source repo HEAD, reports stale pages. Use periodically to keep CCD docs accurate.
+description: Detect drift between apps/ccd/docs/ pages and the source files they cite. Reads each page's frontmatter `sources:` list, compares against current source repo HEAD, reports stale pages. Use periodically to keep CCD docs accurate.
 ---
 
 # CCD doc drift
 
-Each page in `docs/ccd/` declares its `sources:` in frontmatter — repo-relative file paths the page's claims rely on. This skill reports which pages need re-verifying because their cited source has changed since the page was last regenerated.
+Each page in `apps/ccd/docs/` declares its `sources:` in frontmatter — repo-relative file paths the page's claims rely on. This skill reports which pages need re-verifying because their cited source has changed since the page was last regenerated.
 
 ## When to use
 
@@ -20,7 +20,7 @@ Each page in `docs/ccd/` declares its `sources:` in frontmatter — repo-relativ
 
 ## Procedure
 
-1. **Enumerate pages**. `Glob` for `docs/ccd/**/*.md` (excluding `docs/ccd/.work/`).
+1. **Enumerate pages**. `Glob` for `apps/ccd/docs/**/*.md` (excluding `apps/ccd/docs/.work/`).
 2. **For each page**, parse YAML frontmatter via `yq`:
    ```bash
    yq '.sources' <page>
@@ -39,7 +39,7 @@ Each page in `docs/ccd/` declares its `sources:` in frontmatter — repo-relativ
 5. **Print a report**:
 
 ```
-docs/ccd/ drift report — <iso8601>
+apps/ccd/docs/ drift report — <iso8601>
 
 stale (N):
   <path>      sources changed: <count> — <list of repo-slug:path>

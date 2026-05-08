@@ -237,8 +237,8 @@ If `bootWithCCD` fails immediately with `java.lang.ClassNotFoundException: uk.go
 
 ## See also
 
-- [`rse-cft-lib` research notes](../../../docs/ccd/.work/research/rse-cft-lib.md) — full API surface of `CFTLib` and embedded service list
-- [`CFTLibConfigurer` interface](../../ccd/explanation/cftlib-overview.md) — how the configure hook fits into the boot lifecycle
+- [`rse-cft-lib` research notes](../.work/research/rse-cft-lib.md) — full API surface of `CFTLib` and embedded service list
+- [`CFTLibConfigurer` interface](../explanation/cftlib-overview.md) — how the configure hook fits into the boot lifecycle
 
 ## Glossary
 

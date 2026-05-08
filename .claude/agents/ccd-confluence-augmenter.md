@@ -11,10 +11,10 @@ Source code is ground truth. Confluence often has additional behavioural detail 
 
 ## Inputs
 
-The absolute path to one page (e.g. `docs/ccd/reference/field-types.md`).
+The absolute path to one page (e.g. `apps/ccd/docs/reference/field-types.md`).
 
 Skip rules — print "skipped: <reason>" and exit if:
-- The path is `docs/ccd/README.md` or `docs/ccd/reference/glossary.md` (linker-built, not topical).
+- The path is `apps/ccd/docs/README.md` or `apps/ccd/docs/reference/glossary.md` (linker-built, not topical).
 - The page's frontmatter `status` is not `drafted` (run synth first if `stub`; don't re-run if already past drafted).
 
 ## Procedure
@@ -47,12 +47,12 @@ Filter to **3–7 most topically relevant**. If the search returns nothing usefu
 For each chosen page, call `mcp__atlassian__confluence_get_page` (request the markdown export). Cache to:
 
 ```
-docs/ccd/.work/confluence/<page-slug>/<conf-id>.md
+apps/ccd/docs/.work/confluence/<page-slug>/<conf-id>.md
 ```
 
 `<page-slug>` is the page path with `/` replaced by `-` and `.md` stripped:
-- `docs/ccd/reference/field-types.md` → `reference-field-types`
-- `docs/ccd/explanation/case-flags.md` → `explanation-case-flags`
+- `apps/ccd/docs/reference/field-types.md` → `reference-field-types`
+- `apps/ccd/docs/explanation/case-flags.md` → `explanation-case-flags`
 
 Include the Confluence page title and last-modified timestamp at the top of each cache file as a comment block, for `/ccd-doc-drift` to read later.
 
@@ -106,7 +106,7 @@ Keep `topic`, `audience` unchanged. Append any new code citations to `sources` (
 
 ### 7. Write per-page summary
 
-Write `docs/ccd/.work/confluence/<page-slug>/_summary.md`:
+Write `apps/ccd/docs/.work/confluence/<page-slug>/_summary.md`:
 
 ```markdown
 # Confluence augmentation: <page-path>

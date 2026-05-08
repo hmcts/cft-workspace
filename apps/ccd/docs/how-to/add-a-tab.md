@@ -237,7 +237,7 @@ Within the caseworker channel, what each role actually sees follows this hierarc
 
 ## See also
 
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions for tab, field access, show condition.
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions for tab, field access, show condition.
 - Confluence: [Show Conditions and how they work](https://tools.hmcts.net/confluence/pages/viewpage.action?pageId=1056801404) — full grammar, multi-select semantics, injected metadata.
 - Confluence: [How-to: Show or Hide a tab in CCD](https://tools.hmcts.net/confluence/pages/viewpage.action?pageId=1440511391) — divorce-team's spreadsheet-based equivalent.
 - Confluence: [CCD Definition Glossary — CaseTypeTab section](https://tools.hmcts.net/confluence/pages/viewpage.action?pageId=207804327) — column-by-column reference for the underlying spreadsheet.

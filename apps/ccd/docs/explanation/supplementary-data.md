@@ -158,5 +158,5 @@ Updates to the `supplementary_data` column fire a database trigger that flips th
 
 ## See also
 
-- [`docs/ccd/explanation/case-data-model.md`](case-data-model.md) — how the main `data` column and case-type definition relate
-- [`docs/ccd/reference/endpoints.md`](../reference/endpoints.md) — full endpoint reference including supplementary-data path
+- [`apps/ccd/docs/explanation/case-data-model.md`](case-data-model.md) — how the main `data` column and case-type definition relate
+- [`apps/ccd/docs/reference/endpoints.md`](../reference/endpoints.md) — full endpoint reference including supplementary-data path

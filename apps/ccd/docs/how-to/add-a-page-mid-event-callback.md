@@ -259,9 +259,9 @@ The SDK pattern is one mid-event callback per page — `pagesToMidEvent` is a ma
 
 ## See also
 
-- [`docs/ccd/explanation/callbacks.md`](../explanation/callbacks.md) — overview of all callback types and their lifecycle
-- [`docs/ccd/reference/event-configuration.md`](../reference/event-configuration.md) — full event builder field reference
-- [`docs/ccd/how-to/add-an-about-to-submit-callback.md`](add-an-about-to-submit-callback.md) — final-submission callback how-to
+- [`apps/ccd/docs/explanation/callbacks.md`](../explanation/callbacks.md) — overview of all callback types and their lifecycle
+- [`apps/ccd/docs/reference/event-configuration.md`](../reference/event-configuration.md) — full event builder field reference
+- [`apps/ccd/docs/how-to/add-an-about-to-submit-callback.md`](add-an-about-to-submit-callback.md) — final-submission callback how-to
 
 ## Example
 

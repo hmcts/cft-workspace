@@ -236,6 +236,6 @@ See [`work-allocation-integration.md`](work-allocation-integration.md) for the W
 
 ## See also
 
-- [`docs/ccd/explanation/search-configuration.md`](search-configuration.md) — `SearchInputFields`, `SearchResultFields`, and `SearchCasesResultFields`, which share the same `GenericLayoutEntity` base and the same `use_case` selection mechanism
-- [`docs/ccd/explanation/work-allocation-integration.md`](work-allocation-integration.md) — work allocation (WA/Task Manager), a separate system from the work basket
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions of access profile, display context parameter, use case
+- [`apps/ccd/docs/explanation/search-configuration.md`](search-configuration.md) — `SearchInputFields`, `SearchResultFields`, and `SearchCasesResultFields`, which share the same `GenericLayoutEntity` base and the same `use_case` selection mechanism
+- [`apps/ccd/docs/explanation/work-allocation-integration.md`](work-allocation-integration.md) — work allocation (WA/Task Manager), a separate system from the work basket
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions of access profile, display context parameter, use case

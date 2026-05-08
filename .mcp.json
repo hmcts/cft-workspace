@@ -10,6 +10,10 @@
         "-e", "READ_ONLY_MODE=true",
         "ghcr.io/sooperset/mcp-atlassian:latest"
       ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
     }
   }
 }

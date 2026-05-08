@@ -298,7 +298,7 @@ The Confluence LLD pins down behaviour the source merely implements:
 - The request body (`DecentralisedCaseEvent`) carries `case_details_before`, `case_details`, `event_details`, plus three CCD-computed fields services must persist: `internal_case_id` (the pointer's `id`, used as the ES primary key), `resolved_ttl` (CCD-authoritative — services must update via events, not direct mutation), and `start_revision`/`merge_revision` (for service-side optimistic locking).
 <!-- CONFLUENCE-ONLY: the wire-format field names and 4xx/422 status semantics are defined in the LLD; the Java types in ccd-data-store-api confirm the shape but do not enforce service-side compliance. -->
 
-See [`docs/ccd/explanation/decentralised-ccd.md`](decentralised-ccd.md) for a full walkthrough.
+See [`apps/ccd/docs/explanation/decentralised-ccd.md`](decentralised-ccd.md) for a full walkthrough.
 
 ---
 
@@ -326,7 +326,7 @@ With `reindex=true`: definition-store sets the current index read-only, creates 
 
 ## See also
 
-- [`docs/ccd/explanation/event-lifecycle.md`](event-lifecycle.md) — detailed callback phases and error handling
-- [`docs/ccd/explanation/decentralised-ccd.md`](decentralised-ccd.md) — decentralised persistence deep-dive
-- [`docs/ccd/explanation/notice-of-change.md`](notice-of-change.md) — NoC protocol detail
-- [`docs/ccd/reference/endpoints.md`](../reference/endpoints.md) — full endpoint reference
+- [`apps/ccd/docs/explanation/event-lifecycle.md`](event-lifecycle.md) — detailed callback phases and error handling
+- [`apps/ccd/docs/explanation/decentralised-ccd.md`](decentralised-ccd.md) — decentralised persistence deep-dive
+- [`apps/ccd/docs/explanation/notice-of-change.md`](notice-of-change.md) — NoC protocol detail
+- [`apps/ccd/docs/reference/endpoints.md`](../reference/endpoints.md) — full endpoint reference

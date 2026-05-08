@@ -447,8 +447,8 @@ A 422 typically means the message body contains the offending row reference. Re-
 
 ## See also
 
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions of CaseType, CaseField, ACL, DisplayContext
-- [`docs/ccd/explanation/case-type-model.md`](../explanation/case-type-model.md) — conceptual overview of the definition model
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions of CaseType, CaseField, ACL, DisplayContext
+- [`apps/ccd/docs/explanation/case-type-model.md`](../explanation/case-type-model.md) — conceptual overview of the definition model
 - Confluence: "CCD Definition Glossary for Setting up a Service in CCD" (page 207804327) — column-by-column reference for every spreadsheet tab
 - Confluence: "CCD - Import Domain - Validation Rules" (page 205750327) — the canonical numbered list of validation rules
 - Confluence: "CCD Case Admin Web User Guide" (page 688685210) — admin-web walkthrough for the import flow

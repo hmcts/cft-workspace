@@ -143,7 +143,7 @@ The list view of cases assigned to a team or user. Configured via `WorkBasketInp
 
 ## See also
 
-- [`docs/ccd/explanation/case-type-model.md`](../explanation/case-type-model.md) — full hierarchy: jurisdiction, case type, event, state, field
-- [`docs/ccd/explanation/access-control.md`](../explanation/access-control.md) — CRUD, roles, RAS, AM in depth
-- [`docs/ccd/explanation/callbacks.md`](../explanation/callbacks.md) — callback lifecycle: about_to_start, mid-event, about_to_submit, submitted
-- [`docs/ccd/explanation/noc.md`](../explanation/noc.md) — Notice of Change, OrganisationPolicy, ChangeOrganisationRequest
+- [`apps/ccd/docs/explanation/case-type-model.md`](../explanation/case-type-model.md) — full hierarchy: jurisdiction, case type, event, state, field
+- [`apps/ccd/docs/explanation/access-control.md`](../explanation/access-control.md) — CRUD, roles, RAS, AM in depth
+- [`apps/ccd/docs/explanation/callbacks.md`](../explanation/callbacks.md) — callback lifecycle: about_to_start, mid-event, about_to_submit, submitted
+- [`apps/ccd/docs/explanation/noc.md`](../explanation/noc.md) — Notice of Change, OrganisationPolicy, ChangeOrganisationRequest

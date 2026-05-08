@@ -324,9 +324,9 @@ The ExUI component shows a Flag Refinement L2 step for these specifically, popul
 
 ## See also
 
-- [`docs/ccd/explanation/reasonable-adjustments.md`](reasonable-adjustments.md) — RA request flow end-to-end using the same flag machinery
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions of FlagDetail, Flags, status values
-- [`docs/ccd/reference/field-types.md`](../reference/field-types.md) — `Flags`, `FlagDetail`, `FlagLauncher` in the CCD field-type catalogue
+- [`apps/ccd/docs/explanation/reasonable-adjustments.md`](reasonable-adjustments.md) — RA request flow end-to-end using the same flag machinery
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions of FlagDetail, Flags, status values
+- [`apps/ccd/docs/reference/field-types.md`](../reference/field-types.md) — `Flags`, `FlagDetail`, `FlagLauncher` in the CCD field-type catalogue
 
 ---
 

@@ -229,8 +229,8 @@ For larger or longer-running case types, the per-request "request-scope" cache (
 
 ## See also
 
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions for DefinitionImportedEvent, access profile, CRUD
-- [`docs/ccd/explanation/case-type-model.md`](case-type-model.md) — structure of the xlsx spreadsheet and what each sheet maps to
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions for DefinitionImportedEvent, access profile, CRUD
+- [`apps/ccd/docs/explanation/case-type-model.md`](case-type-model.md) — structure of the xlsx spreadsheet and what each sheet maps to
 - [RetainHiddenValue](retain-hidden-value.md) — the `HiddenFieldsValidator` cited in the validation table is explained in depth here, including what it rejects and why
 
 ## Glossary

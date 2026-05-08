@@ -70,7 +70,7 @@ confluence:
 - When an RA request is submitted, `FlagDetail.status` is set to the **magic string** `"Requested"`. CCD does not enforce this value — the entire WA task lifecycle depends on the exact string.
 - Two CCD events drive WA tasks: a `setUpWaTaskForCaseFlagsEventHandler` event publication sets `isCaseFlagsTaskCreated = Yes` (via async `CaseFlagsEventHandler` triggering `CREATE_WA_TASK_FOR_CTSC_CASE_FLAGS`); the caseworker review event resolves flags out of `"Requested"` and the `submitted` callback closes the WA task via `CLOSE_REVIEW_RA_REQUEST_TASK` when all are actioned.
 - For mapping RA flags to downstream systems (HMC hearing requests, etc.) **always use `flagCode`, never string-match on display names.** This is explicit guidance from the Case Flags HLD and the IAC interpreter mapping pattern.
-- Configuration boilerplate (`FlagLauncher` field, hidden flag collections, `#ARGUMENT(CREATE|UPDATE|READ)` `DisplayContextParameter`) is identical to base Case Flags — see [`docs/ccd/explanation/case-flags.md`](../explanation/case-flags.md) for the full mechanism.
+- Configuration boilerplate (`FlagLauncher` field, hidden flag collections, `#ARGUMENT(CREATE|UPDATE|READ)` `DisplayContextParameter`) is identical to base Case Flags — see [`apps/ccd/docs/explanation/case-flags.md`](../explanation/case-flags.md) for the full mechanism.
 
 ## Prerequisites
 
@@ -318,8 +318,8 @@ sequenceDiagram
 
 ## See also
 
-- [`docs/ccd/explanation/case-flags.md`](../explanation/case-flags.md) — overview of the CCD Flags complex type and flag lifecycle (the v2.1 mechanism this how-to builds on)
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions for `Flags`, `FlagDetail`, `AllPartyFlags`, WA
+- [`apps/ccd/docs/explanation/case-flags.md`](../explanation/case-flags.md) — overview of the CCD Flags complex type and flag lifecycle (the v2.1 mechanism this how-to builds on)
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions for `Flags`, `FlagDetail`, `AllPartyFlags`, WA
 - Confluence: *Case Flags HLD Version 2.1* (page 1700663346) — canonical architecture
 - Confluence: *Ref Data Flag Overview* (page 1682839538) — how the FlagDetails / FlagService / ListofValues CSVs feed CFT Ref Data
 - Confluence: *Interpreter languages and Reasonable Adjustments* (page 1700661767) — IAC pattern for HMC mapping

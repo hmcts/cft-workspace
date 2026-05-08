@@ -1,13 +1,13 @@
 ---
 name: generate-ccd-docs
-description: Generate (or refresh) the comprehensive CCD documentation under docs/ccd/. Runs in resumable phases (scaffold → research → synth → examples → link → review), fanning out specialised CCD subagents in parallel. Use when the user asks to populate, refresh, or extend CCD docs, or when a CCD source repo has changed and pages need re-verifying.
+description: Generate (or refresh) the comprehensive CCD documentation under apps/ccd/docs/. Runs in resumable phases (scaffold → research → synth → examples → link → review), fanning out specialised CCD subagents in parallel. Use when the user asks to populate, refresh, or extend CCD docs, or when a CCD source repo has changed and pages need re-verifying.
 ---
 
 # Generate CCD docs
 
-CCD is the case-data spine of most CFT services. The documentation under `docs/ccd/` is generated and maintained by this skill — a multi-phase orchestrator that fans out specialised subagents (`ccd-source-researcher`, `ccd-topic-writer`, `ccd-examples-curator`, `ccd-doc-linker`, `ccd-doc-reviewer`) over the CCD platform repos, the `ccd-config-generator` SDK, and several reference service implementations.
+CCD is the case-data spine of most CFT services. The documentation under `apps/ccd/docs/` is generated and maintained by this skill — a multi-phase orchestrator that fans out specialised subagents (`ccd-source-researcher`, `ccd-topic-writer`, `ccd-examples-curator`, `ccd-doc-linker`, `ccd-doc-reviewer`) over the CCD platform repos, the `ccd-config-generator` SDK, and several reference service implementations.
 
-The static page list, per-page writing brief, and source-repo hints live in [`plan.yaml`](plan.yaml). Per-page state lives in `docs/ccd/.work/manifest.yaml`.
+The static page list, per-page writing brief, and source-repo hints live in [`plan.yaml`](plan.yaml). Per-page state lives in `apps/ccd/docs/.work/manifest.yaml`.
 
 ## Inputs
 
@@ -15,18 +15,18 @@ The skill accepts flags (parse from `$ARGUMENTS`):
 
 - *(no flags)* — run the next-incomplete phase across every page in `plan.yaml`.
 - `--phase <name>` — run a single phase: `scaffold | research | synth | confluence | examples | link | review`.
-- `--page <path>` — restrict to one page (e.g. `docs/ccd/explanation/case-flags.md`).
+- `--page <path>` — restrict to one page (e.g. `apps/ccd/docs/explanation/case-flags.md`).
 - `--topic <token>` — restrict to all pages tagged with that topic in `plan.yaml`.
 - `--rephase <name>` — discard the named phase's outputs and re-run from there.
 - `--dry-run` — report what would happen without spawning subagents.
 
 ## State
 
-`docs/ccd/.work/manifest.yaml` — per-page status:
+`apps/ccd/docs/.work/manifest.yaml` — per-page status:
 
 ```yaml
 pages:
-  docs/ccd/explanation/case-flags.md:
+  apps/ccd/docs/explanation/case-flags.md:
     topic: case-flags
     status: stub | drafted | confluence-augmented | examples-added | linked | reviewed | needs-fix
     sources: [<repo:path>, ...]
@@ -35,7 +35,7 @@ pages:
 
 Re-running the skill skips pages already at the requested target status. Each phase advances pages by one status step.
 
-`docs/ccd/.work/research/` — Phase-2 research notes, one file per source repo. Phase 3 reads only these (not the source repos directly).
+`apps/ccd/docs/.work/research/` — Phase-2 research notes, one file per source repo. Phase 3 reads only these (not the source repos directly).
 
 ## Phases
 
@@ -46,15 +46,15 @@ Read `plan.yaml`. For each page:
 - If the page does not exist, write a stub with only frontmatter (`topic`, `audience: both`, `sources: []`, `status: stub`) and a single `# <title>` line.
 - Add or update the entry in `manifest.yaml` with `status: stub`.
 
-Also write `docs/ccd/README.md` as a minimal navigable entry point (Phase 5 fills it in further).
+Also write `apps/ccd/docs/README.md` as a minimal navigable entry point (Phase 5 fills it in further).
 
 This phase is fast and idempotent — does not spawn subagents.
 
 ### 2. research
 
-Read `plan.yaml` to enumerate source repos. For each source repo, spawn one `ccd-source-researcher` subagent in parallel (cap concurrency at 5). Each subagent reads its single repo and writes structured notes to `docs/ccd/.work/research/<repo-slug>.md`.
+Read `plan.yaml` to enumerate source repos. For each source repo, spawn one `ccd-source-researcher` subagent in parallel (cap concurrency at 5). Each subagent reads its single repo and writes structured notes to `apps/ccd/docs/.work/research/<repo-slug>.md`.
 
-Subagents are read-only and never write to `docs/ccd/<page>.md`. This phase is the long pole.
+Subagents are read-only and never write to `apps/ccd/docs/<page>.md`. This phase is the long pole.
 
 ### 3. synth
 
@@ -67,12 +67,12 @@ The subagent rewrites the page with TL;DR + prose, sets frontmatter `status: dra
 For each page in scope (drafted or later), spawn one `ccd-confluence-augmenter` subagent (parallel, **cap 10** — Confluence rate-bound, not CPU/token-bound). Each agent:
 
 - Searches HMCTS Confluence (via the `atlassian` MCP — see `.mcp.json` at workspace root) for pages topically relevant to the doc page.
-- Fetches the most relevant 3–7, caches them under `docs/ccd/.work/confluence/<page-slug>/<conf-id>.md`.
+- Fetches the most relevant 3–7, caches them under `apps/ccd/docs/.work/confluence/<page-slug>/<conf-id>.md`.
 - Reconciles every behavioural claim against source code clones — source wins where the two disagree.
 - Updates the page: expands sections, adds missing ones, flags divergences inline (`<!-- DIVERGENCE: ... -->`) and Confluence-only claims (`<!-- CONFLUENCE-ONLY: ... -->`).
-- Writes a per-page summary at `docs/ccd/.work/confluence/<page-slug>/_summary.md`.
+- Writes a per-page summary at `apps/ccd/docs/.work/confluence/<page-slug>/_summary.md`.
 
-Pages flip to `status: confluence-augmented`. Skips `docs/ccd/README.md` and `docs/ccd/reference/glossary.md` (linker-built).
+Pages flip to `status: confluence-augmented`. Skips `apps/ccd/docs/README.md` and `apps/ccd/docs/reference/glossary.md` (linker-built).
 
 Requires the Atlassian MCP to be reachable. The agent never writes to Confluence (`READ_ONLY_MODE=true` in `.mcp.json`).
 
@@ -84,7 +84,7 @@ Pages with examples added flip to `status: examples-added`.
 
 ### 5. link
 
-Spawn one `ccd-doc-linker` agent. It reads every drafted page, builds the glossary, inserts cross-links between explanation/how-to/reference pages, and rewrites `docs/ccd/README.md` as the navigable index. Pages flip to `status: linked`.
+Spawn one `ccd-doc-linker` agent. It reads every drafted page, builds the glossary, inserts cross-links between explanation/how-to/reference pages, and rewrites `apps/ccd/docs/README.md` as the navigable index. Pages flip to `status: linked`.
 
 ### 6. review
 
@@ -95,7 +95,7 @@ The orchestrator collates the review summary and prints which pages need human a
 ## Procedure
 
 1. Parse `$ARGUMENTS` into `phase`, `page`, `topic`, `rephase`, `dry_run`.
-2. Load (or create) `docs/ccd/.work/manifest.yaml`.
+2. Load (or create) `apps/ccd/docs/.work/manifest.yaml`.
 3. Determine the **active phase**:
    - If `--phase` set: that phase.
    - If `--rephase` set: that phase (after clearing its outputs first).
@@ -114,7 +114,7 @@ Cap parallel subagents at 5 (matches `generate-product-claude-md`). When spawnin
 ## Don't
 
 - Don't write into the cloned repos under `apps/` or `libs/` — read-only.
-- Don't write outside `docs/ccd/`, `docs/ccd/.work/`, and the manifest pointer files listed in the plan.
+- Don't write outside `apps/ccd/docs/`, `apps/ccd/docs/.work/`, and the manifest pointer files listed in the plan.
 - Don't invent topics that aren't in `plan.yaml` — add them there first.
 - Don't run the review phase before pages are at least drafted; the manifest enforces this.
 - Don't re-run synth on a page that's already at `linked` or `reviewed` unless `--rephase synth` is passed (otherwise reviewer fixes get clobbered).

@@ -189,6 +189,6 @@ CCD case data **never** contains binary content — only references. <!-- CONFLU
 
 ## See also
 
-- [`docs/ccd/explanation/documents.md`](documents.md) — CDAM document upload and access
-- [`docs/ccd/explanation/callbacks.md`](callbacks.md) — callback timeout and retry behaviour
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definition of Document complex type
+- [`apps/ccd/docs/explanation/documents.md`](documents.md) — CDAM document upload and access
+- [`apps/ccd/docs/explanation/callbacks.md`](callbacks.md) — callback timeout and retry behaviour
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definition of Document complex type

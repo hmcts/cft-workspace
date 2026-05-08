@@ -54,7 +54,7 @@ confluence:
 - Structural types — `Collection<T>`, `Complex`, `FixedList`, `MultiSelectList`, `DynamicList`, `DynamicRadioList`, `DynamicMultiSelectList` — produce nested JSON objects or arrays.
 - Purpose-built complex types (`Document`, `AddressGlobalUK`, `OrganisationPolicy`, `ChangeOrganisationRequest`, `CaseLink`) are pre-defined by the platform and referenced by name in the `FieldType` column.
 - `Collection<T>` items are always wrapped in `{"id": "<uuid>", "value": <T>}` via `ListValue<T>` — do not strip the wrapper when reading or writing case data.
-- Each `FieldType` has its own search semantics (Fuzzy, EXACT, CONTAINS, etc.) and validation profile — see [`docs/ccd/reference/field-types.md`](../reference/field-types.md) for the full per-type matrix.
+- Each `FieldType` has its own search semantics (Fuzzy, EXACT, CONTAINS, etc.) and validation profile — see [`apps/ccd/docs/reference/field-types.md`](../reference/field-types.md) for the full per-type matrix.
 
 ---
 
@@ -93,7 +93,7 @@ A few details that bite repeatedly when modelling primitives:
   `#DATETIMEENTRY(format)` (date picker) and `#DATETIMEDISPLAY(format)` (read
   view). They can combine: `#DATETIMEDISPLAY(YY-MM-DD),#DATETIMEENTRY(DD-MM-YY)`.
   Format strings follow Java's `DateTimeFormatter` syntax — see
-  [`docs/ccd/reference/field-types.md`](../reference/field-types.md) for the
+  [`apps/ccd/docs/reference/field-types.md`](../reference/field-types.md) for the
   full pattern-letter vocabulary.
 - **`PhoneUK`** is validated server-side against a regex covering `+44 …` and
   `0…` formats and several digit groupings; **`Postcode`** has a regex matching
@@ -320,7 +320,7 @@ When CCD calls the MidEvent callback, the selected DynamicList arrives in the
 payload as a plain **String** (the code), not a full DynamicList. The callback
 must rebuild the field with both `value` and `list_items` set before returning,
 otherwise CCD's validation will reject the response. See
-[`docs/ccd/.work/confluence/explanation-data-types/1460552629.md`](../.work/confluence/explanation-data-types/1460552629.md)
+[`apps/ccd/docs/.work/confluence/explanation-data-types/1460552629.md`](../.work/confluence/explanation-data-types/1460552629.md)
 for a walkthrough.
 
 DynamicLists can be top-level, inside a Complex, or inside a `Collection<Complex>`
@@ -503,7 +503,7 @@ without redefining its sub-fields in their own `ComplexTypes` tab.
 ## Other platform-defined types (brief)
 
 A handful more pre-defined types — exhaustive detail in
-[`docs/ccd/reference/field-types.md`](../reference/field-types.md):
+[`apps/ccd/docs/reference/field-types.md`](../reference/field-types.md):
 
 - **`Organisation`** — `OrganisationID` (required), `OrganisationName`. Used
   inside `OrganisationPolicy` and `ChangeOrganisationRequest`.
@@ -524,7 +524,7 @@ A handful more pre-defined types — exhaustive detail in
   purpose is to tell ExUI to render a particular component. Only the `C` of
   CRUD applies. `CasePaymentHistoryViewer` requires the IDAM `payments` role.
 - **`Flags`** / **`FlagDetail`** — case / party flags; see
-  [`docs/ccd/explanation/case-flags.md`](case-flags.md).
+  [`apps/ccd/docs/explanation/case-flags.md`](case-flags.md).
 
 ---
 
@@ -585,14 +585,14 @@ Modelled by `SearchCriteria.java` and `SearchParty.java`.
 
 ## See also
 
-- [`docs/ccd/reference/field-types.md`](../reference/field-types.md) — exhaustive
+- [`apps/ccd/docs/reference/field-types.md`](../reference/field-types.md) — exhaustive
   per-type matrix (validation regex, search semantics, JSON shape, sub-fields).
   This page is the prose-flavoured companion; the reference is the lookup.
-- [`docs/ccd/explanation/case-flags.md`](case-flags.md) — `Flags` and
+- [`apps/ccd/docs/explanation/case-flags.md`](case-flags.md) — `Flags` and
   `FlagDetail` complex types used for case/party flags.
-- [`docs/ccd/explanation/notice-of-change.md`](notice-of-change.md) — how
+- [`apps/ccd/docs/explanation/notice-of-change.md`](notice-of-change.md) — how
   `OrganisationPolicy` and `ChangeOrganisationRequest` are used in the NoC flow.
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions of
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions of
   CCD terms.
 - [RetainHiddenValue](retain-hidden-value.md) — how complex types and collections interact with the field-retention flag on event wizard forms
 

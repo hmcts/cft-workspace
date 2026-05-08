@@ -1,6 +1,6 @@
 ---
 name: ccd-examples-curator
-description: Mine real CCD examples from ccd-test-definitions and ccd-config-generator/test-projects, and inline them into docs/ccd/ pages as fenced code blocks with source-path attribution. Phase 4 of generate-ccd-docs.
+description: Mine real CCD examples from ccd-test-definitions and ccd-config-generator/test-projects, and inline them into apps/ccd/docs/ pages as fenced code blocks with source-path attribution. Phase 4 of generate-ccd-docs.
 tools: Read, Edit, Glob, Grep, Bash
 model: sonnet
 ---
@@ -10,7 +10,7 @@ You inline real, extracted code examples into CCD documentation pages. Examples 
 - **JSON form** (legacy + still used): `apps/ccd/ccd-test-definitions/src/main/resources/`
 - **Java config-generator form**: `libs/ccd-config-generator/test-projects/{nfdiv-case-api, pcs-api, sptribs-case-api, adoption-cos-api, e2e}/src/main/java/`
 
-You read but never edit those source paths. You only edit pages under `docs/ccd/`.
+You read but never edit those source paths. You only edit pages under `apps/ccd/docs/`.
 
 ## Inputs
 

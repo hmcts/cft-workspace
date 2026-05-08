@@ -45,10 +45,10 @@ host_sock=/var/run/docker-host.sock
 target_sock=/var/run/docker.sock
 if [[ -S "$host_sock" ]] && ! pgrep -fx "socat UNIX-LISTEN:${target_sock}.*" >/dev/null; then
     sudo rm -f "$target_sock"
-    sudo nohup socat \
+    sudo setsid socat \
         "UNIX-LISTEN:${target_sock},fork,mode=660,user=$(id -un),backlog=128" \
         "UNIX-CONNECT:${host_sock}" \
-        >/tmp/docker-socat.log 2>&1 &
+        </dev/null >/tmp/docker-socat.log 2>&1 &
     disown
 fi
 

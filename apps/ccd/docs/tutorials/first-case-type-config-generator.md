@@ -436,8 +436,8 @@ After `./gradlew :test-projects:e2e:check` completes successfully:
 
 ## See also
 
-- [`docs/ccd/explanation/case-type-model.md`](../explanation/case-type-model.md) — what case types, states, and events mean in CCD
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — CCD term definitions
+- [`apps/ccd/docs/explanation/case-type-model.md`](../explanation/case-type-model.md) — what case types, states, and events mean in CCD
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — CCD term definitions
 
 ## Glossary
 

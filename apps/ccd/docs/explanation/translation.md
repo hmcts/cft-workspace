@@ -140,6 +140,6 @@ The Admin Web Node service (`manage-welsh-dictionary-service.ts`) parses the CSV
 
 ## See also
 
-- [`docs/ccd/explanation/callbacks.md`](callbacks.md) — full callback lifecycle (translation does **not** hook into this; included here so readers don't conflate the two)
-- [`docs/ccd/explanation/definition-import.md`](definition-import.md) — the import flow into which the async dictionary push is hooked
+- [`apps/ccd/docs/explanation/callbacks.md`](callbacks.md) — full callback lifecycle (translation does **not** hook into this; included here so readers don't conflate the two)
+- [`apps/ccd/docs/explanation/definition-import.md`](definition-import.md) — the import flow into which the async dictionary push is hooked
 - [`ts-translation-service` repo](https://github.com/hmcts/ts-translation-service) — the upstream service

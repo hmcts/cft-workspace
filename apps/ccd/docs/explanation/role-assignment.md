@@ -320,6 +320,6 @@ A user with a BASIC role assignment but no Restricted role assignment for a Rest
 
 ## See also
 
-- [`docs/ccd/explanation/notice-of-change.md`](notice-of-change.md) — full NoC multi-step protocol including challenge questions and approval workflow
-- [`docs/ccd/explanation/permissions.md`](permissions.md) — CRUD permissions and AccessProfiles in detail
-- [`docs/ccd/reference/glossary.md`](../reference/glossary.md) — definitions for OrganisationPolicy, COR, AMRAS, grantType
+- [`apps/ccd/docs/explanation/notice-of-change.md`](notice-of-change.md) — full NoC multi-step protocol including challenge questions and approval workflow
+- [`apps/ccd/docs/explanation/permissions.md`](permissions.md) — CRUD permissions and AccessProfiles in detail
+- [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions for OrganisationPolicy, COR, AMRAS, grantType
