@@ -11,6 +11,12 @@ integrations:
   - s2s
   - am
   - flyway
+api_specs:
+  - apps/wa/wa-task-management-api:wa-task-management-api.json
+  - apps/wa/wa-workflow-api:wa-workflow-api.json
+  - apps/wa/wa-case-event-handler:wa-case-event-handler.json
+  - apps/wa/wa-task-monitor:wa-task-monitor.json
+  - apps/wa/wa-standalone-task-bpmn:wa-standalone-task-bpmn.json
 repos:
   - apps/wa/wa-task-management-api
   - apps/wa/wa-workflow-api

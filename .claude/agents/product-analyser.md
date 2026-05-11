@@ -45,6 +45,8 @@ ccd_based: true | false
 ccd_config: json | config-generator | hybrid | none
 ccd_features: [<token>, ...]
 integrations: [<token>, ...]
+api_specs:
+  - <repo>:<spec-filename>.json
 repos:
   - <workspace-relative path>
   - <workspace-relative path>
@@ -92,6 +94,13 @@ repos:
     - `work_allocation`: calls `wa-task-management-api`.
     - `cftlib`: build pulls `rse-cft-lib` for tests.
     - `flyway`: Flyway migrations under `src/main/resources/db/migration/`.
+
+- **`api_specs`**: OpenAPI specs the product publishes to `hmcts/cnp-api-docs`. For each clone in the product, look for:
+    - **`.github/workflows/publish-openapi*.yml`** that calls `hmcts/workflow-publish-openapi-spec/.github/workflows/publish-openapi.yml@main` — the spec filename is `<api_name>.json` where `api_name:` is the workflow `with:` input. Modern pattern (one spec per repo).
+    - **`.github/workflows/swagger.yml`** (legacy) — grep the workflow for `git add docs/specs/<filename>.json` lines; each is a published spec. Some legacy services publish multiple versioned files from one repo (e.g. CCD data store publishes four).
+    - **`*OpenAPIPublisherTest.java` / `*SwaggerPublisherTest.java`** under `src/integrationTest/` — confirms publishing is wired even when the workflow filename is non-standard.
+
+  Emit each entry as `<repo>:<spec-filename>.json` where `<repo>` is the workspace-relative path. Omit the field entirely if the product publishes no specs. Cross-check against `platops/cnp-api-docs/docs/specs/` (the local clone of the central registry) — if a workflow declares a filename not present in the clone, list it anyway; the local clone may be stale.
 
 - **`repos`**: every clone directory inside the product. List the workspace-relative paths exactly as they appear in `workspace.yaml`.
 
@@ -149,5 +158,5 @@ Write the result to `<product>/CLAUDE.md`. Overwrite if it exists. Do not commit
 
 When done, print one line to stdout:
 ```
-wrote <product>/CLAUDE.md (ccd_based=…, features=[…], integrations=[…], repos=N)
+wrote <product>/CLAUDE.md (ccd_based=…, features=[…], integrations=[…], api_specs=N, repos=N)
 ```

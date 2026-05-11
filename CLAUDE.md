@@ -34,6 +34,10 @@ CCD is the case-data spine of most service-team products in this workspace, and 
 
 Team-level documentation lives at `apps/<team>/docs/` (CCD is the first; future teams should follow). Workspace-scoped docs (Diátaxis tree, taxonomy reference, etc.) stay under `docs/`.
 
+## API specs
+
+HMCTS services publish their OpenAPI specs to [`hmcts/cnp-api-docs`](https://github.com/hmcts/cnp-api-docs), cloned locally at [`platops/cnp-api-docs/`](platops/cnp-api-docs/). Every per-product CLAUDE.md declares its published specs via the `api_specs:` frontmatter field; `INDEX.md` surfaces them in the `APIs` column. Use `/find-endpoint <method> <path>` to find which service exposes a given path, and `/api-spec <service>` to summarise one spec. Full catalogue and publishing-workflow notes at [`docs/reference/api-catalogue.md`](docs/reference/api-catalogue.md).
+
 ## Cross-repo relationships
 
 These projects build independently but are tightly related at runtime / by domain:

@@ -10,6 +10,13 @@ integrations:
   - cdam
   - flyway
   - notify
+api_specs:
+  - apps/ccd/ccd-data-store-api:ccd-data-store-api.v1_internal.json
+  - apps/ccd/ccd-data-store-api:ccd-data-store-api.v1_external.json
+  - apps/ccd/ccd-data-store-api:ccd-data-store-api.v2_internal.json
+  - apps/ccd/ccd-data-store-api:ccd-data-store-api.v2_external.json
+  - apps/ccd/ccd-definition-store-api:ccd-definition-store-api.json
+  - apps/ccd/aac-manage-case-assignment:aac-manage-case-assignment.json
 repos:
   - apps/ccd/ccd-data-store-api
   - apps/ccd/ccd-definition-store-api

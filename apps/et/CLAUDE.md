@@ -20,6 +20,8 @@ integrations:
   - cdam
   - cftlib
   - flyway
+api_specs:
+  - apps/et/et-hearings-api:et-hearings-api.json
 repos:
   - apps/et/et-ccd-callbacks
   - apps/et/et-ccd-case-migration

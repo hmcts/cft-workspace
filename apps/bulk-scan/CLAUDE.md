@@ -9,6 +9,8 @@ integrations:
   - cdam
   - payment
   - flyway
+api_specs:
+  - apps/bulk-scan/bulk-scan-processor:bulk-scan-processor.json
 repos:
   - apps/bulk-scan/bulk-scan-processor
 ---

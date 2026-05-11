@@ -25,6 +25,11 @@ integrations:
   - work_allocation
   - send_letter
   - flyway
+api_specs:
+  - apps/civil/civil-service:civil-service.json
+  - apps/civil/civil-orchestrator-service:civil-orchestrator-service.json
+  - apps/civil/civil-rtl-export:civil-rtl-export.json
+  - apps/civil/civil-sdt-gateway:civil-sdt-gateway.json
 repos:
   - apps/civil/civil-service
   - apps/civil/civil-ccd-definition

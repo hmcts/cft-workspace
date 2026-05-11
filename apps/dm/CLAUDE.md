@@ -7,6 +7,8 @@ integrations:
   - idam
   - s2s
   - flyway
+api_specs:
+  - apps/dm/document-management-store-app:document-management-store-app.json
 repos:
   - apps/dm/document-management-store-app
 ---

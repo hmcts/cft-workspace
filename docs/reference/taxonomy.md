@@ -15,6 +15,8 @@ ccd_based: true | false                   # does this product use CCD as its cas
 ccd_config: json | config-generator | hybrid | none
 ccd_features: [<token>, ...]              # opt-in features enabled via CCD definition or service config
 integrations: [<token>, ...]              # external platforms this product talks to
+api_specs:                                # OpenAPI specs this product publishes to hmcts/cnp-api-docs
+  - <repo>:<spec-filename>.json           # workspace-relative repo path + spec filename
 repos:                                    # constituent clones, each as workspace-relative path
   - apps/<product>/<repo>
   - apps/<product>/<repo>
@@ -88,6 +90,30 @@ External platforms or shared services this product talks to:
 | `cftlib` | Uses `rse-cft-lib` to embed CCD in tests. |
 | `flyway` | Manages its DB schema with Flyway migrations. |
 
+### `api_specs`
+
+OpenAPI specs the product's clones publish to [`hmcts/cnp-api-docs`](https://github.com/hmcts/cnp-api-docs) (cloned locally at `platops/cnp-api-docs/`). Each entry is `<repo>:<spec-filename>.json` — a workspace-relative repo path joined to the bare filename of the spec under `platops/cnp-api-docs/docs/specs/`. Omit the field for products that don't publish a spec.
+
+Detection signals (in priority order):
+
+1. **`.github/workflows/publish-openapi*.yml`** using `hmcts/workflow-publish-openapi-spec` — the spec filename is `<api_name>.json` where `api_name:` is the workflow input. Modern convention; one spec per repo.
+2. **`.github/workflows/swagger.yml`** (legacy) — read the workflow's `git add docs/specs/<filename>.json` line(s) to discover the published filename(s). Some services (CCD data-store and definition-store) publish multiple versioned specs from one repo.
+3. **A class named `*OpenAPIPublisherTest` or `SwaggerPublisherTest`** under `src/integrationTest/` — corroborates that publishing is wired even when the workflow filename varies.
+
+If a repo's workflow declares a filename that doesn't yet appear in `platops/cnp-api-docs/docs/specs/`, list it anyway — the spec is published on `master` push and the local clone may be stale.
+
+Example for CCD (multiple versioned specs from one repo):
+
+```yaml
+api_specs:
+  - apps/ccd/ccd-data-store-api:ccd-data-store-api.v1_internal.json
+  - apps/ccd/ccd-data-store-api:ccd-data-store-api.v1_external.json
+  - apps/ccd/ccd-data-store-api:ccd-data-store-api.v2_internal.json
+  - apps/ccd/ccd-data-store-api:ccd-data-store-api.v2_external.json
+  - apps/ccd/aac-manage-case-assignment:aac-manage-case-assignment.json
+  - apps/ccd/ccd-definition-store-api:ccd-definition-store-api.json
+```
+
 ### `repos`
 
 The workspace-relative paths to the constituent clones. The same paths appear in `workspace.yaml`. This list lets `scripts/index`, `/tour`, and `/find-feature` jump from product to clones without re-parsing the manifest.
@@ -109,6 +135,8 @@ integrations:
   - payment
   - cftlib
   - flyway
+api_specs:
+  - apps/pcs/pcs-api:pcs-api.json
 repos:
   - apps/pcs/pcs-api
   - apps/pcs/pcs-frontend

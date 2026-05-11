@@ -21,6 +21,8 @@ integrations:
   - flyway
   - rd
   - stitching
+api_specs:
+  - apps/sscs/sscs-cron-trigger:sscs-cron-trigger.json
 repos:
   - apps/sscs/sscs-tribunals-case-api
   - apps/sscs/sscs-submit-your-appeal

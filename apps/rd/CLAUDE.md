@@ -7,6 +7,9 @@ integrations:
   - idam
   - s2s
   - flyway
+api_specs:
+  - apps/rd/rd-professional-api:rd-professional-api.json
+  - apps/rd/rd-location-ref-api:rd-location-ref-api.json
 repos:
   - apps/rd/rd-professional-api
   - apps/rd/rd-location-ref-api

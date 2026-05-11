@@ -17,6 +17,8 @@ integrations:
   - notify
   - cftlib
   - flyway
+api_specs:
+  - apps/pcs/pcs-api:pcs-api.json
 repos:
   - apps/pcs/pcs-api
   - apps/pcs/pcs-frontend
