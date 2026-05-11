@@ -1,8 +1,6 @@
 {
   "name": "cft-workspace",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "image": "hmctsprod.azurecr.io/cft-workspace/devcontainer:latest",
   "runArgs": ["--network=host", "--privileged"],
   "forwardPorts": [],
   "otherPortsAttributes": {
