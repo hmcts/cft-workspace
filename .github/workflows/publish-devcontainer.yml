@@ -34,7 +34,7 @@ jobs:
       - name: Build and push devcontainer image
         uses: hmcts/cnp-githubactions-library/container-build-push-openid@main
         with:
-          registry-name: hmctspublic
+          registry-name: hmctsprod
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           image-name: cft-workspace/devcontainer

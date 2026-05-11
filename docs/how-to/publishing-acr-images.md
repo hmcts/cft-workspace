@@ -1,6 +1,6 @@
 # Publishing container images to ACR from GitHub Actions
 
-How to push a Docker image to the HMCTS public Azure Container Registry (`hmctspublic.azurecr.io`) from a GitHub Actions workflow, using OIDC and the `cnp-githubactions-library` reusable action — no long-lived credentials in repo secrets.
+How to push a Docker image to the HMCTS Azure Container Registry (`hmctsprod.azurecr.io`) from a GitHub Actions workflow, using OIDC and the `cnp-githubactions-library` reusable action — no long-lived credentials in repo secrets.
 
 ## Overview
 
@@ -43,7 +43,7 @@ In [`hmcts/azure-github-federation-config`](https://github.com/hmcts/azure-githu
         - /subscriptions/bf308a5c-0624-4334-8ff8-8dca9fd43783/resourceGroups/cnp-acr-rg
 ```
 
-Both `rpe-acr-prod-rg` (hosts `hmctspublic`) and `cnp-acr-rg` are typically needed — copy the scopes list from a neighbouring publisher entry rather than guessing.
+Both `rpe-acr-prod-rg` (hosts `hmctsprod`) and `cnp-acr-rg` are typically needed — copy the scopes list from a neighbouring publisher entry rather than guessing.
 
 Subjects use the standard formats listed in [`federated-credentials.md`](federated-credentials.md#subject-identifiers). Add one per branch / `pull_request` / environment context that needs to publish; remember Azure caps each app at 20 federated credentials, so split into `-1`, `-2` apps if you go over.
 
@@ -99,7 +99,7 @@ jobs:
       - name: Build and push devcontainer image
         uses: hmcts/cnp-githubactions-library/container-build-push-openid@main
         with:
-          registry-name: hmctspublic
+          registry-name: hmctsprod
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           image-name: cft-workspace/devcontainer
@@ -113,11 +113,13 @@ Two non-obvious bits:
 - `permissions: id-token: write` is **required** at workflow (or job) level — without it the runner can't mint the OIDC token and step 2's federation has nothing to verify.
 - `image-tags` is newline-separated. Each tag becomes a separate ref pushed to `<registry-name>.azurecr.io/<image-name>:<tag>`.
 
+> The example workflow uses `registry-name: hmctsprod`. If you copy this template, keep that — `hmctspublic` is being decommissioned.
+
 ### Action inputs you'll typically set
 
 | Input | Required | Default | Notes |
 |---|---|---|---|
-| `registry-name` | yes | — | Usually `hmctspublic` |
+| `registry-name` | yes | — | `hmctsprod` (the new HMCTS ACR) |
 | `image-name` | yes | — | Repository path inside the registry, e.g. `cft-workspace/devcontainer` |
 | `azure-client-id` | yes | — | From `AZURE_CLIENT_ID` |
 | `azure-tenant-id` | no | HMCTS tenant | Pass `${{ secrets.AZURE_TENANT_ID }}` to be explicit |
