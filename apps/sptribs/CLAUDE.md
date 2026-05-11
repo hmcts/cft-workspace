@@ -21,6 +21,8 @@ integrations:
   - cftlib
   - flyway
   - send_letter
+api_specs:
+  - apps/sptribs/sptribs-case-api:sptribs-case-api.json
 repos:
   - apps/sptribs/sptribs-case-api
   - apps/sptribs/sptribs-frontend
@@ -35,7 +37,7 @@ Special Tribunals is the HMCTS service handling Criminal Injuries Compensation (
 
 ## Repos
 
-- `apps/sptribs/sptribs-case-api` — Spring Boot backend (port 4013); owns the CCC case type definition (via ccd-config-generator) and handles all CCD event callbacks
+- `apps/sptribs/sptribs-case-api` — Spring Boot backend (port 4013); owns the CIC case type definition (via ccd-config-generator) and handles all CCD event callbacks
 - `apps/sptribs/sptribs-frontend` — Node/Express caseworker-facing frontend (port 4000); primarily integrates with CCD/XUI flows for internal users
 - `apps/sptribs/sptribs-dss-update-case-web` — Node/Express citizen-facing web app (port 3100) for the DSS Update Case journey; allows citizens and legal representatives to upload documents against an existing CCD case
 - `apps/sptribs/sptribs-e2etests` — Playwright-based end-to-end test suite covering DSS Submit, DSS Update, and Case API UI flows; shared pipeline test runner
@@ -53,7 +55,7 @@ The case API publishes CCD case events onto an Azure Service Bus topic (`ccd-cas
 
 Case-type definitions are emitted entirely through the `ccd-config-generator` SDK (plugin `hmcts.ccd.sdk`). The `generateCCDConfig` Gradle task runs the Spring app in `config-gen` profile to produce JSON under `ccd-definitions/definitions`, then `buildCCDXlsx` packages it into the CCD definition spreadsheet. The service is registered as decentralised and CCD routes all `CriminalInjuriesCompensation` callbacks to port 4013.
 
-Case flags (`uk.gov.hmcts.ccd.sdk.type.Flags`) are present in the model (`RetiredFields.java` migrates legacy flag fields). Global Search is configured via a dedicated `SearchCriteria` class implementing `SearchCriteriaField`. `CaseLink` fields are used in `CaseData` for linked-case functionality. WorkBasket input/result fields are configured in `WorkBasketInputFields` and `WorkBasketResultFields`. Document bundling via `em-ccd-orchestrator` (stitching) is integrated through `BundlingService`.
+Case flags (`uk.gov.hmcts.ccd.sdk.type.Flags`) are present in the model (`RetiredFields.java` migrates legacy flag fields). Global Search is configured via a dedicated `SearchCriteria` class implementing `SearchCriteriaField`. `CaseLink` fields are used in `CaseData` for linked-case functionality. WorkBasket input/result fields are configured in `WorkBasketInputFields` and `WorkBasketResultFields`. Elasticsearch-backed search is wired via `SearchInputFields` and `SearchResultFields` (`query_search`). Document bundling via `em-ccd-orchestrator` (stitching) is integrated through `BundlingService`.
 
 Key callback event IDs for citizen DSS flows are declared in `application.yaml` under `caseinfo.apps`: `citizen-cic-create-dss-application`, `citizen-cic-submit-dss-application`, and `citizen-cic-dss-update-case`.
 
@@ -78,3 +80,4 @@ Key callback event IDs for citizen DSS flows are declared in `application.yaml` 
 - `sptribs-e2etests` tests all three applications (DSS Submit, DSS Update, Case API/XUI) in a single Playwright repo rather than per-app test suites; each app's test suite is invokable independently via separate yarn commands.
 - Java 21 (distroless base image `hmctsprod.azurecr.io/base/java:21-distroless`); node apps use Node 18+ / Yarn 4.
 - Camunda external task client v7.24.0 is included as a dependency, suggesting some process/task automation beyond standard WA task management.
+- The service also integrates with `dg-docassembly-api` (Docmosis) for generating decision notices and orders from CIC-specific `.docx` templates; this falls outside the controlled integration tokens.
