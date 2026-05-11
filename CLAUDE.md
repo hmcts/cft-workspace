@@ -44,10 +44,14 @@ These projects build independently but are tightly related at runtime / by domai
 
 - **CCD** (`apps/ccd/*`) is the Core Case Data platform. `ccd-definition-store-api` holds case-type definitions; `ccd-data-store-api` holds case data.
 - **`apps/ccd/aac-manage-case-assignment`** powers Notice of Change and case-assignment flows that complement CCD.
+- **CDAM** (`apps/ccd/ccd-case-document-am-api`) is the Case Document Access Management gate sitting in front of `apps/dm/document-management-store-app` — every CCD service uploads/downloads documents through CDAM, not the document store directly.
+- **HMC** (`apps/hmc/*`) is the Hearings Management Component. Service-team products that schedule hearings (civil, et, prl, ia, sscs, sptribs, finrem-via-finrem-cos, etc.) integrate with `hmc-cft-hearing-service` and the HMI inbound/outbound adapters.
+- **AM / Role Assignment** (`apps/am/*`) provides the runtime role-assignment plane consumed by XUI and CCD (case-level RBAC, judicial booking, organisational role mapping).
+- **EM / Evidence Management** (`apps/em/*`) supplies document bundling/stitching (`em-stitching-api`, `em-ccd-orchestrator`), annotation (`em-annotation-api`), in-court presentation (`em-icp-api`), and hearing-recording ingest/serve (`em-hrs-ingestor`, `em-hrs-api`).
 - **`libs/ccd-config-generator`** is the Java SDK service teams use to generate CCD definition spreadsheets/JSON consumed by `ccd-definition-store-api`. See its `AGENTS.md`.
 - **`libs/rse-cft-lib`** (cftlib) bundles CCD + dependencies so service teams can run the CFT stack in-process for tests.
 - **PCS** (`apps/pcs/*`): possession claims service. `pcs-api` is the Spring Boot backend; `pcs-frontend` the Express/TS user-facing app.
-- **`libs/payments-java-client`** is consumed by services that integrate with HMCTS Payments.
+- **`libs/payments-java-client`** is consumed by services that integrate with HMCTS Payments. **`libs/ccd-case-document-am-client`** is the Java client to CDAM. **`libs/send-letter-client`** is the Java client for Bulk Print (`apps/send-letter/*`). **`libs/idam-java-client`** is the Feign client for IDAM.
 
 When making a change in one repo that another consumes, the dependency is via published artifacts (Jenkins / JitPack) — there is no source-level wiring across these directories.
 

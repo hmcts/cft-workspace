@@ -19,31 +19,84 @@ defaults:
 repos:
 
   # ─── apps/ccd — Core Case Data platform ──────────────────────────────────
-  apps/ccd/ccd-data-store-api:           { url: hmcts/ccd-data-store-api }
-  apps/ccd/ccd-definition-store-api:     { url: hmcts/ccd-definition-store-api }
-  apps/ccd/ccd-admin-web:                { url: hmcts/ccd-admin-web }
-  apps/ccd/ccd-test-definitions:         { url: hmcts/ccd-test-definitions }
-  apps/ccd/aac-manage-case-assignment:   { url: hmcts/aac-manage-case-assignment }
+  apps/ccd/ccd-data-store-api:             { url: hmcts/ccd-data-store-api }
+  apps/ccd/ccd-definition-store-api:       { url: hmcts/ccd-definition-store-api }
+  apps/ccd/ccd-admin-web:                  { url: hmcts/ccd-admin-web }
+  apps/ccd/ccd-test-definitions:           { url: hmcts/ccd-test-definitions }
+  apps/ccd/aac-manage-case-assignment:     { url: hmcts/aac-manage-case-assignment }
+  apps/ccd/ccd-case-document-am-api:       { url: hmcts/ccd-case-document-am-api }
+  apps/ccd/ccd-api-gateway:                { url: hmcts/ccd-api-gateway }
+  apps/ccd/ccd-test-stubs-service:         { url: hmcts/ccd-test-stubs-service }
+  apps/ccd/ccd-user-profile-api:           { url: hmcts/ccd-user-profile-api }
+  apps/ccd/ccd-message-publisher:          { url: hmcts/ccd-message-publisher }
+  apps/ccd/ccd-elastic-search:             { url: hmcts/ccd-elastic-search }
+  apps/ccd/ccd-case-disposer:              { url: hmcts/ccd-case-disposer }
+  apps/ccd/ccd-next-hearing-date-updater:  { url: hmcts/ccd-next-hearing-date-updater }
+  apps/ccd/ccd-case-activity-api:          { url: hmcts/ccd-case-activity-api }
+  apps/ccd/ccd-case-migration-starter:     { url: hmcts/ccd-case-migration-starter }
+  apps/ccd/ccd-definition-processor:       { url: hmcts/ccd-definition-processor }
   # ccd-case-management-web is archived; superseded by rpx-xui-webapp.
 
   # ─── apps/xui — Caseworker UI (eXUI / Manage Cases / Manage Organisations) ──
-  apps/xui/rpx-xui-webapp:               { url: hmcts/rpx-xui-webapp }
-  apps/xui/rpx-xui-manage-organisations: { url: hmcts/rpx-xui-manage-organisations }
-  apps/xui/rpx-xui-common-lib:           { url: hmcts/rpx-xui-common-lib }
+  apps/xui/rpx-xui-webapp:                 { url: hmcts/rpx-xui-webapp }
+  apps/xui/rpx-xui-manage-organisations:   { url: hmcts/rpx-xui-manage-organisations }
+  apps/xui/rpx-xui-common-lib:             { url: hmcts/rpx-xui-common-lib }
+  apps/xui/ccd-case-ui-toolkit:            { url: hmcts/ccd-case-ui-toolkit }
+  apps/xui/rpx-xui-node-lib:               { url: hmcts/rpx-xui-node-lib }
+  apps/xui/rpx-xui-translation:            { url: hmcts/rpx-xui-translation }
+  apps/xui/rpx-xui-approve-org:            { url: hmcts/rpx-xui-approve-org }
+  apps/xui/rpx-xui-dev-utils:              { url: hmcts/rpx-xui-dev-utils }
 
   # ─── apps/idam — Identity & Access Management ───────────────────────────
-  apps/idam/idam-api:                    { url: hmcts/idam-api }
-  apps/idam/idam-web-public:             { url: hmcts/idam-web-public }
+  apps/idam/idam-api:                      { url: hmcts/idam-api }
+  apps/idam/idam-web-public:               { url: hmcts/idam-web-public }
+  apps/idam/idam-user-dashboard:           { url: hmcts/idam-user-dashboard }
+  apps/idam/idam-testing-support-api:      { url: hmcts/idam-testing-support-api }
+  apps/idam/idam-health-checker:           { url: hmcts/idam-health-checker }
+  apps/idam/idam-user-profile-bridge:      { url: hmcts/idam-user-profile-bridge }
+  apps/idam/idam-forgerock-http-client:    { url: hmcts/idam-forgerock-http-client }
+
+  # ─── apps/am — Access / Role Management ─────────────────────────────────
+  apps/am/am-role-assignment-service:           { url: hmcts/am-role-assignment-service }
+  apps/am/am-org-role-mapping-service:          { url: hmcts/am-org-role-mapping-service }
+  apps/am/am-judicial-booking-service:          { url: hmcts/am-judicial-booking-service }
+  apps/am/am-role-assignment-batch-service:     { url: hmcts/am-role-assignment-batch-service }
+  apps/am/am-role-assignment-refresh-batch:     { url: hmcts/am-role-assignment-refresh-batch }
 
   # ─── apps/payment — Fees & Pay ──────────────────────────────────────────
-  apps/payment/ccpay-payment-app:        { url: hmcts/ccpay-payment-app }
+  apps/payment/ccpay-payment-app:                       { url: hmcts/ccpay-payment-app }
+  apps/payment/ccpay-bubble:                            { url: hmcts/ccpay-bubble }
+  apps/payment/ccpay-payment-api-gateway:               { url: hmcts/ccpay-payment-api-gateway }
+  apps/payment/ccpay-bulkscanning-app:                  { url: hmcts/ccpay-bulkscanning-app }
+  apps/payment/ccpay-refunds-app:                       { url: hmcts/ccpay-refunds-app }
+  apps/payment/ccpay-notifications-service:             { url: hmcts/ccpay-notifications-service }
+  apps/payment/ccpay-service-request-cpo-update-service: { url: hmcts/ccpay-service-request-cpo-update-service }
+  apps/payment/ccpay-scheduled-jobs:                    { url: hmcts/ccpay-scheduled-jobs }
+  apps/payment/ccpay-paymentoutcome-web:                { url: hmcts/ccpay-paymentoutcome-web }
 
   # ─── apps/rd — Reference Data ───────────────────────────────────────────
-  apps/rd/rd-professional-api:           { url: hmcts/rd-professional-api }
-  apps/rd/rd-location-ref-api:           { url: hmcts/rd-location-ref-api }
+  apps/rd/rd-professional-api:             { url: hmcts/rd-professional-api }
+  apps/rd/rd-location-ref-api:             { url: hmcts/rd-location-ref-api }
+  apps/rd/rd-caseworker-ref-api:           { url: hmcts/rd-caseworker-ref-api }
+  apps/rd/rd-judicial-api:                 { url: hmcts/rd-judicial-api }
+  apps/rd/rd-commondata-api:               { url: hmcts/rd-commondata-api }
+  apps/rd/rd-commondata-dataload:          { url: hmcts/rd-commondata-dataload }
+  apps/rd/rd-location-ref-data-load:       { url: hmcts/rd-location-ref-data-load }
+  apps/rd/rd-user-profile-api:             { url: hmcts/rd-user-profile-api }
 
   # ─── apps/dm — Document Management ──────────────────────────────────────
-  apps/dm/document-management-store-app: { url: hmcts/document-management-store-app }
+  apps/dm/document-management-store-app:   { url: hmcts/document-management-store-app }
+
+  # ─── apps/em — Evidence Management (bundling, stitching, annotation, hearing recordings) ──
+  apps/em/em-ccd-orchestrator:             { url: hmcts/em-ccd-orchestrator }
+  apps/em/em-stitching-api:                { url: hmcts/em-stitching-api }
+  apps/em/em-annotation-api:               { url: hmcts/em-annotation-api }
+  apps/em/em-hrs-api:                      { url: hmcts/em-hrs-api }
+  apps/em/em-hrs-ingestor:                 { url: hmcts/em-hrs-ingestor }
+  apps/em/em-icp-api:                      { url: hmcts/em-icp-api }
+  apps/em/em-media-viewer:                 { url: hmcts/em-media-viewer }
+  apps/em/em-native-pdf-annotator-app:     { url: hmcts/em-native-pdf-annotator-app }
+  apps/em/em-test-helper:                  { url: hmcts/em-test-helper }
 
   # ─── apps/wa — Work Allocation ──────────────────────────────────────────
   apps/wa/wa-task-management-api:        { url: hmcts/wa-task-management-api }
@@ -60,11 +113,25 @@ repos:
   apps/wa/wa-task-monitor:               { url: hmcts/wa-task-monitor }
   apps/wa/wa-workflow-api:               { url: hmcts/wa-workflow-api }
 
+  # ─── apps/hmc — Hearings Management Component ─────────────────────────────
+  apps/hmc/hmc-cft-hearing-service:        { url: hmcts/hmc-cft-hearing-service }
+  apps/hmc/hmc-hmi-inbound-adapter:        { url: hmcts/hmc-hmi-inbound-adapter }
+  apps/hmc/hmc-hmi-outbound-adapter:       { url: hmcts/hmc-hmi-outbound-adapter }
+  apps/hmc/hmc-admin-ui:                   { url: hmcts/hmc-admin-ui }
+
   # ─── apps/bulk-scan — Bulk Scan ─────────────────────────────────────────
-  apps/bulk-scan/bulk-scan-processor:    { url: hmcts/bulk-scan-processor }
+  apps/bulk-scan/bulk-scan-processor:      { url: hmcts/bulk-scan-processor }
+  apps/bulk-scan/bulk-scan-orchestrator:   { url: hmcts/bulk-scan-orchestrator }
+  apps/bulk-scan/bulk-scan-payment-processor: { url: hmcts/bulk-scan-payment-processor }
+  apps/bulk-scan/bulk-scan-helper-frontend: { url: hmcts/bulk-scan-helper-frontend }
+  apps/bulk-scan/bulk-scan-ccd-definitions: { url: hmcts/bulk-scan-ccd-definitions }
+
+  # ─── apps/send-letter — Bulk Print (send-letter) ────────────────────────
+  apps/send-letter/send-letter-service:    { url: hmcts/send-letter-service }
+  apps/send-letter/send-letter-mock:       { url: hmcts/send-letter-mock }
 
   # ─── apps/dtsse — DTS shared engineering ───────────────────────────────
-  apps/dtsse/expressjs-monorepo-template: { url: hmcts/expressjs-monorepo-template }
+  apps/dtsse/expressjs-monorepo-template:  { url: hmcts/expressjs-monorepo-template }
 
   # ─── apps/nfdiv — No-Fault Divorce service team ────────────────────────
   apps/nfdiv/nfdiv-frontend:             { url: hmcts/nfdiv-frontend }
@@ -127,6 +194,23 @@ repos:
   apps/prl/prl-shared-infrastructure:    { url: hmcts/prl-shared-infrastructure }
   apps/prl/prl-wa-task-configuration:    { url: hmcts/prl-wa-task-configuration }
 
+  # ─── apps/fpl — Family Public Law service team ─────────────────────────
+  apps/fpl/fpl-ccd-configuration:          { url: hmcts/fpl-ccd-configuration }
+  apps/fpl/fpl-ccd-data-migration-tool:    { url: hmcts/fpl-ccd-data-migration-tool }
+  apps/fpl/fpl-wa-task-configuration:      { url: hmcts/fpl-wa-task-configuration }
+
+  # ─── apps/adoption — Adoption service team ─────────────────────────────
+  apps/adoption/adoption-cos-api:                  { url: hmcts/adoption-cos-api }
+  apps/adoption/adoption-web:                      { url: hmcts/adoption-web }
+  apps/adoption/adoption-ccd-data-migration-tool:  { url: hmcts/adoption-ccd-data-migration-tool }
+  apps/adoption/adoption-cron:                     { url: hmcts/adoption-cron }
+
+  # ─── apps/fis — Family Integrated Services (shared by PRL / Adoption) ───
+  apps/fis/fis-cos-api:                    { url: hmcts/fis-cos-api }
+  apps/fis/fis-ds-web:                     { url: hmcts/fis-ds-web }
+  apps/fis/fis-bulk-scan-api:              { url: hmcts/fis-bulk-scan-api }
+  apps/fis/fis-hmc-api:                    { url: hmcts/fis-hmc-api }
+
   # ─── apps/probate — Probate service team ───────────────────────────────
   apps/probate/probate-back-office:      { url: hmcts/probate-back-office }
   apps/probate/probate-business-service: { url: hmcts/probate-business-service }
@@ -138,6 +222,24 @@ repos:
   apps/probate/probate-performance:      { url: hmcts/probate-performance }
   apps/probate/probate-shared-infrastructure: { url: hmcts/probate-shared-infrastructure }
   apps/probate/probate-submit-service:   { url: hmcts/probate-submit-service }
+
+  # ─── apps/ia — Immigration & Asylum service team ───────────────────────
+  apps/ia/ia-case-api:                     { url: hmcts/ia-case-api }
+  apps/ia/ia-ccd-definitions:              { url: hmcts/ia-ccd-definitions }
+  apps/ia/ia-appeal-frontend:              { url: hmcts/ia-appeal-frontend }
+  apps/ia/ia-aip-frontend:                 { url: hmcts/ia-aip-frontend }
+  apps/ia/ia-case-documents-api:           { url: hmcts/ia-case-documents-api }
+  apps/ia/ia-case-notifications-api:       { url: hmcts/ia-case-notifications-api }
+  apps/ia/ia-case-payments-api:            { url: hmcts/ia-case-payments-api }
+  apps/ia/ia-hearings-api:                 { url: hmcts/ia-hearings-api }
+  apps/ia/ia-bail-case-api:                { url: hmcts/ia-bail-case-api }
+  apps/ia/ia-case-access-api:              { url: hmcts/ia-case-access-api }
+  apps/ia/ia-home-office-integration-api:  { url: hmcts/ia-home-office-integration-api }
+  apps/ia/ia-home-office-mock-api:         { url: hmcts/ia-home-office-mock-api }
+  apps/ia/ia-task-configuration:           { url: hmcts/ia-task-configuration }
+  apps/ia/ia-timed-event-service:          { url: hmcts/ia-timed-event-service }
+  apps/ia/ia-wa-post-deployment-ft-tests:  { url: hmcts/ia-wa-post-deployment-ft-tests }
+  apps/ia/ia-cron-config:                  { url: hmcts/ia-cron-config }
 
   # ─── apps/sptribs — Special Tribunals service team ─────────────────────
   apps/sptribs/sptribs-case-api:         { url: hmcts/sptribs-case-api }
@@ -159,12 +261,22 @@ repos:
   apps/sscs/sscs-tribunals-case-api:     { url: hmcts/sscs-tribunals-case-api }
 
   # ─── libs/ — widely-used Java/Node clients & starters ──────────────────
-  libs/ccd-config-generator:             { url: hmcts/dtsse-ccd-config-generator }
-  libs/payments-java-client:             { url: hmcts/payments-java-client }
-  libs/rse-cft-lib:                      { url: hmcts/rse-cft-lib }
-  libs/properties-volume-nodejs:         { url: hmcts/properties-volume-nodejs }
-  libs/rse-idam-simulator:               { url: hmcts/rse-idam-simulator }
-  libs/service-auth-provider-java-client: { url: hmcts/service-auth-provider-java-client }
+  libs/ccd-config-generator:               { url: hmcts/dtsse-ccd-config-generator }
+  libs/payments-java-client:               { url: hmcts/payments-java-client }
+  libs/rse-cft-lib:                        { url: hmcts/rse-cft-lib }
+  libs/properties-volume-nodejs:           { url: hmcts/properties-volume-nodejs }
+  libs/rse-idam-simulator:                 { url: hmcts/rse-idam-simulator }
+  libs/service-auth-provider-java-client:  { url: hmcts/service-auth-provider-java-client }
+  libs/java-logging:                       { url: hmcts/java-logging }
+  libs/nodejs-healthcheck:                 { url: hmcts/nodejs-healthcheck }
+  libs/nodejs-info-provider:               { url: hmcts/nodejs-info-provider }
+  libs/ccd-case-document-am-client:        { url: hmcts/ccd-case-document-am-client }
+  libs/send-letter-client:                 { url: hmcts/send-letter-client }
+  libs/idam-java-client:                   { url: hmcts/idam-java-client }
+  libs/idam-oidc-auth-support:             { url: hmcts/idam-oidc-auth-support }
+  libs/idam-user-management-api-client:    { url: hmcts/idam-user-management-api-client }
+  libs/ccd-client:                         { url: hmcts/ccd-client }
+  libs/rd-commons-lib:                     { url: hmcts/rd-commons-lib }
 
   # ─── platops/ — flux, jenkins shared library, AKS pipelines ────────────
   platops/cnp-flux-config:               { url: hmcts/cnp-flux-config }
