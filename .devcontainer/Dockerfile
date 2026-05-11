@@ -32,9 +32,15 @@ RUN set -eux; \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
         > /etc/apt/sources.list.d/docker.list; \
     \
+    k8s_minor="v1.34"; \
+    curl -fsSL "https://pkgs.k8s.io/core:/stable:/${k8s_minor}/deb/Release.key" \
+        | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg; \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/${k8s_minor}/deb/ /" \
+        > /etc/apt/sources.list.d/kubernetes.list; \
+    \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        gh azure-cli docker-ce-cli docker-buildx-plugin docker-compose-plugin socat; \
+        gh azure-cli kubectl docker-ce-cli docker-buildx-plugin docker-compose-plugin socat; \
     \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
@@ -50,6 +56,17 @@ RUN set -eux; \
         | tar -xz -C /tmp; \
     install -m 0755 "/tmp/ripgrep-${rg_ver}-${rg_arch}/rg" /usr/local/bin/rg; \
     rm -rf "/tmp/ripgrep-${rg_ver}-${rg_arch}"; \
+    helm_ver="v4.1.4"; \
+    curl -fsSL "https://get.helm.sh/helm-${helm_ver}-linux-${arch}.tar.gz" \
+        | tar -xz -C /tmp; \
+    install -m 0755 "/tmp/linux-${arch}/helm" /usr/local/bin/helm; \
+    rm -rf "/tmp/linux-${arch}"; \
+    kubelogin_ver="v0.2.17"; \
+    curl -fsSL "https://github.com/Azure/kubelogin/releases/download/${kubelogin_ver}/kubelogin-linux-${arch}.zip" \
+        -o /tmp/kubelogin.zip; \
+    unzip -q -j /tmp/kubelogin.zip "bin/linux_${arch}/kubelogin" -d /usr/local/bin; \
+    chmod +x /usr/local/bin/kubelogin; \
+    rm -f /tmp/kubelogin.zip; \
     \
     rm -rf /var/lib/apt/lists/*
 
