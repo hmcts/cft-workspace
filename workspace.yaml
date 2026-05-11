@@ -279,10 +279,14 @@ repos:
   libs/rd-commons-lib:                     { url: hmcts/rd-commons-lib }
 
   # ─── platops/ — flux, jenkins shared library, AKS pipelines ────────────
-  platops/cnp-flux-config:               { url: hmcts/cnp-flux-config }
-  platops/cnp-jenkins-library:           { url: hmcts/cnp-jenkins-library }
-  platops/cnp-jenkins-config:            { url: hmcts/cnp-jenkins-config }
-  platops/cnp-aks-pipelines:             { url: hmcts/cnp-aks-pipelines }
-  platops/cnp-core-infrastructure:       { url: hmcts/cnp-core-infrastructure }
-  platops/hmcts.github.io:               { url: hmcts/hmcts.github.io }
-  platops/cnp-api-docs: { url: hmcts/cnp-api-docs }
+  platops/cnp-flux-config:                { url: hmcts/cnp-flux-config }
+  platops/cnp-jenkins-library:            { url: hmcts/cnp-jenkins-library }
+  platops/cnp-jenkins-config:             { url: hmcts/cnp-jenkins-config }
+  platops/cnp-aks-pipelines:              { url: hmcts/cnp-aks-pipelines }
+  platops/cnp-core-infrastructure:        { url: hmcts/cnp-core-infrastructure }
+  platops/hmcts.github.io:                { url: hmcts/hmcts.github.io }
+  platops/cnp-api-docs:                   { url: hmcts/cnp-api-docs }
+  platops/central-app-registration:       { url: hmcts/central-app-registration }
+  platops/azure-github-federation-config: { url: hmcts/azure-github-federation-config }
+  platops/cnp-githubactions-library:      { url: hmcts/cnp-githubactions-library }
+
