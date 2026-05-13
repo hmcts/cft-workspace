@@ -17,6 +17,7 @@ api_specs:
   - apps/wa/wa-case-event-handler:wa-case-event-handler.json
   - apps/wa/wa-task-monitor:wa-task-monitor.json
   - apps/wa/wa-standalone-task-bpmn:wa-standalone-task-bpmn.json
+exemplar_dirs: []
 repos:
   - apps/wa/wa-task-management-api
   - apps/wa/wa-workflow-api

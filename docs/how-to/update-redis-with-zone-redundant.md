@@ -1,3 +1,10 @@
+---
+title: Update Redis with Zone Redundancy
+topic: update-redis-with-zone-redundant
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Update Redis with Zone Redundancy
 
 This guide explains how to update your Azure Cache for Redis to enable zone redundancy for improved availability and resilience.
@@ -39,5 +46,3 @@ Running `terraform apply` will create the Storage Account needed for backup func
 > - DTS-SHAREDSERVICES-PROD
 
 Please ensure you are applying these changes only in the specified production subscriptions.
-
-

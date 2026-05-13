@@ -1,3 +1,10 @@
+---
+title: Node.js
+topic: publish-nodejs-library
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Node.js
 
 For publishing Node.js libraries, we use NPM as our package manager and GitHub Actions to publish the libraries.

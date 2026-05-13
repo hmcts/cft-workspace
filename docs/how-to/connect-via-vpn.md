@@ -1,3 +1,10 @@
+---
+title: Make a new Virtual Network accessible over the VPN
+topic: connect-via-vpn
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Make a new Virtual Network accessible over the VPN
 
 This page describes how to expose a new Virtual Network to the HMCTS VPN.

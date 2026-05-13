@@ -46,6 +46,9 @@ confluence:
   - id: "1380221923"
     title: "A Guide to Assign Access to cases for professional users: configuration"
     space: "RCCD"
+title: Notice of Change
+diataxis: explanation
+product: ccd
 ---
 
 # Notice of Change
@@ -345,4 +348,3 @@ public void configure(final ConfigBuilder<CaseData, State, UserRole> configBuild
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

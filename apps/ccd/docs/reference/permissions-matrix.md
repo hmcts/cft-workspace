@@ -53,6 +53,9 @@ confluence:
     last_modified: "unknown"
     space: "RCCD"
 confluence_checked_at: "2026-04-29T00:00:00Z"
+title: Permissions Matrix
+diataxis: reference
+product: ccd
 ---
 
 # Permissions Matrix
@@ -421,4 +424,3 @@ Definition-store surfaces ACL data in the `/api/data/case-type/{id}` response. E
 ## Glossary
 
 See [Glossary](glossary.md) for term definitions used in this page.
-

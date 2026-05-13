@@ -1,3 +1,10 @@
+---
+title: Create a Github Repository
+topic: github-repo
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Create a Github Repository
 
 Any developer added to [hmcts org](https://github.com/hmcts) is able to create a new Github repo.

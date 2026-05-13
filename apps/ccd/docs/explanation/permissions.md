@@ -43,6 +43,9 @@ confluence:
   - id: "1235783068"
     title: "Case Roles"
     space: "RCCD"
+title: CCD Permissions
+diataxis: explanation
+product: ccd
 ---
 
 # CCD Permissions
@@ -348,4 +351,3 @@ public class CaseworkerAccess implements HasAccessControl {
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

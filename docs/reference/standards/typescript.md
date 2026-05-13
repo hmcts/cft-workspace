@@ -1,3 +1,10 @@
+---
+title: TypeScript
+topic: typescript
+diataxis: reference
+product: workspace
+audience: both
+---
 # TypeScript
 
 ### Linting
@@ -68,4 +75,3 @@ Where possible, use the [optional chaining operator](https://www.typescriptlang.
 When providing a library, [barrel](https://basarat.gitbook.io/typescript/main-1/barrel) your exports to make the library easier to consume.
 
 Automate the barrelling with [Barrelsby](https://www.npmjs.com/package/barrelsby).
-

@@ -1,3 +1,10 @@
+---
+title: Create App Registrations with Federated Credentials for GitHub Actions
+topic: federated-credentials
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Create App Registrations with Federated Credentials for GitHub Actions
 
 This page describes how to self-service the creation of Azure App Registrations with federated credentials, enabling GitHub Actions workflows to access Azure resources without storing long-lived credentials as secrets.

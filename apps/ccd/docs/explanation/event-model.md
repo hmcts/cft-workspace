@@ -50,6 +50,9 @@ confluence:
   - id: "1276576454"
     title: "Proposed State and Event Model (CCD)"
     space: "SPT"
+title: Event Model
+diataxis: explanation
+product: ccd
 ---
 
 # Event Model

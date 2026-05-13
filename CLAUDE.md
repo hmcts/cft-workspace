@@ -13,8 +13,10 @@ libs/<repo>             # Java/Node clients & shared starters
 platops/<repo>          # flux, dns, jenkins, AKS, plumbing
 workspace.yaml          # manifest of every repo this workspace pulls in
 INDEX.md                # generated taxonomy matrix (scripts/index)
-scripts/                # bootstrap, sync, doctor, add-repo, grep, index
-docs/                   # tutorials / how-to / reference / explanation (Diátaxis)
+DOCS.md                 # generated doc-page index across docs/ + apps/*/docs/ (scripts/docs-index)
+scripts/                # bootstrap, sync, doctor, add-repo, grep, index, docs-index
+docs/                   # tutorials / how-to / reference / explanation (Diátaxis) — workspace-wide / platform topics
+apps/<product>/docs/    # product-specific Diátaxis docs (ccd, xui, wa, am, bulk-scan)
 ```
 
 Every clone is its own git repo with its own VCS history, build system, README, and conventions. Treat each as standalone. There is **no** top-level build, dependency graph, or cross-repo tooling beyond what's in `scripts/`.
@@ -28,15 +30,27 @@ General patterns:
 - **Node/Yarn frontends**: `yarn install`, `yarn start`, `yarn test`, `yarn lint`.
 - Several clones ship `docker-compose.yml` for local dependencies.
 
-## CCD documentation
+## Documentation layout
 
-CCD is the case-data spine of most service-team products in this workspace, and has its own dedicated documentation tree at [`apps/ccd/docs/`](apps/ccd/docs/) covering case-type model, events/callbacks, permissions, decentralisation, documents/CDAM, search, NoC, case flags, work-basket, and more. Maintained by `/generate-ccd-docs`. Companion skills: `/ccd-explain`, `/ccd-find-example`, `/ccd-trace-callback`, `/ccd-doc-drift`.
+Documentation is split between **workspace-wide / platform** (in root `docs/`) and **product-specific** (in `apps/<product>/docs/`). Both follow the [Diátaxis](https://diataxis.fr/) framework — `tutorials/`, `how-to/`, `reference/`, `explanation/`.
 
-Team-level documentation lives at `apps/<team>/docs/` (CCD is the first; future teams should follow). Workspace-scoped docs (Diátaxis tree, taxonomy reference, etc.) stay under `docs/`.
+- **Root `docs/`** — workspace operations, CNP/platform, standards, taxonomy. Audience: anyone working in this workspace, regardless of product.
+- **`apps/ccd/docs/`** — CCD case-type model, events/callbacks, permissions, decentralisation, documents/CDAM, search, NoC, case flags, work-basket, more. Generated/maintained by `/docs-generate ccd`.
+- **`apps/xui/docs/`, `apps/bulk-scan/docs/`, `apps/wa/docs/`, `apps/am/docs/`** — scaffolded for each platform product; content added over time.
+
+Every Diátaxis page carries mandatory frontmatter (`title`, `topic`, `diataxis`, `product`, `audience`). `scripts/docs-index` aggregates the metadata into workspace-root `DOCS.md`. Use `DOCS.md` as the routing index when looking up docs.
+
+Companion skills:
+- **`/cft-explain <topic>`** — answers "what is X / how does Y work" by routing via `DOCS.md`.
+- **`/cft-how-to <task>`** — finds a how-to recipe for an action-shaped task.
+- **`/cft-find-example <feature>`** — finds real code examples; routes per-product via `exemplar_dirs:` in each product CLAUDE.md.
+- **`/cft-ccd-trace-callback`**, **`/cft-ccd-find-feature`** — CCD-specific lookups, kept under the cft-* family for naming consistency.
+- **`/docs-generate <product>`** — generates or refreshes a product's Diátaxis docs (CCD's pipeline, generalised). Includes a Confluence-augmentation phase.
+- **`/docs-drift`** — checks every doc page for drift across three modes (source citations, port manifest for root docs, Confluence revisions).
 
 ## API specs
 
-HMCTS services publish their OpenAPI specs to [`hmcts/cnp-api-docs`](https://github.com/hmcts/cnp-api-docs), cloned locally at [`platops/cnp-api-docs/`](platops/cnp-api-docs/). Every per-product CLAUDE.md declares its published specs via the `api_specs:` frontmatter field; `INDEX.md` surfaces them in the `APIs` column. Use `/find-endpoint <method> <path>` to find which service exposes a given path, and `/api-spec <service>` to summarise one spec. Full catalogue and publishing-workflow notes at [`docs/reference/api-catalogue.md`](docs/reference/api-catalogue.md).
+HMCTS services publish their OpenAPI specs to [`hmcts/cnp-api-docs`](https://github.com/hmcts/cnp-api-docs), cloned locally at [`platops/cnp-api-docs/`](platops/cnp-api-docs/). Every per-product CLAUDE.md declares its published specs via the `api_specs:` frontmatter field; `INDEX.md` surfaces them in the `APIs` column. Use `/cft-find-endpoint <method> <path>` to find which service exposes a given path, and `/cft-api-spec <service>` to summarise one spec. Full catalogue and publishing-workflow notes at [`docs/reference/api-catalogue.md`](docs/reference/api-catalogue.md).
 
 ## Cross-repo relationships
 
@@ -57,11 +71,11 @@ When making a change in one repo that another consumes, the dependency is via pu
 
 ## Per-product taxonomy
 
-Each product (`apps/<product>/`, `libs/`, `platops/`) carries a generated `CLAUDE.md` whose frontmatter encodes the workspace taxonomy — `service`, `ccd_based`, `ccd_config`, `ccd_features`, `integrations`, `repos`. See [`docs/reference/taxonomy.md`](docs/reference/taxonomy.md) for the schema.
+Each product (`apps/<product>/`, `libs/`, `platops/`) carries a generated `CLAUDE.md` whose frontmatter encodes the workspace taxonomy — `service`, `ccd_based`, `ccd_config`, `ccd_features`, `integrations`, `api_specs`, `exemplar_dirs`, `repos`. See [`docs/reference/taxonomy.md`](docs/reference/taxonomy.md) for the schema.
 
 The body of each product CLAUDE.md describes the **product** (what it does, how its repos fit together, key integration points) — not per-repo build commands, which stay in each clone's own README/AGENTS.md.
 
-The `/generate-product-claude-md` command (re-runnable) populates these. `scripts/index` aggregates them into `INDEX.md`. Use `INDEX.md` first when answering "which products use X?" — it's much cheaper than searching every clone.
+The `/docs-generate-product-md` command (re-runnable) populates these. `scripts/index` aggregates them into `INDEX.md`. Use `INDEX.md` first when answering "which products use X?" — it's much cheaper than searching every clone.
 
 ## Workspace conventions
 
@@ -71,4 +85,4 @@ The `/generate-product-claude-md` command (re-runnable) populates these. `script
 
 ## Cross-repo searches
 
-Prefer `./scripts/grep <pattern>` over raw `rg` — it has the right excludes (`node_modules`, `build`, `.gradle`, `target`, `dist`, `.terraform`, lock files, etc.) baked in. For taxonomy-keyed queries ("all repos using Notice of Change"), use the `/find-feature` and `/list-integrations` commands; they consult `INDEX.md` rather than blindly grepping.
+Prefer `./scripts/grep <pattern>` over raw `rg` — it has the right excludes (`node_modules`, `build`, `.gradle`, `target`, `dist`, `.terraform`, lock files, etc.) baked in. For taxonomy-keyed queries ("all repos using Notice of Change"), use the `/cft-ccd-find-feature` and `/cft-list-integrations` commands; they consult `INDEX.md` rather than blindly grepping.

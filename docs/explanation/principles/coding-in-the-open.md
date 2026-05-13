@@ -1,3 +1,10 @@
+---
+title: Code in the Open
+topic: coding-in-the-open
+diataxis: explanation
+product: workspace
+audience: both
+---
 # Code in the Open
 
 ## HMCTS Corporate Guidance 

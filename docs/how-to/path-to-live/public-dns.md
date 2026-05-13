@@ -1,3 +1,10 @@
+---
+title: Public DNS
+topic: public-dns
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Public DNS
 
 ## External DNS

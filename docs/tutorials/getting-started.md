@@ -1,3 +1,10 @@
+---
+title: Getting started
+topic: getting-started
+diataxis: tutorials
+product: workspace
+audience: both
+---
 # Getting started
 
 Goal: clone the workspace, run the devcontainer, bootstrap every CFT repo, and have a working cross-repo grep — in under 10 minutes.
@@ -49,13 +56,13 @@ If you're not using VS Code, run those steps yourself on the host.
 Try one of:
 
 ```
-/doctor
-/tour ccd
-/find-feature notice_of_change
-/list-integrations work_allocation
+/repo-doctor
+/cft-tour ccd
+/cft-ccd-find-feature notice_of_change
+/cft-list-integrations work_allocation
 ```
 
-The first two read static state. The latter two consult `INDEX.md` — if it's empty (no product CLAUDE.md generated yet), Claude will offer to run `/generate-product-claude-md` first.
+The first two read static state. The latter two consult `INDEX.md` — if it's empty (no product CLAUDE.md generated yet), Claude will offer to run `/docs-generate-product-md` first.
 
 ## 5. Working inside a clone
 

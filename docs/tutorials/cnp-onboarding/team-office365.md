@@ -1,3 +1,10 @@
+---
+title: Office 365
+topic: team-office365
+diataxis: tutorials
+product: workspace
+audience: both
+---
 # Office 365
 
 ## Create Office 365 team group

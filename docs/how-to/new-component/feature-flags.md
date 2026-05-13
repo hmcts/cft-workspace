@@ -1,3 +1,10 @@
+---
+title: Feature flags
+topic: feature-flags
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Feature flags
 
 Feature flags are a software development and delivery technique that allows software teams to enable and disable parts of a codebase at the flip of a switch.
@@ -42,4 +49,3 @@ We currently provide 'Test' and 'Production' environments by default within Laun
 
 If your team does require additional environments, you can do this by updating your teams [terraform.tfvars](https://github.com/hmcts/launchdarkly-terraform/blob/896019ed1efdebdf9237b7811ab2b9585a7708f2/terraform.tfvars#L59-L61). 
 It is not recommended to do this as targeting rules should be simpler to manage and ensure consistency across environments.
-

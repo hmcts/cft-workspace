@@ -40,6 +40,9 @@ confluence:
     title: "01 CCD SOG - Overview"
     space: "RCCD"
     last_modified: "unknown"
+title: What is CCD?
+diataxis: explanation
+product: ccd
 ---
 
 # What is CCD?

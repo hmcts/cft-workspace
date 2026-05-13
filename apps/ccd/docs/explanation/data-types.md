@@ -43,6 +43,9 @@ confluence:
     title: "RDM ?? - New Type CaseLink"
     space: "RCCD"
     last_modified: "2026-04-29"
+title: CCD Field Data Types
+diataxis: explanation
+product: ccd
 ---
 
 # CCD Field Data Types
@@ -599,4 +602,3 @@ Modelled by `SearchCriteria.java` and `SearchParty.java`.
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

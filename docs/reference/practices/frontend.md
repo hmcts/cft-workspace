@@ -1,3 +1,10 @@
+---
+title: Frontend applications
+topic: frontend
+diataxis: reference
+product: workspace
+audience: both
+---
 # Frontend applications
 
 Citizen frontend applications should be built using a node.js based Server Side Rendering (SSR) framework such as Express.

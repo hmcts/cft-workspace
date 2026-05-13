@@ -1,3 +1,10 @@
+---
+title: Sandbox Cleardown
+topic: sandbox-cleardown
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Sandbox Cleardown
 
 ### What is this for?

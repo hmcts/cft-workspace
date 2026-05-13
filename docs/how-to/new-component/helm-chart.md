@@ -1,3 +1,10 @@
+---
+title: Helm chart
+topic: helm-chart
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Helm chart
 
 [Helm](https://helm.sh) is the package manager for Kubernetes.

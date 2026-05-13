@@ -49,6 +49,9 @@ confluence:
 examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_GlobalSearch_AC_1/CaseField.json
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/common/SearchParty.json
+title: Enable Global Search
+diataxis: how-to
+product: ccd
 ---
 
 # Enable Global Search

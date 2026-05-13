@@ -1,3 +1,10 @@
+---
+title: Database schema changes
+topic: db-schema-change
+diataxis: reference
+product: workspace
+audience: both
+---
 # Database schema changes
 
 See [Flyway database migration](../../how-to/flyway-database-migrations.md) for automatically running schema changes via pipeline.

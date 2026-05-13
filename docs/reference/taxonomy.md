@@ -1,8 +1,17 @@
+---
+title: Product-level CLAUDE.md taxonomy
+topic: taxonomy
+diataxis: reference
+product: workspace
+audience: both
+---
 # Product-level CLAUDE.md taxonomy
 
 CFT documentation lives **outside** each cloned repo, at the product level — `apps/<product>/CLAUDE.md`, `libs/CLAUDE.md`, `platops/CLAUDE.md`. The cloned repos themselves are upstream code we don't own and aren't going to edit; their existing READMEs and `AGENTS.md` files are left untouched.
 
-Each product-level CLAUDE.md starts with a YAML frontmatter encoding the workspace taxonomy. The `product-analyser` subagent populates these; `scripts/index` aggregates them into `INDEX.md`. The `/find-feature` and `/list-integrations` commands consult the index.
+Each product-level CLAUDE.md starts with a YAML frontmatter encoding the workspace taxonomy. The `product-analyser` subagent populates these; `scripts/index` aggregates them into `INDEX.md`. The `/cft-ccd-find-feature` and `/cft-list-integrations` commands consult the index.
+
+In parallel, every doc page under `docs/` and `apps/*/docs/` carries its own (smaller) frontmatter — `title`, `topic`, `diataxis`, `product`, `audience`. `scripts/docs-index` aggregates those into `DOCS.md` (workspace root). `/cft-explain` and `/cft-how-to` consult that index. See "Doc-page frontmatter" below for the full schema.
 
 The CLAUDE.md describes the **product** — what it is, what repos it consists of, what it does, what it integrates with, what CCD features it uses. Build commands, test runners, etc. are repo-level concerns and stay out — they live in each repo's README.
 
@@ -17,6 +26,7 @@ ccd_features: [<token>, ...]              # opt-in features enabled via CCD defi
 integrations: [<token>, ...]              # external platforms this product talks to
 api_specs:                                # OpenAPI specs this product publishes to hmcts/cnp-api-docs
   - <repo>:<spec-filename>.json           # workspace-relative repo path + spec filename
+exemplar_dirs: [<path>, ...]              # workspace-relative dirs that hold canonical examples
 repos:                                    # constituent clones, each as workspace-relative path
   - apps/<product>/<repo>
   - apps/<product>/<repo>
@@ -114,9 +124,33 @@ api_specs:
   - apps/ccd/ccd-definition-store-api:ccd-definition-store-api.json
 ```
 
+### `exemplar_dirs`
+
+Workspace-relative paths to the directories that hold this product's canonical, well-curated examples of its features — usually test fixtures or SDK example projects. `/cft-find-example` greps these first before falling through to the wider product tree. Use `[]` if the product has no such curated tree yet.
+
+| Product | Typical `exemplar_dirs` |
+|---|---|
+| `ccd` | `libs/ccd-config-generator/test-projects`, `apps/ccd/ccd-test-definitions` |
+| `wa` | (none seeded — populate when a canonical tree is identified) |
+| `xui` | (none seeded) |
+
+### `confluence_spaces`
+
+Optional. HMCTS Confluence space keys that hold content most relevant to this product. Consumed by the `confluence-augmenter` agent during `/docs-generate`'s Phase 3.5 to bias Confluence search via CQL `space = "<KEY>"` clauses. Empty / missing → search all accessible spaces.
+
+| Product | Typical `confluence_spaces` |
+|---|---|
+| `ccd` | `[RCCD, EUI, CF]` (Reform CCD, Expert UI, Case Flags) |
+| `wa` | `[WA]` |
+| `am` | `[AM, RBAC]` |
+| `xui` | `[EUI, EXUI]` |
+| `bulk-scan` | `[BS]` |
+
+These are hints, not constraints — the augmenter expands beyond them if hits are sparse.
+
 ### `repos`
 
-The workspace-relative paths to the constituent clones. The same paths appear in `workspace.yaml`. This list lets `scripts/index`, `/tour`, and `/find-feature` jump from product to clones without re-parsing the manifest.
+The workspace-relative paths to the constituent clones. The same paths appear in `workspace.yaml`. This list lets `scripts/index`, `/cft-tour`, and `/cft-ccd-find-feature` jump from product to clones without re-parsing the manifest.
 
 ## Worked examples
 
@@ -154,6 +188,9 @@ integrations:
   - idam
   - s2s
   - am
+exemplar_dirs:
+  - libs/ccd-config-generator/test-projects
+  - apps/ccd/ccd-test-definitions
 repos:
   - apps/ccd/ccd-data-store-api
   - apps/ccd/ccd-definition-store-api
@@ -162,6 +199,49 @@ repos:
   - apps/ccd/aac-manage-case-assignment
 ---
 ```
+
+## Per-product generation plan
+
+Each product with generated docs has an `apps/<product>/docs/.plan.yaml` describing the pages to generate, their writing briefs, and which source repos feed each page. `/docs-generate <product>` reads this plan; `_scaffold.sh <product>` walks its `pages:` keys to create stubs.
+
+```yaml
+research_sources:
+  ccd-data-store-api:
+    path: apps/ccd/ccd-data-store-api
+    focus: "case storage, callback engine, event submission, Elasticsearch indexing"
+  …
+
+pages:
+  apps/ccd/docs/explanation/callbacks.md:
+    topic: callbacks
+    brief: "Explain the callback contract — about-to-start, about-to-submit, mid-event, submitted. Cover request/response shape, error semantics, timeouts, S2S auth."
+    sources_hint:
+      - ccd-data-store-api
+      - ccd-config-generator
+  …
+```
+
+The plan is co-located with the docs (not in the skill directory) so each product owns its own plan independently. CCD's plan is at `apps/ccd/docs/.plan.yaml`.
+
+## Doc-page frontmatter
+
+Every Diátaxis page under `docs/{tutorials,how-to,reference,explanation}/` and `apps/<product>/docs/{tutorials,how-to,reference,explanation}/` carries mandatory frontmatter:
+
+```yaml
+---
+title: <human-readable title>        # also used as the H1 of the page
+topic: <slug>                        # kebab-case; pages on the same topic share a slug
+diataxis: tutorials | how-to | reference | explanation
+product: workspace | ccd | xui | wa | am | bulk-scan
+audience: service-team | platform | both
+---
+```
+
+`scripts/_backfill-frontmatter` populates these on existing pages and is safe to re-run (idempotent). `scripts/docs-index` aggregates them into the workspace-root `DOCS.md` and errors if any Diátaxis page is missing required fields.
+
+`README.md` files (per Diátaxis level and at each product `docs/README.md`) are exempt from this convention — they're navigation aids, not indexed pages.
+
+Optional fields kept where already present on CCD pages: `sources` (list of `<repo>:<path>` pointers to authoritative source code, used by `/docs-drift --mode=source`), `status` (`stub | drafted | reviewed | confluence-augmented`), `last_reviewed` (ISO 8601), `confluence` (cached Confluence metadata, used by `/docs-drift --mode=confluence`).
 
 ```yaml
 # libs/CLAUDE.md  (workspace's collection of shared libraries)

@@ -41,6 +41,9 @@ confluence:
   - id: "1945644195"
     title: "CDAM Architecture"
     space: "RTA"
+title: Store a Document
+diataxis: how-to
+product: ccd
 ---
 
 # Store a Document
@@ -390,4 +393,3 @@ public class DivorceDocument {
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

@@ -66,6 +66,9 @@ confluence:
     space: "EXUI"
     last_modified: "unknown"
 confluence_checked_at: "2026-04-29T00:00:00Z"
+title: RetainHiddenValue
+diataxis: explanation
+product: ccd
 ---
 
 # RetainHiddenValue

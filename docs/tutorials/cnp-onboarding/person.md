@@ -1,3 +1,10 @@
+---
+title: Person
+topic: person
+diataxis: tutorials
+product: workspace
+audience: both
+---
 # Person
 
 ## Microsoft Entra ID Guest User Invite

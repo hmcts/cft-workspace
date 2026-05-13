@@ -36,6 +36,9 @@ confluence:
     title: "How-to: Add a new event in CCD (legacy JSON workflow)"
     space: "DIV"
     last_modified: "v7 (2019)"
+title: Add an Event
+diataxis: how-to
+product: ccd
 ---
 
 # Add an Event

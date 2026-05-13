@@ -1,3 +1,10 @@
+---
+title: External IP addresses (Egress)
+topic: external-ip-addresses
+diataxis: how-to
+product: workspace
+audience: both
+---
 # External IP addresses (Egress)
 
 > **Warning:** IP address allow lists are not a recommended approach. See [A whitelisting approach for Cloud APIs](https://technology.blog.gov.uk/2017/01/03/a-whitelisting-approach-for-cloud-apis/) for guidance from GDS on why we try not to do this anymore.

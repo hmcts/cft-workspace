@@ -1,3 +1,10 @@
+---
+title: Secrets Management
+topic: secrets-management
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Secrets Management
 
 We use [Azure Key Vault](https://docs.microsoft.com/en-us/azure/key-vault/) for managing secrets.

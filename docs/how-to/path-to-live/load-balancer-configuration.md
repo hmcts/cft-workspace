@@ -1,3 +1,10 @@
+---
+title: Load balancer configuration
+topic: load-balancer-configuration
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Load balancer configuration
 
 In all our path-to-live environments we run two clusters for high availability

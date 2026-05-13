@@ -47,6 +47,9 @@ confluence:
     title: "LLD - Manage Case Assignment Microservice"
     space: "ACA"
     last_modified: "unknown"
+title: CCD Architecture
+diataxis: explanation
+product: ccd
 ---
 
 # CCD Architecture

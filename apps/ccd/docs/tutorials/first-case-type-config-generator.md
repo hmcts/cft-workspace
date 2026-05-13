@@ -41,6 +41,9 @@ confluence:
     title: "CCD Decentralisation PoC Impact Assessment for services"
     last_modified: "unknown"
     space: "DSRDI"
+title: First Case Type (Config Generator)
+diataxis: tutorials
+product: ccd
 ---
 
 # First Case Type (Config Generator)
@@ -442,4 +445,3 @@ After `./gradlew :test-projects:e2e:check` completes successfully:
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

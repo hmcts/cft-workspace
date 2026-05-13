@@ -1,3 +1,10 @@
+---
+title: How to get the test URL for a PR build
+topic: pr-url
+diataxis: how-to
+product: workspace
+audience: both
+---
 # How to get the test URL for a PR build
 
 ## How to get the test URL for a PR build

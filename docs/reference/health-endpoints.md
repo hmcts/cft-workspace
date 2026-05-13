@@ -1,3 +1,10 @@
+---
+title: Health Probes
+topic: health-endpoints
+diataxis: reference
+product: workspace
+audience: both
+---
 # Health Probes
 
 ## Readiness Checks on Kubernetes
@@ -26,4 +33,3 @@ Enhance your application's health by incorporating a database health check throu
 ## Liveness Probe
 
 The "Liveness" state of an application indicates whether its internal state allows it to work correctly or recover by itself if failing. A broken "Liveness" state suggests the application cannot recover, prompting infrastructure to restart the application.
-

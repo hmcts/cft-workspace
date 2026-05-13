@@ -1,3 +1,10 @@
+---
+title: GitHub
+topic: team-github
+diataxis: tutorials
+product: workspace
+audience: both
+---
 # GitHub
 
 ## Access
@@ -46,4 +53,3 @@ sscs: # product name in Jenkinsfile_CNP, this will be a 'short name' that your t
 
 Make sure your product name is not too long as some Azure resources have constraints on their length
 which can easily be hit if names are too long.
-

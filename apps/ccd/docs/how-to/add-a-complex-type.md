@@ -39,6 +39,9 @@ confluence:
   - id: "205906788"
     title: "CCD Supported Field Types"
     space: "RCCD"
+title: Add a Complex Type
+diataxis: how-to
+product: ccd
 ---
 
 # Add a Complex Type
@@ -438,4 +441,3 @@ public class SimpleCaseData {
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

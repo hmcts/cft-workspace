@@ -40,6 +40,9 @@ confluence:
     space: "DATS"
 confluence_checked_at: "2026-04-29T00:00:00Z"
 last_reviewed: 2026-04-29T00:00:00Z
+title: 'API: CDAM (Case Document Access Management)'
+diataxis: reference
+product: ccd
 ---
 
 # API: CDAM (Case Document Access Management)

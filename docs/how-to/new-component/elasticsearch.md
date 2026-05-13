@@ -1,3 +1,10 @@
+---
+title: ElasticSearch
+topic: elasticsearch
+diataxis: how-to
+product: workspace
+audience: both
+---
 # ElasticSearch
 
 At the time of writing; Probate, CMC, SSCS, Employment, Divorce and FPLA are the only approved consumers of production ElasticSearch.

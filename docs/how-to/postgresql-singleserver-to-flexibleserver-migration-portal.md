@@ -1,3 +1,10 @@
+---
+title: Postgresql single server to flexible server migration using Azure Portal
+topic: postgresql-singleserver-to-flexibleserver-migration-portal
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Postgresql single server to flexible server migration using Azure Portal
 
 The Azure Portal can be used to perform an offline migration of a PostgreSQL Single Server instance to PostgreSQL Flexible Server.

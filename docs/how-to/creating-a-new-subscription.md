@@ -1,3 +1,10 @@
+---
+title: Creating a new subscription
+topic: creating-a-new-subscription
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Creating a new subscription
 
 Subscriptions are managed via a GitHub repository [hmcts/azure-enterprise](https://github.com/hmcts/azure-enterprise).

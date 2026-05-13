@@ -25,6 +25,9 @@ confluence:
   - id: "1114964598"
     title: "EM DM - Bundling & Stitching"
     space: "RQA"
+title: Stitching
+diataxis: explanation
+product: ccd
 ---
 
 # Stitching

@@ -22,6 +22,9 @@ confluence:
   - id: "1825037149"
     title: "Hearings (HMC) API"
     space: "RRFM"
+title: Hearings Integration (HMC)
+diataxis: explanation
+product: ccd
 ---
 
 # Hearings Integration (HMC)
@@ -126,4 +129,3 @@ SSCS uses `rse-cft-lib` (`bootWithCCD`) to run an embedded CCD stack locally, wh
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

@@ -5,7 +5,7 @@ Look-up information. Information-dense, no narrative.
 ## Workspace
 
 - [Manifest schema](manifest-schema.md) — `workspace.yaml` structure and conventions.
-- [Per-repo CLAUDE.md taxonomy](taxonomy.md) — the controlled vocabulary used by `/find-feature`, `/list-integrations`, `INDEX.md`.
+- [Per-repo CLAUDE.md taxonomy](taxonomy.md) — the controlled vocabulary used by `/cft-ccd-find-feature`, `/cft-list-integrations`, `INDEX.md`.
 - [Devcontainer features](devcontainer-features.md) _(planned)_ — what the devcontainer ships and how to extend it.
 
 ## Cloud Native Platform

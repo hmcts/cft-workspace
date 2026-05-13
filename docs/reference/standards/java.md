@@ -1,3 +1,10 @@
+---
+title: Java
+topic: java
+diataxis: reference
+product: workspace
+audience: both
+---
 # Java
 
 Follow the [Google Java Style Guide](https://google.github.io/styleguide/javaguide.md).

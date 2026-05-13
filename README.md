@@ -36,8 +36,10 @@ libs/<repo>            # widely-used Java/Node clients & starters
 platops/<repo>         # flux, dns, jenkins, plumbing, AKS
 
 workspace.yaml         # manifest — single source of truth for what's in this workspace
-INDEX.md               # generated taxonomy table (run `./scripts/index`)
-docs/                  # workspace docs (Diátaxis: tutorials/how-to/reference/explanation)
+INDEX.md               # generated product taxonomy table (run `./scripts/index`)
+DOCS.md                # generated doc-page index across docs/ + apps/*/docs/ (run `./scripts/docs-index`)
+docs/                  # workspace docs (Diátaxis) — workspace-wide / platform topics
+apps/<product>/docs/   # product-specific docs (ccd, xui, wa, am, bulk-scan)
 ```
 
 ## Scripts
@@ -50,6 +52,8 @@ docs/                  # workspace docs (Diátaxis: tutorials/how-to/reference/e
 | `scripts/add-repo <path> <org/repo> [ref]` | Append a new entry to the manifest and clone it. |
 | `scripts/grep <pattern>` | Ripgrep across all clones with CFT-aware excludes. |
 | `scripts/index` | Regenerate `INDEX.md` from each repo's `CLAUDE.md` frontmatter. |
+| `scripts/docs-index` | Regenerate `DOCS.md` from each Diátaxis doc page's frontmatter (workspace + per-product). |
+| `scripts/_backfill-frontmatter` | Backfill `title`/`topic`/`diataxis`/`product`/`audience` frontmatter on Diátaxis pages. Idempotent. |
 
 The `prefix` argument filters by path prefix — e.g. `./scripts/sync apps/nfdiv` only updates the four nfdiv repos.
 
@@ -62,7 +66,7 @@ git add workspace.yaml && git commit -m "add civil-service to manifest"
 
 ## Generating per-product CLAUDE.md taxonomy
 
-Each product (`apps/<product>/`, `libs/`, `platops/`) gets a `CLAUDE.md` with a structured frontmatter block (service, CCD config, CCD features, integrations, constituent repos) and a product-focused body. Generation is run via the `/generate-product-claude-md` Claude command — re-runnable so the taxonomy stays fresh as products evolve. After generating, run `./scripts/index` to refresh `INDEX.md`.
+Each product (`apps/<product>/`, `libs/`, `platops/`) gets a `CLAUDE.md` with a structured frontmatter block (service, CCD config, CCD features, integrations, constituent repos) and a product-focused body. Generation is run via the `/docs-generate-product-md` Claude command — re-runnable so the taxonomy stays fresh as products evolve. After generating, run `./scripts/index` to refresh `INDEX.md`.
 
 See [`docs/reference/taxonomy.md`](./docs/reference/taxonomy.md) for the full field list.
 

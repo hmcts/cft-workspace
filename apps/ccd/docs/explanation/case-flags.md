@@ -31,6 +31,9 @@ confluence:
   - id: "1540427904"
     title: "Expert UI - Low Level Design - Case Flags Field"
     space: "EUI"
+title: Case Flags
+diataxis: explanation
+product: ccd
 ---
 
 # Case Flags
@@ -333,4 +336,3 @@ The ExUI component shows a Flag Refinement L2 step for these specifically, popul
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

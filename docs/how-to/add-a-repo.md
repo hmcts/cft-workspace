@@ -1,3 +1,10 @@
+---
+title: How to add a repo
+topic: add-a-repo
+diataxis: how-to
+product: workspace
+audience: both
+---
 # How to add a repo
 
 ```bash
@@ -25,7 +32,7 @@ git add workspace.yaml
 git commit -m "add <repo> to manifest"
 
 # Refresh the product's taxonomy (e.g. apps/nfdiv after adding a new nfdiv repo)
-/generate-product-claude-md <product>
+/docs-generate-product-md <product>
 
 # Refresh INDEX.md
 ./scripts/index

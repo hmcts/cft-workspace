@@ -44,6 +44,9 @@ confluence:
     title: "ExUI Decentralisation (Platform Enablement) HLSA"
     space: "POFCC"
     last_modified: "2026-02-23"
+title: Decentralise a Service
+diataxis: how-to
+product: ccd
 ---
 
 # Decentralise a Service
@@ -383,4 +386,3 @@ DB and returns `SubmitResponse.<State>builder().state(CASE_ISSUED).build()`.
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

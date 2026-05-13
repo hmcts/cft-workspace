@@ -41,6 +41,9 @@ confluence:
     title: "Callback System in IA Case API"
     last_modified: "unknown"
     space: "DATS"
+title: Add a Page Mid-Event Callback
+diataxis: how-to
+product: ccd
 ---
 
 # Add a Page Mid-Event Callback

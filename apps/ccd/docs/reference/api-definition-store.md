@@ -40,6 +40,9 @@ confluence:
     space: "RCCD"
 confluence_checked_at: "2026-04-29T00:00:00Z"
 last_reviewed: 2026-04-29T00:00:00Z
+title: 'API: Definition Store'
+diataxis: reference
+product: ccd
 ---
 
 # API: Definition Store
@@ -281,4 +284,3 @@ Before importing to production, the recommended operational workflow is:
 ## Glossary
 
 See [Glossary](glossary.md) for term definitions used in this page.
-

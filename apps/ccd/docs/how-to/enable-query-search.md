@@ -48,6 +48,9 @@ confluence:
     last_modified: "unknown (version 28)"
 examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_BEFTA_JURISDICTION1/BEFTA_CASETYPE_1_1/SearchInputFields.json
+title: Enable Query Search
+diataxis: how-to
+product: ccd
 ---
 
 # Enable Query Search

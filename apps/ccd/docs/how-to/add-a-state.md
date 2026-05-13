@@ -36,6 +36,9 @@ confluence:
   - id: "1616386673"
     title: "CCD Service Operations Guide"
     space: "CCD"
+title: Add a State
+diataxis: how-to
+product: ccd
 ---
 
 # Add a State
@@ -221,4 +224,3 @@ curl -s "http://localhost:4013/ccd-persistence/cases?case-refs={caseRef}" \
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

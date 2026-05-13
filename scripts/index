@@ -82,7 +82,7 @@ done
     done
 
     if (( ${#products[@]} == 0 )); then
-        printf '\n_No product CLAUDE.md files found. Run `/generate-product-claude-md` to populate._\n'
+        printf '\n_No product CLAUDE.md files found. Run `/docs-generate-product-md` to populate._\n'
     fi
 } > INDEX.md
 

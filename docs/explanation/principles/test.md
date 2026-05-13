@@ -1,3 +1,10 @@
+---
+title: Testing
+topic: test
+diataxis: explanation
+product: workspace
+audience: both
+---
 # Testing
 
 Your tests should be:
@@ -55,4 +62,3 @@ Use the Arrange, Act, Assert pattern:
 Have a small number of tests that run with the full stack deployed in a real environment that is as close to production as possible.
 
 Put extra effort into making sure the tests are reliable.
-

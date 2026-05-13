@@ -36,6 +36,9 @@ confluence:
 examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_BEFTA_JURISDICTION1/BEFTA_CASETYPE_1_1/WorkBasketInputFields.json
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_BEFTA_JURISDICTION1/BEFTA_CASETYPE_1_1/WorkBasketResultFields.json
+title: Enable Work Basket
+diataxis: how-to
+product: ccd
 ---
 
 # Enable Work Basket
@@ -261,4 +264,3 @@ This sorts the work basket primarily by `createdDate` (newest first), then alpha
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

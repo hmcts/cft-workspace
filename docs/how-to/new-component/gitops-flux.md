@@ -1,3 +1,10 @@
+---
+title: GitOps
+topic: gitops-flux
+diataxis: how-to
+product: workspace
+audience: both
+---
 # GitOps
 
 One of our principles being <b>Everything as Code</b>, we practice [GitOps](https://web.archive.org/web/20221225081356/https://go.weave.works/rs/249-YDT-025/images/eBook_ThePracticalGuideToGitOps.pdf) for application deployment to Kubernetes.

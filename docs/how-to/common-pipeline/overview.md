@@ -1,3 +1,10 @@
+---
+title: Common pipeline
+topic: overview
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Common pipeline
 
 > To get onboarded to the common pipeline please see [Jenkins onboarding](../../tutorials/cnp-onboarding/team-jenkins.md).

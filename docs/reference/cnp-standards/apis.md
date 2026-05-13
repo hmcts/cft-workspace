@@ -1,3 +1,10 @@
+---
+title: API design
+topic: apis
+diataxis: reference
+product: workspace
+audience: both
+---
 # API design
 
 Rather than reinvent the wheel, we've decided to reuse and amend the good work done by Zalando.

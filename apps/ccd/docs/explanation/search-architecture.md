@@ -48,6 +48,9 @@ confluence:
     title: "Elasticsearch and CCD"
     space: "RCCD"
     version: 1
+title: Search Architecture
+diataxis: explanation
+product: ccd
 ---
 
 # Search Architecture
@@ -458,4 +461,3 @@ sequenceDiagram
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

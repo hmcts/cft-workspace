@@ -23,6 +23,9 @@ confluence:
     last_modified: "unknown"
     space: "FR"
 confluence_checked_at: "2026-04-29T00:00:00Z"
+title: CCD Feature Tokens
+diataxis: reference
+product: ccd
 ---
 
 # CCD Feature Tokens
@@ -30,7 +33,7 @@ confluence_checked_at: "2026-04-29T00:00:00Z"
 ## TL;DR
 
 - Each `ccd_features` token in a product's `CLAUDE.md` frontmatter names an opt-in CCD capability that product enables.
-- Tokens drive the `/find-feature` command and `INDEX.md` aggregation — use exact spellings.
+- Tokens drive the `/cft-ccd-find-feature` command and `INDEX.md` aggregation — use exact spellings.
 - Universal capabilities (event processing, history, audit, CRUD, callbacks, security classifications) are excluded; tokens only appear where a product has explicitly opted in to a differentiating feature.
 - CCD offers 40+ out-of-the-box capabilities (see [Platform capabilities](#platform-capabilities-vs-taxonomy-tokens) below) — only the subset that disambiguates products is tracked as tokens.
 - The `-nonprod` / `-prod` file convention for toggling CCD definitions per environment is unrelated to these tokens; see [Definition-level feature toggling](#definition-level-feature-toggling).
@@ -64,7 +67,7 @@ ccd_features:
   - work_allocation_tasks
 ```
 
-List only tokens the product has actively configured. Omit universal features. Spell tokens exactly as above — `scripts/index` and `/find-feature` match on exact strings.
+List only tokens the product has actively configured. Omit universal features. Spell tokens exactly as above — `scripts/index` and `/cft-ccd-find-feature` match on exact strings.
 
 ## Platform capabilities vs taxonomy tokens
 

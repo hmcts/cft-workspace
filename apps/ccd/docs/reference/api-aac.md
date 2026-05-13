@@ -39,6 +39,9 @@ confluence:
     last_modified: "unknown"
     space: "RCCD"
 confluence_checked_at: "2026-04-29T00:00:00Z"
+title: 'API: AAC (aac-manage-case-assignment)'
+diataxis: reference
+product: ccd
 ---
 
 # API: AAC (aac-manage-case-assignment)

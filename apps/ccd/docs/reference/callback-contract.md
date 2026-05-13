@@ -38,6 +38,9 @@ confluence:
     last_modified: "unknown"
     space: "CRef"
 confluence_checked_at: "2026-04-29T00:00:00Z"
+title: Callback Contract
+diataxis: reference
+product: ccd
 ---
 
 # Callback Contract
@@ -384,4 +387,3 @@ If downstream orchestration is unavoidable in `about_to_submit`, the callback sh
 ## Glossary
 
 See [Glossary](glossary.md) for term definitions used in this page.
-

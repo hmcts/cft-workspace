@@ -1,3 +1,10 @@
+---
+title: OpenAPI catalogue
+topic: api-catalogue
+diataxis: reference
+product: workspace
+audience: both
+---
 # OpenAPI catalogue
 
 HMCTS services publish their OpenAPI specs to a central registry, [`hmcts/cnp-api-docs`](https://github.com/hmcts/cnp-api-docs). This workspace clones that registry locally at `platops/cnp-api-docs/` so developers and agents can browse, grep, and link to specs without going through the hosted site for every lookup.
@@ -65,7 +72,7 @@ api_specs:
   - apps/ccd/ccd-definition-store-api:ccd-definition-store-api.json
 ```
 
-The `product-analyser` subagent populates the field by detecting the workflow patterns above; `scripts/index` aggregates the counts into the `APIs` column of [`INDEX.md`](../../INDEX.md). The `/find-endpoint` and `/api-spec` skills use the mapping to resolve a spec back to its owning product.
+The `product-analyser` subagent populates the field by detecting the workflow patterns above; `scripts/index` aggregates the counts into the `APIs` column of [`INDEX.md`](../../INDEX.md). The `/cft-find-endpoint` and `/cft-api-spec` skills use the mapping to resolve a spec back to its owning product.
 
 ## Skills
 
@@ -73,8 +80,8 @@ Two read-only skills operate over the local clone. They never hit the network; r
 
 | Skill | What it does | Example |
 |---|---|---|
-| [`/find-endpoint`](../../.claude/commands/find-endpoint.md) | Search every spec for a path pattern (optionally filtered by HTTP method). Returns the spec filename, methods, owning product, local file path, and hosted Swagger UI link. | `/find-endpoint POST /cases/{caseId}/events` |
-| [`/api-spec`](../../.claude/commands/api-spec.md) | Summarise one spec: title, version, OpenAPI version, server, endpoint count by tag, auth schemes, owning product, local file path, hosted UI link. | `/api-spec pcs-api` |
+| [`/cft-find-endpoint`](../../.claude/skills/cft-find-endpoint/SKILL.md) | Search every spec for a path pattern (optionally filtered by HTTP method). Returns the spec filename, methods, owning product, local file path, and hosted Swagger UI link. | `/cft-find-endpoint POST /cases/{caseId}/events` |
+| [`/cft-api-spec`](../../.claude/skills/cft-api-spec/SKILL.md) | Summarise one spec: title, version, OpenAPI version, server, endpoint count by tag, auth schemes, owning product, local file path, hosted UI link. | `/cft-api-spec pcs-api` |
 
 For workspace-wide grep across spec contents (not just paths), `./scripts/grep <pattern> platops/cnp-api-docs/` works — the script's excludes don't touch JSON.
 
@@ -82,12 +89,12 @@ For workspace-wide grep across spec contents (not just paths), `./scripts/grep <
 
 There is nothing to do at the workspace level. Once a service repo pushes a spec to `hmcts/cnp-api-docs`, the next `./scripts/sync platops/cnp-api-docs` pulls it down. To wire it into the workspace's product taxonomy:
 
-1. Re-run `/generate-product-claude-md <product>` — the analyser detects the publish workflow and updates `api_specs:`.
+1. Re-run `/docs-generate-product-md <product>` — the analyser detects the publish workflow and updates `api_specs:`.
 2. Re-run `./scripts/index` (or `/workspace-index`) to refresh `INDEX.md`.
 
 ## Caveats
 
-- The registry covers ~110 services org-wide; this workspace clones ~50 of those repos. `/find-endpoint` will surface paths from specs whose source repo isn't in this workspace — they're labelled `(not in workspace)`.
+- The registry covers ~110 services org-wide; this workspace clones ~50 of those repos. `/cft-find-endpoint` will surface paths from specs whose source repo isn't in this workspace — they're labelled `(not in workspace)`.
 - A few services have historical duplicate spec files (e.g. `pcs-api.json`, `pcsAPI.json`, `pcs-backend-api.json`). The catalogue treats them as distinct artifacts; only `pcs-api.json` corresponds to the current `apps/pcs/pcs-api` repo.
 - `microservices.json` is hand-maintained upstream; some entries lag a service's actual published spec. When in doubt, trust the spec file in `docs/specs/`.
 - Refreshing the clone (`./scripts/sync platops/cnp-api-docs`) is the only way to pick up new specs. There is no drift-detection skill yet — adding one is on the Phase-2 roadmap.

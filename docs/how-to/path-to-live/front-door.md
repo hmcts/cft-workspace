@@ -1,3 +1,10 @@
+---
+title: Front Door configuration
+topic: front-door
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Front Door configuration
 
 ## Purpose

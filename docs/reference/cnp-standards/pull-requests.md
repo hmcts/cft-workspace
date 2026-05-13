@@ -1,3 +1,10 @@
+---
+title: Pull requests
+topic: pull-requests
+diataxis: reference
+product: workspace
+audience: both
+---
 # Pull requests
 
 As a PR writer I will:

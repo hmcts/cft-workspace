@@ -1,3 +1,10 @@
+---
+title: Continuous delivery
+topic: continuous-delivery
+diataxis: explanation
+product: workspace
+audience: both
+---
 # Continuous delivery
 
 All teams should use a Continuous Integration and Continuous Delivery pipeline.

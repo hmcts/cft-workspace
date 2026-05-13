@@ -18,7 +18,7 @@ See [`principles/`](principles/README.md).
 
 ## CCD platform
 
-CCD docs live in their own tree: [`apps/ccd/docs/`](../../apps/ccd/docs/). It has its own Diátaxis layout (tutorials, how-to, explanation, reference) and is generated/maintained by the `/generate-ccd-docs` skill. Topics covered include the case-type model, event lifecycle, callbacks, permissions, role assignment, decentralisation, documents/CDAM, search, Notice of Change, case flags, work-basket, work-allocation integration, hearings, and more.
+CCD docs live in their own tree: [`apps/ccd/docs/`](../../apps/ccd/docs/). It has its own Diátaxis layout (tutorials, how-to, explanation, reference) and is generated/maintained by `/docs-generate ccd`. Topics covered include the case-type model, event lifecycle, callbacks, permissions, role assignment, decentralisation, documents/CDAM, search, Notice of Change, case flags, work-basket, work-allocation integration, hearings, and more.
 
 Start at [`apps/ccd/docs/README.md`](../../apps/ccd/docs/README.md).
 

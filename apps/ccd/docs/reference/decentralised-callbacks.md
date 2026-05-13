@@ -45,6 +45,9 @@ confluence:
     space: "DSRDI"
 confluence_checked_at: "2026-04-29T00:00:00Z"
 last_reviewed: 2026-04-29T00:00:00Z
+title: Decentralised Callbacks -- `/ccd-persistence/*` Contract
+diataxis: reference
+product: ccd
 ---
 
 # Decentralised Callbacks -- `/ccd-persistence/*` Contract
@@ -491,4 +494,3 @@ ccd {
 ## Glossary
 
 See [Glossary](glossary.md) for term definitions used in this page.
-

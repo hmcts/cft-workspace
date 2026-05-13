@@ -1,3 +1,10 @@
+---
+title: Java
+topic: publish-java-library
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Java
 
 For publishing Java libraries, we now use Azure Artifacts (preferred platform default). Previously, we used JitPack as our artifact repository to publish the libraries, which is now deprecated and scheduled for removal from the platform by July 2025.

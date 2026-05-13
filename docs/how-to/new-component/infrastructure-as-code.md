@@ -1,3 +1,10 @@
+---
+title: Infrastructure as Code
+topic: infrastructure-as-code
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Infrastructure as Code
 
 <!-- Lots of acronyms all at once, provide examples/explanation here instead of wikipedia? -->
@@ -132,4 +139,3 @@ You must specify what version of terraform you want Jenkins to use with a `.terr
 ## Jenkinsfile_CNP
 
 You must add a `Jenkinsfile_CNP` to the root directory of your repository in order to define a build pipeline for it. [Example](https://github.com/hmcts/tax-tribunals-shared-infrastructure/blob/master/Jenkinsfile_CNP).
-

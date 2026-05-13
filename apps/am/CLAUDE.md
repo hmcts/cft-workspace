@@ -12,6 +12,7 @@ api_specs:
   - apps/am/am-role-assignment-service:am-role-assignment-service.json
   - apps/am/am-org-role-mapping-service:am-org-role-mapping-service.json
   - apps/am/am-judicial-booking-service:am-judicial-booking-service.json
+exemplar_dirs: []
 repos:
   - apps/am/am-role-assignment-service
   - apps/am/am-org-role-mapping-service

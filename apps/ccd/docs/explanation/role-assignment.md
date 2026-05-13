@@ -50,6 +50,9 @@ confluence:
   - id: "1622348398"
     title: "Specific Access Approval"
     space: "WA"
+title: Role Assignment
+diataxis: explanation
+product: ccd
 ---
 
 # Role Assignment

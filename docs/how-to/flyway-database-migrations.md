@@ -1,3 +1,10 @@
+---
+title: Flyway database migration
+topic: flyway-database-migrations
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Flyway database migration
 
 To prevent application startup failure for larger migrations due to Kubernetes probes it's essential that databases are migrated outside of Kubernetes via the Continuous Delivery pipeline.

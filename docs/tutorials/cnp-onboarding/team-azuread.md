@@ -1,3 +1,10 @@
+---
+title: Microsoft Entra ID
+topic: team-azuread
+diataxis: tutorials
+product: workspace
+audience: both
+---
 # Microsoft Entra ID
 
 Microsoft Entra ID is used to give you and your team-mates access to specific subscriptions in Azure. When your github user has access to a subscription, you will be able to view, create and modify Azure resources for your team.

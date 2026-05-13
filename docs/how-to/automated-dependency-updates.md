@@ -1,3 +1,10 @@
+---
+title: Automated dependency updates
+topic: automated-dependency-updates
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Automated dependency updates
 
 Renovate is a tool that automates dependency updates in your project.

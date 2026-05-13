@@ -38,6 +38,9 @@ confluence:
     space: "RRFM"
 confluence_checked_at: "2026-04-29T12:00:00Z"
 last_reviewed: 2026-04-29T00:00:00Z
+title: Config Generator API reference
+diataxis: reference
+product: ccd
 ---
 
 # Config Generator API reference

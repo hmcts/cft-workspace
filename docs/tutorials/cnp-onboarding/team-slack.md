@@ -1,3 +1,10 @@
+---
+title: Slack
+topic: team-slack
+diataxis: tutorials
+product: workspace
+audience: both
+---
 # Slack
 
 Once you've received your `hmcts.net` or `justice.gov.uk` email account you can be invited into our Slack workspace by one of your team members.

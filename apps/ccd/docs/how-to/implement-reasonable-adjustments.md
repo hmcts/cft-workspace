@@ -59,6 +59,9 @@ confluence:
     title: "Reasonable Adjustments (Case flags 2.1) - Requirements"
     space: "PL"
     last_modified: "version 13 (date not exposed)"
+title: Implement Reasonable Adjustments
+diataxis: how-to
+product: ccd
 ---
 
 # Implement Reasonable Adjustments
@@ -327,4 +330,3 @@ sequenceDiagram
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

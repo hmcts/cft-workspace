@@ -38,6 +38,9 @@ confluence:
     title: "Run WA test environment with CFTlib on Mac"
     space: "SPT"
     last_modified: "unknown"
+title: Debug with cftlib
+diataxis: how-to
+product: ccd
 ---
 
 # Debug with cftlib
@@ -243,4 +246,3 @@ If `bootWithCCD` fails immediately with `java.lang.ClassNotFoundException: uk.go
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

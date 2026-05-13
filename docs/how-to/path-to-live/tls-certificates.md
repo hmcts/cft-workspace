@@ -1,3 +1,10 @@
+---
+title: TLS certificates
+topic: tls-certificates
+diataxis: how-to
+product: workspace
+audience: both
+---
 # TLS certificates
 
 <!-- Inspired by the MoJ policy: https://ministryofjustice.github.io/security-guidance/automated-certificate-renewal/#automated-certificate-renewal -->

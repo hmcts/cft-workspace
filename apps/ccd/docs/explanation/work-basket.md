@@ -42,6 +42,9 @@ confluence:
     space: "RCCD"
 examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_BEFTA_JURISDICTION1/BEFTA_CASETYPE_1_1/WorkBasketResultFields.json
+title: Work Basket
+diataxis: explanation
+product: ccd
 ---
 
 # Work Basket

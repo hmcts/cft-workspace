@@ -1,3 +1,10 @@
+---
+title: Glossary
+topic: cnp-glossary
+diataxis: reference
+product: workspace
+audience: both
+---
 # Glossary
 
 ### Component

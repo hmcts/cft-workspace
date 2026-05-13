@@ -1,3 +1,10 @@
+---
+title: DevOps
+topic: devops
+diataxis: explanation
+product: workspace
+audience: both
+---
 # DevOps
 
 DevOps is not a job title. It's a culture. It is not just about infrastructure. It's about the people, processes, and tools that make it all work.

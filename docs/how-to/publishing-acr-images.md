@@ -1,3 +1,10 @@
+---
+title: Publishing container images to ACR from GitHub Actions
+topic: publishing-acr-images
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Publishing container images to ACR from GitHub Actions
 
 How to push a Docker image to the HMCTS Azure Container Registry (`hmctsprod.azurecr.io`) from a GitHub Actions workflow, using OIDC and the `cnp-githubactions-library` reusable action — no long-lived credentials in repo secrets.

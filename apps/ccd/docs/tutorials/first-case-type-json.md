@@ -34,6 +34,9 @@ confluence:
   - id: "203951529"
     title: "CCD - Import Case Definition Domain"
     space: "RCCD"
+title: First Case Type (JSON)
+diataxis: tutorials
+product: ccd
 ---
 
 # First Case Type (JSON)
@@ -457,4 +460,3 @@ A 422 typically means the message body contains the offending row reference. Re-
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

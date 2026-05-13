@@ -1,3 +1,10 @@
+---
+title: Cookies
+topic: cookies
+diataxis: reference
+product: workspace
+audience: both
+---
 # Cookies
 
 Follow the guidance in the [Technical Guidance Library (Confluence)](https://tools.hmcts.net/confluence/display/DACS/C.4e+Cookie+Consent).

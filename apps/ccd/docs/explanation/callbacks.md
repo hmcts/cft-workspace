@@ -42,6 +42,9 @@ confluence:
   - id: "1775332773"
     title: "CCD-5344 - Validation endpoint data exposure with MidEvent callbacks"
     space: "CCD"
+title: Callbacks
+diataxis: explanation
+product: ccd
 ---
 
 # Callbacks

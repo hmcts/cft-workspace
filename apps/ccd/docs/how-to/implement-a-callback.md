@@ -29,6 +29,9 @@ confluence:
   - id: "1417545038"
     title: "CMC-126: Confirmation Pages Using Submitted Callbacks"
     space: "CRef"
+title: Implement a Callback
+diataxis: how-to
+product: ccd
 ---
 
 # Implement a Callback

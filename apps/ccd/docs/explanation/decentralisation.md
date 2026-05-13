@@ -53,6 +53,9 @@ confluence:
     title: "Case Retain and Disposal"
     space: "RCCD"
     last_modified: "2025"
+title: Decentralisation
+diataxis: explanation
+product: ccd
 ---
 
 # Decentralisation

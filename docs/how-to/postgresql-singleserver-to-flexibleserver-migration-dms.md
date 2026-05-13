@@ -1,3 +1,10 @@
+---
+title: Postgresql single server to flexible server migration using Azure DMS
+topic: postgresql-singleserver-to-flexibleserver-migration-dms
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Postgresql single server to flexible server migration using Azure DMS 
 
 Azure Database Migration Service is an universal tool used to migrate databases to Azure platform. For migrating larger databases(> 50GB) it is advised to use this tool as it has minimal downtime. 

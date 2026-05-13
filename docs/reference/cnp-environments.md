@@ -1,3 +1,10 @@
+---
+title: Environments
+topic: cnp-environments
+diataxis: reference
+product: workspace
+audience: both
+---
 # Environments
 
 
@@ -17,4 +24,3 @@
 - [Auto-shutdown](../how-to/auto-shutdown.md)
 - [Sandbox cleardown](../how-to/sandbox-cleardown.md)
 - [External IP addresses](../how-to/external-ip-addresses.md)
-

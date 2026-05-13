@@ -1,3 +1,10 @@
+---
+title: Environment schedule
+topic: auto-shutdown
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Environment schedule
 
 ### Schedule

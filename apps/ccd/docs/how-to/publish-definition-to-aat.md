@@ -45,6 +45,9 @@ confluence:
     last_modified: "unknown"
     space: "RRFM"
 confluence_checked_at: "2026-04-29T00:00:00Z"
+title: Publish a Definition to AAT
+diataxis: how-to
+product: ccd
 ---
 
 # Publish a Definition to AAT

@@ -37,6 +37,9 @@ confluence:
     title: "Hide and show fields/pages/tabs"
     last_modified: "unknown"
     space: "RCCD"
+title: Add a Tab
+diataxis: how-to
+product: ccd
 ---
 
 # Add a Tab

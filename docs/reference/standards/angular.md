@@ -1,3 +1,10 @@
+---
+title: Angular
+topic: angular
+diataxis: reference
+product: workspace
+audience: both
+---
 # Angular
 
 Follow Conventions

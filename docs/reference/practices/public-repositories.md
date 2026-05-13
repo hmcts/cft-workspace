@@ -1,3 +1,10 @@
+---
+title: Public Repositories
+topic: public-repositories
+diataxis: reference
+product: workspace
+audience: both
+---
 # Public Repositories
 
 ### Public vs Private Repository
@@ -17,6 +24,3 @@ The security.md template file can be found in the link below
 [security.md] (https://github.com/hmcts/hmcts.github.io/blob/main/security.md)
 
 Use these guidelines to keep your code reliable, secure, and compliant.
-
-
-

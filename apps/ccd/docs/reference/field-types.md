@@ -57,6 +57,9 @@ confluence:
     last_modified: "2018-01-01T00:00:00Z"
     space: "RCCD"
 confluence_checked_at: "2026-04-29T00:00:00Z"
+title: Field Types
+diataxis: reference
+product: ccd
 ---
 
 # Field Types
@@ -476,4 +479,3 @@ Beyond bare `[METADATA]` references, layout/result sheets accept two further ref
 ## Glossary
 
 See [Glossary](glossary.md) for term definitions used in this page.
-

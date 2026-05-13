@@ -26,6 +26,9 @@ confluence:
   - id: "1875620232"
     title: "Understanding character representation issues with Welsh Translations"
     space: "EXUI"
+title: Translation
+diataxis: explanation
+product: ccd
 ---
 
 # Translation

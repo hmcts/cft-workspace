@@ -1,3 +1,10 @@
+---
+title: '`workspace.yaml` schema'
+topic: manifest-schema
+diataxis: reference
+product: workspace
+audience: both
+---
 # `workspace.yaml` schema
 
 The manifest at the repo root is the single source of truth for what the workspace pulls in.

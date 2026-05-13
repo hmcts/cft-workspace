@@ -1,3 +1,10 @@
+---
+title: Profile a Java application running in an AKS cluster
+topic: profile-java-app-in-aks
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Profile a Java application running in an AKS cluster
 
 This page describes how to profile a java application which is deployed in one of our AKS clusters.

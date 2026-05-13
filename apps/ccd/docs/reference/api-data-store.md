@@ -40,6 +40,9 @@ confluence:
     last_modified: "unknown"
     space: "DRDM"
 confluence_checked_at: "2026-04-29T00:00:00Z"
+title: 'API: Data Store'
+diataxis: reference
+product: ccd
 ---
 
 # API: Data Store

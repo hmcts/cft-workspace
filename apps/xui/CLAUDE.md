@@ -11,6 +11,7 @@ integrations:
   - payment
   - cdam
   - work_allocation
+exemplar_dirs: []
 repos:
   - apps/xui/rpx-xui-webapp
   - apps/xui/rpx-xui-manage-organisations

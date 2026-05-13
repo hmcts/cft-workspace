@@ -43,6 +43,9 @@ confluence:
   - id: "1933993678"
     title: "Case Flags"
     space: "RRFM"
+title: Implement Case Flags
+diataxis: how-to
+product: ccd
 ---
 
 # Implement Case Flags

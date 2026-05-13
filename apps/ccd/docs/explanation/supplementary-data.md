@@ -29,6 +29,9 @@ confluence:
     title: "CCD Configurationless Approach"
     space: "AM"
     version: 4
+title: Supplementary Data
+diataxis: explanation
+product: ccd
 ---
 
 # Supplementary Data

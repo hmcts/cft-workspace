@@ -1,3 +1,10 @@
+---
+title: Azure Frontdoor Web Application Firewall Debug
+topic: afd-waf
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Azure Frontdoor Web Application Firewall Debug
 
 When testing through the Azure Frontdoor you may be presented with an error page saying 'The request is blocked', which normally results in being a Web Application Firewall (WAF) rule being blocked.

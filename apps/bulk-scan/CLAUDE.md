@@ -15,6 +15,7 @@ api_specs:
   - apps/bulk-scan/bulk-scan-processor:bulk-scan-processor.json
   - apps/bulk-scan/bulk-scan-orchestrator:bulk-scan-orchestrator.json
   - apps/bulk-scan/bulk-scan-payment-processor:bulk-scan-payment-processor.json
+exemplar_dirs: []
 repos:
   - apps/bulk-scan/bulk-scan-processor
   - apps/bulk-scan/bulk-scan-orchestrator

@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Backfill mandatory frontmatter (title, topic, diataxis, product, audience) on every
+# Diátaxis page in the workspace doc trees. Re-runnable: only adds fields that are
+# missing; never overwrites existing values. Second run produces no diff.
+#
+# Walks:
+#   docs/{tutorials,how-to,reference,explanation}/**/*.md
+#   apps/*/docs/{tutorials,how-to,reference,explanation}/**/*.md
+# Skips: README.md files and anything outside the four Diátaxis subdirs.
+
+source "$(dirname "$0")/lib/_common.sh"
+
+require_yq
+cd "$WORKSPACE_ROOT"
+
+DIATAXIS_LEVELS=(tutorials how-to reference explanation)
+
+# Slug from a basename: lowercase, underscores → hyphens, drop non [a-z0-9-].
+slugify() {
+    printf '%s' "$1" | tr 'A-Z' 'a-z' | sed -e 's/_/-/g' -e 's/[^a-z0-9-]//g'
+}
+
+# Humanise a basename: hyphens/underscores → space, title-case word starts.
+humanise() {
+    printf '%s' "$1" | sed -e 's/[-_]/ /g' -e 's/\b\(.\)/\u\1/g'
+}
+
+derive_product() {
+    case "$1" in
+        docs/*) echo workspace ;;
+        apps/*) printf '%s' "$1" | cut -d/ -f2 ;;
+    esac
+}
+
+derive_diataxis() {
+    case "$1" in
+        */tutorials/*)   echo tutorials   ;;
+        */how-to/*)      echo how-to      ;;
+        */reference/*)   echo reference   ;;
+        */explanation/*) echo explanation ;;
+    esac
+}
+
+# Title = first H1 in the file. Fall back to humanised basename.
+derive_title() {
+    local h1
+    h1=$(grep -m1 -E '^# [^#]' "$1" 2>/dev/null | sed -e 's/^# //' -e 's/[[:space:]]*$//')
+    if [[ -n "$h1" ]]; then
+        printf '%s' "$h1"
+    else
+        humanise "$(basename "$1" .md)"
+    fi
+}
+
+process_file() {
+    local file="$1"
+    local title topic diataxis product audience fm body new_fm tmp
+
+    diataxis=$(derive_diataxis "$file")
+    product=$(derive_product "$file")
+    title=$(derive_title "$file")
+    topic=$(slugify "$(basename "$file" .md)")
+    audience=both
+
+    if head -1 "$file" | grep -q '^---[[:space:]]*$'; then
+        fm=$(awk '/^---[[:space:]]*$/{c++; if(c==2)exit; if(c>0)next} c==1{print}' "$file")
+        body=$(awk '/^---[[:space:]]*$/{c++; if(c==2){f=1; next}} f{print}' "$file")
+    else
+        fm=""
+        body=$(cat "$file")
+    fi
+
+    export TITLE="$title" TOPIC="$topic" DTX="$diataxis" PROD="$product" AUD="$audience"
+    new_fm=$(printf '%s' "$fm" | yq '
+        . = (. // {}) |
+        .title    = (.title    // strenv(TITLE)) |
+        .topic    = (.topic    // strenv(TOPIC)) |
+        .diataxis = (.diataxis // strenv(DTX))   |
+        .product  = (.product  // strenv(PROD))  |
+        .audience = (.audience // strenv(AUD))
+    ' -)
+    unset TITLE TOPIC DTX PROD AUD
+
+    tmp=$(mktemp)
+    printf -- '---\n%s\n---\n%s\n' "$new_fm" "$body" > "$tmp"
+    mv "$tmp" "$file"
+}
+
+count=0
+updated=0
+for root in docs apps/*/docs; do
+    [[ -d "$root" ]] || continue
+    for level in "${DIATAXIS_LEVELS[@]}"; do
+        [[ -d "$root/$level" ]] || continue
+        while IFS= read -r f; do
+            count=$((count+1))
+            before=$(md5sum "$f" | cut -c1-32)
+            process_file "$f"
+            after=$(md5sum "$f" | cut -c1-32)
+            [[ "$before" != "$after" ]] && updated=$((updated+1))
+        done < <(find "$root/$level" -type f -name '*.md' ! -name 'README.md')
+    done
+done
+
+ok "Frontmatter backfill: $updated of $count pages updated"

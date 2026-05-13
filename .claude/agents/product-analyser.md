@@ -1,6 +1,6 @@
 ---
 name: product-analyser
-description: Analyse one workspace product (apps/<product>, libs, or platops) and produce its CLAUDE.md. Spawned in parallel by the generate-product-claude-md skill. Reads constituent clones; never edits inside a clone.
+description: Analyse one workspace product (apps/<product>, libs, or platops) and produce its CLAUDE.md. Spawned in parallel by the docs-generate-product-md skill. Reads constituent clones; never edits inside a clone.
 tools: Read, Bash, Glob, Grep
 model: sonnet
 ---

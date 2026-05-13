@@ -38,6 +38,9 @@ confluence:
   - id: "1460562062"
     title: CCD Asynchronous Messaging LLD (WIP)
     space: RCCD
+title: Audit and History
+diataxis: explanation
+product: ccd
 ---
 
 # Audit and History

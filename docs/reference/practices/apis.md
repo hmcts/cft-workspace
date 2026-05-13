@@ -1,3 +1,10 @@
+---
+title: APIs
+topic: apis
+diataxis: reference
+product: workspace
+audience: both
+---
 # APIs
 
 ### API Design and implementation

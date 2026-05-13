@@ -31,6 +31,9 @@ confluence:
   - id: "554959334"
     title: "RDM ?? - New Type CaseLink"
     space: "RCCD"
+title: Linked Cases
+diataxis: explanation
+product: ccd
 ---
 
 # Linked Cases

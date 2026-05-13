@@ -59,6 +59,9 @@ confluence:
   - id: "1440512249"
     title: "12 Notice Of Change (formally Notice of Acting)"
     space: "RIA"
+title: Implement Notice of Change
+diataxis: how-to
+product: ccd
 ---
 
 # Implement Notice of Change
@@ -472,4 +475,3 @@ public class CaseRoleID implements HasRole {
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

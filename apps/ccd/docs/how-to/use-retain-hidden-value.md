@@ -57,6 +57,9 @@ confluence:
     space: "RCCD"
     last_modified: "unknown (page version 25)"
 confluence_checked_at: "2026-04-29T00:00:00Z"
+title: Use RetainHiddenValue
+diataxis: how-to
+product: ccd
 ---
 
 # Use RetainHiddenValue

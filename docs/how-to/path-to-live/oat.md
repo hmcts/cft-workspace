@@ -1,3 +1,10 @@
+---
+title: Operational Acceptance Testing
+topic: oat
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Operational Acceptance Testing
 
 This covers details on the Operational Acceptance Testing (OAT) performed by Platform Operations for a change to go into production.

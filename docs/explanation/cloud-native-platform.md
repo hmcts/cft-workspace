@@ -1,3 +1,10 @@
+---
+title: Cloud Native Platform
+topic: cloud-native-platform
+diataxis: explanation
+product: workspace
+audience: both
+---
 # Cloud Native Platform
 
 The Cloud Native Platform is an Azure based platform that hosts CFT, SDS and Legacy services.

@@ -32,6 +32,9 @@ confluence:
     space: "EUI"
 confluence_checked_at: "2026-04-29T00:00:00Z"
 last_reviewed: 2026-04-29T00:00:00Z
+title: JSON Definition Format
+diataxis: reference
+product: ccd
 ---
 
 # JSON Definition Format
@@ -584,4 +587,3 @@ Source: `SheetName.java:6–37`.
 ## Glossary
 
 See [Glossary](glossary.md) for term definitions used in this page.
-

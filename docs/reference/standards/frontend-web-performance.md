@@ -1,3 +1,10 @@
+---
+title: Frontend Web Performance
+topic: frontend-web-performance
+diataxis: reference
+product: workspace
+audience: both
+---
 # Frontend Web Performance
 
 

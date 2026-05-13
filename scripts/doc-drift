@@ -1,154 +1,305 @@
 #!/usr/bin/env bash
-# Detect drift between docs/ and the upstream platops/hmcts.github.io clone.
+# Detect doc drift across the workspace, in three modes:
+#
+#   port       — compare docs/ (ported from platops/hmcts.github.io) against
+#                upstream via docs/.port-manifest.yaml. Existing behaviour.
+#   source     — compare Diátaxis pages' `sources:` frontmatter against the
+#                current SHA of each cited source file in its cloned repo.
+#   confluence — list pages with `confluence:` frontmatter so the /docs-drift
+#                skill can call the Atlassian MCP per page. (This script can't
+#                make MCP calls itself.)
+#   auto       — run port + source, then list confluence-eligible pages. Default.
 #
 # Usage:
-#   scripts/doc-drift            # full check (no upstream pull)
-#   scripts/doc-drift --pull     # fetch + ff-pull upstream first
+#   scripts/doc-drift                                # all modes (auto)
+#   scripts/doc-drift --mode=port [--pull]           # port-manifest only
+#   scripts/doc-drift --mode=source                  # source-citation only
+#   scripts/doc-drift --mode=confluence              # list confluence pages
+#   scripts/doc-drift --product=<slug>               # restrict to one product
+#                                                    # (workspace = root docs/)
 #
-# Reads docs/.port-manifest.yaml and reports per-target status:
-#   - in-sync          target's source has no commits since synced_sha
-#   - needs-update     target's source has new commits upstream
-#   - removed-upstream upstream source no longer exists
-#   - new-upstream     upstream has a *.html.md.erb that's not in the manifest
-#                      and isn't covered by a `dropped:` glob
-#
-# Output is structured (one section per status) so the /check-doc-drift skill
-# can parse it. Read-only with respect to docs/ — does not edit any ported page
-# and does not touch the manifest. The skill does the manifest writes after a
-# refresh.
+# Exit non-zero if any actionable drift was found (port or source modes).
 
 source "$(dirname "$0")/lib/_common.sh"
 
-MANIFEST="$WORKSPACE_ROOT/docs/.port-manifest.yaml"
-UPSTREAM_DIR="$WORKSPACE_ROOT/platops/hmcts.github.io"
-
-[[ -f "$MANIFEST" ]] || die "manifest not found: $MANIFEST"
-[[ -d "$UPSTREAM_DIR/.git" ]] || die "upstream clone not found: $UPSTREAM_DIR"
-
 require_yq
+cd "$WORKSPACE_ROOT"
 
+MODE=auto
+PRODUCT=
 DO_PULL=0
-[[ "${1:-}" == "--pull" ]] && DO_PULL=1
 
-# Refuse to operate on a dirty/branched/unpushed upstream clone — mirrors
-# scripts/sync's contract so we never silently overwrite local upstream work.
-check_upstream_clean() {
-    local default_branch
-    default_branch=$(yq -r '.upstream_branch' "$MANIFEST")
+for arg in "$@"; do
+    case "$arg" in
+        --mode=*)     MODE="${arg#*=}"   ;;
+        --product=*)  PRODUCT="${arg#*=}" ;;
+        --pull)       DO_PULL=1           ;;
+        -h|--help)
+            sed -n '2,/^$/p' "$0" | sed 's/^# *//'
+            exit 0
+            ;;
+        *)
+            die "unknown arg: $arg"
+            ;;
+    esac
+done
 
-    if ! git -C "$UPSTREAM_DIR" diff --quiet || \
-       ! git -C "$UPSTREAM_DIR" diff --cached --quiet; then
-        die "upstream clone has uncommitted changes — refusing to pull"
-    fi
+case "$MODE" in
+    port|source|confluence|auto) ;;
+    *) die "unknown --mode: $MODE (expected port, source, confluence, or auto)" ;;
+esac
 
-    local current_branch
-    current_branch=$(git -C "$UPSTREAM_DIR" symbolic-ref --short HEAD 2>/dev/null || echo '')
-    if [[ "$current_branch" != "$default_branch" ]]; then
-        die "upstream clone is on '$current_branch', expected '$default_branch'"
-    fi
-}
-
-if (( DO_PULL )); then
-    check_upstream_clean
-    info "fetching upstream…"
-    git -C "$UPSTREAM_DIR" fetch origin --quiet
-    git -C "$UPSTREAM_DIR" pull --ff-only --quiet origin "$(yq -r '.upstream_branch' "$MANIFEST")"
-fi
-
-UPSTREAM_HEAD=$(git -C "$UPSTREAM_DIR" rev-parse HEAD)
-UPSTREAM_ROOT=$(yq -r '.upstream_path_root' "$MANIFEST")
-
-info "upstream HEAD: $UPSTREAM_HEAD"
-echo
-
-NEEDS_UPDATE=(); IN_SYNC=(); REMOVED=(); NEW_UPSTREAM=()
-
-# ─── per-entry check ────────────────────────────────────────────────────────
-while IFS=$'\t' read -r target source synced_sha; do
-    src_full="$UPSTREAM_DIR/$UPSTREAM_ROOT/$source"
-
-    if [[ ! -f "$src_full" ]]; then
-        REMOVED+=("$target ← $source")
-        continue
-    fi
-
-    commits=$(git -C "$UPSTREAM_DIR" log --oneline "$synced_sha"..HEAD -- "$UPSTREAM_ROOT/$source" 2>/dev/null || echo '')
-
-    if [[ -z "$commits" ]]; then
-        IN_SYNC+=("$target")
+# ─── per-page path discovery ────────────────────────────────────────────────
+# Return Diátaxis pages under the in-scope tree(s) on stdout, one path per line.
+discover_pages() {
+    local roots=()
+    if [[ -z "$PRODUCT" ]]; then
+        roots=(docs apps/*/docs)
+    elif [[ "$PRODUCT" == "workspace" ]]; then
+        roots=(docs)
     else
-        NEEDS_UPDATE+=("$target	$source	$synced_sha	$(echo "$commits" | wc -l)")
+        roots=("apps/$PRODUCT/docs")
     fi
-done < <(yq -r '.entries[] | [.target, .source, .synced_sha] | @tsv' "$MANIFEST")
+    for root in "${roots[@]}"; do
+        [[ -d "$root" ]] || continue
+        find "$root"/{tutorials,how-to,reference,explanation} \
+            -type f -name '*.md' ! -name 'README.md' 2>/dev/null
+    done
+}
 
-# ─── new-upstream scan ──────────────────────────────────────────────────────
-# Find *.html.md.erb files in upstream that aren't in `entries` and aren't
-# covered by `dropped:` globs.
-mapfile -t known_sources < <(yq -r '.entries[].source' "$MANIFEST")
-mapfile -t dropped_globs < <(yq -r '.dropped[]' "$MANIFEST")
+# Extract YAML frontmatter (the block between the first two `---` lines).
+extract_frontmatter() {
+    awk '/^---[[:space:]]*$/{c++; if(c==2)exit; if(c>0)next} c==1{print}' "$1"
+}
 
-is_dropped() {
-    local rel="$1" glob
-    for glob in "${dropped_globs[@]}"; do
-        # `**` means "any number of path components" — match prefix only.
-        if [[ "$glob" == *'**' ]]; then
-            local prefix="${glob%\*\*}"
-            [[ "$rel" == "$prefix"* ]] && return 0
-        else
-            [[ "$rel" == "$glob" ]] && return 0
+# Resolve a `<slug>:<path>` source citation to a workspace-relative file path.
+# Falls back to treating the whole entry as a workspace-relative path when no
+# colon is present (legacy format used by some early CCD pages).
+#
+# Echoes the resolved path on success; non-zero exit + empty stdout otherwise.
+resolve_source() {
+    local entry="$1"
+
+    # No colon → treat as workspace-relative path.
+    if [[ "$entry" != *:* ]]; then
+        [[ -f "$entry" ]] && { printf '%s' "$entry"; return 0; }
+        return 1
+    fi
+
+    local slug="${entry%%:*}"
+    local path="${entry#*:}"
+
+    # Slug is itself a workspace-relative directory (e.g. `platops/cnp-flux-config:...`).
+    if [[ -d "$slug" ]]; then
+        [[ -f "$slug/$path" ]] && { printf '%s/%s' "$slug" "$path"; return 0; }
+    fi
+
+    # Slug is a repo basename — find under apps/, libs/, platops/.
+    local repo_root
+    repo_root=$(find apps libs platops -mindepth 1 -maxdepth 3 -type d -name "$slug" 2>/dev/null | head -1)
+    if [[ -n "$repo_root" && -f "$repo_root/$path" ]]; then
+        printf '%s/%s' "$repo_root" "$path"
+        return 0
+    fi
+    return 1
+}
+
+# Locate the git repo (containing .git) that owns a given file. Echoes the
+# workspace-relative repo root; non-zero on failure. Used to scope `git log`.
+git_repo_for() {
+    local file="$1"
+    local dir
+    dir=$(dirname "$file")
+    while [[ "$dir" != "." && "$dir" != "/" && -n "$dir" ]]; do
+        if [[ -d "$dir/.git" || -f "$dir/.git" ]]; then
+            printf '%s' "$dir"
+            return 0
         fi
+        dir=$(dirname "$dir")
     done
     return 1
 }
 
-is_known() {
-    local rel="$1" k
-    for k in "${known_sources[@]}"; do
-        [[ "$rel" == "$k" ]] && return 0
-    done
-    return 1
+# ─── port mode (existing logic) ─────────────────────────────────────────────
+run_port_mode() {
+    local manifest="$WORKSPACE_ROOT/docs/.port-manifest.yaml"
+    local upstream_dir="$WORKSPACE_ROOT/platops/hmcts.github.io"
+
+    if [[ ! -f "$manifest" || ! -d "$upstream_dir/.git" ]]; then
+        warn "port mode skipped — missing manifest or upstream clone"
+        return 0
+    fi
+
+    if [[ -n "$PRODUCT" && "$PRODUCT" != "workspace" ]]; then
+        # port-manifest only covers root docs/; skip for other products.
+        return 0
+    fi
+
+    if (( DO_PULL )); then
+        local default_branch
+        default_branch=$(yq -r '.upstream_branch' "$manifest")
+        if ! git -C "$upstream_dir" diff --quiet || ! git -C "$upstream_dir" diff --cached --quiet; then
+            die "upstream clone has uncommitted changes — refusing to pull"
+        fi
+        local current_branch
+        current_branch=$(git -C "$upstream_dir" symbolic-ref --short HEAD 2>/dev/null || echo '')
+        [[ "$current_branch" != "$default_branch" ]] && die "upstream on '$current_branch', expected '$default_branch'"
+        info "fetching upstream…"
+        git -C "$upstream_dir" fetch origin --quiet
+        git -C "$upstream_dir" pull --ff-only --quiet origin "$default_branch"
+    fi
+
+    local upstream_head upstream_root
+    upstream_head=$(git -C "$upstream_dir" rev-parse HEAD)
+    upstream_root=$(yq -r '.upstream_path_root' "$manifest")
+
+    printf '\n=== port mode (upstream HEAD: %s) ===\n\n' "$upstream_head"
+
+    local needs=() insync=() removed=() new=()
+
+    while IFS=$'\t' read -r target source synced_sha; do
+        local src_full="$upstream_dir/$upstream_root/$source"
+        if [[ ! -f "$src_full" ]]; then
+            removed+=("$target ← $source")
+            continue
+        fi
+        local commits
+        commits=$(git -C "$upstream_dir" log --oneline "$synced_sha"..HEAD -- "$upstream_root/$source" 2>/dev/null || echo '')
+        if [[ -z "$commits" ]]; then
+            insync+=("$target")
+        else
+            needs+=("$target	$source	$synced_sha	$(echo "$commits" | wc -l)")
+        fi
+    done < <(yq -r '.entries[] | [.target, .source, .synced_sha] | @tsv' "$manifest")
+
+    # new-upstream scan
+    mapfile -t known < <(yq -r '.entries[].source' "$manifest")
+    mapfile -t dropped < <(yq -r '.dropped[]' "$manifest")
+    while IFS= read -r src_full; do
+        local rel="${src_full#"$upstream_dir/$upstream_root/"}"
+        local skip=0
+        for k in "${known[@]}";   do [[ "$rel" == "$k" ]] && skip=1; done
+        for g in "${dropped[@]}"; do
+            if [[ "$g" == *'**' ]]; then [[ "$rel" == "${g%\*\*}"* ]] && skip=1
+            else [[ "$rel" == "$g" ]] && skip=1; fi
+        done
+        (( skip )) || new+=("$rel")
+    done < <(find "$upstream_dir/$upstream_root" -type f \( -name '*.html.md.erb' -o -name '*.md' \))
+
+    ok "${#insync[@]} in-sync"
+    if (( ${#needs[@]} )); then
+        warn "${#needs[@]} needs-update:"
+        for line in "${needs[@]}"; do
+            IFS=$'\t' read -r target source sha n <<< "$line"
+            printf '  %s (%s commits behind, synced %s)\n' "$target" "$n" "$sha"
+        done
+    else ok "0 needs-update"; fi
+    if (( ${#removed[@]} )); then
+        warn "${#removed[@]} removed-upstream:"; printf '  %s\n' "${removed[@]}"
+    fi
+    if (( ${#new[@]} )); then
+        warn "${#new[@]} new-upstream:"; printf '  %s\n' "${new[@]}"
+    fi
+
+    PORT_DRIFT=$(( ${#needs[@]} + ${#removed[@]} + ${#new[@]} ))
 }
 
-while IFS= read -r src_full; do
-    rel="${src_full#"$UPSTREAM_DIR/$UPSTREAM_ROOT/"}"
-    is_known "$rel" && continue
-    is_dropped "$rel" && continue
-    NEW_UPSTREAM+=("$rel")
-done < <(find "$UPSTREAM_DIR/$UPSTREAM_ROOT" -type f \( -name '*.html.md.erb' -o -name '*.md' \))
+# ─── source mode ────────────────────────────────────────────────────────────
+run_source_mode() {
+    printf '\n=== source mode ===\n\n'
 
-# ─── report ─────────────────────────────────────────────────────────────────
-ok "${#IN_SYNC[@]} in-sync"
-echo
+    local fresh=() stale=() broken=() untracked=()
 
-if (( ${#NEEDS_UPDATE[@]} )); then
-    warn "${#NEEDS_UPDATE[@]} needs-update:"
-    for line in "${NEEDS_UPDATE[@]}"; do
-        IFS=$'\t' read -r target source sha n <<< "$line"
-        printf '  %s\n' "$target"
-        printf '    upstream: %s\n' "$source"
-        printf '    synced:   %s\n' "$sha"
-        printf '    %s commits behind:\n' "$n"
-        git -C "$UPSTREAM_DIR" log --oneline "$sha"..HEAD -- "$UPSTREAM_ROOT/$source" \
-          | sed 's/^/      /'
-        echo
-    done
-else
-    ok "0 needs-update"
-fi
+    while IFS= read -r page; do
+        local fm
+        fm=$(extract_frontmatter "$page") || true
+        local sources
+        sources=$(printf '%s' "$fm" | yq -r '.sources[]?' - 2>/dev/null || true)
+        if [[ -z "$sources" ]]; then
+            untracked+=("$page")
+            continue
+        fi
 
-if (( ${#REMOVED[@]} )); then
-    warn "${#REMOVED[@]} removed-upstream (target should likely be deleted):"
-    printf '  %s\n' "${REMOVED[@]}"
-    echo
-fi
+        local sha_map
+        sha_map=$(printf '%s' "$fm" | yq -o=json '.sources_sha // {}' - 2>/dev/null || echo '{}')
 
-if (( ${#NEW_UPSTREAM[@]} )); then
-    warn "${#NEW_UPSTREAM[@]} new-upstream (consider porting or adding to dropped:):"
-    printf '  %s\n' "${NEW_UPSTREAM[@]}"
-    echo
-fi
+        local stale_sources=() broken_sources=()
+        while IFS= read -r src; do
+            [[ -z "$src" ]] && continue
+            local resolved
+            resolved=$(resolve_source "$src" || true)
+            if [[ -z "$resolved" ]]; then
+                broken_sources+=("$src")
+                continue
+            fi
+            local repo_root
+            repo_root=$(git_repo_for "$resolved" || true)
+            if [[ -z "$repo_root" ]]; then
+                # File exists but is outside any git repo (e.g. workspace-tracked file
+                # like docs/reference/taxonomy.md) — treat as fresh; we can't SHA-track
+                # workspace files via this mechanism. Skip silently.
+                continue
+            fi
+            local rel="${resolved#"$repo_root/"}"
+            local current_sha recorded_sha
+            current_sha=$(git -C "$repo_root" log -1 --format=%H -- "$rel" 2>/dev/null || echo '')
+            recorded_sha=$(printf '%s' "$sha_map" | yq -r ".\"$src\" // \"\"" - 2>/dev/null || echo '')
+            if [[ -n "$recorded_sha" && "$current_sha" != "$recorded_sha" ]]; then
+                stale_sources+=("$src ($recorded_sha → $current_sha)")
+            fi
+        done <<< "$sources"
 
-# Exit non-zero if there's drift to act on, so the skill / CI can detect it.
-if (( ${#NEEDS_UPDATE[@]} + ${#REMOVED[@]} + ${#NEW_UPSTREAM[@]} )); then
+        if (( ${#broken_sources[@]} )); then
+            broken+=("$page: ${broken_sources[*]}")
+        elif (( ${#stale_sources[@]} )); then
+            stale+=("$page: ${#stale_sources[@]} of $(echo "$sources" | wc -l) sources changed")
+        else
+            fresh+=("$page")
+        fi
+    done < <(discover_pages)
+
+    ok "${#fresh[@]} fresh"
+    if (( ${#stale[@]} )); then warn "${#stale[@]} stale:"; printf '  %s\n' "${stale[@]}"; else ok "0 stale"; fi
+    if (( ${#broken[@]} )); then warn "${#broken[@]} broken:"; printf '  %s\n' "${broken[@]}"; fi
+    if (( ${#untracked[@]} )); then info "${#untracked[@]} untracked (no sources: frontmatter)"; fi
+
+    SOURCE_DRIFT=$(( ${#stale[@]} + ${#broken[@]} ))
+}
+
+# ─── confluence mode (script lists candidates; skill calls MCP) ─────────────
+run_confluence_mode() {
+    printf '\n=== confluence mode ===\n\n'
+    info "pages with confluence: frontmatter (the /docs-drift skill checks each via MCP):"
+
+    local count=0
+    while IFS= read -r page; do
+        local fm
+        fm=$(extract_frontmatter "$page")
+        local has
+        has=$(printf '%s' "$fm" | yq -r '.confluence // [] | length' - 2>/dev/null)
+        if [[ "$has" != "0" && -n "$has" && "$has" != "null" ]]; then
+            local checked_at
+            checked_at=$(printf '%s' "$fm" | yq -r '.confluence_checked_at // ""' - 2>/dev/null)
+            printf '  %s (confluence_checked_at=%s)\n' "$page" "${checked_at:-never}"
+            count=$((count+1))
+        fi
+    done < <(discover_pages)
+
+    ok "$count pages have confluence frontmatter"
+}
+
+# ─── dispatch ───────────────────────────────────────────────────────────────
+PORT_DRIFT=0
+SOURCE_DRIFT=0
+
+case "$MODE" in
+    port)       run_port_mode ;;
+    source)     run_source_mode ;;
+    confluence) run_confluence_mode ;;
+    auto)       run_port_mode; run_source_mode; run_confluence_mode ;;
+esac
+
+# Exit non-zero if there's actionable drift to act on.
+if (( PORT_DRIFT + SOURCE_DRIFT )); then
     exit 1
 fi

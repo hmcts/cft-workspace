@@ -1,3 +1,10 @@
+---
+title: Jenkins
+topic: team-jenkins
+diataxis: tutorials
+product: workspace
+audience: both
+---
 # Jenkins
 
 > To find out more about the common pipeline, please see its [documentation](../../how-to/common-pipeline/overview.md).

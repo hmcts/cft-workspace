@@ -1,3 +1,10 @@
+---
+title: Programming
+topic: programming
+diataxis: explanation
+product: workspace
+audience: both
+---
 # Programming
 
 ## General principles
@@ -15,4 +22,3 @@
 - SOLID - [Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion](https://en.wikipedia.org/wiki/SOLID)
 - Composition over inheritance - [prefer composition over inheritance](https://en.wikipedia.org/wiki/Composition_over_inheritance)
 - Law of Demeter - [talk to friends, not strangers](https://en.wikipedia.org/wiki/Law_of_Demeter)
-

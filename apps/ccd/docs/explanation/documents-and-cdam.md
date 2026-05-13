@@ -43,6 +43,9 @@ confluence:
     title: "GET /cases/documents/{documentId}/token"
     space: "RCCD"
     last_modified: "2021-07-14"
+title: Documents and CDAM
+diataxis: explanation
+product: ccd
 ---
 
 # Documents and CDAM
@@ -341,4 +344,3 @@ No custom endpoints are added by cftlib to CDAM — it runs from the upstream bi
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

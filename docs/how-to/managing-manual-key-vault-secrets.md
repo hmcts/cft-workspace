@@ -1,3 +1,10 @@
+---
+title: Managing Manual Key Vault Secrets
+topic: managing-manual-key-vault-secrets
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Managing Manual Key Vault Secrets
 
 Some secrets cannot be automated via Terraform and therefore we need to add them manually to the Key Vaults.

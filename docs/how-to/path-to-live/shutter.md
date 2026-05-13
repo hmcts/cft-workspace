@@ -1,3 +1,10 @@
+---
+title: Shutter Implementation and Design
+topic: shutter
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Shutter Implementation and Design
 
 ## Purpose

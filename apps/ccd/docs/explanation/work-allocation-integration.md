@@ -41,6 +41,9 @@ confluence:
   - id: "1457293975"
     title: "WA Task Management API: POST /task"
     space: "WA"
+title: Work Allocation Integration
+diataxis: explanation
+product: ccd
 ---
 
 # Work Allocation Integration
@@ -288,4 +291,3 @@ Onboarding checklist (per WA programme):
 ## Glossary
 
 See [Glossary](../reference/glossary.md) for term definitions used in this page.
-

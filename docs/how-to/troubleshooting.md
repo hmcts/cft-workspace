@@ -1,3 +1,10 @@
+---
+title: Troubleshooting issues
+topic: troubleshooting
+diataxis: how-to
+product: workspace
+audience: both
+---
 # Troubleshooting issues
 
 ## Table of Contents
@@ -773,5 +780,3 @@ dependencies {
     }
 }
 ```
-
-

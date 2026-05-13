@@ -1,3 +1,10 @@
+---
+title: Certificates
+topic: certificates
+diataxis: reference
+product: workspace
+audience: both
+---
 # Certificates
 
 ### Automate

@@ -1,3 +1,10 @@
+---
+title: Backend applications
+topic: backends
+diataxis: reference
+product: workspace
+audience: both
+---
 # Backend applications
 
 APIs should be written using Java, preferably with an industry standard framework such.

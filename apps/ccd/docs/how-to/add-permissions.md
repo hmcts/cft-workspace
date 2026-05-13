@@ -60,6 +60,9 @@ confluence:
   - id: "1496582661"
     title: "Access Control Worked Examples"
     space: "RCCD"
+title: Add Permissions
+diataxis: how-to
+product: ccd
 ---
 
 # Add Permissions

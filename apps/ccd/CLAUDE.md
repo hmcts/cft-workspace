@@ -19,6 +19,13 @@ api_specs:
   - apps/ccd/ccd-definition-store-api:ccd-definition-store-api.json
   - apps/ccd/ccd-case-document-am-api:ccd-case-document-am-api.json
   - apps/ccd/ccd-user-profile-api:ccd-user-profile-api.json
+exemplar_dirs:
+  - libs/ccd-config-generator/test-projects
+  - apps/ccd/ccd-test-definitions
+confluence_spaces:
+  - RCCD
+  - EUI
+  - CF
 repos:
   - apps/ccd/aac-manage-case-assignment
   - apps/ccd/ccd-admin-web
