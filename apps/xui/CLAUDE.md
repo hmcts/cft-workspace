@@ -21,6 +21,9 @@ repos:
   - apps/xui/rpx-xui-node-lib
   - apps/xui/rpx-xui-translation
   - apps/xui/rpx-xui-dev-utils
+confluence_spaces:
+  - EUI
+  - EXUI
 ---
 
 # XUI (Expert UI)

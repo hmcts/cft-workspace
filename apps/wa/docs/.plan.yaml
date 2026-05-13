@@ -1,0 +1,201 @@
+# Static plan for /docs-generate wa
+#
+# Each page lists:
+#   topic       — slug used for --topic filtering and as the frontmatter topic
+#   brief       — one-paragraph writing brief (audience, focus, what to include)
+#   sources     — repo:path hints the topic-writer should consult (filtered from research notes)
+#
+# Source repos for Phase 2 (research) are listed at the bottom under `research_sources`.
+
+pages:
+
+  # --- Explanation ---
+  apps/wa/docs/explanation/overview.md:
+    topic: overview
+    brief: |
+      The "what is WA" page. Cover the task management model: CCD case events → ASB →
+      case-event-handler → Camunda DMN/BPMN → tasks in PostgreSQL → XUI task list.
+      Audience: a service team onboarding onto work allocation.
+    sources:
+      - apps/wa/wa-task-management-api
+      - apps/wa/wa-case-event-handler
+
+  apps/wa/docs/explanation/architecture.md:
+    topic: architecture
+    brief: |
+      Runtime architecture: all services, their ports, databases, Camunda cluster, ASB topics.
+      Mermaid diagram showing message flow from CCD → ASB → CEH → workflow-api → Camunda →
+      task-management-api → XUI.
+    sources:
+      - apps/wa/wa-task-management-api
+      - apps/wa/wa-workflow-api
+      - apps/wa/wa-case-event-handler
+      - apps/wa/wa-task-monitor
+
+  apps/wa/docs/explanation/dmn-task-configuration.md:
+    topic: dmn
+    brief: |
+      How DMN decision tables configure tasks: the wa-task-configuration-template, the evaluation
+      flow in wa-workflow-api, what inputs/outputs the DMN receives. Include example DMN structure.
+    sources:
+      - apps/wa/wa-task-configuration-template
+      - apps/wa/wa-workflow-api
+
+  apps/wa/docs/explanation/bpmn-workflows.md:
+    topic: bpmn
+    brief: |
+      The BPMN process models in wa-standalone-task-bpmn: the generic task workflow, message
+      correlation, process variables. How initiation/cancellation/reconfiguration events are
+      handled.
+    sources:
+      - apps/wa/wa-standalone-task-bpmn
+      - apps/wa/wa-workflow-api
+
+  apps/wa/docs/explanation/case-event-handler.md:
+    topic: ceh
+    brief: |
+      The case-event-handler: ASB session subscriptions, message deduplication (DB-backed),
+      message routing to workflow-api and task-management-api. Cover the DLQ toggle and the
+      testing controller.
+    sources:
+      - apps/wa/wa-case-event-handler
+
+  apps/wa/docs/explanation/task-lifecycle.md:
+    topic: task-lifecycle
+    brief: |
+      A task from creation to completion: Unconfigured → Configured → Assigned → Completed.
+      Cover task states, transitions, access-control enforcement via AM role assignments, and
+      the task-monitor's role in detecting stuck tasks.
+    sources:
+      - apps/wa/wa-task-management-api
+      - apps/wa/wa-task-monitor
+
+  apps/wa/docs/explanation/access-control.md:
+    topic: access-control
+    brief: |
+      How task access is enforced: wa-task-management-api calls AM RAS for role assignments,
+      matches them against task permissions. Cover the permission model and the difference
+      between CCD case access and WA task access.
+    sources:
+      - apps/wa/wa-task-management-api
+
+  # --- How-to ---
+  apps/wa/docs/how-to/add-tasks-for-new-event.md:
+    topic: dmn
+    brief: |
+      End-to-end recipe: a service team wants CCD event X to create a task. Cover: write the
+      DMN, deploy to Camunda, verify via functional tests.
+    sources:
+      - apps/wa/wa-task-configuration-template
+      - apps/wa/wa-ccd-definitions
+
+  apps/wa/docs/how-to/write-dmn-configuration.md:
+    topic: dmn
+    brief: |
+      Recipe for writing a task-configuration DMN: structure, input/output columns, how to
+      express conditions, testing locally.
+    sources:
+      - apps/wa/wa-task-configuration-template
+
+  apps/wa/docs/how-to/onboard-jurisdiction.md:
+    topic: overview
+    brief: |
+      Recipe for onboarding a new jurisdiction to work allocation: configure allowedJurisdictions
+      and allowedCaseTypes, write DMNs, deploy BPMN, verify end-to-end.
+    sources:
+      - apps/wa/wa-task-management-api
+      - apps/wa/wa-task-configuration-template
+
+  apps/wa/docs/how-to/debug-stuck-tasks.md:
+    topic: task-lifecycle
+    brief: |
+      Troubleshooting recipe: a task is stuck in Unconfigured state. How to identify the cause
+      (task-monitor logs, Camunda admin, CEH DLQ), and how to resolve.
+    sources:
+      - apps/wa/wa-task-monitor
+      - apps/wa/wa-case-event-handler
+
+  # --- Reference ---
+  apps/wa/docs/reference/api-task-management.md:
+    topic: architecture
+    brief: |
+      Task management API endpoint reference: task CRUD, search, actions (claim, unclaim, assign,
+      complete, cancel). Request/response shapes, auth requirements. Link to OpenAPI spec.
+    sources:
+      - apps/wa/wa-task-management-api
+
+  apps/wa/docs/reference/api-workflow.md:
+    topic: architecture
+    brief: |
+      Workflow API endpoint reference: DMN evaluation, message correlation. Link to OpenAPI spec.
+    sources:
+      - apps/wa/wa-workflow-api
+
+  apps/wa/docs/reference/task-states.md:
+    topic: task-lifecycle
+    brief: |
+      Reference table of all task states, valid transitions, who can trigger each transition,
+      and what permissions are required.
+    sources:
+      - apps/wa/wa-task-management-api
+
+  apps/wa/docs/reference/dmn-schema.md:
+    topic: dmn
+    brief: |
+      Reference for DMN input/output columns: task type, task name, due date calculation,
+      priority, permissions, role assignments. Column-by-column specification.
+    sources:
+      - apps/wa/wa-task-configuration-template
+
+research_sources:
+
+  wa-task-management-api:
+    path: apps/wa/wa-task-management-api
+    focus: |
+      Task CRUD controllers, task states and transitions, AM role-assignment integration for
+      access control, search endpoints, configuration endpoints, Flyway migrations.
+
+  wa-workflow-api:
+    path: apps/wa/wa-workflow-api
+    focus: |
+      Camunda DMN evaluation endpoints, BPMN message correlation, the relationship between
+      DMN outputs and task attributes.
+
+  wa-case-event-handler:
+    path: apps/wa/wa-case-event-handler
+    focus: |
+      ASB session subscription, message processing pipeline, deduplication, routing to
+      workflow-api and task-management-api, DLQ handling, testing controller.
+
+  wa-task-monitor:
+    path: apps/wa/wa-task-monitor
+    focus: |
+      Scheduled Camunda polls, unconfigured-task detection, maintenance jobs (termination,
+      reconfiguration, clean-up).
+
+  wa-standalone-task-bpmn:
+    path: apps/wa/wa-standalone-task-bpmn
+    focus: |
+      BPMN process definitions, message events, process variables, the generic task workflow.
+
+  wa-task-configuration-template:
+    path: apps/wa/wa-task-configuration-template
+    focus: |
+      DMN template structure, input/output columns, example task configurations, how service
+      teams derive their own DMN from this template.
+
+  wa-ccd-definitions:
+    path: apps/wa/wa-ccd-definitions
+    focus: |
+      CCD JSON definitions for the WA test case type (appeal): CaseField, CaseEvent, WorkBasket,
+      SearchInput/SearchResult configurations.
+
+  wa-task-batch-service:
+    path: apps/wa/wa-task-batch-service
+    focus: |
+      Node cron runner: S2S auth, HTTP call to task-monitor, exit behaviour.
+
+  wa-message-cron-service:
+    path: apps/wa/wa-message-cron-service
+    focus: |
+      Node cron runner for FIND_PROBLEM_MESSAGES job: S2S auth, HTTP call to CEH.

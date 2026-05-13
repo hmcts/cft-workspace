@@ -8,7 +8,7 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseEventFieldDefinition.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseEventFieldComplexDefinition.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/WizardPageComplexFieldOverride.java
-  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseViewFieldBuilder.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/aggregated/CaseViewFieldBuilder.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/aggregated/CaseViewField.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/MidEventCallback.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/HiddenFieldsValidator.java
@@ -22,7 +22,7 @@ examples_extracted_from:
   - ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_RetainHiddenValue/CaseEventToFields.json
   - ccd-config-generator:sdk/ccd-config-generator/src/test/java/uk/gov/hmcts/reform/fpl/CCDConfig.java
   - ccd-config-generator:sdk/ccd-config-generator/src/test/java/uk/gov/hmcts/reform/fpl/model/CaseData.java
-status: confluence-augmented
+status: reviewed
 last_reviewed: "2026-04-29T00:00:00Z"
 confluence:
   - id: "1457305822"

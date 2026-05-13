@@ -1,0 +1,151 @@
+# Static plan for /docs-generate bulk-scan
+#
+# Each page lists:
+#   topic       — slug used for --topic filtering and as the frontmatter topic
+#   brief       — one-paragraph writing brief (audience, focus, what to include)
+#   sources     — repo:path hints the topic-writer should consult (filtered from research notes)
+#
+# Source repos for Phase 2 (research) are listed at the bottom under `research_sources`.
+
+pages:
+
+  # --- Explanation ---
+  apps/bulk-scan/docs/explanation/overview.md:
+    topic: overview
+    brief: |
+      The "what is Bulk Scan" page. Cover the pipeline: scanning supplier → Azure Blob →
+      processor → ASB → orchestrator → CCD. Audience: a service team onboarding paper forms.
+    sources:
+      - apps/bulk-scan/bulk-scan-processor
+      - apps/bulk-scan/bulk-scan-orchestrator
+
+  apps/bulk-scan/docs/explanation/architecture.md:
+    topic: architecture
+    brief: |
+      Runtime architecture: processor, orchestrator, payment-processor, their databases, ASB
+      queues (envelopes, processed-envelopes, payments). Mermaid diagram of the full pipeline.
+    sources:
+      - apps/bulk-scan/bulk-scan-processor
+      - apps/bulk-scan/bulk-scan-orchestrator
+      - apps/bulk-scan/bulk-scan-payment-processor
+
+  apps/bulk-scan/docs/explanation/envelope-processing.md:
+    topic: processing
+    brief: |
+      Deep-dive into bulk-scan-processor: blob lease, unzip, validation, OCR validation callback,
+      document upload to CDAM, notification to ASB. Cover the scheduling tasks and ShedLock.
+    sources:
+      - apps/bulk-scan/bulk-scan-processor
+
+  apps/bulk-scan/docs/explanation/orchestration-flow.md:
+    topic: orchestration
+    brief: |
+      Deep-dive into bulk-scan-orchestrator: envelope consumption from ASB, case creation vs
+      case attachment vs exception record creation. The transformation-url and update-url
+      callbacks. Cover the completion signal back to processor.
+    sources:
+      - apps/bulk-scan/bulk-scan-orchestrator
+
+  apps/bulk-scan/docs/explanation/exception-records.md:
+    topic: exception-records
+    brief: |
+      What exception records are: CCD case types for unmatched envelopes, the caseworker
+      conversion flow (CCD event → orchestrator callback → jurisdiction transformation-url),
+      per-jurisdiction definitions.
+    sources:
+      - apps/bulk-scan/bulk-scan-orchestrator
+      - apps/bulk-scan/bulk-scan-ccd-definitions
+
+  apps/bulk-scan/docs/explanation/payment-handling.md:
+    topic: payment
+    brief: |
+      The bulk-scan-payment-processor: how cash/cheque payments from envelopes are registered
+      in Pay Hub, PO Box to site ID mapping, exception-record vs service-case payment flows.
+    sources:
+      - apps/bulk-scan/bulk-scan-payment-processor
+
+  # --- How-to ---
+  apps/bulk-scan/docs/how-to/onboard-new-jurisdiction.md:
+    topic: overview
+    brief: |
+      End-to-end recipe for onboarding a new jurisdiction: configure blob container, write
+      exception-record CCD definition, implement transformation-url and update-url callbacks,
+      register OCR validation URL, add to processor config.
+    sources:
+      - apps/bulk-scan/bulk-scan-processor
+      - apps/bulk-scan/bulk-scan-orchestrator
+      - apps/bulk-scan/bulk-scan-ccd-definitions
+
+  apps/bulk-scan/docs/how-to/implement-transformation-callback.md:
+    topic: orchestration
+    brief: |
+      Recipe for implementing the jurisdiction-specific transformation-url callback that converts
+      an exception record into a proper service case.
+    sources:
+      - apps/bulk-scan/bulk-scan-orchestrator
+
+  apps/bulk-scan/docs/how-to/troubleshoot-envelope-failures.md:
+    topic: processing
+    brief: |
+      Troubleshooting recipe: an envelope fails validation or gets stuck. How to diagnose via
+      processor DB, ASB dead-letter queue, blob storage inspection.
+    sources:
+      - apps/bulk-scan/bulk-scan-processor
+      - apps/bulk-scan/bulk-scan-helper-frontend
+
+  # --- Reference ---
+  apps/bulk-scan/docs/reference/envelope-format.md:
+    topic: processing
+    brief: |
+      Reference for the envelope ZIP format: required files, JSON metadata schema, OCR data
+      shape, document naming conventions.
+    sources:
+      - apps/bulk-scan/bulk-scan-processor
+
+  apps/bulk-scan/docs/reference/api-processor.md:
+    topic: architecture
+    brief: |
+      Processor API endpoint reference: SAS token endpoints, envelope status query. Link to
+      OpenAPI spec.
+    sources:
+      - apps/bulk-scan/bulk-scan-processor
+
+  apps/bulk-scan/docs/reference/api-orchestrator.md:
+    topic: architecture
+    brief: |
+      Orchestrator API endpoint reference: callback contract for transformation/update URLs.
+      Link to OpenAPI spec.
+    sources:
+      - apps/bulk-scan/bulk-scan-orchestrator
+
+research_sources:
+
+  bulk-scan-processor:
+    path: apps/bulk-scan/bulk-scan-processor
+    focus: |
+      Blob polling, envelope validation (JSON schema), OCR validation URL dispatch, CDAM upload,
+      ASB notification publishing, scheduling tasks, ShedLock, SAS token issuance.
+
+  bulk-scan-orchestrator:
+    path: apps/bulk-scan/bulk-scan-orchestrator
+    focus: |
+      ASB envelope consumption, CCD case creation/update via core-case-data-store-client,
+      exception record handling, transformation-url/update-url callback contract, completion
+      messages.
+
+  bulk-scan-payment-processor:
+    path: apps/bulk-scan/bulk-scan-payment-processor
+    focus: |
+      Payment message consumption from ASB, PO Box to site ID mapping, Pay Hub Feign client,
+      payment registration flow.
+
+  bulk-scan-ccd-definitions:
+    path: apps/bulk-scan/bulk-scan-ccd-definitions
+    focus: |
+      Per-jurisdiction exception-record CCD definitions: CaseField, CaseEvent, AuthorisationCase*,
+      WorkBasket, Search configurations. Which jurisdictions are defined here.
+
+  bulk-scan-helper-frontend:
+    path: apps/bulk-scan/bulk-scan-helper-frontend
+    focus: |
+      SAS token retrieval, blob inspection capabilities, dev/test usage patterns.

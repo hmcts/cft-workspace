@@ -8,20 +8,20 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagVisibility.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java
-  - service-nfdiv:nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java
-  - service-nfdiv:nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/PartyFlags.java
-  - service-nfdiv:nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerCreateCaseFlag.java
-  - service-nfdiv:nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerManageCaseFlag.java
-  - service-nfdiv:nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/caseworker/service/CaseFlagsService.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java
+  - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java
+  - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/PartyFlags.java
+  - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerCreateCaseFlag.java
+  - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerManageCaseFlag.java
+  - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/service/CaseFlagsService.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java
 examples_extracted_from:
   - apps/prl/prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java
   - apps/nfdiv/nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerCreateCaseFlag.java
   - apps/nfdiv/nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/caseworker/service/CaseFlagsService.java
-status: confluence-augmented
+status: reviewed
 last_reviewed: "2026-04-29T00:00:00Z"
 confluence_checked_at: "2026-04-29T18:00:00Z"
 confluence:

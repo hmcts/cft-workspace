@@ -19,6 +19,9 @@ repos:
   - apps/am/am-judicial-booking-service
   - apps/am/am-role-assignment-batch-service
   - apps/am/am-role-assignment-refresh-batch
+confluence_spaces:
+  - AM
+  - RBAC
 ---
 
 # Access Management (AM)

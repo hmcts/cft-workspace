@@ -11,6 +11,8 @@ api_specs:
 repos:
   - apps/send-letter/send-letter-service
   - apps/send-letter/send-letter-mock
+confluence_spaces:
+  - BP
 ---
 
 # Send Letter (Bulk Print)

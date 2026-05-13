@@ -6,6 +6,32 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 
 | Product | Diátaxis | Title | Topic | Path |
 |---|---|---|---|---|
+| am | how-to | Query Role Assignments | role-lifecycle | `apps/am/docs/how-to/query-role-assignments.md` |
+| am | how-to | Write Drools Mapping Rules | drools | `apps/am/docs/how-to/write-drools-mapping-rules.md` |
+| am | how-to | Write Drools Validation Rules | drools | `apps/am/docs/how-to/write-drools-validation-rules.md` |
+| am | reference | Api Org Role Mapping | orm | `apps/am/docs/reference/api-org-role-mapping.md` |
+| am | reference | Api Role Assignment Service | architecture | `apps/am/docs/reference/api-role-assignment-service.md` |
+| am | reference | Glossary | reference | `apps/am/docs/reference/glossary.md` |
+| am | explanation | Architecture | architecture | `apps/am/docs/explanation/architecture.md` |
+| am | explanation | Batch Jobs | batch | `apps/am/docs/explanation/batch-jobs.md` |
+| am | explanation | Drools Rules | drools | `apps/am/docs/explanation/drools-rules.md` |
+| am | explanation | Judicial Booking | judicial-booking | `apps/am/docs/explanation/judicial-booking.md` |
+| am | explanation | Org Role Mapping Flow | orm | `apps/am/docs/explanation/org-role-mapping-flow.md` |
+| am | explanation | Overview | overview | `apps/am/docs/explanation/overview.md` |
+| am | explanation | Role Assignment Lifecycle | role-lifecycle | `apps/am/docs/explanation/role-assignment-lifecycle.md` |
+| bulk-scan | how-to | Implement Transformation Callback | orchestration | `apps/bulk-scan/docs/how-to/implement-transformation-callback.md` |
+| bulk-scan | how-to | Onboard New Jurisdiction | overview | `apps/bulk-scan/docs/how-to/onboard-new-jurisdiction.md` |
+| bulk-scan | how-to | Troubleshoot Envelope Failures | processing | `apps/bulk-scan/docs/how-to/troubleshoot-envelope-failures.md` |
+| bulk-scan | reference | Api Orchestrator | architecture | `apps/bulk-scan/docs/reference/api-orchestrator.md` |
+| bulk-scan | reference | Api Processor | architecture | `apps/bulk-scan/docs/reference/api-processor.md` |
+| bulk-scan | reference | Envelope Format | processing | `apps/bulk-scan/docs/reference/envelope-format.md` |
+| bulk-scan | reference | Glossary | reference | `apps/bulk-scan/docs/reference/glossary.md` |
+| bulk-scan | explanation | Architecture | architecture | `apps/bulk-scan/docs/explanation/architecture.md` |
+| bulk-scan | explanation | Envelope Processing | processing | `apps/bulk-scan/docs/explanation/envelope-processing.md` |
+| bulk-scan | explanation | Exception Records | exception-records | `apps/bulk-scan/docs/explanation/exception-records.md` |
+| bulk-scan | explanation | Orchestration Flow | orchestration | `apps/bulk-scan/docs/explanation/orchestration-flow.md` |
+| bulk-scan | explanation | Overview | overview | `apps/bulk-scan/docs/explanation/overview.md` |
+| bulk-scan | explanation | Payment Handling | payment | `apps/bulk-scan/docs/explanation/payment-handling.md` |
 | ccd | tutorials | First Case Type (Config Generator) | tutorial-config-generator | `apps/ccd/docs/tutorials/first-case-type-config-generator.md` |
 | ccd | tutorials | First Case Type (JSON) | tutorial-json | `apps/ccd/docs/tutorials/first-case-type-json.md` |
 | ccd | tutorials | Running with cftlib | tutorial-cftlib | `apps/ccd/docs/tutorials/running-with-cftlib.md` |
@@ -61,6 +87,77 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | explanation | What is CCD? | overview | `apps/ccd/docs/explanation/overview.md` |
 | ccd | explanation | Work Allocation Integration | work-allocation | `apps/ccd/docs/explanation/work-allocation-integration.md` |
 | ccd | explanation | Work Basket | work-basket | `apps/ccd/docs/explanation/work-basket.md` |
+| em | how-to | Add Annotations | annotation | `apps/em/docs/how-to/add-annotations.md` |
+| em | how-to | Embed Media Viewer | media-viewer | `apps/em/docs/how-to/embed-media-viewer.md` |
+| em | how-to | Local Development Cftlib | architecture | `apps/em/docs/how-to/local-development-cftlib.md` |
+| em | how-to | Trigger Bundle Stitching | stitching | `apps/em/docs/how-to/trigger-bundle-stitching.md` |
+| em | reference | Api Annotation | annotation | `apps/em/docs/reference/api-annotation.md` |
+| em | reference | Api Hrs | hrs | `apps/em/docs/reference/api-hrs.md` |
+| em | reference | Api Orchestrator | stitching | `apps/em/docs/reference/api-orchestrator.md` |
+| em | reference | Api Stitching | stitching | `apps/em/docs/reference/api-stitching.md` |
+| em | reference | Glossary | reference | `apps/em/docs/reference/glossary.md` |
+| em | explanation | Annotation Flow | annotation | `apps/em/docs/explanation/annotation-flow.md` |
+| em | explanation | Architecture | architecture | `apps/em/docs/explanation/architecture.md` |
+| em | explanation | Hearing Recordings | hrs | `apps/em/docs/explanation/hearing-recordings.md` |
+| em | explanation | In Court Presentation | icp | `apps/em/docs/explanation/in-court-presentation.md` |
+| em | explanation | Media Viewer | media-viewer | `apps/em/docs/explanation/media-viewer.md` |
+| em | explanation | Overview | overview | `apps/em/docs/explanation/overview.md` |
+| em | explanation | Stitching And Bundling | stitching | `apps/em/docs/explanation/stitching-and-bundling.md` |
+| payment | how-to | Configure Pci Pal Flow | telephony | `apps/payment/docs/how-to/configure-pci-pal-flow.md` |
+| payment | how-to | Integrate From A Service | overview | `apps/payment/docs/how-to/integrate-from-a-service.md` |
+| payment | how-to | Troubleshoot Payment Status | lifecycle | `apps/payment/docs/how-to/troubleshoot-payment-status.md` |
+| payment | reference | Api Bulk Scanning | bulk-scan-payments | `apps/payment/docs/reference/api-bulk-scanning.md` |
+| payment | reference | Api Payments | architecture | `apps/payment/docs/reference/api-payments.md` |
+| payment | reference | Api Refunds | refunds | `apps/payment/docs/reference/api-refunds.md` |
+| payment | reference | Glossary | reference | `apps/payment/docs/reference/glossary.md` |
+| payment | reference | Payment Status Callbacks | lifecycle | `apps/payment/docs/reference/payment-status-callbacks.md` |
+| payment | explanation | Architecture | architecture | `apps/payment/docs/explanation/architecture.md` |
+| payment | explanation | Bulk Scan Payments | bulk-scan-payments | `apps/payment/docs/explanation/bulk-scan-payments.md` |
+| payment | explanation | Govuk Pay Integration | govuk-pay | `apps/payment/docs/explanation/govuk-pay-integration.md` |
+| payment | explanation | Overview | overview | `apps/payment/docs/explanation/overview.md` |
+| payment | explanation | Payment Lifecycle | lifecycle | `apps/payment/docs/explanation/payment-lifecycle.md` |
+| payment | explanation | Pci Pal Telephony | telephony | `apps/payment/docs/explanation/pci-pal-telephony.md` |
+| payment | explanation | Reconciliation | reconciliation | `apps/payment/docs/explanation/reconciliation.md` |
+| payment | explanation | Refunds Flow | refunds | `apps/payment/docs/explanation/refunds-flow.md` |
+| rd | how-to | Onboard Common Data | commondata | `apps/rd/docs/how-to/onboard-common-data.md` |
+| rd | how-to | Query Reference Data | overview | `apps/rd/docs/how-to/query-reference-data.md` |
+| rd | how-to | Register As S2s Caller | architecture | `apps/rd/docs/how-to/register-as-s2s-caller.md` |
+| rd | reference | Api Judicial | jrd | `apps/rd/docs/reference/api-judicial.md` |
+| rd | reference | Api Location | lrd | `apps/rd/docs/reference/api-location.md` |
+| rd | reference | Api Professional | prd | `apps/rd/docs/reference/api-professional.md` |
+| rd | reference | Glossary | overview | `apps/rd/docs/reference/glossary.md` |
+| rd | explanation | Architecture | architecture | `apps/rd/docs/explanation/architecture.md` |
+| rd | explanation | Batch Loading | batch | `apps/rd/docs/explanation/batch-loading.md` |
+| rd | explanation | Caseworker Profiles | crd | `apps/rd/docs/explanation/caseworker-profiles.md` |
+| rd | explanation | Common Data | commondata | `apps/rd/docs/explanation/common-data.md` |
+| rd | explanation | Judicial Users | jrd | `apps/rd/docs/explanation/judicial-users.md` |
+| rd | explanation | Locations | lrd | `apps/rd/docs/explanation/locations.md` |
+| rd | explanation | Overview | overview | `apps/rd/docs/explanation/overview.md` |
+| rd | explanation | Professional Organisations | prd | `apps/rd/docs/explanation/professional-organisations.md` |
+| send-letter | how-to | Integrate From A Service | overview | `apps/send-letter/docs/how-to/integrate-from-a-service.md` |
+| send-letter | how-to | Troubleshoot Upload Failures | lifecycle | `apps/send-letter/docs/how-to/troubleshoot-upload-failures.md` |
+| send-letter | reference | Api | architecture | `apps/send-letter/docs/reference/api.md` |
+| send-letter | reference | Configuration | architecture | `apps/send-letter/docs/reference/configuration.md` |
+| send-letter | reference | Glossary | reference | `apps/send-letter/docs/reference/glossary.md` |
+| send-letter | explanation | Architecture | architecture | `apps/send-letter/docs/explanation/architecture.md` |
+| send-letter | explanation | Letter Lifecycle | lifecycle | `apps/send-letter/docs/explanation/letter-lifecycle.md` |
+| send-letter | explanation | Overview | overview | `apps/send-letter/docs/explanation/overview.md` |
+| wa | how-to | Add Tasks For New Event | dmn | `apps/wa/docs/how-to/add-tasks-for-new-event.md` |
+| wa | how-to | Debug Stuck Tasks | task-lifecycle | `apps/wa/docs/how-to/debug-stuck-tasks.md` |
+| wa | how-to | Onboard Jurisdiction | overview | `apps/wa/docs/how-to/onboard-jurisdiction.md` |
+| wa | how-to | Write Dmn Configuration | dmn | `apps/wa/docs/how-to/write-dmn-configuration.md` |
+| wa | reference | Api Task Management | architecture | `apps/wa/docs/reference/api-task-management.md` |
+| wa | reference | Api Workflow | architecture | `apps/wa/docs/reference/api-workflow.md` |
+| wa | reference | Dmn Schema | dmn | `apps/wa/docs/reference/dmn-schema.md` |
+| wa | reference | Glossary | overview | `apps/wa/docs/reference/glossary.md` |
+| wa | reference | Task States | task-lifecycle | `apps/wa/docs/reference/task-states.md` |
+| wa | explanation | Access Control | access-control | `apps/wa/docs/explanation/access-control.md` |
+| wa | explanation | Architecture | architecture | `apps/wa/docs/explanation/architecture.md` |
+| wa | explanation | Bpmn Workflows | bpmn | `apps/wa/docs/explanation/bpmn-workflows.md` |
+| wa | explanation | Case Event Handler | ceh | `apps/wa/docs/explanation/case-event-handler.md` |
+| wa | explanation | Dmn Task Configuration | dmn | `apps/wa/docs/explanation/dmn-task-configuration.md` |
+| wa | explanation | Overview | overview | `apps/wa/docs/explanation/overview.md` |
+| wa | explanation | Task Lifecycle | task-lifecycle | `apps/wa/docs/explanation/task-lifecycle.md` |
 | workspace | tutorials | Getting started | getting-started | `docs/tutorials/getting-started.md` |
 | workspace | tutorials | GitHub | team-github | `docs/tutorials/cnp-onboarding/team-github.md` |
 | workspace | tutorials | Jenkins | team-jenkins | `docs/tutorials/cnp-onboarding/team-jenkins.md` |
@@ -129,3 +226,18 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | explanation | DevOps | devops | `docs/explanation/principles/devops.md` |
 | workspace | explanation | Programming | programming | `docs/explanation/principles/programming.md` |
 | workspace | explanation | Testing | test | `docs/explanation/principles/test.md` |
+| xui | how-to | Add A Component | toolkit | `apps/xui/docs/how-to/add-a-component.md` |
+| xui | how-to | Add Feature Flag | feature-flags | `apps/xui/docs/how-to/add-feature-flag.md` |
+| xui | how-to | Configure For New Service | architecture | `apps/xui/docs/how-to/configure-for-new-service.md` |
+| xui | how-to | Local Development | architecture | `apps/xui/docs/how-to/local-development.md` |
+| xui | reference | Config Schema | architecture | `apps/xui/docs/reference/config-schema.md` |
+| xui | reference | Downstream Services | architecture | `apps/xui/docs/reference/downstream-services.md` |
+| xui | reference | Glossary | overview | `apps/xui/docs/reference/glossary.md` |
+| xui | reference | Shared Libraries | overview | `apps/xui/docs/reference/shared-libraries.md` |
+| xui | explanation | Architecture | architecture | `apps/xui/docs/explanation/architecture.md` |
+| xui | explanation | Bff Pattern | bff | `apps/xui/docs/explanation/bff-pattern.md` |
+| xui | explanation | Case Ui Toolkit | toolkit | `apps/xui/docs/explanation/case-ui-toolkit.md` |
+| xui | explanation | Feature Flags | feature-flags | `apps/xui/docs/explanation/feature-flags.md` |
+| xui | explanation | Overview | overview | `apps/xui/docs/explanation/overview.md` |
+| xui | explanation | Session Management | session | `apps/xui/docs/explanation/session-management.md` |
+| xui | explanation | Translation | translation | `apps/xui/docs/explanation/translation.md` |

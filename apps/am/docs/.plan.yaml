@@ -1,0 +1,152 @@
+# Static plan for /docs-generate am
+#
+# Each page lists:
+#   topic       — slug used for --topic filtering and as the frontmatter topic
+#   brief       — one-paragraph writing brief (audience, focus, what to include)
+#   sources     — repo:path hints the topic-writer should consult (filtered from research notes)
+#
+# Source repos for Phase 2 (research) are listed at the bottom under `research_sources`.
+
+pages:
+
+  # --- Explanation ---
+  apps/am/docs/explanation/overview.md:
+    topic: overview
+    brief: |
+      The "what is AM" page. Cover the role-assignment model (organisational roles vs case roles),
+      how AM sits between IDAM (identity) and CCD/WA (consumers). Audience: a platform or service-team
+      engineer encountering AM for the first time.
+    sources:
+      - apps/am/am-role-assignment-service
+
+  apps/am/docs/explanation/architecture.md:
+    topic: architecture
+    brief: |
+      Runtime architecture: RAS (core), ORM (mapping), JBS (booking), batch services. Include a
+      Mermaid component diagram showing the data flows between RAS ↔ ORM ↔ JBS, inbound consumers
+      (CCD, WA, XUI), and reference-data sources (CRD, JRD). Cover ports, databases, and ASB topics.
+    sources:
+      - apps/am/am-role-assignment-service
+      - apps/am/am-org-role-mapping-service
+      - apps/am/am-judicial-booking-service
+
+  apps/am/docs/explanation/role-assignment-lifecycle.md:
+    topic: role-lifecycle
+    brief: |
+      Explain a role assignment from creation to expiry: request validation (Drools), persistence,
+      query, expiry/purge (batch). Cover assignment attributes (roleType, classification, grantType,
+      readOnly, beginTime/endTime). Distinguish organisational vs case-level assignments.
+    sources:
+      - apps/am/am-role-assignment-service
+
+  apps/am/docs/explanation/drools-rules.md:
+    topic: drools
+    brief: |
+      How Drools is used in both RAS (validation rules) and ORM (mapping rules). Explain the rule
+      structure, how rules are loaded, the decision-table format, and the different purposes in
+      each service. Include examples of rule patterns.
+    sources:
+      - apps/am/am-role-assignment-service
+      - apps/am/am-org-role-mapping-service
+
+  apps/am/docs/explanation/org-role-mapping-flow.md:
+    topic: orm
+    brief: |
+      End-to-end flow: ASB message arrives from CRD/JRD → ORM fetches profile → Drools evaluates
+      mapping rules → RAS called to persist assignments. Cover the JBS interaction for judicial
+      location bookings.
+    sources:
+      - apps/am/am-org-role-mapping-service
+      - apps/am/am-judicial-booking-service
+
+  apps/am/docs/explanation/judicial-booking.md:
+    topic: judicial-booking
+    brief: |
+      What judicial bookings are (time-bounded location assignments), how they're created, and how
+      ORM uses them during judicial role mapping. Short page (~80 lines).
+    sources:
+      - apps/am/am-judicial-booking-service
+
+  apps/am/docs/explanation/batch-jobs.md:
+    topic: batch
+    brief: |
+      The two batch services: what they do, when they run, what they purge/refresh. Cover the
+      CronJob scheduling model and the Kubernetes deployment pattern.
+    sources:
+      - apps/am/am-role-assignment-batch-service
+      - apps/am/am-role-assignment-refresh-batch
+
+  # --- How-to ---
+  apps/am/docs/how-to/write-drools-validation-rules.md:
+    topic: drools
+    brief: |
+      Recipe for adding a new Drools validation rule in RAS. Cover the rule file location,
+      the input/output model (RoleAssignment, Request), how to test locally, and how to verify
+      the rule fires correctly.
+    sources:
+      - apps/am/am-role-assignment-service
+
+  apps/am/docs/how-to/write-drools-mapping-rules.md:
+    topic: drools
+    brief: |
+      Recipe for adding a new Drools mapping rule in ORM. Cover how jurisdiction-specific rules
+      are organised, the CaseWorkerProfile/JudicialProfile input model, and local testing.
+    sources:
+      - apps/am/am-org-role-mapping-service
+
+  apps/am/docs/how-to/query-role-assignments.md:
+    topic: role-lifecycle
+    brief: |
+      How to call the RAS query API to retrieve role assignments for a user or case. Cover the
+      POST /am/role-assignments/query endpoint, filtering parameters, and pagination.
+    sources:
+      - apps/am/am-role-assignment-service
+
+  # --- Reference ---
+  apps/am/docs/reference/api-role-assignment-service.md:
+    topic: architecture
+    brief: |
+      RAS API endpoint reference: create, query, delete role assignments. Request/response shapes,
+      auth requirements, error codes. Link to OpenAPI spec.
+    sources:
+      - apps/am/am-role-assignment-service
+
+  apps/am/docs/reference/api-org-role-mapping.md:
+    topic: orm
+    brief: |
+      ORM API endpoint reference: refresh trigger, staff mapping. Request/response shapes.
+      Link to OpenAPI spec.
+    sources:
+      - apps/am/am-org-role-mapping-service
+
+research_sources:
+
+  am-role-assignment-service:
+    path: apps/am/am-role-assignment-service
+    focus: |
+      Role assignment CRUD endpoints, Drools validation rules, assignment attributes (roleType,
+      classification, grantType, beginTime/endTime), query API, Flyway migrations, S2S callers list.
+
+  am-org-role-mapping-service:
+    path: apps/am/am-org-role-mapping-service
+    focus: |
+      ASB subscription for CRD/JRD events, Drools mapping rules (per-jurisdiction), Feign clients
+      for CRD/JRD/JBS/RAS, the mapping decision flow, how refresh-batch triggers full re-evaluation.
+
+  am-judicial-booking-service:
+    path: apps/am/am-judicial-booking-service
+    focus: |
+      Booking model (location, start/end), CRUD endpoints, how ORM consumes bookings during
+      judicial role mapping.
+
+  am-role-assignment-batch-service:
+    path: apps/am/am-role-assignment-batch-service
+    focus: |
+      Spring Batch job configuration, what records it purges (expired RAS + JBS records),
+      CronJob schedule.
+
+  am-role-assignment-refresh-batch:
+    path: apps/am/am-role-assignment-refresh-batch
+    focus: |
+      Refresh trigger: calls ORM and RAS to re-evaluate all organisational role assignments.
+      Schedule, auth model.

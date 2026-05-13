@@ -2,9 +2,9 @@
 topic: linked-cases
 audience: both
 sources:
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/caselink/CaseLink.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/caselink/LinkReason.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caselink/CaseLink.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caselink/LinkReason.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/CaseLink.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/LinkReason.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/caselinking/CaseLinkExtractor.java
@@ -12,7 +12,7 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/external/controller/CaseController.java
 examples_extracted_from:
   - apps/prl/prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/caselink/CaseLink.java
-status: confluence-augmented
+status: reviewed
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:

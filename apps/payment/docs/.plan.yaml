@@ -1,0 +1,196 @@
+# Static plan for /docs-generate payment
+#
+# Each page lists:
+#   topic       — slug used for --topic filtering and as the frontmatter topic
+#   brief       — one-paragraph writing brief (audience, focus, what to include)
+#   sources     — repo:path hints the topic-writer should consult (filtered from research notes)
+#
+# Source repos for Phase 2 (research) are listed at the bottom under `research_sources`.
+
+pages:
+
+  # --- Explanation ---
+  apps/payment/docs/explanation/overview.md:
+    topic: overview
+    brief: |
+      The "what is Payment" page. Cover the platform role: wraps GOV.UK Pay and PCI-PAL,
+      adds IDAM/S2S auth, structured payment references, aggregation for reconciliation.
+      Audience: a service-team engineer integrating payments.
+    sources:
+      - apps/payment/ccpay-payment-app
+
+  apps/payment/docs/explanation/architecture.md:
+    topic: architecture
+    brief: |
+      Runtime architecture: ccpay-payment-app (hub), refunds, notifications, bulkscanning,
+      bubble (UI), outcome-web, API gateway (Terraform), scheduled-jobs, CPO service. Ports,
+      databases, Liquibase. Mermaid diagram of the hub-and-spoke pattern.
+    sources:
+      - apps/payment/ccpay-payment-app
+      - apps/payment/ccpay-refunds-app
+      - apps/payment/ccpay-notifications-service
+
+  apps/payment/docs/explanation/payment-lifecycle.md:
+    topic: lifecycle
+    brief: |
+      A payment from initiation to settlement: Created → Success/Failed → Reconciled. Cover
+      card payments (GOV.UK Pay), PBA payments (Liberata), telephony (PCI-PAL). The service-
+      request model and case-payment-orders.
+    sources:
+      - apps/payment/ccpay-payment-app
+
+  apps/payment/docs/explanation/govuk-pay-integration.md:
+    topic: govuk-pay
+    brief: |
+      How ccpay-payment-app integrates with GOV.UK Pay: the gov-pay-client module, payment
+      creation, status polling, return URLs, multi-account management.
+    sources:
+      - apps/payment/ccpay-payment-app
+
+  apps/payment/docs/explanation/pci-pal-telephony.md:
+    topic: telephony
+    brief: |
+      Telephony payments via PCI-PAL: Antenna and Kerv providers, OAuth flows, per-jurisdiction
+      flow IDs, launch endpoint, callback handling.
+    sources:
+      - apps/payment/ccpay-payment-app
+
+  apps/payment/docs/explanation/refunds-flow.md:
+    topic: refunds
+    brief: |
+      The refunds lifecycle: request submission, approval, Liberata reconciliation callback,
+      notification dispatch. Cover ccpay-refunds-app and its interaction with the hub and
+      notifications service.
+    sources:
+      - apps/payment/ccpay-refunds-app
+      - apps/payment/ccpay-notifications-service
+
+  apps/payment/docs/explanation/reconciliation.md:
+    topic: reconciliation
+    brief: |
+      Financial reconciliation: how ccpay-payment-app aggregates data across GOV.UK Pay accounts,
+      the Liberata callback endpoints (via APIM gateway), the scheduled CSV reports.
+    sources:
+      - apps/payment/ccpay-payment-app
+      - apps/payment/ccpay-payment-api-gateway
+      - apps/payment/ccpay-scheduled-jobs
+
+  apps/payment/docs/explanation/bulk-scan-payments.md:
+    topic: bulk-scan-payments
+    brief: |
+      How bulk-scanned cash/cheque payments flow: Exela gateway → ccpay-bulkscanning-app →
+      ccpay-payment-app. PO Box to site ID mapping.
+    sources:
+      - apps/payment/ccpay-bulkscanning-app
+
+  # --- How-to ---
+  apps/payment/docs/how-to/integrate-from-a-service.md:
+    topic: overview
+    brief: |
+      Recipe for a service team to integrate with Payment: register S2S, configure payment
+      references, call the card/PBA/telephony APIs, handle callbacks.
+    sources:
+      - apps/payment/ccpay-payment-app
+
+  apps/payment/docs/how-to/configure-pci-pal-flow.md:
+    topic: telephony
+    brief: |
+      Recipe for configuring a new PCI-PAL telephony flow for a jurisdiction: obtain OAuth
+      credentials from PCI-PAL, add flow.id properties, deploy.
+    sources:
+      - apps/payment/ccpay-payment-app
+
+  apps/payment/docs/how-to/troubleshoot-payment-status.md:
+    topic: lifecycle
+    brief: |
+      Troubleshooting recipe: a payment is stuck or failed. How to check GOV.UK Pay status,
+      inspect the payment DB, use PayBubble to investigate.
+    sources:
+      - apps/payment/ccpay-payment-app
+      - apps/payment/ccpay-bubble
+
+  # --- Reference ---
+  apps/payment/docs/reference/api-payments.md:
+    topic: architecture
+    brief: |
+      Core payment API reference: card payments, PBA, telephony, service requests. Key endpoints
+      from the 18 published OpenAPI specs. Request/response shapes.
+    sources:
+      - apps/payment/ccpay-payment-app
+
+  apps/payment/docs/reference/api-refunds.md:
+    topic: refunds
+    brief: |
+      Refunds API reference: create refund, update status, list refunds. Request/response shapes.
+    sources:
+      - apps/payment/ccpay-refunds-app
+
+  apps/payment/docs/reference/api-bulk-scanning.md:
+    topic: bulk-scan-payments
+    brief: |
+      Bulk scanning payment API reference: cash/cheque receipt registration. Request/response shapes.
+    sources:
+      - apps/payment/ccpay-bulkscanning-app
+
+  apps/payment/docs/reference/payment-status-callbacks.md:
+    topic: lifecycle
+    brief: |
+      Reference for the ASB payment-status callback topic: message format, consumer registration,
+      which services receive status updates.
+    sources:
+      - apps/payment/ccpay-payment-app
+      - apps/payment/ccpay-service-request-cpo-update-service
+
+research_sources:
+
+  ccpay-payment-app:
+    path: apps/payment/ccpay-payment-app
+    focus: |
+      Multi-module structure (payment-api, gov-pay-client, payment-model, payment-reference-data),
+      card/PBA/telephony controllers, GOV.UK Pay client, PCI-PAL OAuth, Liberata PBA, Fees Register
+      client, ASB callback topic publishing, scheduled jobs, Liquibase migrations, S2S callers list.
+
+  ccpay-refunds-app:
+    path: apps/payment/ccpay-refunds-app
+    focus: |
+      Refund CRUD controllers, Liberata reconciliation callback, interaction with notifications
+      service, Liquibase migrations.
+
+  ccpay-notifications-service:
+    path: apps/payment/ccpay-notifications-service
+    focus: |
+      GOV.UK Notify integration (emails and letters), template IDs, notification triggers from
+      refunds-app, Liquibase migrations.
+
+  ccpay-bulkscanning-app:
+    path: apps/payment/ccpay-bulkscanning-app
+    focus: |
+      Cash/cheque receipt endpoints, PO Box to site ID mapping, forwarding to ccpay-payment-app,
+      Liquibase migrations.
+
+  ccpay-bubble:
+    path: apps/payment/ccpay-bubble
+    focus: |
+      Angular staff UI: payment review, web components (view-payment, fee-register-search),
+      Express BFF for API calls.
+
+  ccpay-scheduled-jobs:
+    path: apps/payment/ccpay-scheduled-jobs
+    focus: |
+      Scheduled job definitions: CSV pay-reports, card-payment status updates, refund notification
+      polling. How they're triggered via /jobs/* endpoints.
+
+  ccpay-service-request-cpo-update-service:
+    path: apps/payment/ccpay-service-request-cpo-update-service
+    focus: |
+      ASB topic consumption, CPO API forwarding, service-request update flow.
+
+  ccpay-paymentoutcome-web:
+    path: apps/payment/ccpay-paymentoutcome-web
+    focus: |
+      Citizen-facing payment outcome page: Express/TypeScript, GOV.UK Pay redirect handling.
+
+  ccpay-payment-api-gateway:
+    path: apps/payment/ccpay-payment-api-gateway
+    focus: |
+      Terraform APIM configuration for Liberata reconciliation endpoints.

@@ -31,8 +31,9 @@
 /.claude/settings.local.json
 /.claude/*.env
 
-# 6) CCD docs pipeline working state
-/apps/ccd/docs/.work/
+# 6) docs-generate pipeline working state (per-product .work/ caches: research notes,
+#    Confluence dumps, manifest). Regenerable from page frontmatter; not committed.
+/apps/*/docs/.work/
 
 # 7) IDE / OS noise
 .DS_Store

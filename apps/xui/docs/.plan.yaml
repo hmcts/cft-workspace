@@ -1,0 +1,187 @@
+# Static plan for /docs-generate xui
+#
+# Each page lists:
+#   topic       — slug used for --topic filtering and as the frontmatter topic
+#   brief       — one-paragraph writing brief (audience, focus, what to include)
+#   sources     — repo:path hints the topic-writer should consult (filtered from research notes)
+#
+# Source repos for Phase 2 (research) are listed at the bottom under `research_sources`.
+
+pages:
+
+  # --- Explanation ---
+  apps/xui/docs/explanation/overview.md:
+    topic: overview
+    brief: |
+      The "what is XUI" page. Cover the three deployed apps (Manage Cases, Manage Organisations,
+      Approve Organisation), the shared libraries, and XUI's role as the CCD UI platform. Audience:
+      any engineer joining an HMCTS team that uses CCD.
+    sources:
+      - apps/xui/rpx-xui-webapp
+
+  apps/xui/docs/explanation/architecture.md:
+    topic: architecture
+    brief: |
+      The dual-layer pattern: Angular SPA + Express BFF per app. Cover session management (Redis),
+      auth flow (IDAM OIDC → node-lib middleware → S2S), proxy routing to downstream services.
+      Include a Mermaid diagram showing webapp → BFF → CCD/AM/WA/RD.
+    sources:
+      - apps/xui/rpx-xui-webapp
+      - apps/xui/rpx-xui-node-lib
+
+  apps/xui/docs/explanation/bff-pattern.md:
+    topic: bff
+    brief: |
+      Deep-dive into the Backend-for-Frontend: Express routes, proxy configuration, how downstream
+      service URLs are resolved from node-config, the auth-interceptor middleware chain, error handling.
+    sources:
+      - apps/xui/rpx-xui-webapp
+      - apps/xui/rpx-xui-node-lib
+
+  apps/xui/docs/explanation/case-ui-toolkit.md:
+    topic: toolkit
+    brief: |
+      The ccd-case-ui-toolkit Angular library: what it renders (wizard forms, case lists, event flows,
+      field types), how it's published and consumed, its versioning model. Cover the key component tree.
+    sources:
+      - apps/xui/ccd-case-ui-toolkit
+
+  apps/xui/docs/explanation/session-management.md:
+    topic: session
+    brief: |
+      OIDC session lifecycle: login → token exchange → Redis session → timeout notification →
+      re-auth. Cover the timeout-notification service from rpx-xui-common-lib and how LaunchDarkly
+      gates timeout behaviour.
+    sources:
+      - apps/xui/rpx-xui-webapp
+      - apps/xui/rpx-xui-common-lib
+      - apps/xui/rpx-xui-node-lib
+
+  apps/xui/docs/explanation/feature-flags.md:
+    topic: feature-flags
+    brief: |
+      How LaunchDarkly is integrated: client-side SDK in Angular, server-side evaluation in the BFF,
+      flag propagation to the SPA. Cover the flag-naming convention and the jurisdictional feature
+      patterns (e.g. hearingsJurisdictions).
+    sources:
+      - apps/xui/rpx-xui-webapp
+
+  apps/xui/docs/explanation/translation.md:
+    topic: translation
+    brief: |
+      Welsh language support via rpx-xui-translation: the Angular pipe, the ts-translation-service
+      integration, how phrase bundles are loaded and cached. Short page.
+    sources:
+      - apps/xui/rpx-xui-translation
+
+  # --- How-to ---
+  apps/xui/docs/how-to/add-a-component.md:
+    topic: toolkit
+    brief: |
+      Recipe for adding a new Angular component to ccd-case-ui-toolkit: where to create it,
+      how to export it, how to test it, how to publish a new version, and how consuming apps
+      pick it up.
+    sources:
+      - apps/xui/ccd-case-ui-toolkit
+
+  apps/xui/docs/how-to/configure-for-new-service.md:
+    topic: architecture
+    brief: |
+      Recipe for configuring rpx-xui-webapp to proxy to a new downstream service: add config
+      entry, add proxy route in BFF, wire S2S service name, verify in local dev.
+    sources:
+      - apps/xui/rpx-xui-webapp
+
+  apps/xui/docs/how-to/add-feature-flag.md:
+    topic: feature-flags
+    brief: |
+      Recipe for adding a new LaunchDarkly feature flag: define in LD dashboard, consume in
+      Angular (client SDK) and/or Express (server evaluation), gate UI and API paths.
+    sources:
+      - apps/xui/rpx-xui-webapp
+
+  apps/xui/docs/how-to/local-development.md:
+    topic: architecture
+    brief: |
+      Recipe for running rpx-xui-webapp locally: prerequisites, config overrides, connecting to
+      AAT services, running against local CCD via cftlib, common troubleshooting.
+    sources:
+      - apps/xui/rpx-xui-webapp
+      - apps/xui/rpx-xui-dev-utils
+
+  # --- Reference ---
+  apps/xui/docs/reference/config-schema.md:
+    topic: architecture
+    brief: |
+      Reference for the node-config schema in rpx-xui-webapp: top-level keys, service URLs,
+      feature toggles, session settings, LaunchDarkly settings. Table format.
+    sources:
+      - apps/xui/rpx-xui-webapp
+
+  apps/xui/docs/reference/shared-libraries.md:
+    topic: overview
+    brief: |
+      Reference table of shared libraries: rpx-xui-common-lib, rpx-xui-node-lib, rpx-xui-translation.
+      For each: npm package name, what it provides, which apps consume it, versioning.
+    sources:
+      - apps/xui/rpx-xui-common-lib
+      - apps/xui/rpx-xui-node-lib
+      - apps/xui/rpx-xui-translation
+
+  apps/xui/docs/reference/downstream-services.md:
+    topic: architecture
+    brief: |
+      Reference table of all downstream services XUI connects to: service name, config key,
+      what XUI uses it for, which XUI app connects.
+    sources:
+      - apps/xui/rpx-xui-webapp
+      - apps/xui/rpx-xui-manage-organisations
+
+research_sources:
+
+  rpx-xui-webapp:
+    path: apps/xui/rpx-xui-webapp
+    focus: |
+      Express BFF routes, proxy configuration, node-config schema (config/default.json), OIDC
+      session middleware, LaunchDarkly integration, downstream service wiring, Angular app module
+      structure.
+
+  rpx-xui-node-lib:
+    path: apps/xui/rpx-xui-node-lib
+    focus: |
+      Express middleware stack: OIDC, S2S token exchange, Helmet, AppInsights. How the middleware
+      is composed and exported for all three apps.
+
+  ccd-case-ui-toolkit:
+    path: apps/xui/ccd-case-ui-toolkit
+    focus: |
+      Angular component tree: wizard, case-list, event-flow components. Field-type renderers.
+      How case-type definitions drive the UI. Publishing to npm.
+
+  rpx-xui-common-lib:
+    path: apps/xui/rpx-xui-common-lib
+    focus: |
+      Timeout-notification service, session-dialog component, other shared UI primitives.
+      Publishing to npm.
+
+  rpx-xui-manage-organisations:
+    path: apps/xui/rpx-xui-manage-organisations
+    focus: |
+      Manage Organisations BFF: organisation management, PBA flows, case-sharing via AAC.
+      Distinct downstream integrations from webapp.
+
+  rpx-xui-translation:
+    path: apps/xui/rpx-xui-translation
+    focus: |
+      Angular pipe and service for loading translations from ts-translation-service; how phrase
+      bundles are fetched and cached.
+
+  rpx-xui-approve-org:
+    path: apps/xui/rpx-xui-approve-org
+    focus: |
+      Admin approval flow, HMCTS-internal auth model, downstream calls to rd-professional-api.
+
+  rpx-xui-dev-utils:
+    path: apps/xui/rpx-xui-dev-utils
+    focus: |
+      Developer tooling scripts, Key Vault helpers, local dev setup aids.

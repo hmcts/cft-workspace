@@ -38,6 +38,8 @@ repos:
   - apps/payment/ccpay-service-request-cpo-update-service
   - apps/payment/ccpay-scheduled-jobs
   - apps/payment/ccpay-paymentoutcome-web
+confluence_spaces:
+  - PAY
 ---
 
 # Payment (Fees & Pay)

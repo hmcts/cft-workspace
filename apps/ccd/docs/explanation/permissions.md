@@ -16,12 +16,12 @@ sources:
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/HasRole.java
-  - nfdiv-case-api:apps/nfdiv/nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java
-  - nfdiv-case-api:apps/nfdiv/nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/Permissions.java
+  - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java
+  - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/Permissions.java
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/CaseworkerAccess.java
 examples_extracted_from:
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/CaseworkerAccess.java
-status: confluence-augmented
+status: reviewed
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:

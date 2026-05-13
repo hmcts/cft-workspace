@@ -32,6 +32,8 @@ repos:
   - apps/wa/wa-performance
   - apps/wa/wa-post-deployment-ft-tests
   - apps/wa/wa-shared-infrastructure
+confluence_spaces:
+  - WA
 ---
 
 # Work Allocation (WA)

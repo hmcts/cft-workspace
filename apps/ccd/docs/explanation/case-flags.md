@@ -10,12 +10,12 @@ sources:
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20220113_12977__RDM-12977_FlagLauncher_base_type.sql
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20230510_4515__CCD-4515__AmendFlagDetails.sql
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20230920_4820__CCD-4820_Updating_Flags.sql
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java
-  - service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/controllers/citizen/ReasonableAdjustmentsController.java
-status: confluence-augmented
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java
+  - prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/citizen/ReasonableAdjustmentsController.java
+status: reviewed
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:
@@ -162,10 +162,10 @@ In External mode, only flags with `availableExternally = true` are shown.
 
 In PRL, `CaseData` carries both:
 
-- `Flags caseFlags` at line 714 (`service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java:714`)
-- `AllPartyFlags allPartyFlags` at line 786, which holds up to 5 applicants, 5 respondents, solicitors, and barristers — each typed `Flags` (`service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java`).
+- `Flags caseFlags` at line 714 (`prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java:714`)
+- `AllPartyFlags allPartyFlags` at line 786, which holds up to 5 applicants, 5 respondents, solicitors, and barristers — each typed `Flags` (`prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java`).
 
-`CaseFlagsWaService` iterates all `Flags`-typed fields on `AllPartyFlags` using Java reflection rather than typed iteration, so field names like `caApplicant1ExternalFlags` must exactly match the reflection-based lookup (`service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java:115`).
+`CaseFlagsWaService` iterates all `Flags`-typed fields on `AllPartyFlags` using Java reflection rather than typed iteration, so field names like `caApplicant1ExternalFlags` must exactly match the reflection-based lookup (`prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java:115`).
 
 ### Setting `visibility` and `groupId` (v2.1)
 
@@ -307,7 +307,7 @@ Reasonable adjustments (RA) are **not** a separate data structure — they are p
 4. Caseworker reviews `ReviewRaRequestWrapper.selectedFlags`; sets status to `"Active"` or `"Inactive"` (or `"Not approved"`).
 5. Once all flags resolved, `CLOSE_REVIEW_RA_REQUEST_TASK` closes the WA task.
 
-The citizen-facing `ReasonableAdjustmentsController` (`service-prl:prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/controllers/citizen/ReasonableAdjustmentsController.java`) also exposes:
+The citizen-facing `ReasonableAdjustmentsController` (`prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/citizen/ReasonableAdjustmentsController.java`) also exposes:
 
 - `GET {caseId}/retrieve-ra-flags/{partyId}` — returns the party's `Flags` object.
 - `POST {caseId}/language-support-notes` — appends language support notes.

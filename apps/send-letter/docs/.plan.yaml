@@ -1,0 +1,85 @@
+# Static plan for /docs-generate send-letter
+#
+# Each page lists:
+#   topic       — slug used for --topic filtering and as the frontmatter topic
+#   brief       — one-paragraph writing brief (audience, focus, what to include)
+#   sources     — repo:path hints the topic-writer should consult (filtered from research notes)
+#
+# Source repos for Phase 2 (research) are listed at the bottom under `research_sources`.
+
+pages:
+
+  # --- Explanation ---
+  apps/send-letter/docs/explanation/overview.md:
+    topic: overview
+    brief: |
+      The "what is Send Letter" page. Cover the purpose: accept documents from case services,
+      buffer, upload to external print provider via SFTP. The Created → Uploaded → Posted
+      lifecycle. Audience: a service-team engineer integrating for the first time.
+    sources:
+      - apps/send-letter/send-letter-service
+
+  apps/send-letter/docs/explanation/architecture.md:
+    topic: architecture
+    brief: |
+      Runtime architecture: single Spring Boot service, PostgreSQL, SFTP. Cover scheduling
+      (UploadLettersTask, MarkLettersPostedTask), ShedLock, PGP encryption, reporting.
+      Simple Mermaid diagram.
+    sources:
+      - apps/send-letter/send-letter-service
+
+  apps/send-letter/docs/explanation/letter-lifecycle.md:
+    topic: lifecycle
+    brief: |
+      Deep-dive into letter states: Created (POST /letters) → Uploaded (scheduler uploads ZIP
+      to SFTP) → Posted (FTP report detected). Cover error states and stale-letter detection.
+    sources:
+      - apps/send-letter/send-letter-service
+
+  # --- How-to ---
+  apps/send-letter/docs/how-to/integrate-from-a-service.md:
+    topic: overview
+    brief: |
+      End-to-end recipe for a service team to send letters: register in S2S, request FTP folder
+      from provider, add to application.yaml config, call POST /letters with base64 PDFs.
+    sources:
+      - apps/send-letter/send-letter-service
+
+  apps/send-letter/docs/how-to/troubleshoot-upload-failures.md:
+    topic: lifecycle
+    brief: |
+      Troubleshooting recipe: letters stuck in Created state. Check scheduling enabled, FTP
+      downtime window, SFTP connectivity, ShedLock locks.
+    sources:
+      - apps/send-letter/send-letter-service
+
+  # --- Reference ---
+  apps/send-letter/docs/reference/api.md:
+    topic: architecture
+    brief: |
+      API endpoint reference: POST /letters (v3 content type), GET /letters/{id}, status
+      endpoints. Request/response shapes, S2S auth. Link to OpenAPI spec.
+    sources:
+      - apps/send-letter/send-letter-service
+
+  apps/send-letter/docs/reference/configuration.md:
+    topic: architecture
+    brief: |
+      Reference for application.yaml: ftp.service-folders, reports.service-config, scheduling
+      toggles, FTP downtime window, SMTP settings. Table format.
+    sources:
+      - apps/send-letter/send-letter-service
+
+research_sources:
+
+  send-letter-service:
+    path: apps/send-letter/send-letter-service
+    focus: |
+      REST controller (POST /letters), letter model and states, UploadLettersTask scheduler,
+      MarkLettersPostedTask, SFTP upload (SSHJ), PGP encryption, ShedLock, Spring Batch,
+      email reporting (Spring Mail), Flyway migrations, onboarded services config.
+
+  send-letter-mock:
+    path: apps/send-letter/send-letter-mock
+    focus: |
+      Test harness: how it calls the real service, what it demonstrates about the API contract.

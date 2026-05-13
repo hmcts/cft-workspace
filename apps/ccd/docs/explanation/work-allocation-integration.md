@@ -12,14 +12,14 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/CaseEventMessageService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/AbstractMessageService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/message/MessageQueueCandidateEntity.java
-  - sscs-tribunals-case-api:sscs-task-configuration/src/main/resources/wa-task-initiation-sscs-benefit.dmn
-  - sscs-tribunals-case-api:sscs-task-configuration/src/main/resources/wa-task-configuration-sscs-benefit.dmn
-  - sscs-tribunals-case-api:sscs-task-configuration/src/main/resources/wa-task-permissions-sscs-benefit.dmn
-  - sscs-tribunals-case-api:sscs-task-configuration/src/main/resources/wa-task-cancellation-sscs-benefit.dmn
+  - sscs-task-configuration:src/main/resources/wa-task-initiation-sscs-benefit.dmn
+  - sscs-task-configuration:src/main/resources/wa-task-configuration-sscs-benefit.dmn
+  - sscs-task-configuration:src/main/resources/wa-task-permissions-sscs-benefit.dmn
+  - sscs-task-configuration:src/main/resources/wa-task-cancellation-sscs-benefit.dmn
   - sscs-tribunals-case-api:definitions/benefit/sheets/CaseEvent/CaseEvent-WA-nonprod.json
   - sscs-tribunals-case-api:definitions/benefit/sheets/CaseField/CaseField-workAllocation.json
   - rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/Service.java
-status: confluence-augmented
+status: reviewed
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:

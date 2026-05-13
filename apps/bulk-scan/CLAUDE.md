@@ -22,6 +22,8 @@ repos:
   - apps/bulk-scan/bulk-scan-payment-processor
   - apps/bulk-scan/bulk-scan-ccd-definitions
   - apps/bulk-scan/bulk-scan-helper-frontend
+confluence_spaces:
+  - BS
 ---
 
 # Bulk Scan

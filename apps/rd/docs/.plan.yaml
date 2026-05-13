@@ -1,0 +1,184 @@
+# Static plan for /docs-generate rd
+#
+# Each page lists:
+#   topic       — slug used for --topic filtering and as the frontmatter topic
+#   brief       — one-paragraph writing brief (audience, focus, what to include)
+#   sources     — repo:path hints the topic-writer should consult (filtered from research notes)
+#
+# Source repos for Phase 2 (research) are listed at the bottom under `research_sources`.
+
+pages:
+
+  # --- Explanation ---
+  apps/rd/docs/explanation/overview.md:
+    topic: overview
+    brief: |
+      The "what is RD" page. Cover the suite of reference data services: professional orgs,
+      judicial, caseworker, locations, common data, user profiles. Audience: any platform or
+      service-team engineer querying reference data.
+    sources:
+      - apps/rd/rd-professional-api
+      - apps/rd/rd-judicial-api
+
+  apps/rd/docs/explanation/architecture.md:
+    topic: architecture
+    brief: |
+      Runtime architecture: 6 independent APIs + 2 batch loaders. Ports, databases, ASB topics.
+      Mermaid diagram showing consumers (XUI, AM-ORM, payment, hearing services) calling the APIs.
+    sources:
+      - apps/rd/rd-professional-api
+      - apps/rd/rd-caseworker-ref-api
+      - apps/rd/rd-judicial-api
+      - apps/rd/rd-location-ref-api
+
+  apps/rd/docs/explanation/professional-organisations.md:
+    topic: prd
+    brief: |
+      The Professional Reference Data API: manages solicitor firms, their users, PUI roles,
+      status lifecycle (pending → active). How XUI Manage Organisations and AAC consume it.
+    sources:
+      - apps/rd/rd-professional-api
+
+  apps/rd/docs/explanation/judicial-users.md:
+    topic: jrd
+    brief: |
+      The Judicial Reference Data API: stores judicial office holder profiles, appointments,
+      authorisations. eLinks middleware integration for profile refresh. ASB topic publishing.
+    sources:
+      - apps/rd/rd-judicial-api
+
+  apps/rd/docs/explanation/caseworker-profiles.md:
+    topic: crd
+    brief: |
+      The Caseworker Reference Data API: manages caseworker profiles, skill/location assignments.
+      ASB topic publishing to AM-ORM for role mapping triggers.
+    sources:
+      - apps/rd/rd-caseworker-ref-api
+
+  apps/rd/docs/explanation/locations.md:
+    topic: lrd
+    brief: |
+      The Location Reference Data API: court buildings, service codes, region/area hierarchies.
+      How hearings, caseworker-ref, and payment services consume it.
+    sources:
+      - apps/rd/rd-location-ref-api
+
+  apps/rd/docs/explanation/common-data.md:
+    topic: commondata
+    brief: |
+      The Common Data API: shared lookup tables (case flags, panel member types, categories,
+      list-of-values). The batch loader that ingests CSVs from Azure Blob Storage.
+    sources:
+      - apps/rd/rd-commondata-api
+      - apps/rd/rd-commondata-dataload
+
+  apps/rd/docs/explanation/batch-loading.md:
+    topic: batch
+    brief: |
+      The two batch loaders (commondata-dataload, location-ref-data-load): Apache Camel routes,
+      GPG decryption, Azure Blob consumption, ShedLock, CronJob scheduling.
+    sources:
+      - apps/rd/rd-commondata-dataload
+      - apps/rd/rd-location-ref-data-load
+
+  # --- How-to ---
+  apps/rd/docs/how-to/query-reference-data.md:
+    topic: overview
+    brief: |
+      Recipe for querying reference data from a service: choosing the right API (PRD/JRD/CRD/
+      LRD/commondata), auth setup (IDAM + S2S), common query patterns, pagination.
+    sources:
+      - apps/rd/rd-professional-api
+      - apps/rd/rd-judicial-api
+      - apps/rd/rd-location-ref-api
+
+  apps/rd/docs/how-to/onboard-common-data.md:
+    topic: commondata
+    brief: |
+      Recipe for adding a new data set to rd-commondata-api: prepare the CSV, configure the
+      Camel route in the dataload job, add Flyway migration for the target table.
+    sources:
+      - apps/rd/rd-commondata-api
+      - apps/rd/rd-commondata-dataload
+
+  apps/rd/docs/how-to/register-as-s2s-caller.md:
+    topic: architecture
+    brief: |
+      Recipe for registering a new service as an authorised S2S caller of an RD API: add to
+      s2s-authorised.services list, deploy, verify.
+    sources:
+      - apps/rd/rd-professional-api
+
+  # --- Reference ---
+  apps/rd/docs/reference/api-professional.md:
+    topic: prd
+    brief: |
+      PRD API endpoint reference: organisation CRUD, user management, PBA accounts.
+      Key endpoints, request/response shapes. Link to OpenAPI spec.
+    sources:
+      - apps/rd/rd-professional-api
+
+  apps/rd/docs/reference/api-judicial.md:
+    topic: jrd
+    brief: |
+      JRD API endpoint reference: profile search, appointments, authorisations.
+      Key endpoints, request/response shapes. Link to OpenAPI spec.
+    sources:
+      - apps/rd/rd-judicial-api
+
+  apps/rd/docs/reference/api-location.md:
+    topic: lrd
+    brief: |
+      LRD API endpoint reference: building locations, service codes, region hierarchy.
+      Key endpoints, request/response shapes. Link to OpenAPI spec.
+    sources:
+      - apps/rd/rd-location-ref-api
+
+research_sources:
+
+  rd-professional-api:
+    path: apps/rd/rd-professional-api
+    focus: |
+      Organisation CRUD controllers, user management, PBA accounts, status lifecycle (pending/
+      active/deleted), S2S authorised services list, Flyway migrations.
+
+  rd-judicial-api:
+    path: apps/rd/rd-judicial-api
+    focus: |
+      Judicial profile model, eLinks integration (ELINKS_URL), ASB topic publishing
+      (rd-judicial-topic), appointments/authorisations endpoints, Flyway migrations.
+
+  rd-caseworker-ref-api:
+    path: apps/rd/rd-caseworker-ref-api
+    focus: |
+      Caseworker profile model, skill/location assignments, ASB topic publishing
+      (rd-caseworker-topic), LRD integration (LOCATION_REF_DATA_URL), Flyway migrations.
+
+  rd-location-ref-api:
+    path: apps/rd/rd-location-ref-api
+    focus: |
+      Court venue model, building locations, service codes, region/area hierarchy, Flyway
+      migrations.
+
+  rd-commondata-api:
+    path: apps/rd/rd-commondata-api
+    focus: |
+      Case flags, panel member types, categories, list-of-values endpoints. Custom schema
+      (dbcommondata). Flyway migrations.
+
+  rd-user-profile-api:
+    path: apps/rd/rd-user-profile-api
+    focus: |
+      User profile preferences, activation state. Flyway migrations.
+
+  rd-commondata-dataload:
+    path: apps/rd/rd-commondata-dataload
+    focus: |
+      Apache Camel routes, GPG decryption, Azure Blob consumption (rd-common-data container),
+      CSV ingestion (FlagDetails, FlagService, OtherCategories, ListOfValues), ShedLock.
+
+  rd-location-ref-data-load:
+    path: apps/rd/rd-location-ref-data-load
+    focus: |
+      Apache Camel routes, Azure Blob consumption (lrd-ref-data container), CSV ingestion
+      (CourtVenue, BuildingLocation, OrgServiceCCDMapping), ShedLock.

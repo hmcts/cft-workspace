@@ -23,6 +23,8 @@ repos:
   - apps/rd/rd-user-profile-api
   - apps/rd/rd-commondata-dataload
   - apps/rd/rd-location-ref-data-load
+confluence_spaces:
+  - RD
 ---
 
 # Reference Data (RD)

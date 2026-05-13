@@ -1,0 +1,201 @@
+# Static plan for /docs-generate em
+#
+# Each page lists:
+#   topic       — slug used for --topic filtering and as the frontmatter topic
+#   brief       — one-paragraph writing brief (audience, focus, what to include)
+#   sources     — repo:path hints the topic-writer should consult (filtered from research notes)
+#
+# Source repos for Phase 2 (research) are listed at the bottom under `research_sources`.
+
+pages:
+
+  # --- Explanation ---
+  apps/em/docs/explanation/overview.md:
+    topic: overview
+    brief: |
+      The "what is EM" page. Cover the four capability areas: stitching/bundling, annotations/
+      redactions, hearing recordings, in-court presentation. Audience: a service-team engineer
+      who needs to trigger a bundle or embed document viewing.
+    sources:
+      - apps/em/em-ccd-orchestrator
+      - apps/em/em-stitching-api
+
+  apps/em/docs/explanation/architecture.md:
+    topic: architecture
+    brief: |
+      Runtime architecture: all 9 repos, their roles, ports, databases. Mermaid diagram showing
+      the stitching flow (CCD callback → orchestrator → stitching-api → CDAM) and the annotation
+      flow (media-viewer → annotation-api). Cover the HRS ingest path separately.
+    sources:
+      - apps/em/em-ccd-orchestrator
+      - apps/em/em-stitching-api
+      - apps/em/em-annotation-api
+      - apps/em/em-hrs-api
+
+  apps/em/docs/explanation/stitching-and-bundling.md:
+    topic: stitching
+    brief: |
+      Deep-dive into document stitching: the CCD callback trigger, orchestrator's role, how
+      stitching-api processes DocumentTask jobs (PDFBox/POI), versioned tasks for zero-downtime
+      deploys, Spring Batch with ShedLock.
+    sources:
+      - apps/em/em-stitching-api
+      - apps/em/em-ccd-orchestrator
+
+  apps/em/docs/explanation/annotation-flow.md:
+    topic: annotation
+    brief: |
+      How annotations and redactions work: em-media-viewer renders the document, user creates
+      annotations, em-annotation-api persists them. Redaction path via em-native-pdf-annotator-app.
+    sources:
+      - apps/em/em-annotation-api
+      - apps/em/em-native-pdf-annotator-app
+      - apps/em/em-media-viewer
+
+  apps/em/docs/explanation/hearing-recordings.md:
+    topic: hrs
+    brief: |
+      The hearing recording pipeline: CVP blob store → em-hrs-ingestor → em-hrs-api. Cover
+      metadata storage, access control, notification emails, playback serving.
+    sources:
+      - apps/em/em-hrs-api
+      - apps/em/em-hrs-ingestor
+
+  apps/em/docs/explanation/in-court-presentation.md:
+    topic: icp
+    brief: |
+      The ICP system: em-icp-api (Node/TypeScript), Azure Web PubSub, Redis. How a presenter
+      controls what all participants see. Note: archived but code still present.
+    sources:
+      - apps/em/em-icp-api
+
+  apps/em/docs/explanation/media-viewer.md:
+    topic: media-viewer
+    brief: |
+      The em-media-viewer Angular library: what it renders (PDF, images), annotation/redaction
+      capabilities, how it's published to npm and consumed by XUI and service frontends.
+    sources:
+      - apps/em/em-media-viewer
+
+  # --- How-to ---
+  apps/em/docs/how-to/trigger-bundle-stitching.md:
+    topic: stitching
+    brief: |
+      Recipe for triggering a document bundle from a service's CCD callback: configure the
+      bundle definition, call em-ccd-orchestrator, handle the stitched document URL in the
+      callback response.
+    sources:
+      - apps/em/em-ccd-orchestrator
+
+  apps/em/docs/how-to/embed-media-viewer.md:
+    topic: media-viewer
+    brief: |
+      Recipe for embedding em-media-viewer in a frontend: install the npm package, configure
+      the component, wire annotation-api and pdf-annotator proxy routes.
+    sources:
+      - apps/em/em-media-viewer
+
+  apps/em/docs/how-to/add-annotations.md:
+    topic: annotation
+    brief: |
+      Recipe for programmatic annotation creation: call em-annotation-api directly, understand
+      the annotation model (highlights, comments, bookmarks), handle permissions.
+    sources:
+      - apps/em/em-annotation-api
+
+  apps/em/docs/how-to/local-development-cftlib.md:
+    topic: architecture
+    brief: |
+      Recipe for running EM services locally via cftlib (bootWithCCD): which repos support it,
+      how to configure, how to test stitching end-to-end locally.
+    sources:
+      - apps/em/em-stitching-api
+      - apps/em/em-annotation-api
+
+  # --- Reference ---
+  apps/em/docs/reference/api-stitching.md:
+    topic: stitching
+    brief: |
+      Stitching API endpoint reference: create DocumentTask, poll status, retrieve result.
+      Request/response shapes. Link to OpenAPI spec.
+    sources:
+      - apps/em/em-stitching-api
+
+  apps/em/docs/reference/api-annotation.md:
+    topic: annotation
+    brief: |
+      Annotation API endpoint reference: CRUD for annotations, annotation sets, bookmarks.
+      Request/response shapes. Link to OpenAPI spec.
+    sources:
+      - apps/em/em-annotation-api
+
+  apps/em/docs/reference/api-hrs.md:
+    topic: hrs
+    brief: |
+      HRS API endpoint reference: recording ingest, retrieval, search. Request/response shapes.
+      Link to OpenAPI spec.
+    sources:
+      - apps/em/em-hrs-api
+
+  apps/em/docs/reference/api-orchestrator.md:
+    topic: stitching
+    brief: |
+      CCD Orchestrator callback contract: what CCD sends, what the orchestrator returns.
+      Bundle configuration format. Link to OpenAPI spec.
+    sources:
+      - apps/em/em-ccd-orchestrator
+
+research_sources:
+
+  em-stitching-api:
+    path: apps/em/em-stitching-api
+    focus: |
+      DocumentTask model, Spring Batch job processing, PDFBox/POI merging, CDAM integration,
+      versioned tasks for zero-downtime, ShedLock, Flyway migrations.
+
+  em-ccd-orchestrator:
+    path: apps/em/em-ccd-orchestrator
+    focus: |
+      CCD callback handling, bundle configuration, stitching-api client, callback URL construction
+      (CALLBACK_DOMAIN), notification via GOV.UK Notify on failure.
+
+  em-annotation-api:
+    path: apps/em/em-annotation-api
+    focus: |
+      Annotation model (Annotation, AnnotationSet, Comment, Rectangle, Bookmark), CRUD endpoints,
+      Flyway migrations, cftlib integration.
+
+  em-hrs-api:
+    path: apps/em/em-hrs-api
+    focus: |
+      Recording metadata model, ingest endpoint, access control (authorised roles), GOV.UK Notify
+      reporting, Flyway migrations.
+
+  em-hrs-ingestor:
+    path: apps/em/em-hrs-ingestor
+    focus: |
+      CVP blob polling, comparison logic (what's new vs what HRS already holds), submission to
+      em-hrs-api. Batch runner pattern.
+
+  em-native-pdf-annotator-app:
+    path: apps/em/em-native-pdf-annotator-app
+    focus: |
+      Redaction markup endpoints (/api/markups), final redaction rendering (/api/redaction),
+      CDAM integration for output storage.
+
+  em-media-viewer:
+    path: apps/em/em-media-viewer
+    focus: |
+      Angular library structure, PDF/image rendering, annotation toolbar, ICP integration,
+      npm publishing, component API for consumers.
+
+  em-icp-api:
+    path: apps/em/em-icp-api
+    focus: |
+      Session lifecycle management, Azure Web PubSub integration, Redis pub/sub, presenter
+      control flow. Note archived status.
+
+  em-test-helper:
+    path: apps/em/em-test-helper
+    focus: |
+      Shared test utilities: IDAM/S2S helpers, what consumer test suites depend on.

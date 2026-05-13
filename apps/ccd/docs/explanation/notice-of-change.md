@@ -8,8 +8,8 @@ sources:
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/NoticeOfChangeQuestions.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ChallengeAnswerValidator.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/VerifyNoCAnswersService.java
-  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ApplyNoCDecisionService.java
-  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/RequestNoticeOfChangeService.java
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ApplyNoCDecisionService.java
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/RequestNoticeOfChangeService.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/definitionstore/DefinitionStoreApiClientConfig.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/datastore/CaseEventCreationPayload.java
   - aac-manage-case-assignment:src/main/resources/application.yaml
@@ -18,7 +18,7 @@ sources:
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/client/AssignCaseAccessClient.java
 examples_extracted_from:
   - apps/nfdiv/nfdiv-case-api/src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemRequestNoticeOfChange.java
-status: confluence-augmented
+status: reviewed
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:

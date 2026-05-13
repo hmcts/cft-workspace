@@ -26,6 +26,8 @@ repos:
   - apps/em/em-native-pdf-annotator-app
   - apps/em/em-stitching-api
   - apps/em/em-test-helper
+confluence_spaces:
+  - EM
 ---
 
 # Evidence Management (EM)
