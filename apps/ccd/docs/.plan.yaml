@@ -158,6 +158,24 @@ pages:
       - libs/rse-cft-lib/projects/ccd-case-document-am-api
       - apps/ccd/ccd-data-store-api
 
+  apps/ccd/docs/explanation/document-extension-validation.md:
+    topic: documents-and-cdam
+    brief: |
+      Layered story of how filename / extension validation is (or isn't) enforced for document
+      uploads: XUI client-side (ccd-case-ui-toolkit accept attribute + filename regex), CDAM
+      (none — access-control proxy only), DM Store (extension allow-list + Tika MIME allow-list
+      via DM_MULTIPART_WHITELIST*), and CCD Data Store's HTML carve-out for new documents on
+      event submit. Cover the RegularExpression-as-extension-list quirk on Document CaseFields,
+      the seed default in definition-store (null), browser-bypass and env-drift limitations,
+      and the rule that the per-field list should be a subset of DM Store's whitelist.
+    sources:
+      - apps/xui/ccd-case-ui-toolkit
+      - apps/ccd/ccd-data-store-api
+      - apps/ccd/ccd-definition-store-api
+      - apps/ccd/ccd-case-document-am-api
+      - apps/dm/document-management-store-app
+      - platops/cnp-flux-config
+
   apps/ccd/docs/explanation/search-architecture.md:
     topic: search
     brief: |
@@ -348,6 +366,23 @@ pages:
       the hash-token lifecycle and what categories metadata buys.
     sources:
       - libs/rse-cft-lib/projects/ccd-case-document-am-api
+
+  apps/ccd/docs/how-to/restrict-document-upload-extensions.md:
+    topic: documents-and-cdam
+    brief: |
+      Recipe for setting RegularExpression on Document CaseField / ComplexTypes rows (and the
+      equivalent @CCD(regex=…) on the config-generator SDK) so the toolkit's file picker and
+      filename match restrict uploads. Spell out the comma-separated-extension convention
+      (.pdf,.jpg,…), the per-field repetition requirement, the HTML allow-listing path that
+      satisfies Data Store's CaseDocumentTimestampService HTML carve-out, and how to cross-check
+      against DM Store's DM_MULTIPART_WHITELIST_EXT (in-repo defaults plus per-env overrides in
+      cnp-flux-config). End with verification steps and limitations (browser-bypass, env drift).
+    sources:
+      - apps/xui/ccd-case-ui-toolkit
+      - apps/ccd/ccd-data-store-api
+      - libs/ccd-config-generator
+      - apps/dm/document-management-store-app
+      - platops/cnp-flux-config
 
   apps/ccd/docs/how-to/enable-global-search.md:
     topic: search

@@ -28,6 +28,7 @@ Understand how CCD works.
 
 - [Decentralisation](explanation/decentralisation.md) — service-owned case data via /ccd-persistence/*
 - [Documents and CDAM](explanation/documents-and-cdam.md) — upload, hash-token, retrieval
+- [Document Extension Validation](explanation/document-extension-validation.md) — how XUI, CDAM, DM Store and Data Store enforce filename/extension rules
 - [Search Architecture](explanation/search-architecture.md) — work-basket, global search, ES query search
 - [Notice of Change](explanation/notice-of-change.md) — solicitor transfers via AAC
 - [Case Flags](explanation/case-flags.md) — party-level and case-level flags
@@ -73,6 +74,7 @@ Practical recipes for common tasks.
 ### Features
 
 - [Store a Document](how-to/store-a-document.md)
+- [Restrict Document Upload by File Extension](how-to/restrict-document-upload-extensions.md)
 - [Implement NoC](how-to/implement-noc.md)
 - [Implement Case Flags](how-to/implement-case-flags.md)
 - [Implement Reasonable Adjustments](how-to/implement-reasonable-adjustments.md)

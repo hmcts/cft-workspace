@@ -51,6 +51,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | how-to | Implement Notice of Change | notice-of-change | `apps/ccd/docs/how-to/implement-noc.md` |
 | ccd | how-to | Implement Reasonable Adjustments | case-flags | `apps/ccd/docs/how-to/implement-reasonable-adjustments.md` |
 | ccd | how-to | Publish a Definition to AAT | definition-import | `apps/ccd/docs/how-to/publish-definition-to-aat.md` |
+| ccd | how-to | Restrict Document Upload by File Extension | documents-and-cdam | `apps/ccd/docs/how-to/restrict-document-upload-extensions.md` |
 | ccd | how-to | Store a Document | documents-and-cdam | `apps/ccd/docs/how-to/store-a-document.md` |
 | ccd | how-to | Use RetainHiddenValue | retain-hidden-value | `apps/ccd/docs/how-to/use-retain-hidden-value.md` |
 | ccd | reference | API: AAC (aac-manage-case-assignment) | notice-of-change | `apps/ccd/docs/reference/api-aac.md` |
@@ -73,6 +74,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | explanation | CCD Permissions | permissions | `apps/ccd/docs/explanation/permissions.md` |
 | ccd | explanation | Decentralisation | decentralisation | `apps/ccd/docs/explanation/decentralisation.md` |
 | ccd | explanation | Definition Import | definition-import | `apps/ccd/docs/explanation/definition-import.md` |
+| ccd | explanation | Document Extension Validation | documents-and-cdam | `apps/ccd/docs/explanation/document-extension-validation.md` |
 | ccd | explanation | Documents and CDAM | documents-and-cdam | `apps/ccd/docs/explanation/documents-and-cdam.md` |
 | ccd | explanation | Event Model | event-model | `apps/ccd/docs/explanation/event-model.md` |
 | ccd | explanation | Hearings Integration (HMC) | hearings | `apps/ccd/docs/explanation/hearings-integration.md` |

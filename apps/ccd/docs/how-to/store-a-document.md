@@ -388,6 +388,8 @@ public class DivorceDocument {
 ## See also
 
 - [Documents and CDAM](../explanation/documents-and-cdam.md) — conceptual overview of the CDAM integration and hash-token lifecycle
+- [Document extension validation](../explanation/document-extension-validation.md) — how filename/extension rules are enforced (or not) across the upload stack
+- [Restrict document upload by file extension](restrict-document-upload-extensions.md) — recipe for configuring the per-field allow-list
 - [CDAM API reference](../reference/api-cdam.md) — full endpoint reference for ccd-case-document-am-api
 
 ## Glossary
