@@ -77,6 +77,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | explanation | Document Extension Validation | documents-and-cdam | `apps/ccd/docs/explanation/document-extension-validation.md` |
 | ccd | explanation | Documents and CDAM | documents-and-cdam | `apps/ccd/docs/explanation/documents-and-cdam.md` |
 | ccd | explanation | Event Model | event-model | `apps/ccd/docs/explanation/event-model.md` |
+| ccd | explanation | Group Access | group-access | `apps/ccd/docs/explanation/group-access.md` |
 | ccd | explanation | Hearings Integration (HMC) | hearings | `apps/ccd/docs/explanation/hearings-integration.md` |
 | ccd | explanation | Linked Cases | linked-cases | `apps/ccd/docs/explanation/linked-cases.md` |
 | ccd | explanation | Notice of Change | notice-of-change | `apps/ccd/docs/explanation/notice-of-change.md` |

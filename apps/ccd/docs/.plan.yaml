@@ -137,6 +137,38 @@ pages:
       - apps/ccd/aac-manage-case-assignment
       - libs/ccd-config-generator/sdk/ccd-config-generator
 
+  apps/ccd/docs/explanation/group-access.md:
+    topic: group-access
+    brief: |
+      Explain CCD "group access": access granted by virtue of a user's Professional
+      (PRD) organisation membership, at the granularity of the whole organisation, rather
+      than per-case (NoC/case-assignment) or by STANDARD organisational/jurisdictional
+      roles. Audience: a service-team engineer or AM/CCD platform engineer deciding how
+      a jurisdiction should grant solicitor-firm access. Frame it as the third "org-ish"
+      access mechanism and contrast it explicitly with OrganisationPolicy+NoC (one named
+      org bound to one case role) and STANDARD organisational roles (internal staff +
+      attributes). Cover the definition surface — the `AccessType` and `AccessTypeRoles`
+      sheets/entities — field by field: AccessTypeId, OrganisationProfileId, AccessMandatory,
+      AccessDefault, Display* ordering, and on AccessTypeRoles the CaseTypeId,
+      OrganisationalRoleName, GroupRoleName, CaseAssignedRoleField, GroupAccessEnabled.
+      Explain the crucial GroupAccessEnabled flag (false = run all group-access logic
+      except minting the user's role assignment, so services can seed org IDs into case
+      data and toggle the capability safely without later data migration) and the
+      GroupRoleName→RoleToAccessProfiles dependency (not validated at import). Describe the
+      runtime: definition-store `POST /retrieve-access-types` (AccessTypesController) returning
+      AccessTypeJurisdictionResults, optionally filtered by OrganisationProfileIds; how
+      group role assignments are created (AAC / supplementary_data new_case.<organisation_id>
+      flags) and resolved into AccessProfiles via RoleToAccessProfiles. Cross-link
+      role-assignment.md, permissions.md, notice-of-change.md, and the definition-import +
+      api-definition-store reference pages. End with a short failure-mode list (GroupRoleName
+      without matching RoleToAccessProfiles row silently no-ops; forgetting AccessMandatory
+      semantics; leaving GroupAccessEnabled false in production).
+    sources:
+      - apps/ccd/ccd-definition-store-api
+      - apps/ccd/ccd-data-store-api
+      - apps/ccd/aac-manage-case-assignment
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+
   apps/ccd/docs/explanation/decentralisation.md:
     topic: decentralisation
     brief: |

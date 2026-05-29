@@ -30,6 +30,7 @@ Understand how CCD works.
 - [Documents and CDAM](explanation/documents-and-cdam.md) — upload, hash-token, retrieval
 - [Document Extension Validation](explanation/document-extension-validation.md) — how XUI, CDAM, DM Store and Data Store enforce filename/extension rules
 - [Search Architecture](explanation/search-architecture.md) — work-basket, global search, ES query search
+- [Group Access](explanation/group-access.md) — whole-organisation professional access via AccessType/AccessTypeRole sheets and CaseAccessGroups
 - [Notice of Change](explanation/notice-of-change.md) — solicitor transfers via AAC
 - [Case Flags](explanation/case-flags.md) — party-level and case-level flags
 - [Work Basket](explanation/work-basket.md) — definition-driven caseworker queues

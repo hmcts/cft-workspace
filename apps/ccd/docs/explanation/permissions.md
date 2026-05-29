@@ -347,6 +347,7 @@ public class CaseworkerAccess implements HasAccessControl {
 - [Role assignment](role-assignment.md) — runtime per-case grants that compose with definition-time CRUD ACLs
 - [Add permissions](../how-to/add-permissions.md) — how to add or adjust CRUD grants for an access profile
 - [Permissions matrix reference](../reference/permissions-matrix.md) — full reference of scopes, columns, and enforcement rules
+- [Group access](group-access.md) — how matched group-access role assignments resolve to AccessProfiles via RoleToAccessProfiles (same resolution path as any STANDARD role assignment)
 
 ## Glossary
 

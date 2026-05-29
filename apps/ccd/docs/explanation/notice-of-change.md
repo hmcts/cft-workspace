@@ -344,6 +344,7 @@ public void configure(final ConfigBuilder<CaseData, State, UserRole> configBuild
 - [Implement NoC](../how-to/implement-noc.md) — step-by-step guide to wiring NoC in a case type
 - [AAC API reference](../reference/api-aac.md) — full endpoint reference for `aac-manage-case-assignment`
 - [Role assignment](role-assignment.md) — how AAC writes role assignments after a NoC decision is applied
+- [Group access](group-access.md) — whole-organisation access via AccessType/AccessTypeRole (contrast: NoC grants per-case roles to a named org, group access grants org-grain access to every case the org is involved in)
 
 ## Glossary
 

@@ -37,11 +37,20 @@ Callback hook invoked after the user submits an event form but before the data s
 **AC** (Access Control)
 General term for the permission model applied to case types, events, states, and fields. Permissions are expressed as Create / Read / Update / Delete (CRUD) flags against roles.
 
+**AccessType**
+A row in the `AccessType` definition sheet that declares one access type for a (case type, organisation profile) pair. Controls whether the access type is mandatory, optional-default, or optional-off, and whether it appears in the ManageOrg UI. See [Group Access](../explanation/group-access.md).
+
+**AccessTypeRole**
+A row in the `AccessTypeRole` definition sheet that maps an access type to an organisational role name and/or a group role name with its `CaseAccessGroupIDTemplate`. The group role rows drive `CaseAccessGroups` seeding in case data. See [Group Access](../explanation/group-access.md).
+
 **AM** (Access Management)
 The subsystem — comprising RAS and the AM library in the data store — that evaluates role assignments at runtime to enforce AC rules.
 
 **callback**
 An HTTP webhook registered in the case-type definition. The data store POSTs a `CallbackRequest` payload to a service-team URL at defined points in the event lifecycle. See `about_to_start`, `about_to_submit`, `submitted`.
+
+**CaseAccessGroups**
+A top-level CCD collection field written into case data by `ccd-data-store-api` when group access is configured. Each entry carries a `caseAccessGroupType` and a `caseAccessGroupId` derived from the org's ID substituted into the `CaseAccessGroupIDTemplate`. `CaseAccessGroupsMatcher` compares an incoming role assignment's `caseAccessGroupId` attribute against this collection at access-control time. See [Group Access](../explanation/group-access.md).
 
 **CaseLink**
 A CCD complex field type (`CaseLink`) that stores a reference to another case by case ID. Used to model parent/child or related-case relationships.
@@ -85,6 +94,9 @@ A built-in CCD complex field type used to record case-level and party-level flag
 **global search**
 A cross-jurisdiction search API (`/searchCases`) and XUI surface that allows users to find cases across multiple case types using `SearchCriteria` and `SearchParty` fields.
 
+**Group access**
+The CCD mechanism that grants whole-organisation case visibility to professional users by virtue of their PRD organisation membership, configured via `AccessType` and `AccessTypeRole` definition sheets. At runtime, `CaseAccessGroups` in case data are matched against a `caseAccessGroupId` attribute on a role assignment minted by the AM Professional Role Mapping (PRM) service. Contrast with per-case NoC/case-assignment access. See [Group Access](../explanation/group-access.md).
+
 **hash token**
 A CDAM-issued token embedded in document URLs. Proves that the requesting user held a valid role assignment at the time of document access. Validated on every document fetch.
 
@@ -103,8 +115,14 @@ The workflow by which a solicitor replaces another on a case without the origina
 **OrganisationPolicy**
 A built-in CCD complex field type that links a case-role (e.g. `[APPLICANTSOLICITOR]`) to a Prd organisation ID. Required for NoC and case-assignment flows.
 
+**OrganisationProfileId**
+A string identifier (e.g. `SOLICITOR_PROFILE`, `LOCAL_AUTHORITY_PROFILE`) that classifies an organisation's behavioural role in PRD. Used in `AccessType` and `AccessTypeRole` rows to target configuration at a specific organisation type. The value must exist in PRD; definition-store stores it verbatim without validating against PRD. See [Group Access](../explanation/group-access.md).
+
 **page**
 A wizard step within an event form. A case type definition groups fields into ordered pages; XUI renders one page at a time and fires mid-event callbacks between pages.
+
+**PRM** (Professional Role Mapping)
+An AM service (not part of the CCD clones) that reads each user's access types from PRD and the group role configuration from `ccd-definition-store-api`'s `POST /retrieve-access-types` endpoint, then mints role assignments in RAS carrying a `caseAccessGroupId` attribute. Replaces the legacy ORM service for professional users. See [Group Access](../explanation/group-access.md).
 
 **RAM** (Role Assignment Migration / Role Assignment Model)
 Depending on context: (1) the data model used by RAS to persist role assignments, or (2) a batch migration that moved legacy CCD role grants into RAS-managed assignments.

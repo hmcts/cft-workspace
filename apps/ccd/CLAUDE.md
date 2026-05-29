@@ -26,6 +26,7 @@ confluence_spaces:
   - RCCD
   - EUI
   - CF
+  - AM
 repos:
   - apps/ccd/aac-manage-case-assignment
   - apps/ccd/ccd-admin-web
