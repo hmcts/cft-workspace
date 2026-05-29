@@ -66,8 +66,10 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | reference | Glossary | overview | `apps/ccd/docs/reference/glossary.md` |
 | ccd | reference | JSON Definition Format | tutorial-json | `apps/ccd/docs/reference/json-definition-format.md` |
 | ccd | reference | Permissions Matrix | permissions | `apps/ccd/docs/reference/permissions-matrix.md` |
+| ccd | explanation | Asynchronous Case-Event Messaging | messaging | `apps/ccd/docs/explanation/messaging.md` |
 | ccd | explanation | Audit and History | audit | `apps/ccd/docs/explanation/audit-and-history.md` |
 | ccd | explanation | Callbacks | callbacks | `apps/ccd/docs/explanation/callbacks.md` |
+| ccd | explanation | Case File View | case-file-view | `apps/ccd/docs/explanation/case-file-view.md` |
 | ccd | explanation | Case Flags | case-flags | `apps/ccd/docs/explanation/case-flags.md` |
 | ccd | explanation | CCD Architecture | architecture | `apps/ccd/docs/explanation/architecture.md` |
 | ccd | explanation | CCD Field Data Types | data-types | `apps/ccd/docs/explanation/data-types.md` |
@@ -80,6 +82,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | explanation | Group Access | group-access | `apps/ccd/docs/explanation/group-access.md` |
 | ccd | explanation | Hearings Integration (HMC) | hearings | `apps/ccd/docs/explanation/hearings-integration.md` |
 | ccd | explanation | Linked Cases | linked-cases | `apps/ccd/docs/explanation/linked-cases.md` |
+| ccd | explanation | Next Hearing Date | next-hearing-date | `apps/ccd/docs/explanation/next-hearing-date.md` |
 | ccd | explanation | Notice of Change | notice-of-change | `apps/ccd/docs/explanation/notice-of-change.md` |
 | ccd | explanation | RetainHiddenValue | retain-hidden-value | `apps/ccd/docs/explanation/retain-hidden-value.md` |
 | ccd | explanation | Role Assignment | role-assignment | `apps/ccd/docs/explanation/role-assignment.md` |

@@ -342,6 +342,7 @@ No custom endpoints are added by cftlib to CDAM — it runs from the upstream bi
 - [Document extension validation](document-extension-validation.md) — layered filename/extension enforcement across XUI, CDAM, DM Store, and Data Store
 - [Restrict document upload by file extension](../how-to/restrict-document-upload-extensions.md) — recipe for configuring the per-field allow-list
 - [CDAM API reference](../reference/api-cdam.md) — full endpoint and response-field reference for `ccd-case-document-am-api`
+- [Case File View](case-file-view.md) — how documents stored via CDAM are organised into a folder tree using `category_id` and the Categories definition sheet
 
 ## Glossary
 

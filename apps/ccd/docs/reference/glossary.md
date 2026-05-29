@@ -49,6 +49,9 @@ The subsystem — comprising RAS and the AM library in the data store — that e
 **callback**
 An HTTP webhook registered in the case-type definition. The data store POSTs a `CallbackRequest` payload to a service-team URL at defined points in the event lifecycle. See `about_to_start`, `about_to_submit`, `submitted`.
 
+**Case File View (CFV)**
+An ExUI tab that presents a case's documents as a navigable folder tree, with search, sort, and per-document actions (open, download, print, change folder). The tree is defined by the `Categories` sheet in the case-type definition; documents are assigned to folders via `category_id`. See [Case File View](../explanation/case-file-view.md).
+
 **CaseAccessGroups**
 A top-level CCD collection field written into case data by `ccd-data-store-api` when group access is configured. Each entry carries a `caseAccessGroupType` and a `caseAccessGroupId` derived from the org's ID substituted into the `CaseAccessGroupIDTemplate`. `CaseAccessGroupsMatcher` compares an incoming role assignment's `caseAccessGroupId` attribute against this collection at access-control time. See [Group Access](../explanation/group-access.md).
 
@@ -79,6 +82,9 @@ A deployment topology (also "decentralised CCD" or "dCCD") in which each service
 **definition store**
 `ccd-definition-store-api`. Stores and serves case-type definitions (jurisdictions, case types, events, states, fields, roles). Definitions are imported as XLSX or JSON.
 
+**document category**
+A folder label defined in the `Categories` sheet of a case-type definition and referenced by a `Document` or `Collection(Document)` field via its `CategoryID` column. Determines which folder a document appears in within the Case File View. A document whose `category_id` is null or unrecognised falls into the `uncategorised_documents` bucket. See [Case File View](../explanation/case-file-view.md).
+
 **dynamic list**
 A field type (`DynamicList`) whose options are populated at runtime from a callback response rather than being fixed in the definition. The data store passes the list back to XUI for rendering.
 
@@ -106,8 +112,17 @@ The HMCTS identity service (`idam-web-public` / `idam-service`). Issues JWT bear
 **jurisdiction**
 The top-level grouping in CCD (e.g. `DIVORCE`, `PROBATE`). A jurisdiction contains one or more case types and owns a set of user roles. Maps roughly to a service team's domain.
 
+**JMSXGroupID**
+A JMS message property set to the CCD case ID on every message published to the Azure Service Bus `ccd-case-events` topic. Azure Service Bus uses this as the session key, ensuring all messages for a given case are delivered in order to the same session-aware consumer (e.g. `wa-case-event-handler`). See [Asynchronous Case-Event Messaging](../explanation/messaging.md).
+
+**message_queue_candidates**
+A PostgreSQL table in the CCD data-store database. When a case event with `Publish = true` is committed, the data store inserts a row here (in the same transaction as the audit-event write). `ccd-message-publisher` polls this table and forwards unpublished rows to Azure Service Bus, then marks them published. This is the Transactional Outbox Pattern. See [Asynchronous Case-Event Messaging](../explanation/messaging.md).
+
 **mid-event**
 A callback that fires between pages within a multi-page event form. Allows server-side validation or field mutation after the user navigates between wizard pages, before final submission.
+
+**Next Hearing Date**
+A convention by which service teams cache the date and ID of an upcoming hearing onto the case as a `nextHearingDetails` complex field, enabling case lists and the work basket to sort by hearing date without a live call to HMC. The date is kept current by the `ccd-next-hearing-date-updater` batch job. See [Next Hearing Date](../explanation/next-hearing-date.md).
 
 **NoC** (Notice of Change)
 The workflow by which a solicitor replaces another on a case without the original solicitor's involvement. Driven by AAC using `ChangeOrganisationRequest` and `OrganisationPolicy` fields.
@@ -135,6 +150,9 @@ A per-field flag (`RetainHiddenValue=Y` on `CaseEventToFields`, `ComplexTypes`, 
 
 **S2S** (Service-to-Service authentication)
 `service-auth-provider`. Issues short-lived JWT tokens that microservices present to each other (in `ServiceAuthorization` headers) to prove their identity without user credentials.
+
+**Service Bus**
+Azure Service Bus — the managed messaging infrastructure used by CCD to deliver published case-event messages to downstream consumers (work allocation, message handlers). CCD owns the `ccd-servicebus-<env>` namespace; the `ccd-case-events` topic is session-enabled to support per-case FIFO delivery via `JMSXGroupID`. See [Asynchronous Case-Event Messaging](../explanation/messaging.md).
 
 **SearchCriteria**
 A built-in CCD complex field type that maps case fields to global-search index fields. Must be populated (usually via callback) for a case to appear in global search results.

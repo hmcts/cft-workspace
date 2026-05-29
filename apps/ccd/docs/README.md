@@ -29,14 +29,17 @@ Understand how CCD works.
 - [Decentralisation](explanation/decentralisation.md) — service-owned case data via /ccd-persistence/*
 - [Documents and CDAM](explanation/documents-and-cdam.md) — upload, hash-token, retrieval
 - [Document Extension Validation](explanation/document-extension-validation.md) — how XUI, CDAM, DM Store and Data Store enforce filename/extension rules
+- [Case File View](explanation/case-file-view.md) — folder-tree presentation of case documents via Categories and category_id
 - [Search Architecture](explanation/search-architecture.md) — work-basket, global search, ES query search
 - [Group Access](explanation/group-access.md) — whole-organisation professional access via AccessType/AccessTypeRole sheets and CaseAccessGroups
 - [Notice of Change](explanation/notice-of-change.md) — solicitor transfers via AAC
 - [Case Flags](explanation/case-flags.md) — party-level and case-level flags
 - [Work Basket](explanation/work-basket.md) — definition-driven caseworker queues
 - [Work Allocation Integration](explanation/work-allocation-integration.md) — CCD events to WA tasks via DMN
+- [Asynchronous Case-Event Messaging](explanation/messaging.md) — transactional outbox, ccd-message-publisher, Azure Service Bus delivery
 - [Linked Cases](explanation/linked-cases.md) — CaseLink field type and UI flow
 - [Hearings Integration](explanation/hearings-integration.md) — HMC callbacks and case fields
+- [Next Hearing Date](explanation/next-hearing-date.md) — caching upcoming hearing date onto case data via ccd-next-hearing-date-updater
 - [Supplementary Data](explanation/supplementary-data.md) — sidecar data distinct from case data
 - [Audit and History](explanation/audit-and-history.md) — event history, versioning, XUI timeline
 - [Definition Import](explanation/definition-import.md) — admin-web upload to ES index seeding

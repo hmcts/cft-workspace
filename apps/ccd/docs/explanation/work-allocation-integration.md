@@ -286,6 +286,7 @@ Onboarding checklist (per WA programme):
 
 - [`apps/ccd/docs/explanation/callbacks.md`](callbacks.md) — how `aboutToSubmit` and `submitted` callbacks relate to the event lifecycle before WA messages are published
 - [`apps/ccd/docs/explanation/work-basket.md`](work-basket.md) — how XUI surfaces WA tasks alongside the work-basket views configured in CCD
+- [Asynchronous Case-Event Messaging](messaging.md) — the outbox table, `ccd-message-publisher`, and the Service Bus pipeline that delivers events to WA
 - [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions for DMN, outbox pattern, role assignment
 
 ## Glossary

@@ -314,6 +314,68 @@ pages:
       - apps/ccd/ccd-admin-web
       - apps/ccd/ccd-definition-store-api
 
+  apps/ccd/docs/explanation/next-hearing-date.md:
+    topic: next-hearing-date
+    brief: |
+      Explain the Next Hearing Date feature: how a case's next hearing date is surfaced in
+      case lists / work-basket and kept current. Audience: a service-team engineer integrating
+      hearings whose caseworkers need to see the upcoming hearing in their queue. Cover the
+      `NextHearingDate` complex field on the case (hearingID + hearingDate), how XUI/work-basket
+      render it, and — crucially — the `ccd-next-hearing-date-updater` batch job: it queries
+      Elasticsearch for cases whose stored next-hearing-date is stale relative to HMC, then fires
+      an `UpdateNextHearingInfo` event per case to refresh it through the normal event pipeline
+      (so audit/history and callbacks still apply). Explain why a batch updater is needed rather
+      than a live join (HMC owns hearings; CCD caches the derived date for fast listing). Note the
+      relationship to the HMC hearings integration and that the updater uses rse-cft-lib for local
+      testing. Cross-link hearings-integration.md, work-basket.md, search-architecture.md, audit-and-history.md.
+      Keep ~120 lines.
+    sources:
+      - apps/ccd/ccd-next-hearing-date-updater
+      - apps/ccd/ccd-data-store-api
+      - libs/ccd-config-generator/sdk
+
+  apps/ccd/docs/explanation/messaging.md:
+    topic: messaging
+    brief: |
+      Explain CCD's reliable asynchronous case-event messaging: how case events committed to the
+      data store are published to Azure Service Bus topics for downstream consumers (work
+      allocation, message handlers, service backends). Audience: a platform/service engineer who
+      needs to consume CCD events or understand why a downstream task didn't fire. Cover the
+      `ccd-message-publisher` scheduler: it polls the data store database for unpublished
+      case-event records and publishes them to Service Bus, providing at-least-once delivery
+      decoupled from the synchronous event transaction (so a slow/broken consumer never blocks
+      case progression). Explain what triggers a message (the definition opting an event into
+      publishing — the message/EventToCEH style config), the message envelope shape, ordering and
+      idempotency expectations on consumers, and the dev-mode embedded ActiveMQ (AMQP 1.0)
+      substitute vs production `SERVICE_BUS_CONNECTION_STRING`. Contrast synchronous callbacks
+      (in-transaction, can block/fail the event) with this asynchronous post-commit channel.
+      Cross-link work-allocation-integration.md, callbacks.md, event-model.md, audit-and-history.md.
+      Flag anything that is config/deployment detail vs in-source behaviour. ~140 lines.
+    sources:
+      - apps/ccd/ccd-message-publisher
+      - apps/ccd/ccd-data-store-api
+      - libs/ccd-config-generator/sdk
+
+  apps/ccd/docs/explanation/case-file-view.md:
+    topic: case-file-view
+    brief: |
+      Explain Case File View: the feature that lets caseworkers categorise, find, open and interact
+      with the documents attached to a case as an organised, foldered document bundle rather than a
+      flat list. Audience: a service-team engineer enabling document categorisation for their case
+      type. Promote this from the passing mention in documents-and-cdam.md to a first-class page.
+      Cover: the document-category model (CategoryId on Document fields, the Categories tab/sheet in
+      the case-type definition), how categorised documents roll up into the Case File View tree that
+      XUI renders, the relationship to CDAM (documents are still stored/served through CDAM — Case
+      File View is the organisation/presentation layer over them), and how uncategorised documents
+      are handled. Distinguish Case File View (in-case document organisation) from bundling/stitching
+      (em-stitching, a separate assembled-PDF concern) and from the Media Viewer. Cross-link
+      documents-and-cdam.md, stitching.md, the data-types Document type, and api-cdam.md. ~120 lines.
+    sources:
+      - apps/ccd/ccd-data-store-api
+      - apps/ccd/ccd-definition-store-api
+      - libs/ccd-config-generator/sdk/ccd-config-generator
+      - apps/xui/ccd-case-ui-toolkit
+
   # --- How-to ---
   apps/ccd/docs/how-to/add-an-event.md:
     topic: event-model
@@ -619,6 +681,21 @@ research_sources:
     path: apps/ccd/ccd-admin-web
     focus: |
       Definition import flow, IDAM auth model, what failure modes the UI surfaces.
+
+  ccd-message-publisher:
+    path: apps/ccd/ccd-message-publisher
+    focus: |
+      Asynchronous case-event publishing to Azure Service Bus: the polling scheduler, how it reads
+      unpublished case events from the data store DB, the message envelope/payload shape, delivery
+      semantics (at-least-once, ordering, idempotency), embedded ActiveMQ (AMQP 1.0) dev mode vs
+      SERVICE_BUS_CONNECTION_STRING production config, and how an event is opted into publishing.
+
+  ccd-next-hearing-date-updater:
+    path: apps/ccd/ccd-next-hearing-date-updater
+    focus: |
+      The batch job that refreshes cases' NextHearingDate: how it queries Elasticsearch for stale
+      cases, the UpdateNextHearingInfo event it fires, the NextHearingDate field shape, scheduling,
+      and the rse-cft-lib bootWithCCD local-test harness.
 
   ccd-test-definitions:
     path: apps/ccd/ccd-test-definitions
