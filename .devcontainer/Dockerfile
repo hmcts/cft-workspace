@@ -67,6 +67,10 @@ RUN set -eux; \
     unzip -q -j /tmp/kubelogin.zip "bin/linux_${arch}/kubelogin" -d /usr/local/bin; \
     chmod +x /usr/local/bin/kubelogin; \
     rm -f /tmp/kubelogin.zip; \
+    sops_ver="v3.13.1"; \
+    curl -fsSL "https://github.com/getsops/sops/releases/download/${sops_ver}/sops-${sops_ver}.linux.${arch}" \
+        -o /usr/local/bin/sops; \
+    chmod +x /usr/local/bin/sops; \
     \
     rm -rf /var/lib/apt/lists/*
 
