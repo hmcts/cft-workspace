@@ -283,6 +283,18 @@ stringifies to garbage like `EnvActionImpl@…`.
 Reuse your service's existing `bin/setup-role-assignments` and S2S token script rather than
 duplicating WA's `bin/utils/` tooling.
 
+> **Seed by email, not by raw IDAM id.** `createOrgMapping` takes a `{ "userIds": [...] }` body of
+> IDAM GUIDs, but hand-maintaining GUIDs is unreviewable and they're not published anywhere — the
+> test-user list (e.g. the "Test Users" Confluence page) holds emails. Resolve emails to ids in the
+> script. The obvious route — the admin user-search endpoint `GET /api/v1/users?query=email:"…"` —
+> is **role-gated and returns 403** for a typical system user (the data-store system user only has
+> `caseworker` / `idam-service-account`). Instead, exploit that **every user can read its own id**:
+> log in as each test user (they share one password, e.g. pcs's `idam-pcs-user-password` /
+> `IDAM_PCS_USER_PASSWORD`) and read `.uid` from `GET /o/userinfo` — no special role needed. Keep the
+> system-user token for the `createOrgMapping` call itself; the per-user login is only for id
+> resolution. Warn-and-skip emails that fail to authenticate rather than failing the whole seed, so
+> one diverged password doesn't red the build.
+
 > **Prod S2S caveat.** The diagram upload authenticates to Camunda with an S2S token. A typical
 > service `bin/s2s-token.sh` leases via the **`/testing-support/lease`** endpoint, which is enabled
 > in preview/AAT but **disabled in prod**. The prod upload needs a prod-capable token (the
