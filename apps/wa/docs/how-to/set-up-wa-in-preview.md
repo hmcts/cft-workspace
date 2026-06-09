@@ -283,6 +283,11 @@ stringifies to garbage like `EnvActionImpl@…`.
 Reuse your service's existing `bin/setup-role-assignments` and S2S token script rather than
 duplicating WA's `bin/utils/` tooling.
 
+> **Commit the WA bin scripts executable (git mode `100755`)** — then drop any `sh "chmod -R +x
+> ./bin"` step from the pipeline stages. The exec bit is preserved in git, so the chmod is a no-op
+> that only adds noise. (Watch out if `bin/` is gitignored in your repo, as it is in pcs-api — you
+> have to `git add -f` the new scripts, and the stored mode comes along with them.)
+
 > **Seed by email, not by raw IDAM id.** `createOrgMapping` takes a `{ "userIds": [...] }` body of
 > IDAM GUIDs, but hand-maintaining GUIDs is unreviewable and they're not published anywhere — the
 > test-user list (e.g. the "Test Users" Confluence page) holds emails. Resolve emails to ids in the
