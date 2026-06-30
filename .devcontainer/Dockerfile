@@ -144,4 +144,4 @@ RUN bash -c 'export NVM_DIR="$HOME/.nvm"; \
 RUN bash -c 'export NVM_DIR="$HOME/.nvm"; \
     . "$NVM_DIR/nvm.sh"; \
     nvm use default; \
-    yarn playwright install-deps'
+    npx -y playwright install --with-deps'
