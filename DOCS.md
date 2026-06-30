@@ -50,6 +50,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | how-to | Implement a Callback | callbacks | `apps/ccd/docs/how-to/implement-a-callback.md` |
 | ccd | how-to | Implement Case Flags | case-flags | `apps/ccd/docs/how-to/implement-case-flags.md` |
 | ccd | how-to | Implement Notice of Change | notice-of-change | `apps/ccd/docs/how-to/implement-noc.md` |
+| ccd | how-to | Implement Notice of Change for a decentralised service | notice-of-change | `apps/ccd/docs/how-to/implement-noc-decentralised.md` |
 | ccd | how-to | Implement Reasonable Adjustments | case-flags | `apps/ccd/docs/how-to/implement-reasonable-adjustments.md` |
 | ccd | how-to | Publish a Definition to AAT | definition-import | `apps/ccd/docs/how-to/publish-definition-to-aat.md` |
 | ccd | how-to | Restrict Document Upload by File Extension | documents-and-cdam | `apps/ccd/docs/how-to/restrict-document-upload-extensions.md` |
