@@ -45,6 +45,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | how-to | Decentralise a Service | decentralisation | `apps/ccd/docs/how-to/decentralise-a-service.md` |
 | ccd | how-to | Enable Global Search | search | `apps/ccd/docs/how-to/enable-global-search.md` |
 | ccd | how-to | Enable Query Search | search | `apps/ccd/docs/how-to/enable-query-search.md` |
+| ccd | how-to | Enable Retain and Dispose | retain-and-dispose | `apps/ccd/docs/how-to/enable-retain-and-dispose.md` |
 | ccd | how-to | Enable Work Basket | work-basket | `apps/ccd/docs/how-to/enable-work-basket.md` |
 | ccd | how-to | Implement a Callback | callbacks | `apps/ccd/docs/how-to/implement-a-callback.md` |
 | ccd | how-to | Implement Case Flags | case-flags | `apps/ccd/docs/how-to/implement-case-flags.md` |
@@ -151,6 +152,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | wa | how-to | Add Tasks For New Event | dmn | `apps/wa/docs/how-to/add-tasks-for-new-event.md` |
 | wa | how-to | Debug Stuck Tasks | task-lifecycle | `apps/wa/docs/how-to/debug-stuck-tasks.md` |
 | wa | how-to | Onboard Jurisdiction | overview | `apps/wa/docs/how-to/onboard-jurisdiction.md` |
+| wa | how-to | Set Up Work Allocation in a Preview Environment | deployment | `apps/wa/docs/how-to/set-up-wa-in-preview.md` |
 | wa | how-to | Write Dmn Configuration | dmn | `apps/wa/docs/how-to/write-dmn-configuration.md` |
 | wa | reference | Api Task Management | architecture | `apps/wa/docs/reference/api-task-management.md` |
 | wa | reference | Api Workflow | architecture | `apps/wa/docs/reference/api-workflow.md` |

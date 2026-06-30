@@ -290,3 +290,7 @@ repos:
   platops/azure-github-federation-config: { url: hmcts/azure-github-federation-config }
   platops/cnp-githubactions-library:      { url: hmcts/cnp-githubactions-library }
 
+  apps/cath/cath-service: { url: hmcts/cath-service }
+  platops/sds-flux-config: { url: hmcts/sds-flux-config }
+  platops/azure-public-dns: { url: hmcts/azure-public-dns }
+  platops/azure-platform-terraform: { url: hmcts/azure-platform-terraform }

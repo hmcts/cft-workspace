@@ -436,7 +436,7 @@ public class PCSCaseView implements CaseView<PCSCase, State> {
 
 ## Retain-and-dispose for decentralised cases
 
-CCD remains the **authority for TTL evaluation** even for decentralised cases — every TTL change still flows through CCD's event pipeline, which applies the TTL guard, recalculates `resolvedTTL`, and returns it in the `DecentralisedCaseEvent.resolved_ttl` field on submit.
+CCD remains the **authority for TTL evaluation** even for decentralised cases — every TTL change still flows through CCD's event pipeline, which applies the TTL guard, recalculates `resolvedTTL`, and returns it in the `DecentralisedCaseEvent.resolved_ttl` field on submit. For the full setup (adding the TTL field, `TTLIncrement` events, and the disposer config that applies to centralised and decentralised case types alike), see [Enable Retain and Dispose](../how-to/enable-retain-and-dispose.md).
 
 The disposal split:
 
