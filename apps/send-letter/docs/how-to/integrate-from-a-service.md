@@ -13,6 +13,7 @@ sources:
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/FtpConfigProperties.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/ftp/ServiceFolderMapping.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/DocumentService.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/model/in/RecipientsValidator.java
 status: needs-fix
@@ -192,7 +193,7 @@ Key constraints (`LetterWithPdfsAndNumberOfCopiesRequest.java`, `Doc.java:17-21`
 | `type` | Non-empty string (`@NotEmpty`); underscores are stripped in the output filename |
 | `additional_data` | **Required** -- must include a `recipients` array of strings. Validated by `@ValidRecipients` which rejects null `additional_data` or missing/empty `recipients`. Error message: "Invalid recipients. Please check that the recipients attribute is included within the additional_data field, and that it includes a list of names (an array of strings)." |
 
-**Duplicate detection**: the service computes a checksum over the letter content. If a letter with the same checksum already exists in `Created` status, the existing `letter_id` is returned rather than creating a new record. Additionally, document-level deduplication (by recipients checksum) catches duplicate submissions with different metadata (`LetterService.java:150-162, 182-187`).
+**Duplicate detection**: the service deduplicates identical submissions automatically — same document to the same recipients returns the original `letter_id` rather than printing again. You control the time window and must include `recipients`; see [Deduplicating letters](#deduplicating-letters) below.
 
 <!-- REVIEW: Rate limiter only applies to FeatureFlagController (GET /feature-flags/{flag}), not to POST /letters. See send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/FeatureFlagController.java:15 — the @RateLimiter annotation is only on that controller. This claim should be removed or corrected. -->
 **Rate limiting**: the service applies a Resilience4j rate limiter of 15 requests per second across all callers (`application.yaml` `resilience4j.ratelimiter.instances.default`). Requests exceeding this rate are rejected immediately.
@@ -241,6 +242,37 @@ For extended history including events:
 ```
 GET /letters/{letter_id}/extended-status?include-additional-info=true
 ```
+
+## Deduplicating letters
+
+There is **no idempotency key or header to pass**. The service deduplicates by looking at the letter itself — if you submit the same document to the same recipients again, it returns the **original `letter_id`** and nothing new is printed. As a client, you don't build the dedup logic; you enable it and set the window.
+
+### What you need to do
+
+1. **Include `recipients` in `additional_data`.** Duplicate detection only runs when a recipients list is present. Without it, letters are never deduplicated. This is the trigger for the whole mechanism, and it is the only part in your control.
+
+2. **Submit normally.** If a matching letter was created within the dedup window, you get its `letter_id` back. You can confirm a submission was treated as a duplicate with:
+
+   ```
+   GET /letters/{letter_id}?check-duplicate=true
+   ```
+
+### The dedup window
+
+How far back the service looks for a match is set by `DUPLICATES_CUT_OFF_TIME` on `send-letter-service` (in **hours**). It is a single global value shared by all onboarded services — not per-service or per-request. It is currently **1 hour** in all environments (the chart default; no environment overrides it in `cnp-flux-config`). Changing it is a `send-letter-service` config change, so if you need a longer window, raise it with the Bulk Print team.
+
+### What counts as a duplicate
+
+A letter matches an earlier one when **both**:
+
+- the **document content** is the same (matched on the PDF page content, ignoring PDF metadata — so the same letter regenerated at a different time still matches), and
+- the **`recipients`** list is the same.
+
+The match does **not** consider your `type`, case reference, or other `additional_data` — only content + recipients. So two genuinely different sends that happen to be byte-identical to the same recipients within the window will be collapsed into one.
+
+### Retry protection (always on)
+
+Independently of the above, if you POST the exact same letter twice while the first is still in `Created` status (i.e. before the upload scheduler picks it up), you also get the original `letter_id` back. This makes short-window retries after a timeout safe without any configuration.
 
 ## PDF formatting requirements
 

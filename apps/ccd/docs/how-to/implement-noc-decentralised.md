@@ -10,22 +10,39 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocSubmitContext.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocError.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocOrganisation.java
-  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/runtime/noc/NocController.java
-  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/ChallengeQuestionGenerator.java
-  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ChallengeQuestion.java
-  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/AnswerBuilder.java
-  - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/noc/PcsNoticeOfChange.java
-  - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/task/NocAccessChangeTaskComponent.java
-  - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/CaseRoleAssignmentService.java
-  - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/service/LegalRepresentativePartyLinkService.java
+  - ccd-config-generator@noc-sdk-refinement:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/runtime/noc/NocController.java
+  - ccd-config-generator@noc-sdk-refinement:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocEndpoint.java
+  - ccd-config-generator@noc-sdk-refinement:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocQuestionsResponse.java
+  - ccd-config-generator@noc-sdk-refinement:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocQuestion.java
+  - ccd-config-generator@noc-xui-native:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/runtime/noc/NocController.java
+  - ccd-config-generator@noc-xui-native:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/ChallengeQuestionGenerator.java
+  - ccd-config-generator@noc-xui-native:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ChallengeQuestion.java
+  - ccd-config-generator@noc-xui-native:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/AnswerBuilder.java
+  - pcs-api@noc-provider-routing:src/main/java/uk/gov/hmcts/reform/pcs/noc/NocService.java
+  - pcs-api@noc-provider-routing:build.gradle
+  - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/noc/PcsNoticeOfChange.java
+  - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/task/NocAccessChangeTaskComponent.java
+  - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/CaseRoleAssignmentService.java
+  - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/service/LegalRepresentativePartyLinkService.java
   - rpx-xui-webapp:api/noc/index.ts
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/NoticeOfChangeQuestions.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/ChallengeQuestionValidator.java
 provenance:
   note: >-
-    Derived from two proof-of-concept branches, not yet merged to master.
-    config-generator branch `noc-xui-native` @ a087f81f, pcs-api branch
-    `noc-xui-native-pcs` @ c6d41a4b. A separate exploratory branch
-    `noc-provider-routing` @ e8f801ce sketches an alternative where the SDK
-    also serves the questions endpoint — noted under "Open questions".
+    Derived from several unmerged proof-of-concept branches. It is NOT known which
+    (if any) is the intended direction. Two distinct SDK shapes were observed.
+    Shape 1: config-generator `noc-xui-native` @ a087f81f (builder
+    `noticeOfChange().validate().submit()`; runtime NocController serves only
+    verify-noc-answers + noc-requests) + pcs-api `noc-xui-native-pcs` @ c6d41a4b.
+    Here the questions endpoint is NOT served by the service, so it falls back to
+    AAC, which forces an OrganisationPolicy. Shape 2: config-generator
+    `noc-sdk-refinement` @ 6cbce4d5 (builder `noc().questions().verifyAnswers().submit()`;
+    runtime NocController also serves GET /noc/noc-questions) + pcs-api
+    `noc-provider-routing` @ e8f801ce (PCS serves questions itself; pins a forked
+    XUI build via XUI_MANAGE_CASES_TAG=noc-provider-routing). Here AAC is out of the
+    path and no OrganisationPolicy is needed. Other branches exist
+    (config-generator `noc`, `noc-part2`, `test-noc`; pcs-api `NoC_ChallengeQuestions`)
+    and were not fully analysed. Treat everything here as exploratory.
 status: draft
 title: Implement Notice of Change for a decentralised service
 diataxis: how-to
@@ -44,7 +61,7 @@ product: ccd
 - In the **centralised** model, `aac-manage-case-assignment` (AAC) owns the whole NoC flow: it discovers a `ChangeOrganisationRequest` (COR) field by structure-scanning case data, verifies challenge answers against case fields, drives four CCD events, writes role assignments to data-store `/case-users`, maintains an `OrganisationPolicy.PreviousOrganisations` audit trail, and emails the outgoing solicitor via GOV.UK Notify. See [Implement Notice of Change](implement-noc.md) for that model.
 - In the **decentralised** model the service owns its own database and its own case lifecycle, so **AAC is bypassed entirely**. The service implements the NoC verify + submit logic itself, against its own tables, and applies role changes directly to AMRAS via the CCD data-store `addCaseUserRoles` / `removeCaseUserRoles` client.
 - The ccd-config-generator SDK (`noc-xui-native`) grows a `builder.noticeOfChange()` block with two parts: **challenge questions** (generated into `ChallengeQuestion.json` and imported into definition-store, exactly as before — this is what XUI reads to render the form) and a **runtime endpoint** (`validate` + `submit` handlers) served by an auto-registered `NocController` in the `decentralised-runtime` at `POST /noc/verify-noc-answers` and `POST /noc/noc-requests`.
-- **You do not need a `ChangeOrganisationRequest` field, and you do not need an `OrganisationPolicy` field**, in the PCS PoC. Representation state lives in the service's own entities (PCS: `LegalRepresentativeEntity` linked to `PartyEntity`). The "put OrganisationPolicy in a list" advice solved AAC's one-org-per-role limitation; decentralised services sidestep that by not modelling representation as CCD `OrganisationPolicy` at all. See [Do you still need OrganisationPolicy?](#do-you-still-need-organisationpolicy) for the nuance — XUI may still want one for display.
+- **You do not need a `ChangeOrganisationRequest` field**, and the PCS verify/submit *logic* never reads an `OrganisationPolicy` — representation state lives in the service's own entities (PCS: `LegalRepresentativeEntity` linked to `PartyEntity`). **But you almost certainly still need at least one `OrganisationPolicy` field on the case**, because the questions-rendering path still goes through AAC, which refuses to return challenge questions for a case that has no matching OrganisationPolicy. This is exactly what blocks XUI from rendering the form. See [Do you still need OrganisationPolicy?](#do-you-still-need-organisationpolicy) for the precise mechanism and the "put them in a list" nuance.
 - **Who sends the email?** The service does — there is no AAC to do it. The PoC has not wired Notify yet; the `noc-provider-routing` branch leaves an explicit `TODO` to send the outgoing-representative email from the service's own job queue, using AAC's Notify template as the content baseline.
 - **Multi-party** works because the service writes its own matching logic. AAC's "one Role filled by one Org" assumption lives in `OrganisationPolicy` + COR; once you drop those and match parties in your own code, a case can have any number of represented parties.
 
@@ -54,11 +71,12 @@ product: ccd
 
 | Concern | Centralised (AAC) | Decentralised (this guide) |
 |---|---|---|
-| Who serves `/noc/*` to XUI | AAC (`aac-manage-case-assignment`, port 4454) | The service itself, via the SDK's `decentralised-runtime` `NocController` |
+| Who serves `verify-noc-answers` / `noc-requests` to XUI | AAC (`aac-manage-case-assignment`, port 4454) | The service itself, via the SDK's `decentralised-runtime` `NocController` |
+| Who serves `noc-questions` to XUI | AAC | **Still AAC in the PoC** — and AAC requires an OrganisationPolicy here (see below) |
 | Challenge questions | `ChallengeQuestion` group id `NoCChallenge` in definition-store | Same — generated by the SDK into `ChallengeQuestion.json`, imported to definition-store |
 | Answer verification | AAC `ChallengeAnswerValidator` against CCD case fields | Your `validate` handler against your own DB |
 | In-flight request holder | `ChangeOrganisationRequest` complex field on the case | None — service tracks state in its own entities |
-| Representation model | `OrganisationPolicy` per role (one org ↔ one role) | Service entities (PCS: `LegalRepresentativeEntity`); no `OrganisationPolicy` required |
+| Representation model | `OrganisationPolicy` per role (one org ↔ one role) | Service entities (PCS: `LegalRepresentativeEntity`) — but an `OrganisationPolicy` field is still needed to satisfy AAC's question-rendering gate |
 | CCD events | 2–4 events (Request / Approval / Rejection / Decision) | None required — the submit handler does the work synchronously |
 | Role assignment | AAC → data-store `/case-users` → AMRAS | Service → data-store `addCaseUserRoles`/`removeCaseUserRoles` → AMRAS |
 | Audit trail | `OrganisationPolicy.PreviousOrganisations` collection | Service entities (PCS: `ClaimPartyLegalRepresentative` rows marked `active = NO` with `endDate`) |
@@ -314,11 +332,39 @@ idam:
 
 ## Do you still need OrganisationPolicy?
 
-Short answer for the **service backend**: **no.** The PCS PoC contains no `OrganisationPolicy` field and no `ChangeOrganisationRequest` field anywhere — representation is modelled by `LegalRepresentativeEntity` ↔ `PartyEntity` join rows in the service's own schema. Matching, the "already represents" guard, and the audit trail all run against those tables.
+**Yes — at least one, despite the service backend never reading it.** This is the subtle part, and it's worth being precise because the two halves of the system disagree:
 
-The "put OrganisationPolicy in a list" advice you were given is a workaround for AAC's hard assumption that one role is filled by one organisation (the COR and `OrganisationPolicy` both encode a 1:1 role↔org relationship, which breaks for multi-party). By **not** routing through AAC and **not** modelling representation as CCD `OrganisationPolicy`, the decentralised service avoids that limitation entirely — a case can carry any number of represented parties because your own schema and matching code decide the cardinality.
+- **Your service's verify/submit logic does not use OrganisationPolicy at all.** The PCS PoC contains no `OrganisationPolicy` field and no `ChangeOrganisationRequest` field in its own model — matching, the "already represents" guard, and the audit trail all run against `LegalRepresentativeEntity` ↔ `PartyEntity` rows. If the only thing that mattered were the decentralised handlers, you'd need no OrgPolicy.
 
-The nuance — and an open question to confirm with the ExUI team — is **display**. XUI historically reads `OrganisationPolicy` fields to show "who represents whom" on the case. If your service's XUI tab needs to show current representation, you may still want to **surface** an `OrganisationPolicy`-shaped value in your `CaseView` projection for display, even though it plays no part in the NoC mechanics. That is a read-model concern, not a NoC requirement, and the PoC doesn't address it. Don't add a writable `OrganisationPolicy` field expecting AAC semantics — nothing will drive it.
+- **But AAC still serves the questions endpoint, and AAC hard-requires an OrganisationPolicy to return questions at all.** In the `noc-xui-native` PoC the SDK's `NocController` only serves `verify-noc-answers` and `noc-requests`. XUI's `GET /noc/noc-questions?case_id=` still goes to AAC. AAC's `NoticeOfChangeQuestions.challengeQuestions()` fetches the challenge questions from definition-store, then calls `checkOrgPoliciesForRoles(...)` (`NoticeOfChangeQuestions.java:80-101`):
+
+  ```java
+  List<OrganisationPolicy> organisationPolicies = findPolicies(caseDetails);
+  checkOrgPoliciesForRoles(challengeQuestionsResult, organisationPolicies);
+  // ...
+  private void checkOrgPoliciesForRoles(ChallengeQuestionsResult result,
+                                        List<OrganisationPolicy> organisationPolicies) {
+      if (organisationPolicies.isEmpty()) {
+          throw new NoCException(NO_ORG_POLICY_WITH_ROLE);     // <-- no OrgPolicy at all
+      }
+      result.getQuestions().forEach(challengeQuestion -> {
+          boolean missingRole = challengeQuestion.getAnswers().stream()
+              .anyMatch(a -> !isRoleInOrganisationPolicies(organisationPolicies, a.getCaseRoleId()));
+          if (missingRole) {
+              throw new NoCException(NO_ORG_POLICY_WITH_ROLE); // <-- question role not covered
+          }
+      });
+  }
+  ```
+
+  So if the case has **no** OrganisationPolicy, or has one whose `OrgPolicyCaseAssignedRole` doesn't match the `CaseRoleId` of every challenge question, AAC throws `NO_ORG_POLICY_WITH_ROLE` ("No Organisation Policy for one or more of the roles…") and XUI gets nothing to render. **This is exactly the symptom the developer hit.** Note: definition-store *import* validation (`ChallengeQuestionValidator`) does **not** require an OrgPolicy — it only checks the answer-field role against case roles and the dot-paths against case fields. The coupling is purely AAC's runtime questions path.
+
+**What to do, then:**
+
+- Add an `OrganisationPolicy` field for each case role referenced by your challenge questions, with `OrgPolicyCaseAssignedRole` set to that bracket role (e.g. `[DEFENDANTSOLICITOR]`). It exists to satisfy AAC's question gate; your own handlers ignore it.
+- The **"put them in a list"** advice fits here: AAC's COR + `OrganisationPolicy` model assumes one role is filled by one organisation, which breaks for multi-party. Your decentralised handlers sidestep that (your DB decides cardinality), but AAC still needs to *see* an OrgPolicy per question role, so modelling the policies as a collection is the pragmatic way to cover multiple parties while keeping AAC's questions endpoint happy.
+
+This requirement disappears only once the questions endpoint also moves off AAC — which is what the alternative `noc-provider-routing` branch explores (it adds a service-side `questions(...)` handler). Until that lands and XUI is routed to it, **keep the OrganisationPolicy field(s).** See [Open questions](#open-questions-and-gaps-in-the-poc) item 1.
 
 ---
 
@@ -326,7 +372,7 @@ The nuance — and an open question to confirm with the ExUI team — is **displ
 
 These are genuinely unresolved on the PoC branches — flag them with the ExUI / RCCD platform team before committing to a design:
 
-1. **The questions endpoint.** XUI calls `GET /noc/noc-questions?case_id=` (`api/noc/index.ts`), but the `noc-xui-native` `NocController` only serves `verify-noc-answers` and `noc-requests`. The challenge questions are generated into definition-store, so either (a) XUI fetches questions from definition-store/data-store directly for decentralised case types, or (b) the questions call still goes somewhere central. The separate `noc-provider-routing` branch instead adds a `questions(...)` handler to the SDK (`builder.noc().questions(...).verifyAnswers(...).submit(...)`) so the **service** serves questions too — a different shape from `noc-xui-native`. Decide which model wins.
+1. **The questions endpoint (and the OrgPolicy gate it imposes).** XUI calls `GET /noc/noc-questions?case_id=` (`api/noc/index.ts`); the `noc-xui-native` `NocController` does **not** serve it, so it still hits AAC — which throws `NO_ORG_POLICY_WITH_ROLE` unless the case carries an OrganisationPolicy matching every question's role (see [Do you still need OrganisationPolicy?](#do-you-still-need-organisationpolicy)). That is the root cause of "XUI won't render the questions". The separate `noc-provider-routing` branch instead adds a `questions(...)` handler to the SDK (`builder.noc().questions(...).verifyAnswers(...).submit(...)`) so the **service** serves questions too — which, if XUI is routed to it, would remove the OrgPolicy requirement entirely. The two branches are different shapes; decide which model wins, and whether the questions endpoint moves off AAC.
 2. **XUI routing per case type.** `SERVICES_CCD_CASE_ASSIGNMENT_API_PATH` is a single base URL. How XUI decides, per case type, to call the decentralised service instead of AAC is not in these branches. This is the core "ExUI decentralisation" routing problem and likely needs a platform-level resolver.
 3. **Challenge group id.** PCS uses challenge id `"NoC"`; the centralised XUI/AAC path hardcodes `NoCChallenge`. Confirm what the decentralised XUI route expects.
 4. **Two divergent SDK shapes.** `noc-xui-native` exposes `builder.noticeOfChange().validate(...).submit(...)`; `noc-provider-routing` exposes `builder.noc().questions(...).verifyAnswers(...).submit(...)`. They are competing PoCs — only one should survive.

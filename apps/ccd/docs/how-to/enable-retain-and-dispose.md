@@ -4,7 +4,12 @@ audience: both
 sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/TTL.java@f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventPayload.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Submit.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedeletion/TimeToLiveService.java@0afa06a9ffaa5094e0e715f414a0a885479696a9
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/service/DecentralisedCreateCaseEventService.java
   - ccd-data-store-api:src/main/resources/application.properties
   - ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/data/CaseDataRepository.java
   - ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/parameter/DefaultParameterResolver.java
@@ -12,7 +17,7 @@ sources:
   - ccd-case-disposer:src/main/resources/application.yaml
   - ccd-case-disposer:charts/ccd-case-disposer/values.yaml@9fc420ba5e7b34c664988c8e41893cf1120a4be1
 status: reviewed
-last_reviewed: 2026-06-30T00:00:00Z
+last_reviewed: 2026-07-01T12:47:00Z
 confluence:
   - id: "1525467847"
     title: "Case Retain and Disposal"
@@ -37,23 +42,26 @@ that date passes. This page covers how a service team switches it on for a case 
 
 - Add the platform-defined **`TTL`** complex field to your case type — by name, without
   redefining its sub-fields.
-- Set **`TTLIncrement`** (days) on the events that should push the deletion date forward;
-  on submit CCD sets `SystemTTL = today + increment`.
+- To schedule deletion, set the field's **`SystemTTL`** to the date you want the case gone.
+  CCD stores that as the case's `resolved_ttl`; the disposer deletes on/after it. No
+  `TTLIncrement` needed.
+- **`TTLIncrement`** on an event is an *optional* convenience for auto-extending retention
+  on activity (`SystemTTL = today + increment`) — not a requirement for using the feature.
 - Get your case type added to the disposer's **`DELETE_CASE_TYPES`** Flux env var — until
-  this is done, *nothing is ever deleted*, regardless of TTL values.
-- Roll out safely via **`SIMULATED_CASE_TYPES`** first — the disposer logs what it *would*
-  delete without actually deleting.
-- TTL changes are subject to the platform **`TTLGuard`** (default 365 days): you cannot
-  suspend or override a case to a deletion date nearer than the guard.
-- **Decentralised services** must additionally run their own garbage-collection cron —
-  the disposer purges only CCD-owned data, not your service-side store. See
+  this is done, *nothing is ever deleted*, regardless of TTL values. Roll out via
+  **`SIMULATED_CASE_TYPES`** first.
+- The **`TTLGuard`** (default 365 days) only constrains changes to **`Suspended`** and
+  **`OverrideTTL`** — setting `SystemTTL` is never guarded, so use it for near-term deletion.
+- **Decentralised services** set `SystemTTL` in their event handler and must additionally
+  run their own garbage-collection cron — the disposer purges only CCD-owned data. See
   [Decentralised services](#decentralised-services).
 
 ## Prerequisites
 
 - A case type wired via `CCDConfig<CaseData, State, UserRole>` (SDK) or a JSON/Excel
   definition.
-- Knowledge of which business events represent "activity" that should extend retention.
+- A decision on when cases should be deleted — either a fixed retention date/period you set
+  as `SystemTTL`, or (optionally) the business events that should extend retention.
 - For the disposer config step: access to the relevant `cnp-flux-config` environment, or
   a platform/CCD team contact who can make the change.
 
@@ -87,10 +95,65 @@ The resolved deletion date is computed by `TimeToLiveService` and written to the
 logic aside) the resolved TTL is null and the case **cannot** be deleted; otherwise
 `OverrideTTL` beats `SystemTTL`. If both are null the case cannot be deleted.
 
-## 2. Set the TTL on significant events
+## 2. Set the deletion date
 
-The normal way to move the deletion date is `TTLIncrement` on an event definition. When
-the event is submitted, CCD sets `SystemTTL = today + TTLIncrement`.
+The only sub-field you normally set is **`SystemTTL`** — the date the case becomes eligible
+for deletion. CCD resolves the effective date (`TimeToLiveService.getResolvedTTL`) as:
+
+| Case state | `resolved_ttl` (what the disposer reads) |
+|---|---|
+| Not suspended | `OverrideTTL` if set, otherwise `SystemTTL` |
+| `Suspended = Yes` | `null` — never deleted |
+
+So "delete this case on date X" means: set `SystemTTL = X`, leave `OverrideTTL` unset, keep
+`Suspended = No`. You do **not** need `TTLIncrement` for this.
+
+### Decentralised services (set it in your handler)
+
+The case data is owned by your service, so you set the field in the event handler and CCD
+computes `resolved_ttl` from the value you return. With the field declared on your case
+model (step 1), set it in a `start`/`submit` handler:
+
+```java
+private PCSCase start(EventPayload<PCSCase, State> payload) {
+    var caseData = payload.caseData();
+
+    caseData.setRetainAndDisposeTimeToLive(
+        TTL.builder()
+           .systemTTL(LocalDate.now().plusYears(6))  // delete 6 years from now
+           .suspended(YesOrNo.NO)
+           .build()
+    );
+
+    return caseData;   // returned data is persisted; CCD reads TTL from it
+}
+```
+
+`EventPayload.caseData()` gives you the current case data; the object you return is
+persisted, and CCD reads the TTL field from it to compute `resolved_ttl` on its pointer row
+(`DecentralisedCreateCaseEventService` sends it as `DecentralisedCaseEvent.resolvedTtl`). To
+reschedule, set a new `SystemTTL` on a later event; to hold indefinitely, set
+`.suspended(YesOrNo.YES)`.
+
+> **Not yet demonstrated in a live decentralised service.** As of writing no decentralised
+> service (including PCS) sets TTL from a handler — the real TTL-setting examples in the
+> estate are all centralised. The mechanics are verified against data-store source, but
+> confirm `resolved_ttl` lands on the pointer in a test environment before relying on it.
+
+### Centralised services
+
+For a centralised case type the TTL field lives in CCD's own data. You **cannot** set it
+from an `AboutToSubmit` callback — CCD rejects any callback that changes the TTL field (see
+[the guard](#the-ttl-guard)). Set it either by making the field writable on the event
+(`CaseEventToFields`) so the submitted data carries the value, or with `TTLIncrement` (next
+section) for the common "extend on activity" case.
+
+## 3. (Optional) Auto-extend retention with `TTLIncrement`
+
+If you want each significant event to push the deletion date forward automatically — "keep
+this case for 90 days after the last activity" — set `TTLIncrement` (days) on the event. On
+submit CCD sets `SystemTTL = today + TTLIncrement`. This is a convenience layer on top of
+step 2, not a requirement.
 
 **SDK** — chain `.ttlIncrement(days)` on the event builder (`Event.java`):
 
@@ -104,19 +167,22 @@ configBuilder.event("submitApplication")
 
 **JSON** — set the `TTLIncrement` column (integer days) on the `CaseEvent` tab.
 
-You can also let a caseworker event write `OverrideTTL` or `Suspended` directly, but those
-changes are constrained by the guard (next section).
+An event with no `TTLIncrement` leaves the TTL field untouched
+(`updateCaseDetailsWithTTL` is a no-op without one), so mixing increment events with
+events/handlers that set `SystemTTL` directly is fine — only increment-configured events
+overwrite it.
 
 ### The TTL guard
 
-`TimeToLiveService` enforces `ttl.guard` (env `TTL_GUARD`, **default 365 days**,
-configured in `ccd-data-store-api`'s `application.properties`). If an event changes
-`Suspended` or `OverrideTTL` such that the resolved deletion date would be sooner than
-`today + TTLGuard`, the event is **rejected**. This stops a case being fast-tracked to
-near-term deletion by mistake. CCD also rejects any callback (`AboutToStart`, `MidEvent`,
-`AboutToSubmit`) that alters TTL sub-field values.
+`TimeToLiveService` enforces `ttl.guard` (env `TTL_GUARD`, **default 365 days**, in
+`ccd-data-store-api`'s `application.properties`). The guard **only** applies to changes in
+**`Suspended`** or **`OverrideTTL`**: if either changes such that the resolved deletion date
+would be sooner than `today + TTLGuard`, the event is **rejected**. Setting **`SystemTTL`**
+is *not* guarded — which is why it's the field to use for near-term deletion. CCD also
+rejects any callback (`AboutToStart`, `MidEvent`, `AboutToSubmit`) that alters TTL
+sub-field values.
 
-## 3. Register the case type with the disposer
+## 4. Register the case type with the disposer
 
 This is the step that's easy to forget — **TTL on a case does nothing on its own.** The
 `ccd-case-disposer` job only queries case types it has been explicitly told about:
@@ -150,11 +216,18 @@ To onboard:
 
 The Flux pod picks up changed env vars within ~15 minutes of the commit.
 
-## 4. (Optional) Add suspend / override caseworker events
+## 5. Suspend, reschedule or cancel a scheduled deletion
 
-If business rules require holding a case (legal hold, ongoing dispute) or bringing
-deletion forward, add a case event whose `AboutToSubmit` sets `TTL.Suspended = Yes` or
-`TTL.OverrideTTL`. Remember the guard applies to both.
+- **Reschedule** — set a new `SystemTTL` on a later event (no guard).
+- **Hold indefinitely** (legal hold, ongoing dispute) — set `Suspended = Yes`; `resolved_ttl`
+  becomes null and the case is never picked up. Resume by setting `Suspended = No`, but the
+  guard then applies — the resulting deletion date must be at least `TTLGuard` days out.
+- **`OverrideTTL`** — a caseworker override that beats `SystemTTL`. Also guarded, so it
+  can't bring deletion inside the guard window; prefer `SystemTTL` for near-term dates.
+
+In a decentralised service these are all just field writes in your event handler, exactly
+as in [step 2](#decentralised-services-set-it-in-your-handler). In a centralised service
+they come from the submitted event data (a callback cannot change TTL).
 
 ## What the disposer deletes
 
@@ -180,7 +253,11 @@ recursively) are *also* expired **and** in the same deletion list. If a non-expi
 or one whose type isn't registered for deletion — links to your case, neither is deleted.
 Keep this in mind when a case type links to long-lived cases.
 
-## Decentralised services
+## Decentralised services: cleaning up your own data
+
+Setting the TTL in a decentralised service is covered in
+[step 2](#decentralised-services-set-it-in-your-handler). This section is about the *other*
+half — what happens at disposal time.
 
 For [decentralised services](../explanation/decentralisation.md) the authoritative case
 data lives in the service's own database; CCD holds only a pointer row. CCD remains the
@@ -206,9 +283,10 @@ reference for the full responsibility split.
 
 ## Verify
 
-- After adding the field and an increment event, fire the event locally
-  ([cftlib](debug-with-cftlib.md)) and confirm the case's `resolved_ttl` is populated
-  (inspect via the data-store DB or the case-data API).
+- Run the event that sets `SystemTTL` locally ([cftlib](debug-with-cftlib.md)) and confirm
+  the case's `resolved_ttl` column matches the date you set (inspect via the data-store DB
+  or the case-data API). For a decentralised case, check it landed on the CCD pointer row,
+  not just in your own store.
 - In a non-prod environment, register the case type under `SIMULATED_CASE_TYPES` and
   confirm the disposer log lists the expected cases without deleting them.
 

@@ -7,7 +7,6 @@
         "-i",
         "--rm",
         "--env-file", ".claude/.atlassian.env",
-        "-e", "READ_ONLY_MODE=true",
         "ghcr.io/sooperset/mcp-atlassian:latest"
       ]
     },
