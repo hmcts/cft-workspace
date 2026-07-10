@@ -22,6 +22,16 @@ if ! getent hosts "$hostname" >/dev/null 2>&1; then
     echo "127.0.1.1 ${hostname}" | sudo tee -a /etc/hosts >/dev/null
 fi
 
+# cms-template local dev: the IDAM simulator advertises its docker-network
+# issuer (idam-simulator:5062) in its OIDC discovery doc, and openid-client
+# validates the discovered issuer against the configured one — so the host app
+# and Playwright browser must resolve `idam-simulator` too. --network=host
+# shares the host loopback, so point it at 127.0.0.1. See
+# apps/dtsse/cms-template docs/ticket-6 (amendment 4).
+if ! grep -q 'idam-simulator' /etc/hosts 2>/dev/null; then
+    echo '127.0.0.1 idam-simulator' | sudo tee -a /etc/hosts >/dev/null
+fi
+
 if [[ "$(uname -s)" == "Linux" && "$(uname -r)" != *linuxkit* ]]; then
     if ! grep -q '127.0.0.53' /etc/resolv.conf 2>/dev/null; then
         echo 'nameserver 127.0.0.53' | sudo tee /etc/resolv.conf >/dev/null

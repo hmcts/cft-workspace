@@ -132,6 +132,7 @@ repos:
 
   # ─── apps/dtsse — DTS shared engineering ───────────────────────────────
   apps/dtsse/expressjs-monorepo-template:  { url: hmcts/expressjs-monorepo-template }
+  apps/dtsse/cms-template:                 { url: hmcts/cms-template }
 
   # ─── apps/nfdiv — No-Fault Divorce service team ────────────────────────
   apps/nfdiv/nfdiv-frontend:             { url: hmcts/nfdiv-frontend }
@@ -142,6 +143,7 @@ repos:
   # ─── apps/pcs — Possession Claims Service team ─────────────────────────
   apps/pcs/pcs-api:                      { url: hmcts/pcs-api }
   apps/pcs/pcs-frontend:                 { url: hmcts/pcs-frontend }
+  apps/pcs/pcs-shared-infrastructure:    { url: hmcts/pcs-shared-infrastructure }
 
   # ─── apps/civil — Civil service team ───────────────────────────────────
   apps/civil/civil-camunda-bpmn-definition: { url: hmcts/civil-camunda-bpmn-definition }
