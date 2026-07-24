@@ -95,6 +95,9 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | explanation | What is CCD? | overview | `apps/ccd/docs/explanation/overview.md` |
 | ccd | explanation | Work Allocation Integration | work-allocation | `apps/ccd/docs/explanation/work-allocation-integration.md` |
 | ccd | explanation | Work Basket | work-basket | `apps/ccd/docs/explanation/work-basket.md` |
+| cuiys | how-to | Onboard a Service to CUIYS | onboarding | `apps/cuiys/docs/how-to/onboard-a-service.md` |
+| cuiys | reference | CUIYS Payload API | payload-api | `apps/cuiys/docs/reference/payload-api.md` |
+| cuiys | explanation | CUIYS Overview | overview | `apps/cuiys/docs/explanation/overview.md` |
 | em | how-to | Add Annotations | annotation | `apps/em/docs/how-to/add-annotations.md` |
 | em | how-to | Embed Media Viewer | media-viewer | `apps/em/docs/how-to/embed-media-viewer.md` |
 | em | how-to | Local Development Cftlib | architecture | `apps/em/docs/how-to/local-development-cftlib.md` |
