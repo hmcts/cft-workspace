@@ -15,7 +15,8 @@
         "files.autoSave": "onFocusChange",
         "terminal.integrated.defaultProfile.linux": "zsh",
         "explorer.excludeGitIgnore": false,
-        "git.repositoryScanMaxDepth": 4,
+        "git.repositoryScanMaxDepth": 5,
+        "git.detectSubmodulesLimit": 40,
         "files.exclude": {
           "**/node_modules": true,
           "**/build": true,
