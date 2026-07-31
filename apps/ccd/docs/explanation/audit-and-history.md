@@ -19,6 +19,8 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPI.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceClient.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/service/DecentralisedAuditEventLoader.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseAuditEventRepository.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java
 status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
@@ -163,6 +165,8 @@ For case types routed to an external persistence service, `DecentralisedAuditEve
 
 `ServicePersistenceClient.getCaseHistory()` and `getCaseHistoryEvent()` validate the returned case reference and case type before returning the `AuditEvent` (`ServicePersistenceClient.java:112-124`). The external service is responsible for storing and returning the same fields as the local `case_event` table.
 
+On the write path, CCD inserts **nothing** into its own `case_event` table for a decentralised case type. `CaseAuditEventRepository.set()` is the only insert path (`CaseAuditEventRepository.java:38-42`) and both callers sit in the centralised branch of an `isDecentralised` check (`SubmitCaseTransaction.java:289`, `CreateCaseEventService.java:586`). The audit row is written instead by the SDK's `AuditEventService.saveAuditRecord`, into a `ccd.case_event` table in the *service's* database — which is what makes the atomicity above hold for decentralised services too, since the outbox insert happens in that same transaction. See [`explanation/decentralisation.md`](decentralisation.md) for the full storage layout.
+
 ## What CCD does *not* audit
 
 Confluence "Log and Audit" (id 1252000857) describes audit gaps that aren't visible in the `case_event` table:
@@ -193,4 +197,4 @@ CCD is the designated **master for business audit of case-related data** across 
 ## See also
 
 - [`explanation/event-lifecycle.md`](event-lifecycle.md) — how events are validated and persisted before the audit row is written
-- [`explanation/decentralised-ccd.md`](decentralised-ccd.md) — remote persistence and why history fetches differ for decentralised case types
+- [`explanation/decentralisation.md`](decentralisation.md) — remote persistence, why history fetches differ for decentralised case types, and where the audit rows actually live

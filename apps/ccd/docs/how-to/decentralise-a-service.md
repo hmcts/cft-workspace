@@ -9,6 +9,8 @@ sources:
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventPayload.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java
@@ -169,11 +171,13 @@ The SDK creates the following tables in the `ccd` schema (among others):
 | `case_data` | Service-local store of case data, state, supplementary data |
 | `case_event` | Audit trail of all events including `idempotency_key` (UUID) |
 | `message_queue_candidates` | Transactional outbox for Work Allocation / task management messages |
-| `es_queue` | Queue for Elasticsearch indexing (populated by trigger on `case_event` insert) |
+| `es_queue` | Queue for Elasticsearch indexing, keyed `(reference, case_revision)`; populated by a trigger on `case_data` insert-or-update |
 
-No explicit wiring needed unless you declare your own `FlywayMigrationStrategy` bean (the
-SDK's won't auto-run due to `@ConditionalOnMissingBean` -- invoke `SdkFlywayMigrationStrategy`
-manually in that case). Ensure your migrations do not conflict with schema `ccd`.
+No explicit wiring needed unless you declare your own `FlywayMigrationStrategy` bean. The SDK's
+`orderedFlywayMigrationStrategy` is `@ConditionalOnMissingBean`, so yours replaces it entirely
+and the SDK migrations stop running -- in that case your strategy must load
+`classpath:dataruntime-db/migration` against schema `ccd` itself, before your own migrations.
+Ensure your migrations do not conflict with schema `ccd`.
 
 ---
 
@@ -231,26 +235,34 @@ builder.setCallbackHost(System.getenv().getOrDefault("CASE_API_URL", "http://loc
 
 ### 7. Configure message publishing (Work Allocation)
 
-The SDK's `MessagePublisher` inserts messages into `ccd.message_queue_candidates` within the
-same transaction as the case event (Transactional Outbox Pattern). Only events with
-`publish = true` in the CCD definition emit messages. Enable with:
+This step needs **no configuration** — the SDK wires it up automatically. `MessagePublisher`
+inserts into `ccd.message_queue_candidates` from within `AuditEventService.saveAuditRecord`,
+so the outbox row shares the transaction with the case event and your domain write
+(Transactional Outbox Pattern).
 
-```yaml
-ccd.messaging.enabled: true
-ccd.messaging.topicName: ${CCD_MESSAGES_TOPIC_NAME:ccd-case-events}
-```
+You do need to mark each event you want published with `publish = true` in the CCD definition;
+otherwise `MessagePublisher` logs "not marked for publishing" and inserts nothing
+(`MessagePublisher.java:64-68`). This is the only thing you control.
+
+CCD emits no message of its own for a decentralised event — its centralised publish call sits
+inside the audit-event method that the decentralised branch skips
+(`ccd-data-store-api:CreateCaseEventService.java:587`). If this outbox row isn't written,
+Work Allocation never hears about the event.
 
 CCD's existing message publisher service can be reused -- the SDK writes to the same
 `message_queue_candidates` schema that the publisher reads from.
 
-<!-- source: ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java:48-96 -->
+<!-- source: ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java:47-96 -->
+<!-- source: ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java:195-213 -->
 
 ---
 
 ### 8. Configure Elasticsearch indexing
 
 Provision a **dedicated Logstash instance** that reads from the SDK's `ccd.es_queue` table
-(populated by a PostgreSQL trigger on `case_event` insert) into CCD's central ES cluster.
+into CCD's central ES cluster. The queue is revision-driven: a trigger on `ccd.case_data`
+insert-or-update enqueues `(reference, case_revision)`, deduplicating via
+`on conflict do nothing` (`dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql`).
 Use ES **external versioning** and start version numbers at **v > 1** so your writes take
 precedence over any stale centralised Logstash indexing.
 

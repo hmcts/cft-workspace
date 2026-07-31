@@ -16,6 +16,14 @@ sources:
   - ccd-data-store-api:src/main/resources/application.properties
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getevents/AuditEventLoader.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseAuditEventRepository.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseDataRepository.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/LegacyCallbackSubmissionHandler.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0001.sql
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java
@@ -156,8 +164,10 @@ sequenceDiagram
     DataStore->>DataStore: validate token (skip about_to_submit & submitted callbacks)
     DataStore->>Service: POST /ccd-persistence/cases\n(Idempotency-Key, Authorization headers)
     Service->>SVC_DB: INSERT / UPDATE domain tables
+    Service->>SVC_DB: INSERT ccd.case_event audit row
+    Service->>SVC_DB: INSERT ccd.message_queue_candidates (outbox)
     Service-->>DataStore: DecentralisedSubmitEventResponse
-    DataStore->>CCD_DB: INSERT case_event audit row (reference only)
+    DataStore->>CCD_DB: UPDATE pointer resolvedTTL / case links (if revision is newer)
     DataStore-->>Client: 201 CaseDetails
 ```
 
@@ -290,6 +300,28 @@ Decentralised case types skip `aboutToSubmit` and `submitted` HTTP callbacks ent
 
 Audit history for decentralised cases is loaded by `DecentralisedAuditEventLoader` (rather than `LocalAuditEventLoader`), which calls `GET /ccd-persistence/cases/{ref}/history` on the service.
 
+## Where event data lives
+
+For a decentralised case type, CCD writes **no rows at all** to its own `case_event` table. The audit trail lives in the service's database, in a `ccd` schema the SDK provisions alongside the service's own domain tables.
+
+`CaseAuditEventRepository.set()` is the only insert path into CCD's `case_event` (`CaseAuditEventRepository.java:38-42`), and both of its callers sit inside the centralised branch of an `isDecentralised` check — `SubmitCaseTransaction.java:289` (reached from `:172`, `else` of `:165`) and `CreateCaseEventService.java:586` (reached from `:300` and `:410`, `else` of `:275` and `:393`). The decentralised branches attach documents, call `submitDecentralisedEvent`, and stop.
+
+Three distinct things get called "event data" in this design, and they land in different places:
+
+| What | Where | Written by |
+|---|---|---|
+| Domain tables (the source of truth) | Service DB, service's own schema | the event's `Submit<T,S>` handler |
+| `ccd.case_event.data` — CCD-shaped snapshot of the case at that event | Service DB, `ccd` schema | `AuditEventService.saveAuditRecord` |
+| `ccd.case_data.data` — legacy JSON blob | Service DB, `ccd` schema | only on the legacy-callback path (see below) |
+| Case pointer row (`data = {}`) | CCD DB | `CasePointerRepository` |
+
+The SDK's Flyway migrations create `ccd.case_data`, `ccd.case_event`, `case_event_audit`, `es_queue`, `submitted_callback_queue`, and `message_queue_candidates` in the **same datasource** as the service's domain tables (`dataruntime-db/migration/V0001.sql`; ordering enforced by `DecentralisedDataConfiguration.java:29-49`). That co-location is what allows a single transaction to cover the domain write, the audit row, and the outbox insert (`CaseSubmissionService.java:66-95`).
+
+Two details worth knowing:
+
+- The audit snapshot is **not** the payload CCD sent in. `CaseSubmissionService.java:84` re-reads the case through `caseProjectionService.load(...)` *after* the handler has written, and stores that. So `ccd.case_event.data` is your `CaseView` projection of your own committed state.
+- `ccd.case_data.data` stays `{}` for `Submit<T,S>` events. `CaseDataRepository.upsertCase` only touches the `data` column when `has_data` is true (`CaseDataRepository.java:148,150`), and `DecentralisedSubmissionHandler` passes `Optional.empty()`. Only `LegacyCallbackSubmissionHandler.java:82` supplies a blob, snapshotted from the about-to-submit callback response.
+
 ## Implementing a decentralised service with the SDK
 
 The `ccd-config-generator` SDK's `decentralised-runtime` module provides everything a service needs.
@@ -389,9 +421,13 @@ To prevent the centralised and service-owned indexers from racing each other, tw
 
 Decentralised services must continue to publish event messages so downstream consumers (task management / work allocation, ccd-message-publisher) keep getting their at-least-once delivery.
 
+This is **mandatory, not optional**, and for the same reason the audit row moves: CCD's centralised `messageService.handleMessage(...)` call sits at `CreateCaseEventService.java:587`, immediately after the `case_event` insert and inside the same `saveAuditEventForCaseDetails` method that the decentralised branch skips. So CCD emits nothing for a decentralised event. If the service doesn't write its own outbox row, downstream consumers simply never hear about the event.
+
 The pattern: during event submission the service performs **two writes inside one atomic transaction** — the case-data write *and* an insert into a local `message_queue_candidates` table (mirroring CCD's existing transactional-outbox table). A separate poller drains the outbox onto the message bus.
 
-CCD's existing `ccd-message-publisher` service can be reused and re-deployed by the decentralised service to drain its local outbox. <!-- CONFLUENCE-ONLY: this re-use pattern is described in the LLD; the SDK's outbox wiring is partially confirmed by `decentralised-runtime`'s migrations under `dataruntime-db/migration` but the publisher reuse claim wasn't directly verified in code. -->
+The SDK does this for you. `MessagePublisher.publishEvent()` inserts into `ccd.message_queue_candidates` (`MessagePublisher.java:84-95`) and is called from inside `AuditEventService.saveAuditRecord` (`AuditEventService.java:195-213`) — same transaction as the audit row and the domain write. Two conditions gate it: the bean is `@ConditionalOnBean(MessagingProperties.class)`, and the event must be marked `publish = true` in the CCD definition (`MessagePublisher.java:64-68`), otherwise it logs and returns. The table is created by `dataruntime-db/migration/V0004.sql` with the same shape CCD uses, including the `published` timestamp column the poller stamps.
+
+CCD's existing `ccd-message-publisher` service can be reused and re-deployed by the decentralised service to drain its local outbox. <!-- CONFLUENCE-ONLY: the publisher-reuse deployment pattern is from the LLD; the SDK's outbox write is confirmed in MessagePublisher.java but which process drains it wasn't verified in code. -->
 
 ## Preview environment support
 

@@ -23,6 +23,8 @@ sources:
   - ccd-message-publisher:src/main/java/uk/gov/hmcts/ccd/config/CcdMessageConverter.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/DataBlockGenerator.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/DefinitionBlockGenerator.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_MultiplePages/CaseEvent.json
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/PublishedEvent.java
 examples_extracted_from:
@@ -206,10 +208,9 @@ Key environment variables:
 
 Under [decentralised data persistence](decentralisation.md), the source of truth for a case's data moves out of the data store and into the owning service. Message publishing moves with it, but the mechanism is deliberately unchanged:
 
-<!-- CONFLUENCE-ONLY: the decentralised publishing model is described in the "Decentralised data persistence" LLD (RCCD 1875854371); it is design-level and not yet fully reflected in the cited data-store source on this page. -->
-
-- The decentralised service runs the **same Transactional Outbox Pattern**: when it persists a case event it inserts a row into **its own** `message_queue_candidates` table in the same atomic transaction.
-- **`ccd-message-publisher` is reused as-is** — a decentralised service deploys its own instance pointed at its own database. There is no code fork; the publisher is database-agnostic and only needs JDBC access plus the Service Bus connection string.
+- The decentralised service runs the **same Transactional Outbox Pattern**: when it persists a case event it inserts a row into **its own** `ccd.message_queue_candidates` table in the same atomic transaction. This is implemented in the SDK, not left to the service — `MessagePublisher.publishEvent()` does the insert (`MessagePublisher.java:84-95`) and is called from `AuditEventService.saveAuditRecord` (`AuditEventService.java:195-213`), inside the submission transaction. The message body is built with CCD's own `DataBlockGenerator` / `DefinitionBlockGenerator`, so the payload shape matches centralised publishing.
+- The publish decision uses the same per-event `publish` flag as centralised CCD (`MessagePublisher.java:64-68`).
+- **`ccd-message-publisher` is reused as-is** — a decentralised service deploys its own instance pointed at its own database. There is no code fork; the publisher is database-agnostic and only needs JDBC access plus the Service Bus connection string. <!-- CONFLUENCE-ONLY: the reuse/deployment model is from the "Decentralised data persistence" LLD (RCCD 1875854371); the SDK-side outbox write is confirmed in source but which process drains the table was not verified. -->
 - For decentralised case types the data store **suppresses** the `AboutToSubmit` and `Submitted` callbacks and delegates persistence via a single `POST /ccd-persistence/cases` call to the owning service, so the outbox insert happens in the service's transaction rather than CCD's. The at-least-once guarantee to downstream consumers (work allocation et al.) is preserved end-to-end.
 
 ## Downstream consumers
