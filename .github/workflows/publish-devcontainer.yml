@@ -41,3 +41,4 @@ jobs:
           dockerfile: .devcontainer/Dockerfile
           context: .devcontainer
           image-tags: ${{ steps.tags.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
