@@ -18,6 +18,10 @@ on:
         description: 'Report drift only — do not let Claude edit or push'
         type: boolean
         default: false
+      verbose:
+        description: "Log Claude's full output (this repo is public — tool results become world-readable)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -72,11 +76,12 @@ jobs:
         id: check
         run: |
           set -uo pipefail
-          # The clones are blobless, so any accidental blob read would fetch
-          # per-file over the network. Fail loudly instead. GITHUB_ENV so the
-          # Claude step inherits it too.
+          # Detection reads only commits and trees, which the blobless clones
+          # carry in full — so a blob read here means a regression (e.g. back to
+          # `cat-file -e`) that would silently fetch per file. Fail loudly.
+          # Step-local on purpose: the Claude step below MUST be able to fetch
+          # blobs, because reading the changed source is the whole job.
           export GIT_NO_LAZY_FETCH=1
-          echo 'GIT_NO_LAZY_FETCH=1' >> "$GITHUB_ENV"
 
           # `|| true` because doc-drift exits non-zero when it FINDS drift,
           # which is the case this whole job exists to act on. The default
@@ -129,13 +134,18 @@ jobs:
         if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
         uses: anthropics/claude-code-action@v1
         env:
-          GIT_NO_LAZY_FETCH: '1'
           ANTHROPIC_DEFAULT_OPUS_MODEL: 'eu.anthropic.claude-opus-5'
           ANTHROPIC_DEFAULT_SONNET_MODEL: 'eu.anthropic.claude-sonnet-5'
           ANTHROPIC_DEFAULT_HAIKU_MODEL: 'eu.anthropic.claude-haiku-4-5-20251001-v1:0'
         with:
           use_bedrock: "true"
           github_token: ${{ steps.app-token.outputs.token }}
+          # Off by default: full output includes tool results, and this repo's
+          # logs are public. Turn it on via the `verbose` dispatch input when a
+          # run needs explaining — without it the action logs only init and
+          # result JSON, so a no-op gives no way to tell a reasoned decision
+          # from a broken toolset.
+          show_full_output: ${{ inputs.verbose == true }}
           prompt: |
             The weekly doc-drift check found ${{ steps.check.outputs.affected }}
             documentation page(s) whose cited sources have moved. Fix them, then
@@ -145,9 +155,7 @@ jobs:
 
                 ./scripts/doc-drift --mode=source
 
-            to see the report. (GIT_NO_LAZY_FETCH=1 is already exported for you —
-            don't prefix commands with it, and don't unset it.) Work through the
-            affected pages ONE AT A TIME.
+            to see the report. Work through the affected pages ONE AT A TIME.
 
             For each page reported `stale` — a cited file changed since the page
             was written:
@@ -157,7 +165,9 @@ jobs:
                recorded SHA and the current one:
                    git -C <clone-path> diff <old-sha>..<new-sha> -- <path>
                The clones are blobless and have no working tree, so read file
-               contents with `git show <ref>:<path>`, not the Read tool.
+               contents with `git show <ref>:<path>`, not the Read tool. Blobs
+               are fetched from the remote on first access, so the first read of
+               a file may pause briefly — that's normal, not an error.
             3. Decide whether the diff invalidates anything the PAGE claims. Most
                upstream commits change nothing a doc asserts — a refactor, a test,
                a formatting pass. Only edit prose that is now WRONG.

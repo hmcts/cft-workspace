@@ -41,8 +41,13 @@ CI is the authority here: it clones fresh every week.
 ## The weekly workflow
 
 `.github/workflows/doc-drift.yml` runs 06:00 UTC Monday, and on demand via
-**Actions → Weekly doc drift → Run workflow** (tick `dry_run` to report without
-letting Claude edit or push).
+**Actions → Weekly doc drift → Run workflow**. Two dispatch inputs:
+
+- `dry_run` — report drift without letting Claude edit or push.
+- `verbose` — log Claude's full output, including its reasoning. Off by default
+  because tool results land in this public repo's logs; turn it on when a run
+  needs explaining, since otherwise the action logs only its init and result
+  JSON and a no-op run is indistinguishable from a broken one.
 
 It clones the cited repos, runs the source-mode check, and if anything is
 stale or broken, hands the report to Claude to reconcile the prose against the
@@ -74,8 +79,24 @@ Two consequences worth knowing:
 `git cat-file -e` for its existence check. They answer the same question, but
 `cat-file` needs the blob — which a blobless clone doesn't have, so it would
 trigger a per-file lazy fetch or, offline, wrongly report every citation
-broken. The workflow sets `GIT_NO_LAZY_FETCH=1` so any such regression fails
+broken. The check step sets `GIT_NO_LAZY_FETCH=1` so any such regression fails
 loudly instead of silently fetching 3 GB.
+
+That guard is **step-local, and must stay that way.** Detection needs only
+commits and trees; the *fix* step needs blobs, because `git show <ref>:<path>`
+and `git diff <old>..<new>` are how Claude reads what actually changed. Setting
+`GIT_NO_LAZY_FETCH` job-wide (via `GITHUB_ENV` or the Claude step's `env:`)
+breaks that with a confusing error:
+
+```
+$ GIT_NO_LAZY_FETCH=1 git show origin/master:src/main/resources/META-INF/kmodule.xml
+fatal: bad object origin/master:src/main/resources/META-INF/kmodule.xml
+```
+
+The failure mode is nasty: drift is still detected and reported correctly, so the
+run goes green, but Claude can't read a single line of any changed source and
+correctly declines to invent prose — a silent, expensive no-op. Lazy fetching
+only the files Claude actually diffs costs well under a second each.
 
 ### Required setup
 
