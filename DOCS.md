@@ -193,6 +193,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Helm chart | helm-chart | `docs/how-to/new-component/helm-chart.md` |
 | workspace | how-to | How to add a repo | add-a-repo | `docs/how-to/add-a-repo.md` |
 | workspace | how-to | How to get the test URL for a PR build | pr-url | `docs/how-to/pr-url.md` |
+| workspace | how-to | How to run and maintain the doc-drift pipeline | doc-drift-pipeline | `docs/how-to/doc-drift-pipeline.md` |
 | workspace | how-to | Infrastructure as Code | infrastructure-as-code | `docs/how-to/new-component/infrastructure-as-code.md` |
 | workspace | how-to | Java | publish-java-library | `docs/how-to/common-pipeline/publish-java-library.md` |
 | workspace | how-to | Load balancer configuration | load-balancer-configuration | `docs/how-to/path-to-live/load-balancer-configuration.md` |

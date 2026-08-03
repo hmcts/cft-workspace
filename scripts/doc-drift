@@ -175,7 +175,13 @@ citation_current_sha() {
 
     local ref
     for ref in "${refs[@]}"; do
-        if git -C "$repo_root" cat-file -e "$ref:$CIT_PATH" 2>/dev/null; then
+        # `rev-parse --verify`, not `cat-file -e`: both answer "does this path
+        # exist on this ref", but cat-file needs the BLOB, which a blobless
+        # clone (--filter=blob:none, as scripts/ci-clone-cited makes) doesn't
+        # have — it would either trigger a per-file lazy fetch or, offline,
+        # wrongly report every citation broken. rev-parse resolves from the
+        # tree alone, which blobless clones do carry in full.
+        if git -C "$repo_root" rev-parse --verify --quiet "$ref:$CIT_PATH" >/dev/null 2>&1; then
             git -C "$repo_root" log -1 --format=%H "$ref" -- "$CIT_PATH" 2>/dev/null
             return 0
         fi

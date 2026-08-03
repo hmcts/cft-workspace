@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# Clone the repos cited by doc frontmatter, shaped for CI.
+#
+# Usage:
+#   scripts/ci-clone-cited              # clone every cited repo
+#   scripts/ci-clone-cited -j12         # parallelism (default: 8)
+#   scripts/ci-clone-cited --list       # print what would be cloned, clone nothing
+#
+# Why this exists rather than reusing scripts/bootstrap:
+#
+#   * HTTPS, not SSH. A runner has no deploy key. Set GITHUB_TOKEN to reach
+#     private repos; public ones clone with no credential. bootstrap hard-fails
+#     if `ssh -T git@github.com` doesn't authenticate.
+#   * Only the repos a doc page actually cites (~72 of the manifest's 222), so
+#     we don't pay for history nobody checks.
+#   * --filter=blob:none --no-checkout. scripts/doc-drift only ever asks
+#     "what commit last touched this path" (`git log -1 -- <path>`) and "does
+#     this path exist on this ref" (`git rev-parse --verify <ref>:<path>`).
+#     Both resolve from commit and tree objects; neither needs file contents.
+#     Verified: per-path SHAs from a blobless clone match a full clone exactly.
+#
+#     A --depth=1 clone would be smaller still but is WRONG here — with no
+#     history `git log -1 -- <path>` returns the tip commit for every path, so
+#     every citation would report stale at once.
+#
+# Skips any repo already on disk, so it's safe to run in a populated workspace.
+set -uo pipefail
+
+source "$(dirname "$0")/lib/_common.sh"
+set +e   # _common.sh sets -e; we want to survive individual clone failures
+
+JOBS=8
+LIST_ONLY=0
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -j)        JOBS="$2"; shift 2 ;;
+        -j*)       JOBS="${1#-j}"; shift ;;
+        --list)    LIST_ONLY=1; shift ;;
+        -h|--help) sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *)         die "unknown argument: $1" ;;
+    esac
+done
+
+cd "$WORKSPACE_ROOT" || die "cannot cd to $WORKSPACE_ROOT"
+require_yq
+command -v git >/dev/null || die "git not found"
+
+# --- 1. Which repo slugs do the docs cite? ---------------------------------
+# Mirrors doc-drift's page discovery and citation grammar
+# (`<slug>[@<branch>]:<path>[@<sha>]`). A citation with no `<slug>:` prefix is
+# workspace-local, so it needs no clone — hence the `grep ':'`.
+#
+# The per-level `-d` guard matters: a glob over a missing tutorials/ dir would
+# otherwise feed a literal unexpanded pattern into find.
+pages=$(
+    for root in docs apps/*/docs; do
+        [[ -d "$root" ]] || continue
+        for level in tutorials how-to reference explanation; do
+            [[ -d "$root/$level" ]] || continue
+            find "$root/$level" -type f -name '*.md' ! -name 'README.md' ! -path '*/.work/*'
+        done
+    done
+)
+
+cited=$(
+    while IFS= read -r page; do
+        [[ -n "$page" ]] || continue
+        fm_end=$(awk 'NR>1 && /^---[[:space:]]*$/{print NR; exit}' "$page")
+        [[ -n "$fm_end" ]] || continue
+        sed -n "2,$((fm_end - 1))p" "$page" | yq -r '(.sources // [])[]' 2>/dev/null
+    done <<< "$pages" | grep ':' | sed 's/:.*//; s/@.*//' | sort -u
+)
+
+[[ -n "$cited" ]] || die "no cited repos found — has doc frontmatter changed shape?"
+
+# --- 2. Resolve each slug to its manifest path + URL -----------------------
+# The manifest keys on workspace path (`apps/ccd/ccd-data-store-api`). A
+# citation may name a repo either way, and doc-drift's resolve_repo_root
+# accepts both — bare name (the common case) or full workspace path (e.g.
+# `platops/cnp-flux-config:apps/…/prod.yaml`). Match both, or the full-path
+# citations get reported missing here and broken by doc-drift later.
+manifest=$(manifest_tsv) || die "could not read $MANIFEST"
+
+targets=$(
+    printf '%s\n' "$manifest" | awk -F'\t' -v slugs="$cited" '
+        BEGIN { n = split(slugs, a, "\n"); for (i = 1; i <= n; i++) if (a[i] != "") want[a[i]] = 1 }
+        {
+            name = $1; sub(/.*\//, "", name)
+            # Both spellings can appear for the same repo across different
+            # pages, so mark each independently rather than picking one —
+            # otherwise the unmarked spelling is falsely reported missing.
+            hit = 0
+            if ($1 in want)   { seen[$1] = 1;   hit = 1 }   # full workspace path
+            if (name in want) { seen[name] = 1; hit = 1 }   # bare repo name
+            if (hit) print $1 "\t" $2
+        }
+        END { for (s in want) if (!(s in seen)) print "MISSING\t" s > "/dev/stderr" }
+    ' 2>/tmp/ci-clone-missing.$$
+)
+
+if [[ -s /tmp/ci-clone-missing.$$ ]]; then
+    warn "cited but absent from workspace.yaml (skipped — their citations will report broken):"
+    sed 's/^MISSING\t/  /' /tmp/ci-clone-missing.$$ >&2
+fi
+rm -f /tmp/ci-clone-missing.$$
+
+total=$(printf '%s\n' "$targets" | grep -c . )
+
+if (( LIST_ONLY )); then
+    printf '%s\n' "$targets" | grep . | awk -F'\t' '{printf "%-58s %s\n", $1, $2}'
+    printf '\n%s cited repos\n' "$total"
+    exit 0
+fi
+
+# --- 3. Clone --------------------------------------------------------------
+info "cloning $total cited repos (blobless, no checkout), -j$JOBS"
+
+clone_one() {
+    local path="$1" ssh_url="$2"
+    if [[ -d "$path/.git" ]]; then
+        printf 'SKIP %s (already present)\n' "$path"
+        return 0
+    fi
+
+    # manifest_tsv emits git@github.com: URLs (SSH is the workspace default).
+    # Rewrite to HTTPS for CI, injecting the token so private repos resolve.
+    local slug="${ssh_url#git@github.com:}"; slug="${slug%.git}"
+    local public_url="https://github.com/${slug}.git"
+    local clone_url="$public_url"
+    [[ -n "${GITHUB_TOKEN:-}" ]] && clone_url="https://x-access-token:${GITHUB_TOKEN}@github.com/${slug}.git"
+
+    mkdir -p "$(dirname "$path")"
+    local errfile; errfile=$(mktemp)
+    if git clone --filter=blob:none --no-checkout --quiet "$clone_url" "$path" 2>"$errfile"; then
+        # Don't leave the token in .git/config for later steps to leak.
+        git -C "$path" remote set-url origin "$public_url"
+        printf 'OK   %s\n' "$path"
+        rm -f "$errfile"
+        return 0
+    fi
+
+    # A token that can't see this repo doesn't stop a PUBLIC clone — GitHub
+    # falls back to anonymous access, so an under-installed app costs nothing
+    # on the ~69 public repos. Only a private repo hard-fails here, and only
+    # its own citations are affected, so report it and keep going rather than
+    # failing the whole run: a partial check still catches real drift
+    # everywhere else.
+    rm -rf "$path"
+    printf 'MISS %s — %s\n' "$path" "$(tr '\n' ' ' <"$errfile" | tail -c 160)"
+    rm -f "$errfile"
+    return 0
+}
+export -f clone_one
+
+results=$(mktemp)
+# -d '\n' keeps the tab-separated pair intact as one argument; bash -c then
+# splits it. Piping through xargs -I{} would mangle the tab.
+printf '%s\n' "$targets" | grep . \
+    | xargs -d '\n' -P "$JOBS" -I{} bash -c 'IFS=$'"'"'\t'"'"' read -r p u <<< "$1"; clone_one "$p" "$u"' _ {} \
+    | tee "$results"
+
+unreachable=$(grep -c '^MISS' "$results")
+cloned=$(grep -c '^OK  ' "$results")
+skipped=$(grep -c '^SKIP' "$results")
+rm -f "$results"
+
+printf '\n'
+ok "$cloned cloned, $skipped skipped, $unreachable unreachable"
+if (( unreachable > 0 )); then
+    warn "$unreachable repo(s) could not be cloned — doc-drift will report their"
+    warn "citations broken, tagged '(repo not cloned)' so they're distinguishable"
+    warn "from genuinely deleted files. Grant the token read access to fix."
+fi
+if (( cloned + skipped == 0 )); then
+    die "nothing cloned at all — check network/credentials before trusting any drift report"
+fi

@@ -1,0 +1,223 @@
+name: Weekly doc drift
+
+# Docs under docs/ and apps/*/docs/ cite source files in other HMCTS repos and
+# pin the SHA each claim was written against. Upstream moves; the pins don't.
+# This job runs weekly, finds the pages whose cited sources have changed, has
+# Claude re-read the source and correct the prose, then pushes to master.
+#
+# Setup this workflow needs (see docs/how-to/doc-drift-pipeline.md):
+#   secrets.CLAUDE_CODE_APP_ID / CLAUDE_CODE_PRIVATE_KEY — hmcts org secrets,
+#     already available here. The Claude app does need installing on this repo
+#     for the token to be mintable at all. Reaching the OTHER cited repos is
+#     mostly free: 69 of the 70 are public and clone anonymously even with a
+#     token that can't see them. Only the private one (rpx-xui-dev-utils) needs
+#     the app installed to be checked, and ci-clone-cited skips it if not.
+#   this repo added to the trust policy of the shared HMCTSClaudeGitHubActionsRole.
+
+on:
+  schedule:
+    # 06:00 UTC Monday — before the working week, so a bad push is noticed.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Report drift only — do not let Claude edit or push'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doc-drift
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.CLAUDE_CODE_APP_ID }}
+          private-key: ${{ secrets.CLAUDE_CODE_PRIVATE_KEY }}
+          # The cited repos live alongside this one in the hmcts org, and the
+          # token must reach all of them.
+          owner: ${{ github.repository_owner }}
+
+      - name: Checkout workspace
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          # Full history: the push at the end needs a real branch, and
+          # `--record` amends tracked files.
+          fetch-depth: 0
+
+      - name: Install mikefarah/yq
+        run: |
+          set -euo pipefail
+          # ubuntu-latest ships yq already, but confirm it's the Go one —
+          # scripts/lib/_common.sh hard-fails on the python jq wrapper.
+          if yq --version 2>&1 | grep -q mikefarah; then
+            yq --version
+          else
+            sudo wget -qO /usr/local/bin/yq \
+              https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+            sudo chmod +x /usr/local/bin/yq
+            yq --version
+          fi
+
+      - name: Clone cited repos
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: ./scripts/ci-clone-cited -j10
+
+      - name: Check for drift
+        id: check
+        run: |
+          set -uo pipefail
+          # Never lazily fetch a blob: the clones are --filter=blob:none, and a
+          # silent per-file fetch would turn a 20-second check into a very long
+          # one. doc-drift only needs commits and trees. Via GITHUB_ENV so it
+          # also reaches the Claude step's shell, not just this one.
+          export GIT_NO_LAZY_FETCH=1
+          echo 'GIT_NO_LAZY_FETCH=1' >> "$GITHUB_ENV"
+
+          ./scripts/doc-drift --mode=source 2>&1 | tee /tmp/drift.txt
+          {
+            echo '## Source-citation drift'
+            echo '```'
+            cat /tmp/drift.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # `stale` = a cited file changed since the page was written.
+          # `broken` = a cited file no longer exists on its ref (moved, renamed,
+          # deleted, or a merged feature branch) — also needs a human-grade fix.
+          affected=$(grep -cE '^  [^ ]+\.md:' /tmp/drift.txt)
+          echo "affected=$affected" >> "$GITHUB_OUTPUT"
+          if (( affected > 0 )); then
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$affected page(s) need attention"
+          else
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::no drift"
+          fi
+
+      - name: Configure git
+        if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        run: |
+          git config user.name "claude-code-bot[bot]"
+          git config user.email "claude-code-bot[bot]@users.noreply.github.com"
+
+      - name: Configure AWS credentials
+        if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          # Shared HMCTS Bedrock role, same one cath-service and
+          # expressjs-monorepo-template use. Not a secret — an ARN is just an
+          # account ID plus a role name; the role's trust policy is what
+          # decides which repos can assume it, which is why this repo has to be
+          # added there before the job can authenticate.
+          role-to-assume: arn:aws:iam::313941174580:role/HMCTSClaudeGitHubActionsRole
+          aws-region: eu-west-1
+
+      - name: Fix drift with Claude
+        if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        uses: anthropics/claude-code-action@v1
+        env:
+          GIT_NO_LAZY_FETCH: '1'
+          ANTHROPIC_DEFAULT_OPUS_MODEL: 'eu.anthropic.claude-opus-5'
+          ANTHROPIC_DEFAULT_SONNET_MODEL: 'eu.anthropic.claude-sonnet-5'
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: 'eu.anthropic.claude-haiku-4-5-20251001-v1:0'
+        with:
+          use_bedrock: "true"
+          github_token: ${{ steps.app-token.outputs.token }}
+          prompt: |
+            The weekly doc-drift check found ${{ steps.check.outputs.affected }}
+            documentation page(s) whose cited sources have moved. Fix them, then
+            commit and push to master.
+
+            Read @CLAUDE.md first. Then run:
+
+                ./scripts/doc-drift --mode=source
+
+            to see the report. (GIT_NO_LAZY_FETCH=1 is already exported for you —
+            don't prefix commands with it, and don't unset it.) Work through the
+            affected pages ONE AT A TIME.
+
+            For each page reported `stale` — a cited file changed since the page
+            was written:
+
+            1. Read the page.
+            2. For each changed citation, diff the cited file between the
+               recorded SHA and the current one:
+                   git -C <clone-path> diff <old-sha>..<new-sha> -- <path>
+               The clones are blobless and have no working tree, so read file
+               contents with `git show <ref>:<path>`, not the Read tool.
+            3. Decide whether the diff invalidates anything the PAGE claims. Most
+               upstream commits change nothing a doc asserts — a refactor, a test,
+               a formatting pass. Only edit prose that is now WRONG.
+            4. Where the page is wrong, correct it against the current source.
+
+            For each page reported `broken` — a cited file no longer exists on its
+            ref: find where it went (`git log --diff-filter=D`, or search the clone
+            for the class/symbol name). If it moved, update the citation path and
+            check the prose still holds. If it was deleted outright, the feature is
+            probably gone: fix the prose and drop the citation. If it was on a
+            feature branch that has since merged, drop the `@branch` pin.
+
+            EXCEPTION: a broken citation tagged `(repo not cloned)` is NOT drift.
+            It means the token couldn't clone that repo — a permissions gap, not a
+            deleted file. Leave those pages completely alone: do not edit the prose,
+            do not touch the citation. Note them in the commit body if you commit
+            anything else.
+
+            When every page is handled, re-pin the SHAs and verify:
+
+                ./scripts/doc-drift --record
+                ./scripts/doc-drift --mode=source     # expect 0 stale, 0 broken
+                ./scripts/docs-index
+
+            Then commit and push to master:
+
+                git add -A docs apps/*/docs DOCS.md
+                git commit -m "<summary of what actually changed>"
+                git push origin HEAD:master
+
+            Rules:
+            - ONLY ever `git add` paths under docs/, apps/*/docs/, or DOCS.md.
+              Everything under apps/<product>/<repo>/, libs/<x>/, platops/<x>/ is
+              a separate cloned repo — this workspace must never track its
+              contents, and the clones here are throwaway CI checkouts.
+            - Do NOT edit any file inside a clone.
+            - Never write an exact `x.y.z` dependency version into a page. Majors
+              only, where they carry meaning. See the guidance in
+              .claude/agents/topic-writer.md.
+            - Do NOT put `Co-Authored-By: Claude`, a `Claude-Session` trailer, or
+              any claude.ai link in the commit message.
+            - `--record` pins SHAs whether or not the prose is right, so it
+              asserts the page is now correct. Only run it after you have
+              actually reconciled each page.
+            - If a page's drift is beyond a confident fix — the upstream change is
+              large, or the right prose is a judgement call — leave that page
+              alone, do NOT record its SHAs, and say so in the commit body. A
+              still-stale page is better than a confidently wrong one.
+            - If nothing genuinely needed changing, make no commit and say so.
+          claude_args: |
+            --dangerously-skip-permissions
+            --append-system-prompt "You are running unattended in a GitHub Action on hmcts/cft-workspace and pushing straight to master with no human review. Be conservative: correct only what the source proves wrong, and leave anything ambiguous untouched. The repos under apps/, libs/ and platops/ are blobless, no-checkout CI clones — use `git show <ref>:<path>` to read their files, never the Read tool, and never edit inside them."
+            --allowedTools "Read,Glob,Grep,Write,Edit,Bash(git:*),Bash(./scripts/doc-drift:*),Bash(./scripts/docs-index:*),Bash(yq:*)"
+
+      - name: Report unpushed changes
+        if: always() && steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        run: |
+          if ! git diff --quiet HEAD -- docs apps/*/docs DOCS.md 2>/dev/null; then
+            echo "::warning::Claude left uncommitted doc changes — they were not pushed"
+            git diff --stat HEAD -- docs apps/*/docs DOCS.md >> "$GITHUB_STEP_SUMMARY"
+          fi
