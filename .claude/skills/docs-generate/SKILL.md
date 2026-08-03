@@ -17,7 +17,7 @@ The skill accepts a product slug and optional flags (parse from `$ARGUMENTS`):
 
 - `<product>` — required first positional argument. Resolves to `apps/<product>/docs/` as the docs root.
 - *(no flags after product)* — run the next-incomplete phase across every page in the product's plan.
-- `--phase <name>` — run a single phase: `scaffold | research | synth | confluence | examples | link | review`.
+- `--phase <name>` — run a single phase: `scaffold | research | synth | confluence | examples | link | review | pin`.
 - `--page <path>` — restrict to one page (e.g. `apps/wa/docs/explanation/task-lifecycle.md`).
 - `--topic <token>` — restrict to all pages tagged with that topic in `.plan.yaml`.
 - `--rephase <name>` — discard the named phase's outputs and re-run from there.
@@ -33,7 +33,7 @@ If the product has no `.plan.yaml`, the scaffold phase will bootstrap a starter 
 pages:
   apps/<product>/docs/explanation/case-flags.md:
     topic: case-flags
-    status: stub | drafted | confluence-augmented | examples-added | linked | reviewed | needs-fix
+    status: stub | drafted | confluence-augmented | examples-added | linked | reviewed | needs-fix | pinned
     sources: [<repo:path>, ...]
     last_run: <iso8601>
 ```
@@ -99,6 +99,26 @@ Spawn one `doc-linker` agent. It reads every drafted page, builds the glossary (
 For each page, spawn one `doc-reviewer` subagent (parallel). It re-reads the cited source files, verifies claims, and either flips the page to `status: reviewed` or inserts inline `<!-- REVIEW: <issue> -->` comments and sets `status: needs-fix`.
 
 The orchestrator collates the review summary and prints which pages need human attention.
+
+### 7. pin
+
+Once review is clean, pin each page's cited sources so future drift is detectable:
+
+```bash
+./scripts/doc-drift --record --product=<product>
+```
+
+This writes `sources_sha:` into every in-scope page's frontmatter from the SHAs observed
+now. Run it **only after** review has passed — it asserts "correct as of now", so pinning a
+page that still has `status: needs-fix` bakes the drift into the baseline. Any page whose
+citations don't resolve is skipped and listed; fix those citations by hand (usually a wrong
+path, or a branch-only file needing `<repo>@<branch>:<path>`) and re-run.
+
+Then confirm the result is clean:
+
+```bash
+./scripts/doc-drift --mode=source --product=<product>   # expect 0 stale, 0 broken
+```
 
 ## Procedure
 

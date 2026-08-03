@@ -53,6 +53,28 @@ confluence:
     last_modified: "unknown"
     space: "RCCD"
 confluence_checked_at: "2026-05-29T00:00:00Z"
+sources_sha:
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/AccessTypeEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/AccessTypeRoleEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/SheetName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/AccessTypesValidator.java"
+  : "c726d1c4b968cfb41e8a217d3ae567a04cc64f92"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/AccessTypeRolesValidator.java"
+  : "c726d1c4b968cfb41e8a217d3ae567a04cc64f92"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/AccessTypesController.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/service/AccessTypesService.java": "c726d1c4b968cfb41e8a217d3ae567a04cc64f92"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/model/AccessTypeRoleResult.java": "fccada36abeb44647b3ffa6a7ee5d483a1b9b99e"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/CaseAccessGroupUtils.java": "908a83a97b9e15e4d93e9990c4ee6f7f4cbdfb72"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/CaseAccessGroupsMatcher.java": "484119b15a8eacd34f30af868e363047f014cd40"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/RoleAssignmentAttributes.java": "6e54c6ae57480c1a72d28e6d2f94ff0f9d8bb44f"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/AccessProfileServiceImpl.java": "59ff93fdf61ce8bac912443bf6335d5d432f7b36"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessType.json"
+  : "0b035fa17258e24bc51803ded7ecb26fea032068"
+  ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessTypeRole.json"
+  : "46629947d6c4fdeee0105ce354ff496efc27ac89"
 ---
 
 # Group Access

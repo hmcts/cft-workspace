@@ -10,8 +10,15 @@ sources:
   - sptribs-case-api:charts/sptribs-case-api/values.wa.preview.template.yaml
   - cnp-flux-config:apps/sptribs/preview/aso/sptribs-postgres-config.yaml
   - wa-shared-infrastructure:aat.tfvars
-  - cnp-jenkins-library:src/uk/gov/hmcts/contino/helmInstall.groovy
+  - cnp-jenkins-library:vars/helmInstall.groovy
 status: verified
+sources_sha:
+  "sptribs-case-api:charts/sptribs-case-api/Chart.yaml": "2ea4d5f7e49caf86bf7ecae4cbb62de174b13981"
+  "sptribs-case-api:charts/sptribs-case-api/values.yaml": "2ea4d5f7e49caf86bf7ecae4cbb62de174b13981"
+  "sptribs-case-api:charts/sptribs-case-api/values.wa.preview.template.yaml": "b88a5372465bdc044a55f60807ab14cc8c5be229"
+  "cnp-flux-config:apps/sptribs/preview/aso/sptribs-postgres-config.yaml": "8e7d09ac38d68ff1241f6f03999f5a466a44d1a8"
+  "wa-shared-infrastructure:aat.tfvars": "8486ff92aaf6395eb59b608ae4b27c806cd413bd"
+  "cnp-jenkins-library:vars/helmInstall.groovy": "4c15a676f5a47e1773d1ee47e1254af22276a8a0"
 ---
 
 ## TL;DR

@@ -48,6 +48,25 @@ confluence_checked_at: "2026-04-29T00:00:00Z"
 title: Publish a Definition to AAT
 diataxis: how-to
 product: ccd
+sources_sha:
+  "ccd-admin-web:src/main/routes/importDefinition.ts": "317e397db9381e27049482a70ccaa5cc938dcaef"
+  "ccd-admin-web:src/main/service/import-service.ts": "c525b01236acf627fad50d63d7125ce30dfc0dab"
+  "ccd-admin-web:config/default.yaml": "c525b01236acf627fad50d63d7125ce30dfc0dab"
+  "ccd-admin-web:src/main/app.ts": "c525b01236acf627fad50d63d7125ce30dfc0dab"
+  "ccd-admin-web:src/main/routes/userRoles.ts": "716d8d9437491ad5fdce20a893835863b120eafa"
+  "ccd-admin-web:src/main/routes/indexElasticsearch.ts": "87f1e2404d141525a6216dad83ebd7ca4cde9d17"
+  "ccd-admin-web:src/main/role/roles-based-authorizer.ts": "5126ec22eeb9e8689e3240712e3cef00258f8acf"
+  "ccd-admin-web:charts/ccd-admin-web/values.yaml": "c525b01236acf627fad50d63d7125ce30dfc0dab"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/endpoint/ImportController.java": "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ProcessUploadServiceImpl.java"
+  : "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/SpreadsheetParser.java": "061d68540d6a44e87c4d8cf5afd949e919efbb50"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/SpreadsheetValidator.java"
+  : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/ElasticDefinitionImportListener.java"
+  : "3e97a6f49f81af7cdaa0eceee2c9a52ecd2e6fd5"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/UserRoleController.java": "bda0438d09f29d99f546185907272748a1224c49"
 ---
 
 # Publish a Definition to AAT

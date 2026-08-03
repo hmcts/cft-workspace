@@ -69,6 +69,25 @@ confluence_checked_at: "2026-04-29T00:00:00Z"
 title: RetainHiddenValue
 diataxis: explanation
 product: ccd
+sources_sha:
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/ConditionalFieldRestorer.java": "4d82832e6bc76a8c6b1b0ebc4ab877001e1e47f3"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseFieldDefinition.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseEventFieldDefinition.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseEventFieldComplexDefinition.java": "489236c1af684a67a9157f71e86ff52de7a026c0"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/WizardPageComplexFieldOverride.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/aggregated/CaseViewFieldBuilder.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/aggregated/CaseViewField.java": "7efc96c18146da056021baf28580725fd9db6a43"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/MidEventCallback.java": "03cd1ab65166841bb649b78b61418ee3d8217f89"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/HiddenFieldsValidator.java"
+  : "6ad5468e76b9ce8c56d74d619b2b5c79cdee63e9"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCD.java": "6b11c958ff5a6acaebbd19987c9b4706158b108b"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java": "fd407422cd1c80859f3374209a54562d6dbf38f3"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java": "5aac4f32ba9d903d5fde3474938c9afaaee510b8"
+  ? "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_RetainHiddenValue/CaseEventToFields.json"
+  : "2b17ab5d70837b8124aba352007d503882853843"
+  "ccd-config-generator:sdk/ccd-config-generator/src/test/java/uk/gov/hmcts/reform/fpl/CCDConfig.java": "c7f310e6f229b8d22b82eedcd428590ab00d2f84"
+  "ccd-config-generator:sdk/ccd-config-generator/src/test/java/uk/gov/hmcts/reform/fpl/model/CaseData.java": "2969f7223b78ee519ad7b054b016f0fa21fe2dcb"
 ---
 
 # RetainHiddenValue

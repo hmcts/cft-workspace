@@ -83,6 +83,12 @@ When writing the page, set:
 
 - `status: drafted`
 - `sources: [<repo>:<path-relative-file>]` listing every file you cited in the body. Format: `<repo-slug>:<path-from-repo-root>` (e.g. `ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/api/CaseDetails.java`). The drift skill consumes this list.
+  - If a cited file exists **only on an unmerged branch**, pin it: `<repo-slug>@<branch>:<path>`. Unbranched citations are resolved against the repo's default branch, so an unpinned branch-only file is reported as `broken`.
+
+Do **not** hand-write `sources_sha:`. After the page is written, the pipeline records it by
+running `./scripts/doc-drift --record --product=<product>`, which pins every citation to the
+SHA observed at write time. Without that map, drift is undetectable for the page — so if you
+add `sources:` to a page outside the normal pipeline, mention that `--record` still needs running.
 
 Leave `title`, `topic`, `diataxis`, `product`, `audience` as they were in the stub.
 

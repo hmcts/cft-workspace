@@ -49,6 +49,17 @@ confluence:
     last_modified: "unknown"
     space: "DIV"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/SendLetterController.java": "cd01b8cca8df1d5afd7c786701493045172a0eb8"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/MediaTypes.java": "cd01b8cca8df1d5afd7c786701493045172a0eb8"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/ActionController.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/TaskController.java": "0a0a5c69d4c39afc30fe01542905d1fbaa868171"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/model/in/LetterWithPdfsRequest.java": "9a5eeff0de681f8381cd779a2aee8fec74124747"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/model/in/LetterWithPdfsAndNumberOfCopiesRequest.java": "9a5eeff0de681f8381cd779a2aee8fec74124747"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/model/in/Doc.java": "9a5eeff0de681f8381cd779a2aee8fec74124747"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/util/FileNameHelper.java": "d5a03ebeda0f0ec72338d4a46b861766e0cc66e4"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/model/in/RecipientsValidator.java": "fafc1d84527b0687a12d30952ea72bba8474aeaa"
+  "send-letter-service:src/main/resources/application.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
 ---
 
 ## TL;DR

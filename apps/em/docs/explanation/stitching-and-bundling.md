@@ -54,6 +54,28 @@ confluence:
     last_modified: "unknown"
     space: "RQA"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/config/BatchConfiguration.java": "305d667570e24bd9d0b98f5a48c5be1c3563f259"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/batch/DocumentTaskItemProcessor.java": "3e65614c095b855b240593d6d91e58a02551d71a"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/batch/DocumentTaskCallbackProcessor.java": "d7b465083f9a9969889329f5e2772375321eae54"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/batch/DocumentTaskStateMarker.java": "926f466e7b58cafb348cfdec478937e3992356df"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/DocumentTask.java": "706ad3ed0c5d30ef9818dee4ae4fc72c5dde9c99"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/pdf/PDFMerger.java": "fe4a3d11b923c23a72a16ef7fe982a53ab6e93a9"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/info/BuildInfo.java": "ec4a5689709910de992e22b558e3fe58ccec585b"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/service/impl/DocumentTaskServiceImpl.java": "3e65614c095b855b240593d6d91e58a02551d71a"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/conversion/DocmosisConverter.java": "531d06a9344c8aa2a2efee8f0983a7162a6249ec"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/conversion/ImageConverter.java": "0ab846b76c3551586f75ee524f091d22cc325610"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/DocumentImage.java": "4795d709edef2cd713d2bc86c4fea463bb6cbac9"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/enumeration/PaginationStyle.java": "b6f4464eb93864835832b1480c04d9f9a6254897"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/enumeration/PageNumberFormat.java": "531d06a9344c8aa2a2efee8f0983a7162a6249ec"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/enumeration/ImageRendering.java": "531d06a9344c8aa2a2efee8f0983a7162a6249ec"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/enumeration/ImageRenderingLocation.java": "531d06a9344c8aa2a2efee8f0983a7162a6249ec"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/stitching/StitchingService.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/AutomatedStitchingExecutor.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/CallbackUrlCreator.java": "971e03d1e207771b5a64840bd90e2454d9a3c410"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/StitchingCompleteCallbackController.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/notification/NotificationService.java": "bd3df6d2894c1f0ac17942e700975a20d7f111b9"
+  "em-ccd-orchestrator:src/main/resources/bundleconfiguration/complex-example.yaml": "c9f34034b621149bf9da290484501407f540e196"
 ---
 
 ## TL;DR

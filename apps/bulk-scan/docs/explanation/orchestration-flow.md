@@ -50,6 +50,28 @@ confluence:
     last_modified: "unknown"
     space: "RBS"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/envelopes/EnvelopeMessageProcessor.java"
+  : "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/QueueClientsConfig.java": "c7bcda72fb826e91f171f33989af1d1db0656562"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/casecreation/AutoCaseCreator.java": "2b0ff9656c512532859844cfa7c588a9e45769db"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/CreateExceptionRecord.java"
+  : "191d098f8515659ce5fe6dfc59a5f553efa019ca"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CcdApi.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationClient.java": "6d8494debc6cedcc3edb339b126ae3d43c5bd32d"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/caseupdate/CaseUpdateDataClient.java": "6d8494debc6cedcc3edb339b126ae3d43c5bd32d"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/processedenvelopes/ProcessedEnvelopeNotifier.java"
+  : "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CcdNewCaseCreator.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CcdCaseUpdater.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/controllers/CcdCallbackController.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CreateCaseCallbackService.java": "c7bcda72fb826e91f171f33989af1d1db0656562"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/AttachToCaseCallbackService.java": "5f9a0b598dc0ddffe9de49a9ce25cd5c86d6cc5d"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/model/ccd/mappers/ExceptionRecordMapper.java": "2a3662a2e5440b8c1f1b427f00f3257373590421"
+  "bulk-scan-orchestrator:src/main/resources/application.yaml": "3bf6a33c0e90821820d8bab62a9f3129a9dd3244"
 ---
 
 ## TL;DR

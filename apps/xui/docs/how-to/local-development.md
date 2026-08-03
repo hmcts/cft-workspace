@@ -40,6 +40,18 @@ confluence:
     last_modified: "unknown"
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:api/application.ts": "74acb47e0cdb1f7d11939e2fcfdbbc2dd4696a75"
+  "rpx-xui-webapp:api/server.ts": "00d655af4e17c9d5ccc167d27a018eb744da7d11"
+  "rpx-xui-webapp:api/local.ts": "00d655af4e17c9d5ccc167d27a018eb744da7d11"
+  "rpx-xui-webapp:api/.env.defaults": "33e9a2351f8841c128ba4a1599681c0e13ea16fb"
+  "rpx-xui-webapp:api/idamCheck.ts": "64637412ee9099155bc4c766ea8772e7890d43ba"
+  "rpx-xui-webapp:api/configuration/index.ts": "e6b48e7df696e4f542dcd45e9840f7645babd613"
+  "rpx-xui-webapp:proxy.config.json": "2cf9f0a9da5dacc691b60f466f9a67b3d1980a38"
+  "rpx-xui-webapp:.gitignore": "80b8e357941ba60d49d547e1956c39299fab6179"
+  "rpx-xui-dev-utils:getKeyVaultSecrets/get-secrets.sh": "5df062a5b8c7e628ac367b707766b833e973b572"
 ---
 
 ## TL;DR

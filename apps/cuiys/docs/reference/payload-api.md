@@ -26,6 +26,20 @@ confluence:
   - id: "1712514145"
     title: "Developer Integration Guide"
     space: "CUIRA"
+sources_sha:
+  "cui-ra:src/main/constants/route.ts": "8733768f0ade2a82cd91e0d5ecddd9a0871a6bee"
+  "cui-ra:src/main/routes.ts": "8733768f0ade2a82cd91e0d5ecddd9a0871a6bee"
+  "cui-ra:src/main/controllers/apiController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/controllers/dataController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/controllers/reviewController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/schemas/InboundPayload.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/interfaces/payload.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/models/inboundPayload.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/constants/headerParams.ts": "af8c0a719f3e5840a7add675da9c216802831467"
+  "cui-ra:src/main/constants/actions.ts": "dab233536fe62820eec2723b3031c1f0cf9c8bcc"
+  "cui-ra:src/main/services/redis.ts": "67093850ce8c0e3adbfbf688a00db340ac0fe75f"
+  "cui-ra:src/main/utilities/urlRoute.ts": "661bd1051972ce9b8d23433fcbdaef1670170078"
+  "cui-ra:config/default.json": "324d85792ffb142ce54f9263e03634e7b324aae9"
 ---
 # CUIYS Payload API
 

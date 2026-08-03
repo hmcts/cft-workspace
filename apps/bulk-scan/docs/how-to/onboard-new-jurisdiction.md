@@ -47,6 +47,22 @@ confluence:
     last_modified: "2024-12-01T00:00:00Z"
     space: "DATS"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "bulk-scan-processor:src/main/resources/application.yaml": "143488c2c25b4bee56e4c8d5201c280a37c0c0d9"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/config/ContainerMappings.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/OcrValidator.java": "3b463d31c663cb0e155239467383b7732a64feaa"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/document/DocumentServiceHelper.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-orchestrator:src/main/resources/application.yaml": "3bf6a33c0e90821820d8bab62a9f3129a9dd3244"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationClient.java": "6d8494debc6cedcc3edb339b126ae3d43c5bd32d"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/caseupdate/CaseUpdateDataClient.java": "6d8494debc6cedcc3edb339b126ae3d43c5bd32d"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/CreateExceptionRecord.java"
+  : "191d098f8515659ce5fe6dfc59a5f553efa019ca"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/definition/ServiceCaseFields.java": "53b8e994a68e62bc05346336c92b943d119d66c4"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/EventIds.java": "277a9607e25400f67e44fabafc0938060ea2d4d5"
+  "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseField.json": "de9c28e2d2da5f41e0e322726d568c8a27f061fc"
+  "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseEvent.json": "ea6da3682f7d976e1084903f88e0fbbed3c1bfaa"
+  "bulk-scan-ccd-definitions:definitions/privatelaw/data/sheets/CaseEvent.json": "e7accc5a391fe45df1a4eae14be811336197f28f"
 ---
 
 ## TL;DR

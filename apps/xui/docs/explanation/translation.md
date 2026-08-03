@@ -43,6 +43,18 @@ confluence:
     last_modified: "2026-04-01T00:00:00Z"
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translate.pipe.ts": "6f57537ed9a9b4f36330c1e371f5e7e462dc89e7"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.service.ts": "405aa00e7d6e1b908bc451e8929e26e1664ab7bb"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/db.ts": "cac4bb0e31b5697313577794dbce259aaae50bc0"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.config.ts": "cac4bb0e31b5697313577794dbce259aaae50bc0"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.module.ts": "61f4dc00adcd02585719517d1006e4c466e7c0ad"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/helpers/replace-placeholders/replace-placeholders.helper.ts": "b5696eaaa8583a9cecc20c31fcdb1ca358924fbf"
+  "rpx-xui-webapp:src/app/components/hmcts-global-footer/hmcts-global-footer.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/app/components/phase-banner/phase-banner.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
+  ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/welsh-translated-markdown/welsh-translated-markdown.directive.ts"
+  : "0c69822a961db385bf2f3947d2f172791553aaa5"
 ---
 
 ## TL;DR

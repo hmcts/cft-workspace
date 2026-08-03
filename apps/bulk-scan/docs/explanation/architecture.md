@@ -47,6 +47,23 @@ confluence:
     last_modified: "unknown"
     space: "DATS"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/BlobProcessorTask.java": "ac5ee8dbac634179a557c12e09779457e22e34ad"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/OrchestratorNotificationService.java": "ac5ee8dbac634179a557c12e09779457e22e34ad"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/ProcessedEnvelopeNotificationHandler.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/document/DocumentManagementService.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/ActionController.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/CleanUpRejectedFilesTask.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/resources/application.yaml": "143488c2c25b4bee56e4c8d5201c280a37c0c0d9"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/envelopes/EnvelopeMessageProcessor.java"
+  : "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/processedenvelopes/ProcessedEnvelopeNotifier.java"
+  : "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CcdApi.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/tasks/CleanupEnvelopesDlqTask.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/controllers/PaymentController.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/client/payhub/PayHubClient.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/ccd/CcdClient.java": "408b838166e957d0712791e31208a621791963a3"
 ---
 
 ## TL;DR

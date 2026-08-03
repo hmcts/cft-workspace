@@ -46,6 +46,16 @@ confluence:
     last_modified: "unknown"
     space: "RBPS"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java": "523d1f48bf4ca1a73880d32b060a821831ea9a9a"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/SchedulerConfiguration.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/ftp/FtpAvailabilityChecker.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/ftp/FtpClient.java": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "send-letter-service:src/main/resources/application.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "send-letter-service:src/main/resources/db/migration/V010__Add_shedlock.sql": "c2a82b4574f9fd928ee4f7156f5347b407b39d35"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/ActionController.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/reports/StaleLetterController.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/reports/PendingLettersController.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
 ---
 
 ## TL;DR

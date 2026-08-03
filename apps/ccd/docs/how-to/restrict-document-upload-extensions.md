@@ -23,6 +23,16 @@ confluence:
 title: Restrict Document Upload by File Extension
 diataxis: how-to
 product: ccd
+sources_sha:
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/document/write-document-field.component.ts": "f5ef7f0613973c080398c2af7eca7c297287d907"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/document/write-document-field.html": "635c7375119632a530afe4f49b2e1c38cb2883e1"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java": "b58f7f447730bf5ec8f9bca0bd831c1abe2b6db0"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java": "013ed140d477b8ef8ea079619d0b6e0a96d89fa2"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCD.java": "6b11c958ff5a6acaebbd19987c9b4706158b108b"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java": "6b11c958ff5a6acaebbd19987c9b4706158b108b"
+  "document-management-store-app:src/main/resources/application.yaml": "e37f459dc0a2bbda59e687d605b89084e1733c82"
+  "cnp-flux-config:apps/dm-store/dm-store/aat.yaml": "65fd2b10f1aecfe0b4d36c1c2af86db76acf2674"
+  "cnp-flux-config:apps/dm-store/dm-store/prod.yaml": "7206749603bbe46b201e2044bc7f86172727d27b"
 ---
 
 # Restrict Document Upload by File Extension

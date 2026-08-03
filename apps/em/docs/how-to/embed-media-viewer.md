@@ -43,6 +43,18 @@ confluence:
     last_modified: "unknown"
     space: "RDM"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.ts": "d0021abc1a687f247765d65ff348e43a7684b441"
+  "em-media-viewer:projects/media-viewer/src/lib/media-viewer.module.ts": "9b4edc2c7f19264628215e37ddc7f89de2e4dd72"
+  "em-media-viewer:README.md": "cb1055c515b2ef4270bce54cdbe991247f3583d6"
+  "em-media-viewer:projects/media-viewer/ng-package.json": "a2c84c421d8b92aaf03c3a85772b26ee6becdbbc"
+  "em-media-viewer:projects/media-viewer/src/public_api.ts": "e7f09d756b2fde6fec08da292390d51c70112d58"
+  "em-media-viewer:package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
+  "em-media-viewer:projects/media-viewer/src/lib/toolbar/toolbar-button-visibility.service.ts": "fbb1f9f029644e8c81fec863ed570a508d1764ba"
+  "em-media-viewer:projects/media-viewer/src/lib/redaction/services/redaction-api.service.ts": "0731a078e06501e2754da52365795c5ad3c2b6ee"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts": "fa3728864c83874e15ea556857123115bc616eb6"
+  "em-media-viewer:projects/media-viewer/src/lib/icp/icp-session-api.service.ts": "52688fbd2c9836734906256332d6bddf09507c4c"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/pdf-viewer/pdf-js/pdf-js-wrapper.ts": "86b9adfa5ffc1bed792b123e99a3d95517690915"
 ---
 
 ## TL;DR

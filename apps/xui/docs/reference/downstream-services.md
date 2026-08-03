@@ -40,6 +40,18 @@ confluence:
     last_modified: "2021-01-01T00:00:00Z"
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
+  "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
+  "rpx-xui-webapp:api/configuration/references.ts": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:api/routes.ts": "8577c8c217f3e58ec34ce4efde89c468268befb7"
+  "rpx-xui-webapp:api/application.ts": "74acb47e0cdb1f7d11939e2fcfdbbc2dd4696a75"
+  "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
+  "rpx-xui-webapp:api/lib/proxy.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
+  "rpx-xui-webapp:api/lib/http/index.ts": "55079aab2a3d290fb54432007a9ee7c73183e447"
+  "rpx-xui-webapp:api/workAllocation/routes.ts": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-manage-organisations:config/default.json": "c6ee3703d3f06e69afd20dc3065b8deaf3649727"
+  "rpx-xui-manage-organisations:api/configuration/references.ts": "60a1f791b7e62dafaf70493b60f2d548dbc6a417"
 ---
 
 ## TL;DR

@@ -59,6 +59,27 @@ confluence:
     last_modified: "unknown"
     space: "RSTR"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CaseFlagApiController.java": "713a8d70241032382965f812dcb7bb71e6b3a816"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CrdApiController.java": "a1f480e957736aee6b3134630037b5613d091de8"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/service/impl/CaseFlagServiceImpl.java": "1d584dd7974213750a1a1d5b5acf1eff5f429fbe"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/service/impl/CrdServiceImpl.java": "d68116161c149caeb7325dda4c2536695f3ccff2"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/repository/CaseFlagRepository.java": "1d584dd7974213750a1a1d5b5acf1eff5f429fbe"
+  "rd-commondata-api:src/main/resources/db/migration/V1_1__init_tables.sql": "91e6520bf8ebbd836aa69bea1c41be988dc0be93"
+  "rd-commondata-api:src/main/resources/db/migration/V1_4__create_table_List_Of_Values.sql": "901aea41aeae84962cadd2d09f96cd566adb68ac"
+  "rd-commondata-api:src/main/resources/db/migration/V1_14__Alter_List_Of_Values.sql": "469f4920f9171e2c8bc0d65bcb3daf116344c7ea"
+  "rd-commondata-api:src/main/resources/db/migration/V1_11__alter_flag_service_details.sql": "2bffa6bd61c700bd5b09369a48147e73473152fc"
+  "rd-commondata-api:src/main/resources/application.yaml": "94c35993b5eda2a490b168dcd5414eaa5f4e748b"
+  "rd-commondata-dataload:src/main/java/uk/gov/hmcts/reform/rd/commondata/configuration/BatchConfig.java": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-camel-routes-common.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-crd-flag-details-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-crd-flag-service-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-crd-other-categories-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-crd-list-of-values-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-crd-case-linking-reasons-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/java/uk/gov/hmcts/reform/rd/commondata/camel/util/CommonDataDRecords.java": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/java/uk/gov/hmcts/reform/rd/commondata/CommonDataLoadApplication.java": "60d1d4c874b945b46a9e5ce40d3bc2a263ecadc1"
+  "platops/cnp-flux-config:apps/rd/rd-commondata-api/prod.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
 ---
 
 ## TL;DR

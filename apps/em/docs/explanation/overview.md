@@ -48,6 +48,22 @@ confluence:
     last_modified: "unknown"
     space: "RDM"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/NewBundleController.java": "76f50f2a1fff38d4500c39030ff043f132ff9f59"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdStitchBundleCallbackController.java": "5bc8c4fda1c1b561846b3d960398f7fc86700ac5"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/caseupdater/DefaultUpdateCaller.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/CallbackUrlCreator.java": "971e03d1e207771b5a64840bd90e2454d9a3c410"
+  "em-ccd-orchestrator:src/main/resources/bundleconfiguration/caseprogression-bundle-config.yaml": "23da1bdbc204ab19d22ef60d047428f1f45d3979"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/batch/DocumentTaskItemProcessor.java": "3e65614c095b855b240593d6d91e58a02551d71a"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/config/BatchConfiguration.java": "305d667570e24bd9d0b98f5a48c5be1c3563f259"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/pdf/PDFMerger.java": "fe4a3d11b923c23a72a16ef7fe982a53ab6e93a9"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/service/CdamService.java": "3e65614c095b855b240593d6d91e58a02551d71a"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/DocumentTask.java": "706ad3ed0c5d30ef9818dee4ae4fc72c5dde9c99"
+  "em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/listener/IngestWhenApplicationReadyListener.java": "a2e92dac5c0e15635b8c03b7879c2f1a31b90db4"
+  "em-hrs-ingestor:src/main/resources/application.yaml": "5fb13165c928bfd58aa97791e969016b88d3855d"
+  "em-hrs-api:src/main/resources/application.yaml": "060237e2439c825ca8e9ac5463b95004c812d1f8"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/controller/HearingRecordingController.java": "d9c7ef9373e8c43c3e74ab89520efb383ee52c2b"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/AnnotationSetResource.java": "b84e15b87ad87e891117a17c4da4085249314af5"
 ---
 
 ## TL;DR

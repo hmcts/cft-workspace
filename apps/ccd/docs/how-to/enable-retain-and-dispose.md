@@ -15,7 +15,7 @@ sources:
   - ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/parameter/DefaultParameterResolver.java
   - ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/service/remote/RemoteDisposeService.java
   - ccd-case-disposer:src/main/resources/application.yaml
-  - ccd-case-disposer:charts/ccd-case-disposer/values.yaml@9fc420ba5e7b34c664988c8e41893cf1120a4be1
+  - ccd-case-disposer:charts/ccd-case-disposer/values.yaml@16ec1edc6922
 status: reviewed
 last_reviewed: 2026-07-01T12:47:00Z
 confluence:
@@ -29,6 +29,23 @@ confluence:
 title: Enable Retain and Dispose
 diataxis: how-to
 product: ccd
+sources_sha:
+  ? "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/TTL.java@f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  : "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventPayload.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Submit.java": "d975f9829c1df4a0856e56c222d5137638d92f82"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedeletion/TimeToLiveService.java@0afa06a9ffaa5094e0e715f414a0a885479696a9"
+  : "0afa06a9ffaa5094e0e715f414a0a885479696a9"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/service/DecentralisedCreateCaseEventService.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
+  "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
+  "ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/data/CaseDataRepository.java": "0fe304c9f7bd495b893bb01fb6a93e28c6776056"
+  "ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/parameter/DefaultParameterResolver.java": "0fe304c9f7bd495b893bb01fb6a93e28c6776056"
+  "ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/service/remote/RemoteDisposeService.java": "08a9fb204ae66ce4de6d0590cf3d781b4fa89186"
+  "ccd-case-disposer:src/main/resources/application.yaml": "9fc420ba5e7b34c664988c8e41893cf1120a4be1"
+  "ccd-case-disposer:charts/ccd-case-disposer/values.yaml@16ec1edc6922": "16ec1edc692209cbd09216a28cb583b7b6d5687d"
 ---
 
 # Enable Retain and Dispose

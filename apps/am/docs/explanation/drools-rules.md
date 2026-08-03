@@ -63,6 +63,25 @@ confluence:
     last_modified: "unknown"
     space: "AM"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "am-role-assignment-service:src/main/resources/validationrules/core/role-assignment-config-validation.drl": "c4a2b8662304ef450cdedf1c98ae0c59266029e9"
+  "am-role-assignment-service:src/main/resources/validationrules/core/reject-unapproved-role-assignments.drl": "dbf2d2d3e7e5d0737010ace755a89f1db1f73d3e"
+  "am-role-assignment-service:src/main/resources/validationrules/core/organisational-role-mapping-common.drl": "683f8db55a52ff5a3f4cfa6dc64c582a3f6e83d8"
+  "am-role-assignment-service:src/main/resources/validationrules/core/case-allocator-global.drl": "7a38104afd09ab562ebeb23eebeccde36b2e017a"
+  "am-role-assignment-service:src/main/resources/validationrules/core/load-case-data.drl": "dbc160bf651038d4cd1b2f15865e381158348e61"
+  "am-role-assignment-service:src/main/resources/validationrules/core/specific-access-global.drl": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "am-role-assignment-service:src/main/resources/validationrules/core/challenged-access-global.drl": "efd0f0d312881d8523cfa5cfa17d553ec4366aac"
+  "am-role-assignment-service:src/main/resources/validationrules/core/conflict-of-interest-global.drl": "ecbc331219eccec01275cfcfd0326507a09f7f86"
+  "am-role-assignment-service:src/main/resources/META-INF/kmodule.xml": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/DroolConfig.java": "d2e8dba140653845b1d8ac5664ed045d04a926cb"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ValidationModelService.java": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
+  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "f2c71dea6e9fc93641f7c24ceb6123d73d392f68"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/DroolConfig.java": "5123dc2c5c4d127394df67e80c538e5122088d28"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RequestMappingService.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
+  "am-org-role-mapping-service:src/main/resources/validationrules/core/core.drl": "37fcddad0d4f0e3d838a53cbc175216801c62992"
+  "am-org-role-mapping-service:src/main/resources/validationrules/core/log.drl": "a56c282c3071b4a6258c3e1f7e6093ae9ee49aa5"
+  "am-org-role-mapping-service:src/main/resources/validationrules/core/hearing-role-judicial-global.drl": "fcdfb1cea50ee1d860963eead015847111abc007"
 ---
 
 ## TL;DR

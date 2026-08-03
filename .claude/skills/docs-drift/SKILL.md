@@ -11,7 +11,7 @@ A page can declare its authoritative source in three ways. The skill checks each
 
 | Signal on the page | Mode | Check |
 |---|---|---|
-| `sources:` list in frontmatter | source-citation | git SHA of each cited source file vs `sources_sha:` map (or fresh if no recorded SHA) |
+| `sources:` list in frontmatter | source-citation | git SHA of each cited source file vs `sources_sha:` map (reported as `unpinned` if no recorded SHA) |
 | Listed in `docs/.port-manifest.yaml` | port-manifest | `git log <synced_sha>..HEAD -- <upstream-source>` against `platops/hmcts.github.io` |
 | `confluence:` array in frontmatter | Confluence-revision | Current Confluence page revision via MCP vs `confluence_checked_at:` |
 
@@ -24,7 +24,34 @@ A page can declare its authoritative source in three ways. The skill checks each
 /docs-drift --mode=port           # port-manifest only (workspace docs only)
 /docs-drift --mode=confluence     # Confluence-revision only
 /docs-drift --pull                # port mode: ff-pull upstream first, then check
+/docs-drift --record              # WRITES sources_sha: — see "Recording SHAs" below
 ```
+
+### Citation grammar
+
+A `sources:` entry is `<repo-slug>[@<branch>]:<path>[@<sha>]`:
+
+- `ccd-data-store-api:src/.../CaseDetails.java` — the normal form. Resolved against the
+  repo's **default branch**, not the working tree, so a clone parked on an unrelated
+  feature branch doesn't produce false `broken` reports.
+- `ccd-config-generator@noc-sdk-refinement:sdk/.../NocQuestion.java` — branch-pinned, for a
+  file that only exists on an unmerged branch. Use this for PoC/exploratory pages.
+- `ccd-case-disposer:charts/.../values.yaml@16ec1edc6922` — inline SHA pin; takes precedence
+  over the page's `sources_sha:` entry for that citation.
+
+### Recording SHAs
+
+Staleness is only detectable for citations with a recorded SHA. `--record` writes the
+`sources_sha:` map into each page's frontmatter from the SHAs observed now:
+
+```bash
+./scripts/doc-drift --record [--product=<slug>]
+```
+
+This asserts "this page is correct as of now" — only run it after verifying the pages are
+actually accurate, or you'll pin a baseline over real drift. It rewrites frontmatter only;
+page bodies are copied verbatim. Pages with unresolvable citations are skipped and listed
+for hand-fixing rather than pinned.
 
 The first three modes are run by `scripts/doc-drift`. The Confluence mode is split: the script lists the candidate pages (with their `confluence_checked_at:` timestamps), and this skill iterates them, calling `mcp__atlassian__confluence_get_page_history` per cached page ID to compare revisions.
 

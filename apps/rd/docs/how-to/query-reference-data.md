@@ -41,6 +41,19 @@ confluence:
     last_modified: "unknown"
     space: "RTRD"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/OrganisationInternalController.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
+  "rd-professional-api:src/main/resources/application.yaml": "8501e4e7406318653bae352c04d5e03c1944a2cf"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/controller/JrdElinkController.java": "c3ba638268aac0e7dc990f941f1a958cdfaf09fb"
+  "rd-judicial-api:src/main/resources/application.yaml": "91db0edf4a57e5899d31861797cf690cc11b61af"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdApiController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdCourtVenueController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/resources/application.yaml": "0348cf42d7f36f5959fa7b671eebd32282f7fcfa"
+  "rd-caseworker-ref-api:src/main/resources/application.yaml": "7f0f71f1b67983565653410fb473aefea4d925f9"
+  "rd-commondata-api:src/main/resources/application.yaml": "94c35993b5eda2a490b168dcd5414eaa5f4e748b"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CaseFlagApiController.java": "713a8d70241032382965f812dcb7bb71e6b3a816"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CrdApiController.java": "a1f480e957736aee6b3134630037b5613d091de8"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/controllers/StaffRefDataController.java": "797ed17a96dc04579f100997ce7ad8ee5e6af8a6"
 ---
 
 ## TL;DR

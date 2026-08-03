@@ -48,6 +48,21 @@ confluence:
     last_modified: "unknown"
     space: "RP"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/controllers/PaymentController.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/service/PaymentService.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/service/PaymentHubHandlerService.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/service/PaymentRequestMapper.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/config/SiteConfiguration.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/client/payhub/PayHubClient.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/ccd/CcdClient.java": "408b838166e957d0712791e31208a621791963a3"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/client/processor/ProcessorClient.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  ? "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/client/processor/BulkScanProcessorApiProxy.java"
+  : "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/config/AsyncConfiguration.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/config/RetryConfig.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:src/main/resources/application.yaml": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  "bulk-scan-payment-processor:build.gradle": "c9a9159eb11932ccc7df71031593270c602d458b"
 ---
 
 ## TL;DR

@@ -17,6 +17,11 @@ confluence:
   - id: "1933858875"
     title: "CUIYS Onboarding - Context and Background"
     space: "CUIRA"
+sources_sha:
+  "cui-ra:src/main/controllers/apiController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/controllers/dataController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/controllers/reviewController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:config/default.json": "324d85792ffb142ce54f9263e03634e7b324aae9"
 ---
 # Onboard a Service to CUIYS
 

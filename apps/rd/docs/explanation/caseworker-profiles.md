@@ -50,6 +50,24 @@ confluence:
     last_modified: "unknown"
     space: "RTRD"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/domain/CaseWorkerProfile.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/domain/CaseWorkerSkill.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/domain/CaseWorkerLocation.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/servicebus/TopicPublisher.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/config/MessagingConfig.java": "c7eaa556c590376dc265b221bad459a306dab269"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/controllers/StaffRefDataController.java": "797ed17a96dc04579f100997ce7ad8ee5e6af8a6"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/controllers/CaseWorkerRefUsersController.java": "e6a4e34c594d58dbc14722a30705d65bf784a2d9"
+  "rd-caseworker-ref-api:src/main/resources/application.yaml": "7f0f71f1b67983565653410fb473aefea4d925f9"
+  "rd-caseworker-ref-api:src/main/resources/db/migration/V1_1__init_tables.sql": "3d45423415bc0e721253bb80a2114abc376ce178"
+  "rd-caseworker-ref-api:src/main/resources/db/migration/V1_17__staff_ui_tables.sql": "a59a0d0b0cfd5bbc661ac98f370b2c42d9d743a9"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/domain/CaseWorkerIdamRoleAssociation.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/domain/CaseWorkerWorkArea.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/domain/RoleType.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/domain/UserType.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/domain/StaffAudit.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/EmailValidator.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java": "3a7fd8f716cd339c00480b4763e3438b7b56c2d0"
 ---
 
 ## TL;DR

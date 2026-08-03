@@ -48,6 +48,21 @@ confluence:
     last_modified: "unknown"
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/public-api.ts": "d8781265f59485c3c9545882f6019114fadf3bd0"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/ng-package.json": "28beefe025ff4a81ca74779ef804b668ab9e0907"
+  "ccd-case-ui-toolkit:angular.json": "d1ab32c3066c97424724ff6690e4cc2ec1ed2c54"
+  "ccd-case-ui-toolkit:package.json": "47ef5a9b35cbbfdc2edf440a213c4ddaf50dc973"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "47ef5a9b35cbbfdc2edf440a213c4ddaf50dc973"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.module.ts": "543bacc3071f7ed6bf163a74bd5314ccbc9741d1"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "6a082439702a917c186720a837526f8c968c29d0"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "9b885551a65a6c03184556275bd356abc2f4ebe2"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts": "6a082439702a917c186720a837526f8c968c29d0"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write.component.ts": "7f1b0d12f0af5a80788e266558817af09930cd4f"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-read.component.ts": "5dbc31c8259c5f503b00b65476552b726b6dfd1c"
+  ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write-journey.component.ts"
+  : "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
+  "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "3ea421b1e4974dd0a14a2d259ecbe3073f561896"
 ---
 
 ## TL;DR

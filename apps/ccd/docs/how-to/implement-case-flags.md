@@ -46,6 +46,22 @@ confluence:
 title: Implement Case Flags
 diataxis: how-to
 product: ccd
+sources_sha:
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Flags.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagDetail.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagLauncher.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagVisibility.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "4d82832e6bc76a8c6b1b0ebc4ab877001e1e47f3"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java": "0433376e83a1001e75f42e1d775e3035ca257145"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "8ea172728014eb8e47eb0914bde427846940fba2"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/PartyFlags.java": "acdc7d611fe8457205536e12e8fae907fa04282d"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerCreateCaseFlag.java": "1c9413a213871f149b50f20eabed0669c370f758"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerManageCaseFlag.java": "1c9413a213871f149b50f20eabed0669c370f758"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/service/CaseFlagsService.java": "ac082843f9435e0fdd0d81a64b2317aad7d37e68"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java": "544975f6b47e5ba67d6b7e85b961bee60c6e9dc3"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java": "9f7737ceceb64587f7c2a5bd9b0616092cfe4ba2"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java": "531d5b6842f81c82b1bac65c790500acc73523f8"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java": "268bdafb8c6c3a5d235ae399d84108a51a008f22"
 ---
 
 # Implement Case Flags

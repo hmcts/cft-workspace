@@ -49,6 +49,22 @@ confluence:
     last_modified: "unknown"
     space: "RDM"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdStitchBundleCallbackController.java": "5bc8c4fda1c1b561846b3d960398f7fc86700ac5"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/NewBundleController.java": "76f50f2a1fff38d4500c39030ff043f132ff9f59"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/AutomatedCaseUpdater.java": "aaa728e7e88ce3c1b5c49dc808dc39df244f9c84"
+  ? "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/configuration/LocalConfigurationLoader.java"
+  : "5bc8c4fda1c1b561846b3d960398f7fc86700ac5"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/stitching/StitchingService.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/CallbackUrlCreator.java": "971e03d1e207771b5a64840bd90e2454d9a3c410"
+  "em-ccd-orchestrator:src/main/resources/bundleconfiguration/sscs-bundle-config.yaml": "91caefc89cf0d906425bec0bbab8df863507692e"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/caseupdater/DefaultUpdateCaller.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/configuration/BundleConfiguration.java": "ef1f0dadf296361643cc5f8744528fbaaf7300d6"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/stitching/dto/DocumentImage.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/dto/CcdBundlePaginationStyle.java": "7f03abd3595ce9c3882ad5f9f4ac91fa41ac937f"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/util/StringUtilities.java": "35ba2c7fffd5d32cb6550d9b249d5e49152c1c49"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/config/Config.java": "bd3df6d2894c1f0ac17942e700975a20d7f111b9"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdCloneBundleController.java": "5bc8c4fda1c1b561846b3d960398f7fc86700ac5"
 ---
 
 ## TL;DR

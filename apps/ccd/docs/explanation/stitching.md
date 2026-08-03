@@ -28,6 +28,8 @@ confluence:
 title: Stitching
 diataxis: explanation
 product: ccd
+sources_sha:
+  "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java": "013ed140d477b8ef8ea079619d0b6e0a96d89fa2"
 ---
 
 # Stitching

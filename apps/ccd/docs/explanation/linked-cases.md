@@ -34,6 +34,15 @@ confluence:
 title: Linked Cases
 diataxis: explanation
 product: ccd
+sources_sha:
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caselink/CaseLink.java": "d431bd4066fe381ec89fbab4fcda9e9a07214829"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caselink/LinkReason.java": "d431bd4066fe381ec89fbab4fcda9e9a07214829"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java": "544975f6b47e5ba67d6b7e85b961bee60c6e9dc3"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/CaseLink.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/LinkReason.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/caselinking/CaseLinkExtractor.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/caselinking/CaseLinkEntity.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/external/controller/CaseController.java": "908a83a97b9e15e4d93e9990c4ee6f7f4cbdfb72"
 ---
 
 # Linked Cases

@@ -33,6 +33,16 @@ confluence:
     last_modified: "unknown"
     space: "AM"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/controller/endpoints/QueryAssignmentController.java": "9baaef158b35973e37e42cf3358043d137d6e3f1"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/QueryRequest.java": "72c5480dccfa2c156bdb38ef4b3f1749fedee045"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/MultipleQueryRequest.java": "351e6d07f42459461fdfe6fb737843342014a138"
+  ? "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/queryroles/QueryRoleAssignmentOrchestrator.java"
+  : "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/data/RoleAssignmentEntitySpecifications.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/PersistenceService.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/util/ValidationUtil.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
+  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
 ---
 
 ## TL;DR

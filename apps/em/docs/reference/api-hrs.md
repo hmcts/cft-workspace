@@ -49,6 +49,21 @@ confluence:
     last_modified: "unknown"
     space: "RDM"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/controller/HearingRecordingController.java": "d9c7ef9373e8c43c3e74ab89520efb383ee52c2b"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/controller/FolderController.java": "d9c7ef9373e8c43c3e74ab89520efb383ee52c2b"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/controller/BlobStoreInspectorController.java": "7ee1a5f3f004b37a20f527d479a905be4ea7c759"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/dto/HearingRecordingDto.java": "88e6a5c96adcd3db1ff0c68b48a3f06639ef8bfe"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/dto/HearingSource.java": "650e66e8099ec0c9900f0bfcf9acdf66ab01806b"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/SegmentDownloadServiceImpl.java": "711d96e5651c5f1932656ef6981ee45ea7ab10fc"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/PermissionEvaluatorImpl.java": "dca036be0df07c53e1400b3fd84572c57b37f624"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/config/security/SecurityConfiguration.java": "af70acf0ab8b8d6cdf43b5069a3ae17e01f904c0"
+  "em-hrs-api:src/main/resources/application.yaml": "060237e2439c825ca8e9ac5463b95004c812d1f8"
+  "em-hrs-api:src/main/resources/ttl_service_map.json": "22cc67abb7fca8771a32236166bc0076e616ea17"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/HearingRecording.java": "3f8eaf52de4f1a49e891a74be2f5530425db480b"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/HearingRecordingSegment.java": "d630cce32118cdb8542105f873badc789f893246"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/AuditActions.java": "2b6f84a016f3ec51c5b39effae8a88bcfa77725e"
+  "em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/parse/FilenameParser.java": "6d60056cc3b7383e3c68c6cc2ae8d896c1af9f78"
 ---
 
 ## TL;DR

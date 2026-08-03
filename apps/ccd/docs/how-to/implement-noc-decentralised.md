@@ -14,10 +14,10 @@ sources:
   - ccd-config-generator@noc-sdk-refinement:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocEndpoint.java
   - ccd-config-generator@noc-sdk-refinement:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocQuestionsResponse.java
   - ccd-config-generator@noc-sdk-refinement:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocQuestion.java
-  - ccd-config-generator@noc-xui-native:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/runtime/noc/NocController.java
-  - ccd-config-generator@noc-xui-native:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/ChallengeQuestionGenerator.java
-  - ccd-config-generator@noc-xui-native:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ChallengeQuestion.java
-  - ccd-config-generator@noc-xui-native:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/AnswerBuilder.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/runtime/noc/NocController.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/ChallengeQuestionGenerator.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ChallengeQuestion.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/AnswerBuilder.java
   - pcs-api@noc-provider-routing:src/main/java/uk/gov/hmcts/reform/pcs/noc/NocService.java
   - pcs-api@noc-provider-routing:build.gradle
   - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/noc/PcsNoticeOfChange.java
@@ -29,38 +29,57 @@ sources:
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/ChallengeQuestionValidator.java
 provenance:
   note: >-
-    Derived from several unmerged proof-of-concept branches. It is NOT known which
-    (if any) is the intended direction. Two distinct SDK shapes were observed.
-    Shape 1: config-generator `noc-xui-native` @ a087f81f (builder
-    `noticeOfChange().validate().submit()`; runtime NocController serves only
-    verify-noc-answers + noc-requests) + pcs-api `noc-xui-native-pcs` @ c6d41a4b.
-    Here the questions endpoint is NOT served by the service, so it falls back to
-    AAC, which forces an OrganisationPolicy. Shape 2: config-generator
-    `noc-sdk-refinement` @ 6cbce4d5 (builder `noc().questions().verifyAnswers().submit()`;
-    runtime NocController also serves GET /noc/noc-questions) + pcs-api
-    `noc-provider-routing` @ e8f801ce (PCS serves questions itself; pins a forked
-    XUI build via XUI_MANAGE_CASES_TAG=noc-provider-routing). Here AAC is out of the
-    path and no OrganisationPolicy is needed. Other branches exist
-    (config-generator `noc`, `noc-part2`, `test-noc`; pcs-api `NoC_ChallengeQuestions`)
-    and were not fully analysed. Treat everything here as exploratory.
+    The SDK half of Shape 1 has MERGED to ccd-config-generator master (`noc-xui-native` is fully contained in master; the API types are byte-identical to the branch tip). Builder is `noticeOfChange().validate().submit()`; the decentralised-runtime NocController serves only verify-noc-answers + noc-requests, and is opt-in via `ccd.decentralised-runtime.noc.enabled`. The questions endpoint is still NOT served by the service, so it falls back to AAC, which forces an OrganisationPolicy. Shape 2 did NOT merge: config-generator `noc-sdk-refinement` (builder `noc().questions().verifyAnswers().submit()`; NocController also serving GET /noc/noc-questions, types NocQuestion/NocQuestionsResponse) still has 4 commits not in master, and its citations below stay branch-pinned. The PCS wiring is also still UNMERGED — `noc-xui-native-pcs` and `noc-provider-routing` both exist as branches; on pcs-api master only CaseRoleAssignmentService and LegalRepresentativePartyLinkService are present (no PcsNoticeOfChange, NocAccessChangeTaskComponent, or NocService). Treat the PCS examples as exploratory.
 status: draft
 title: Implement Notice of Change for a decentralised service
 diataxis: how-to
 product: ccd
+sources_sha:
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/NoticeOfChange.java": "e0518056b0b4b00f457c8049abf201ee1dedd83b"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocEndpoint.java": "a087f81f475e07ef86a32ff151cfa428abbc2404"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocAnswersRequest.java": "a087f81f475e07ef86a32ff151cfa428abbc2404"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocAnswersResponse.java": "a087f81f475e07ef86a32ff151cfa428abbc2404"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocSubmissionResponse.java": "a087f81f475e07ef86a32ff151cfa428abbc2404"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocSubmitContext.java": "a087f81f475e07ef86a32ff151cfa428abbc2404"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocError.java": "a087f81f475e07ef86a32ff151cfa428abbc2404"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocOrganisation.java": "a087f81f475e07ef86a32ff151cfa428abbc2404"
+  ? "ccd-config-generator@noc-sdk-refinement:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/runtime/noc/NocController.java"
+  : "03769e856bcef255a2e9ff33590535f8ac734986"
+  "ccd-config-generator@noc-sdk-refinement:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocEndpoint.java": "03769e856bcef255a2e9ff33590535f8ac734986"
+  ? "ccd-config-generator@noc-sdk-refinement:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocQuestionsResponse.java"
+  : "5e4a105b1e08db88e3a5c16ef9ebfe28e98d0664"
+  "ccd-config-generator@noc-sdk-refinement:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/noc/NocQuestion.java": "5e4a105b1e08db88e3a5c16ef9ebfe28e98d0664"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/runtime/noc/NocController.java": "56355375c657aadcda48cb5a4dff560b13a5b0de"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/ChallengeQuestionGenerator.java": "c7f310e6f229b8d22b82eedcd428590ab00d2f84"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ChallengeQuestion.java": "c7f310e6f229b8d22b82eedcd428590ab00d2f84"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/AnswerBuilder.java": "c7f310e6f229b8d22b82eedcd428590ab00d2f84"
+  "pcs-api@noc-provider-routing:src/main/java/uk/gov/hmcts/reform/pcs/noc/NocService.java": "e8f801ceaeaee533a2c5e827ce0b2e6d83ec7028"
+  "pcs-api@noc-provider-routing:build.gradle": "9ebaf641b90463e44c73f714ceb29cd984714d39"
+  "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/noc/PcsNoticeOfChange.java": "c6d41a4bdd6e7b5eac66292242083b386a20ab21"
+  "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/task/NocAccessChangeTaskComponent.java": "c6d41a4bdd6e7b5eac66292242083b386a20ab21"
+  "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/CaseRoleAssignmentService.java": "b5f50950e956f4a18b5c5da104818ee9a1a3a97f"
+  "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/service/LegalRepresentativePartyLinkService.java": "86ff16a381cf54f545d326faa779473f97465c17"
+  "rpx-xui-webapp:api/noc/index.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/NoticeOfChangeQuestions.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/ChallengeQuestionValidator.java"
+  : "6ad5468e76b9ce8c56d74d619b2b5c79cdee63e9"
 ---
 
 # Implement Notice of Change for a decentralised service
 
-> **Status: proof-of-concept.** This guide is reverse-engineered from the
-> `noc-xui-native` (config-generator) and `noc-xui-native-pcs` (pcs-api) PoC
-> branches. APIs and SDK builder names will change before this lands on master.
-> Treat the code snippets as the shape of the solution, not a stable contract.
+> **Status: SDK merged, service wiring still PoC.** The ccd-config-generator half has
+> landed on master — `builder.noticeOfChange()`, the `Noc*` API types, and the
+> `decentralised-runtime` `NocController` are all released SDK surface, so treat those
+> snippets as a real contract. The **PCS-side** examples are still reverse-engineered
+> from the unmerged `noc-xui-native-pcs` / `noc-provider-routing` branches and show the
+> shape of the solution, not a stable contract. The questions endpoint is still served
+> by AAC, which is what forces an `OrganisationPolicy` (see below).
 
 ## TL;DR
 
 - In the **centralised** model, `aac-manage-case-assignment` (AAC) owns the whole NoC flow: it discovers a `ChangeOrganisationRequest` (COR) field by structure-scanning case data, verifies challenge answers against case fields, drives four CCD events, writes role assignments to data-store `/case-users`, maintains an `OrganisationPolicy.PreviousOrganisations` audit trail, and emails the outgoing solicitor via GOV.UK Notify. See [Implement Notice of Change](implement-noc.md) for that model.
 - In the **decentralised** model the service owns its own database and its own case lifecycle, so **AAC is bypassed entirely**. The service implements the NoC verify + submit logic itself, against its own tables, and applies role changes directly to AMRAS via the CCD data-store `addCaseUserRoles` / `removeCaseUserRoles` client.
-- The ccd-config-generator SDK (`noc-xui-native`) grows a `builder.noticeOfChange()` block with two parts: **challenge questions** (generated into `ChallengeQuestion.json` and imported into definition-store, exactly as before — this is what XUI reads to render the form) and a **runtime endpoint** (`validate` + `submit` handlers) served by an auto-registered `NocController` in the `decentralised-runtime` at `POST /noc/verify-noc-answers` and `POST /noc/noc-requests`.
+- The ccd-config-generator SDK provides a `builder.noticeOfChange()` block with two parts: **challenge questions** (generated into `ChallengeQuestion.json` and imported into definition-store, exactly as before — this is what XUI reads to render the form) and a **runtime endpoint** (`validate` + `submit` handlers) served by `NocController` in the `decentralised-runtime` at `POST /noc/verify-noc-answers` and `POST /noc/noc-requests`. The controller is opt-in via `ccd.decentralised-runtime.noc.enabled: true`.
 - **You do not need a `ChangeOrganisationRequest` field**, and the PCS verify/submit *logic* never reads an `OrganisationPolicy` — representation state lives in the service's own entities (PCS: `LegalRepresentativeEntity` linked to `PartyEntity`). **But you almost certainly still need at least one `OrganisationPolicy` field on the case**, because the questions-rendering path still goes through AAC, which refuses to return challenge questions for a case that has no matching OrganisationPolicy. This is exactly what blocks XUI from rendering the form. See [Do you still need OrganisationPolicy?](#do-you-still-need-organisationpolicy) for the precise mechanism and the "put them in a list" nuance.
 - **Who sends the email?** The service does — there is no AAC to do it. The PoC has not wired Notify yet; the `noc-provider-routing` branch leaves an explicit `TODO` to send the outgoing-representative email from the service's own job queue, using AAC's Notify template as the content baseline.
 - **Multi-party** works because the service writes its own matching logic. AAC's "one Role filled by one Org" assumption lives in `OrganisationPolicy` + COR; once you drop those and match parties in your own code, a case can have any number of represented parties.
@@ -120,7 +139,7 @@ The decisive change is the XUI base URL: `SERVICES_CCD_CASE_ASSIGNMENT_API_PATH`
 
 ## Step 1 — Declare the NoC block in your SDK config
 
-On the `noc-xui-native` branch, `ConfigBuilder` gains `noticeOfChange()`, returning a builder with two responsibilities: **challenge questions** (definition-store config) and **runtime handlers** (`validate` / `submit`).
+On master, `ConfigBuilder` provides `noticeOfChange()`, returning a builder with two responsibilities: **challenge questions** (definition-store config) and **runtime handlers** (`validate` / `submit`).
 
 ```java
 // pcs-api: PcsNoticeOfChange.java (PoC)
@@ -159,7 +178,7 @@ public class PcsNoticeOfChange implements CCDConfig<PCSCase, State, UserRole> {
 Two things happen at config-resolution time:
 
 1. **Challenge questions** are emitted by `ChallengeQuestionGenerator` into `ChallengeQuestion.json` (case type, challenge id, question id/text/order, and an `Answer` expression `${path.to.field}:[ROLE]`). This is imported into definition-store like any other config and is what XUI reads to render the form. The challenge id here (`"NoC"`) is the group id — the centralised model hardcodes `NoCChallenge`, so confirm what the decentralised XUI route expects (see [Open questions](#open-questions-and-gaps-in-the-poc)).
-2. **Runtime handlers** are bundled into a `NocEndpoint` (`NoticeOfChange.build(caseTypeId)`), discovered at runtime by the auto-registered `NocController`.
+2. **Runtime handlers** are bundled into a `NocEndpoint` (`NoticeOfChange.build(caseTypeId)`), discovered at runtime by `NocController` (which you must enable — see [Step 6](#step-6--service-auth-and-the-runtime-controller)).
 
 The `.answer(role).complex(...).field(...)` builder records a dot-path into the model and binds it to a case role; the generator turns each into `${defendant1.firstName}:[DEFENDANTSOLICITOR]`. Note the answer expression is generated for definition-store/XUI display purposes — **the actual matching is done by your `validate` handler in code**, not by AAC's `ChallengeAnswerValidator`.
 
@@ -312,7 +331,19 @@ Recommended approach when you implement it:
 
 ## Step 6 — Service auth and the runtime controller
 
-The SDK's `decentralised-runtime` auto-registers `NocController` at `/noc` when a `ResolvedConfigRegistry` bean is present. You don't write it. It:
+The SDK's `decentralised-runtime` ships `NocController` at `/noc` — you don't write it. It is **opt-in**: as
+well as needing a `ResolvedConfigRegistry` bean, the controller is annotated
+`@ConditionalOnProperty(prefix = "ccd.decentralised-runtime.noc", name = "enabled", havingValue = "true")`,
+so services that don't use NoC never register the routes. Enable it explicitly:
+
+```yaml
+ccd:
+  decentralised-runtime:
+    noc:
+      enabled: true
+```
+
+Once enabled it:
 
 - exposes `POST /noc/verify-noc-answers` → your `validate`, and `POST /noc/noc-requests` → your `submit`;
 - validates the `ServiceAuthorization` S2S token and checks the caller against the endpoint's **authorised services** (default: `xui_webapp`). Override via `authorisedServices(...)` on the endpoint builder if a different caller needs access;
@@ -336,7 +367,7 @@ idam:
 
 - **Your service's verify/submit logic does not use OrganisationPolicy at all.** The PCS PoC contains no `OrganisationPolicy` field and no `ChangeOrganisationRequest` field in its own model — matching, the "already represents" guard, and the audit trail all run against `LegalRepresentativeEntity` ↔ `PartyEntity` rows. If the only thing that mattered were the decentralised handlers, you'd need no OrgPolicy.
 
-- **But AAC still serves the questions endpoint, and AAC hard-requires an OrganisationPolicy to return questions at all.** In the `noc-xui-native` PoC the SDK's `NocController` only serves `verify-noc-answers` and `noc-requests`. XUI's `GET /noc/noc-questions?case_id=` still goes to AAC. AAC's `NoticeOfChangeQuestions.challengeQuestions()` fetches the challenge questions from definition-store, then calls `checkOrgPoliciesForRoles(...)` (`NoticeOfChangeQuestions.java:80-101`):
+- **But AAC still serves the questions endpoint, and AAC hard-requires an OrganisationPolicy to return questions at all.** The merged SDK `NocController` only serves `verify-noc-answers` and `noc-requests`. XUI's `GET /noc/noc-questions?case_id=` still goes to AAC. AAC's `NoticeOfChangeQuestions.challengeQuestions()` fetches the challenge questions from definition-store, then calls `checkOrgPoliciesForRoles(...)` (`NoticeOfChangeQuestions.java:80-101`):
 
   ```java
   List<OrganisationPolicy> organisationPolicies = findPolicies(caseDetails);
@@ -368,17 +399,17 @@ This requirement disappears only once the questions endpoint also moves off AAC 
 
 ---
 
-## Open questions and gaps in the PoC
+## Open questions and gaps
 
-These are genuinely unresolved on the PoC branches — flag them with the ExUI / RCCD platform team before committing to a design:
+The SDK builder is settled, but these remain unresolved — flag them with the ExUI / RCCD platform team before committing to a design:
 
-1. **The questions endpoint (and the OrgPolicy gate it imposes).** XUI calls `GET /noc/noc-questions?case_id=` (`api/noc/index.ts`); the `noc-xui-native` `NocController` does **not** serve it, so it still hits AAC — which throws `NO_ORG_POLICY_WITH_ROLE` unless the case carries an OrganisationPolicy matching every question's role (see [Do you still need OrganisationPolicy?](#do-you-still-need-organisationpolicy)). That is the root cause of "XUI won't render the questions". The separate `noc-provider-routing` branch instead adds a `questions(...)` handler to the SDK (`builder.noc().questions(...).verifyAnswers(...).submit(...)`) so the **service** serves questions too — which, if XUI is routed to it, would remove the OrgPolicy requirement entirely. The two branches are different shapes; decide which model wins, and whether the questions endpoint moves off AAC.
+1. **The questions endpoint (and the OrgPolicy gate it imposes).** XUI calls `GET /noc/noc-questions?case_id=` (`api/noc/index.ts`); the merged `NocController` does **not** serve it, so it still hits AAC — which throws `NO_ORG_POLICY_WITH_ROLE` unless the case carries an OrganisationPolicy matching every question's role (see [Do you still need OrganisationPolicy?](#do-you-still-need-organisationpolicy)). That is the root cause of "XUI won't render the questions". The separate `noc-provider-routing` branch instead adds a `questions(...)` handler to the SDK (`builder.noc().questions(...).verifyAnswers(...).submit(...)`) so the **service** serves questions too — which, if XUI is routed to it, would remove the OrgPolicy requirement entirely. The two branches are different shapes; decide which model wins, and whether the questions endpoint moves off AAC.
 2. **XUI routing per case type.** `SERVICES_CCD_CASE_ASSIGNMENT_API_PATH` is a single base URL. How XUI decides, per case type, to call the decentralised service instead of AAC is not in these branches. This is the core "ExUI decentralisation" routing problem and likely needs a platform-level resolver.
 3. **Challenge group id.** PCS uses challenge id `"NoC"`; the centralised XUI/AAC path hardcodes `NoCChallenge`. Confirm what the decentralised XUI route expects.
-4. **Two divergent SDK shapes.** `noc-xui-native` exposes `builder.noticeOfChange().validate(...).submit(...)`; `noc-provider-routing` exposes `builder.noc().questions(...).verifyAnswers(...).submit(...)`. They are competing PoCs — only one should survive.
-5. **No approval gate.** The PoC auto-approves on match. If a service needs a caseworker approval step, that state machine has to be designed (the SDK has `NocSubmissionResponse.pending(...)` as a hook but nothing consumes it yet).
+4. **Two divergent SDK shapes — resolved in favour of `noticeOfChange()`.** `builder.noticeOfChange().validate(...).submit(...)` is what merged to master. The competing `noc-sdk-refinement` / `noc-provider-routing` shape (`builder.noc().questions(...).verifyAnswers(...).submit(...)`, with the service serving questions) did **not** merge and remains branch-only. Its `questions(...)` handler is still the only route that would remove the OrgPolicy gate in (1), so the question of whether questions moves off AAC is still open even though the builder naming is settled.
+5. **No approval gate.** Submit auto-approves on match. If a service needs a caseworker approval step, that state machine has to be designed (the SDK has `NocSubmissionResponse.pending(...)` as a hook but nothing consumes it yet).
 6. **Email not implemented** (Step 5).
-7. **config-generator merge status.** The challenge-question + NoC builder support is on the `noc-xui-native` branch and is **not merged** — your observation that "support in ccd-config-generator is [not] fully merged" is correct.
+7. **Merge status.** The config-generator side is **merged**: challenge questions, the `noticeOfChange()` builder, the `Noc*` API types, and the runtime `NocController` are all on master (the controller now gated behind `ccd.decentralised-runtime.noc.enabled`). The **service-side** wiring is not — on pcs-api master only `CaseRoleAssignmentService` and `LegalRepresentativePartyLinkService` exist; `PcsNoticeOfChange`, `NocAccessChangeTaskComponent`, and `NocService` are still branch-only.
 
 ---
 

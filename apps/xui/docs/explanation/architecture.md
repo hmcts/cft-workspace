@@ -47,6 +47,21 @@ confluence:
     last_modified: "2024-01-01T00:00:00Z"
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rpx-xui-webapp:api/application.ts": "74acb47e0cdb1f7d11939e2fcfdbbc2dd4696a75"
+  "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
+  "rpx-xui-webapp:api/auth/index.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
+  "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
+  "rpx-xui-webapp:api/lib/middleware/auth.ts": "3b6d926b78e0815e477c8938d564099e392a8c94"
+  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
+  "rpx-xui-webapp:charts/xui-webapp/values.yaml": "f48caa5dd7496ddd38035c9eaf6478c43f7271d0"
+  "rpx-xui-webapp:charts/xui-webapp/Chart.yaml": "f48caa5dd7496ddd38035c9eaf6478c43f7271d0"
+  "rpx-xui-webapp:Dockerfile": "f5bb097efe787ff7db6d9889ae7f62ee3d48ba16"
+  "rpx-xui-webapp:infrastructure/main.tf": "5376993d7f1f693f22ab014158974ad412abc4cc"
+  "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
+  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
+  "rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
 ---
 
 ## TL;DR
@@ -140,7 +155,7 @@ In deployed environments, sessions are stored in Azure Cache for Redis:
 | Connection secret | `secrets.rpx.webapp-redis6-connection-string` (aliased to `webapp-redis-connection-string`) |
 | Feature gate | `FEATURE_REDIS_ENABLED=true` |
 
-The node-lib's `RedisSessionStore` (`redisSessionStore.class.ts:17-51`) uses `redis` v3 client with `connect-redis` v4. It emits `redisStore.ClientReady` and `redisStore.ClientError` events propagated to `xuiNode` for BFF-level health checks.
+The node-lib's `RedisSessionStore` uses the `redis` v6 client with `connect-redis` v9, normalising legacy Azure-style and `?tls=true` connection strings into `rediss://` URLs first. It emits `redisStore.ClientReady` and `redisStore.ClientError` events propagated to `xuiNode` for BFF-level health checks.
 
 For local development, a file-backed session store writes to `.sessions` or `/tmp/sessions`.
 

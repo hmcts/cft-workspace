@@ -36,6 +36,18 @@ confluence:
     last_modified: "unknown"
     space: "RSE"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "em-stitching-api:build.gradle": "ba43d5346b387b0b78bba09d92e1c95e69339f2c"
+  "em-stitching-api:src/cftlib/java/uk/gov/hmcts/reform/em/stitching/cftlib/CftLibConfig.java": "248c283029d42edf340adf573bfe82c89ff9a06a"
+  "em-stitching-api:src/cftlib/resources/docker-compose-local.yml": "7d5acb4f93cfd6be8b08286521bb3450a0f2c9f4"
+  "em-annotation-api:build.gradle": "f086b4c6eeb7a52f5cca15c511d74976c69eb6a4"
+  "em-annotation-api:src/cftlib/java/uk/gov/hmcts/reform/em/annotation/cftlib/CftLibConfig.java": "ec97bb95c09e500d78f7a95517ed16bb3a6f4d94"
+  "em-native-pdf-annotator-app:build.gradle": "8257ef96e3d34d14addcd35b600b1bc96dd8eb9a"
+  "em-native-pdf-annotator-app:src/cftlib/java/uk/gov/hmcts/reform/em/npa/redaction/cftlib/CftLibConfig.java": "718ed1a6ce7faba5fa757f444be083486cee5856"
+  "em-native-pdf-annotator-app:src/cftlib/resources/docker-compose-local.yml": "a0bc4b6c4879ce836bdc90f57295f746b391d86e"
+  "em-hrs-api:build.gradle": "b396664680aafb1c188a3d7691266aa1deeeca26"
+  "em-hrs-api:src/cftlib/java/uk/gov/hmcts/reform/em/hrs/cftlib/CftLibConfig.java": "2b91f3dbb6217677d09c5042d3d189c692608179"
+  "em-hrs-api:src/cftlib/resources/docker-compose-local.yml": "02a2b73d70fbc57f454d35f00a04541d9d3bca2d"
 ---
 
 ## TL;DR

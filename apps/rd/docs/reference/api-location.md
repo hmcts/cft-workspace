@@ -52,6 +52,22 @@ confluence:
     last_modified: "unknown"
     space: "DTSRD"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdApiController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdCourtVenueController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/BuildingLocation.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtVenue.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/Region.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/Service.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/ServiceToCcdCaseTypeAssoc.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/response/LrdBuildingLocationResponse.java": "3cacda4e7abb33c83ebc86b03ddde5660f53eeb7"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/response/LrdCourtVenueResponse.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/response/LrdOrgInfoServiceResponse.java": "dd882d04b7a201b31f759dc8c5105cbcf4c773c4"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/response/LrdRegionResponse.java": "fa783f7848c500fdee8ade22449fc149af607336"
+  "rd-location-ref-api:src/main/resources/application.yaml": "0348cf42d7f36f5959fa7b671eebd32282f7fcfa"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/constants/LocationRefConstants.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/CourtVenueServiceImpl.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/CourtVenueRepository.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
 ---
 
 ## TL;DR
