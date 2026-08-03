@@ -67,7 +67,7 @@ That's it. The OIDC trust established in step 2 means there is no client secret 
 
 ## Step 4 — Wire up the workflow
 
-Use `hmcts/cnp-githubactions-library/container-build-push-openid@main`. The full publishing workflow used to push this repo's own devcontainer image is a good minimal template (`.github/workflows/publish-devcontainer.yml`):
+Use `hmcts/cnp-githubactions-library/container-build-push-openid@main`. Here is a minimal single-arch template — one job, one platform, `latest` plus a short SHA:
 
 ```yaml
 name: Publish devcontainer image
@@ -122,6 +122,8 @@ Two non-obvious bits:
 
 > The example workflow uses `registry-name: hmctsprod`. If you copy this template, keep that — `hmctspublic` is being decommissioned.
 
+If any of your users are on Apple Silicon Macs, this single-arch template is not enough — see [Multi-arch builds](#multi-arch-builds) below.
+
 ### Action inputs you'll typically set
 
 | Input | Required | Default | Notes |
@@ -138,6 +140,103 @@ Two non-obvious bits:
 | `push` | no | `'true'` | Set `false` for build-only PR validation |
 
 Outputs: `digest`, `tags`, `metadata`.
+
+## Multi-arch builds
+
+`platforms` defaults to **`linux/amd64` only**. Leave it unset and anyone on an Apple Silicon Mac gets `no matching manifest for linux/arm64` on pull, or a silently emulated container. This repo's own devcontainer image had exactly that problem. If your image has human users on Macs, publish `linux/amd64,linux/arm64`.
+
+There are two ways to get there.
+
+### Native matrix + manifest merge (preferred)
+
+Build each architecture on a runner of that architecture, then merge the results into one manifest list. GitHub's `ubuntu-24.04-arm` hosted runners are free for public repos and cheaper than the amd64 ones for private repos.
+
+Two jobs. The first is a matrix that pushes an **arch-suffixed staging tag** per architecture:
+
+```yaml
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+      - id: tag
+        run: echo "tag=$(echo "${{ github.sha }}" | cut -c1-7)-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
+      - uses: hmcts/cnp-githubactions-library/container-build-push-openid@main
+        with:
+          registry-name: hmctsprod
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          image-name: my-product/my-image
+          image-tags: ${{ steps.tag.outputs.tag }}
+          platforms: ${{ matrix.platform }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,scope=${{ matrix.arch }},mode=max
+```
+
+The second merges the staging tags into the tags users actually pull:
+
+```yaml
+  merge:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+      - run: az acr login --name hmctsprod
+      - run: |
+          set -euo pipefail
+          img="hmctsprod.azurecr.io/my-product/my-image"
+          sha=$(echo "${{ github.sha }}" | cut -c1-7)
+          docker buildx imagetools create \
+            --tag "${img}:latest" --tag "${img}:${sha}" \
+            "${img}:${sha}-amd64" "${img}:${sha}-arm64"
+          docker buildx imagetools inspect "${img}:latest"
+```
+
+Four things to get right:
+
+- **Scope the cache per architecture.** The action defaults to `cache-from: type=gha` / `cache-to: type=gha,mode=max` with no scope — two concurrent matrix jobs would then overwrite each other's layer cache. `scope=${{ matrix.arch }}` isolates them.
+- **Suffix staging tags with the SHA**, not just the arch (`abc1234-arm64`, not `latest-arm64`). With a bare `latest-<arch>` tag, two overlapping runs can have the merge job pick up the other run's layer. Add a `concurrency:` group as well.
+- **The merge job does its own `azure/login` + `az acr login`.** The shared action handles auth internally, but you aren't calling it here. `id-token: write` must still be in scope. No federation change is needed — the subject is the same repo/ref already trusted from step 2.
+- **`fail-fast: false`** so a failure on one architecture still leaves the other's image pushed to diagnose from.
+
+`.github/workflows/publish-devcontainer.yml` in this repo is the worked example.
+
+### QEMU cross-build (fallback)
+
+Add `docker/setup-qemu-action@v3` before the build step and pass both platforms in one job:
+
+```yaml
+      - uses: docker/setup-qemu-action@v3
+      - uses: hmcts/cnp-githubactions-library/container-build-push-openid@main
+        with:
+          # ...
+          platforms: linux/amd64,linux/arm64
+```
+
+Smaller diff, one atomically-pushed manifest, no staging tags. But the non-native half runs fully emulated, which is drastically slower — for an image doing JVM, npm, or `playwright install` work, expect hours rather than tens of minutes, plus emulation-specific flakiness. Use this only when arm64 runners aren't available to you.
+
+### Verifying
+
+```
+az acr login --name hmctsprod
+docker buildx imagetools inspect hmctsprod.azurecr.io/my-product/my-image:latest
+```
+
+Expect entries for both `linux/amd64` and `linux/arm64`. To smoke-test the other architecture's binaries from your own machine, `docker run --rm --platform linux/arm64 <image> uname -m` should print `aarch64` (emulated locally — that's fine, it still proves the layer is arm64-native).
 
 ## Tagging patterns
 
