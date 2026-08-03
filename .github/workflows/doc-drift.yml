@@ -70,9 +70,6 @@ jobs:
 
       - name: Check for drift
         id: check
-        # `bash` not the default `bash -e`: doc-drift exits non-zero when it
-        # FINDS drift, which is the case we want to act on, not fail on.
-        shell: bash
         run: |
           set -uo pipefail
           # The clones are blobless, so any accidental blob read would fetch
@@ -81,7 +78,11 @@ jobs:
           export GIT_NO_LAZY_FETCH=1
           echo 'GIT_NO_LAZY_FETCH=1' >> "$GITHUB_ENV"
 
-          ./scripts/doc-drift --mode=source 2>&1 | tee /tmp/drift.txt
+          # `|| true` because doc-drift exits non-zero when it FINDS drift,
+          # which is the case this whole job exists to act on. The default
+          # step shell is `bash -e`, so an unguarded call aborts here with the
+          # report unread. Genuine failure is caught by the summary check below.
+          ./scripts/doc-drift --mode=source 2>&1 | tee /tmp/drift.txt || true
           {
             echo '## Source-citation drift'
             echo '```'
