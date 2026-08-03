@@ -222,10 +222,35 @@ jobs:
             --append-system-prompt "You are running unattended in a GitHub Action on hmcts/cft-workspace and pushing straight to master with no human review. Be conservative: correct only what the source proves wrong, and leave anything ambiguous untouched. The repos under apps/, libs/ and platops/ are blobless, no-checkout CI clones — use `git show <ref>:<path>` to read their files, never the Read tool, and never edit inside them."
             --allowedTools "Read,Glob,Grep,Write,Edit,Bash(git:*),Bash(./scripts/doc-drift:*),Bash(./scripts/docs-index:*),Bash(yq:*)"
 
-      - name: Report unpushed changes
+      - name: Verify the work actually landed
         if: always() && steps.check.outputs.drift == 'true' && inputs.dry_run != true
         run: |
+          set -uo pipefail
+          # Fail the job on work that didn't reach master. Comparing against
+          # HEAD is not enough: a commit that failed to push leaves a CLEAN
+          # tree, so the only honest check is against the remote.
+          git fetch -q origin master
+
+          failed=0
+
           if ! git diff --quiet HEAD -- docs apps/*/docs DOCS.md 2>/dev/null; then
-            echo "::warning::Claude left uncommitted doc changes — they were not pushed"
+            echo "::error::Claude left uncommitted doc changes — not pushed"
             git diff --stat HEAD -- docs apps/*/docs DOCS.md >> "$GITHUB_STEP_SUMMARY"
+            failed=1
           fi
+
+          ahead=$(git rev-list --count origin/master..HEAD)
+          if (( ahead > 0 )); then
+            echo "::error::$ahead commit(s) were made but never reached master — push failed"
+            {
+              echo '## Unpushed commits'
+              echo '```'
+              git log --oneline origin/master..HEAD
+              git diff --stat origin/master..HEAD
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            failed=1
+          fi
+
+          (( failed )) && exit 1
+          echo "::notice::all work pushed to master"

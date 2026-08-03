@@ -107,10 +107,28 @@ and already reach this repo — no per-repo secret to create. The Bedrock role
 the role's trust policy is what decides which repos may assume it, so this repo
 must be added there.
 
-What does need checking is that the **Claude GitHub App is installed on
+What does need checking is the **Claude GitHub App's permissions on
 `cft-workspace`**. Org secrets existing doesn't imply the app is installed
 here — the secrets are just a key, and `create-github-app-token` mints a token
 scoped to wherever that app is actually installed.
+
+The app needs **`contents: write`** on this repo, and read access is not
+enough — read gets you all the way to a commit and then fails:
+
+```
+remote: Permission to hmcts/cft-workspace.git denied to hmctsclaudecode[bot].
+fatal: unable to access 'https://github.com/hmcts/cft-workspace.git/': 403
+```
+
+The job's `permissions: contents: write` block does **not** grant this. That
+governs the default `GITHUB_TOKEN`; the push uses the app token, whose scope
+comes from the app installation. Only an org admin can widen it.
+
+The "Verify the work actually landed" step fails the job when this happens.
+It compares `HEAD` against `origin/master` rather than just checking for a
+dirty tree, because a commit that failed to push leaves the tree clean — the
+symptom is a green run that changed nothing, which is indistinguishable from
+"no drift to fix" unless you look at the remote.
 
 The good news is that an under-installed app degrades gracefully rather than
 breaking the run. A token that can't see a given repo does **not** block a
