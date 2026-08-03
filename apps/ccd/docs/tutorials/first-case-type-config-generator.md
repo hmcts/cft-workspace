@@ -16,7 +16,6 @@ sources:
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/DefaultAccess.java
-  - ccd-config-generator:test-projects/e2e/build.gradle
 status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
@@ -59,7 +58,6 @@ sources_sha:
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java": "cde80e20584d39f3f3a890f473db818f79449fae"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/DefaultAccess.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
-  "ccd-config-generator:test-projects/e2e/build.gradle": "cde80e20584d39f3f3a890f473db818f79449fae"
 ---
 
 # First Case Type (Config Generator)

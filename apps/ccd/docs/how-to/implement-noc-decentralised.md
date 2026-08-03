@@ -19,7 +19,6 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ChallengeQuestion.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/AnswerBuilder.java
   - pcs-api@noc-provider-routing:src/main/java/uk/gov/hmcts/reform/pcs/noc/NocService.java
-  - pcs-api@noc-provider-routing:build.gradle
   - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/noc/PcsNoticeOfChange.java
   - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/task/NocAccessChangeTaskComponent.java
   - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/CaseRoleAssignmentService.java
@@ -54,7 +53,6 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ChallengeQuestion.java": "c7f310e6f229b8d22b82eedcd428590ab00d2f84"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/AnswerBuilder.java": "c7f310e6f229b8d22b82eedcd428590ab00d2f84"
   "pcs-api@noc-provider-routing:src/main/java/uk/gov/hmcts/reform/pcs/noc/NocService.java": "e8f801ceaeaee533a2c5e827ce0b2e6d83ec7028"
-  "pcs-api@noc-provider-routing:build.gradle": "9ebaf641b90463e44c73f714ceb29cd984714d39"
   "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/noc/PcsNoticeOfChange.java": "c6d41a4bdd6e7b5eac66292242083b386a20ab21"
   "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/task/NocAccessChangeTaskComponent.java": "c6d41a4bdd6e7b5eac66292242083b386a20ab21"
   "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/CaseRoleAssignmentService.java": "b5f50950e956f4a18b5c5da104818ee9a1a3a97f"

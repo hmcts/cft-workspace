@@ -14,7 +14,6 @@ sources:
   - wa-task-configuration-template:src/main/resources/wa-task-allowed-days-wa-wacasetype.dmn
   - wa-task-configuration-template:camunda-deployment.sh
   - wa-task-configuration-template:src/test/java/uk/gov/hmcts/reform/wataskconfigurationtemplate/DmnDecisionTable.java
-  - wa-task-configuration-template:build.gradle
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/calendar/DateTypeIntervalData.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java
@@ -65,7 +64,6 @@ sources_sha:
   "wa-task-configuration-template:src/main/resources/wa-task-allowed-days-wa-wacasetype.dmn": "ad5c4d1f3f999a71df3e145d1b784637e15fe261"
   "wa-task-configuration-template:camunda-deployment.sh": "0a58de5ec9a536dc6f319f113a1ff203f6cb77dd"
   "wa-task-configuration-template:src/test/java/uk/gov/hmcts/reform/wataskconfigurationtemplate/DmnDecisionTable.java": "ecc46851eb4f10d3028af8b72b2557cb038e5c74"
-  "wa-task-configuration-template:build.gradle": "ea467af15a46342ac837255e662df906756b9238"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java": "1145b29f89b2e45601917fc0ec0c6b8801b783be"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/calendar/DateTypeIntervalData.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"

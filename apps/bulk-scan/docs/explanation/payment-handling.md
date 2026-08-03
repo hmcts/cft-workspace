@@ -17,7 +17,6 @@ sources:
   - bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/config/AsyncConfiguration.java
   - bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/config/RetryConfig.java
   - bulk-scan-payment-processor:src/main/resources/application.yaml
-  - bulk-scan-payment-processor:build.gradle
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -62,7 +61,6 @@ sources_sha:
   "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/config/AsyncConfiguration.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
   "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/config/RetryConfig.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
   "bulk-scan-payment-processor:src/main/resources/application.yaml": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
-  "bulk-scan-payment-processor:build.gradle": "c9a9159eb11932ccc7df71031593270c602d458b"
 ---
 
 ## TL;DR
@@ -81,7 +79,7 @@ sources_sha:
 1. **Pay Hub** — the HMCTS Payments platform that records fees/payments against cases.
 2. **CCD** — updated to mark exception records as no longer awaiting DCN processing.
 
-The service is purely HTTP-driven. Although historical references to Azure Service Bus and JMS consumers exist in Sonar exclusions (`build.gradle:131`), the current codebase contains no message listener — payment messages arrive as REST calls from the orchestrator.
+The service is purely HTTP-driven. Although historical references to Azure Service Bus and JMS consumers exist in Sonar exclusions (`build.gradle`), the current codebase contains no message listener — payment messages arrive as REST calls from the orchestrator.
 
 <!-- DIVERGENCE: Confluence HLD (page 917963141/1794557345) describes interface I1 as AMQP between orchestrator and payment-handling-service, but bulk-scan-payment-processor source shows only HTTP REST endpoints (PaymentController.java). Source wins — the current implementation uses HTTP, not AMQP. -->
 

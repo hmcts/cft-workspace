@@ -150,8 +150,10 @@ Raise a PR against `send-letter-service` with the `application.yaml` changes. En
 Add the Java client to your `build.gradle`:
 
 ```groovy
-implementation group: 'com.github.hmcts', name: 'send-letter-client', version: '5.1.1'
+implementation group: 'com.github.hmcts', name: 'send-letter-client', version: '5.+'
 ```
+
+Check [`libs/send-letter-client`](https://github.com/hmcts/send-letter-client/releases) for the current release rather than copying a version from here. The client is on major 5.x.
 
 The client autoconfigures when the `send-letter.url` property is set. It exposes `SendLetterApi` which:
 - Always sends requests in **async mode** (`isAsync=true`) by default.

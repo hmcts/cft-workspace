@@ -15,7 +15,6 @@ sources:
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/services/cases.service.ts
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/services/wizard-page-field-to-case-field.mapper.ts
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/public-api.ts
-  - ccd-case-ui-toolkit:package.json
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/ng-package.json
   - ccd-case-ui-toolkit:angular.json
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/conditional-show-form.directive.ts
@@ -58,23 +57,22 @@ confluence:
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit/case-edit.component.ts": "d8781265f59485c3c9545882f6019114fadf3bd0"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit/case-edit.component.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-page/case-edit-page.component.ts"
-  : "543bacc3071f7ed6bf163a74bd5314ccbc9741d1"
+  : "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-create/case-create.component.ts": "db39163cb7de92af326a333fe7430558a051c135"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.ts": "b239d2859f3c5ec11025a5597f8e639806521c36"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read.component.ts": "288e38c19e95db200753da7559ab71cf480de986"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read.component.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "9b885551a65a6c03184556275bd356abc2f4ebe2"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/services/cases.service.ts": "f5ef7f0613973c080398c2af7eca7c297287d907"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/services/cases.service.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/services/wizard-page-field-to-case-field.mapper.ts"
   : "a0696744cf3ccae9aacbb31b40f99e2e69fc2655"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/public-api.ts": "d8781265f59485c3c9545882f6019114fadf3bd0"
-  "ccd-case-ui-toolkit:package.json": "47ef5a9b35cbbfdc2edf440a213c4ddaf50dc973"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/ng-package.json": "28beefe025ff4a81ca74779ef804b668ab9e0907"
   "ccd-case-ui-toolkit:angular.json": "d1ab32c3066c97424724ff6690e4cc2ec1ed2c54"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/conditional-show-form.directive.ts": "8892a7adb5f5cdeaaa74920c07eac09861779b4a"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/condition.peg.ts": "87ae0314e6f8ef16f73d92cd02a429595c3c8b7b"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/condition.peg.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "3ea421b1e4974dd0a14a2d259ecbe3073f561896"
 ---
@@ -82,7 +80,7 @@ sources_sha:
 ## TL;DR
 
 - `@hmcts/ccd-case-ui-toolkit` is the Angular component library that renders all CCD case data in the XUI platform -- wizard forms, case views, search results, workbasket filters, and the full field-type palette.
-- Published to npm (currently v7.3.52); consumed by all three XUI apps (`rpx-xui-webapp`, `rpx-xui-manage-organisations`, `rpx-xui-approve-org`).
+- Published to npm (major version 7.x); consumed by all three XUI apps (`rpx-xui-webapp`, `rpx-xui-manage-organisations`, `rpx-xui-approve-org`).
 - Built with ng-packagr from `projects/ccd-case-ui-toolkit/`; entry point is `public-api.ts`.
 - Entirely NgModule-based (no standalone components); consumers import `CaseEditorModule`, `PaletteModule`, `CaseViewerModule`, etc.
 - Host apps must provide `AbstractAppConfig` via DI to supply all backend URLs at runtime.
@@ -205,7 +203,9 @@ The mapper looks up each `WizardPageField.case_field_id` in the trigger's flat `
 
 ### Show/hide conditions
 
-Show conditions use a PEG.js grammar (`condition.peg.ts`) supporting `=`, `!=`, `CONTAINS`, `AND`, `OR`, and nested parentheses. Field references follow `[A-Za-z0-9._-]+`; metadata fields use square-bracket syntax (`[fieldName]`). Quoted string values accept `[A-Za-z0-9.,* _&()/-]*`; unquoted values are plain words or integers. The same parser handles both page-level and field-level conditions. For Complex/Collection subfields, `ShowCondition.addPathPrefixToCondition()` rewrites nested field references with the parent field path.
+Show conditions use a [Peggy](https://peggyjs.org/) grammar supporting `=`, `!=`, `CONTAINS`, `AND`, `OR`, and nested parentheses. Field references follow `[A-Za-z0-9._-]+`; metadata fields use square-bracket syntax (`[fieldName]`). Quoted string values accept `[A-Za-z0-9.,* _&()/-]*`; unquoted values are plain words or integers. The same parser handles both page-level and field-level conditions.
+
+The grammar source is `condition.peggy`, and the parser is **generated, not hand-written**: `npm run generate:condition-parser` runs `peggy --format es` to emit `condition-parser.generated.ts` (prefixed with `// @ts-nocheck` and a do-not-edit banner). `condition.peg.ts` is now a three-line re-export of that generated module, kept so existing import paths still resolve. To change the condition syntax, edit `condition.peggy` and re-run the generator — never edit the generated file. For Complex/Collection subfields, `ShowCondition.addPathPrefixToCondition()` rewrites nested field references with the parent field path.
 
 #### Conditional show architecture
 
@@ -247,7 +247,7 @@ Configuration: `projects/ccd-case-ui-toolkit/ng-package.json` sets `entryFile: "
 ### npm package
 
 - Package name: `@hmcts/ccd-case-ui-toolkit`
-- Current version: `7.3.52`
+- Major version: `7.x` (exact published version: see `package.json` on master, or npm)
 - `publishConfig.access: "public"` (required for scoped packages)
 - Only `dist/` is published (`.npmignore` excludes `src/`, `coverage/`, `docs/`, `node_modules/`)
 
@@ -284,7 +284,7 @@ JIRA Fix Version tags: Feature team uses `EXUI_MC_X.Y.Z`, PET team uses `EXUI_MC
 
 Consuming apps must:
 
-1. Install `@hmcts/ccd-case-ui-toolkit` as a dependency (pinned to a specific patch version). Current versions in use: webapp `7.3.49`, manage-organisations and approve-org `7.3.48`.
+1. Install `@hmcts/ccd-case-ui-toolkit` as a dependency, pinned to an exact patch version. The three apps are routinely on slightly different pins — `rpx-xui-webapp` usually leads, since toolkit changes are validated there first. Check each app's `package.json` for the version actually in use.
 2. Import the needed NgModules (`CaseEditorModule`, `PaletteModule`, `CaseViewerModule`).
 3. Provide `AbstractAppConfig` via Angular DI, implementing all abstract methods that return backend URLs (`getApiUrl()`, `getCaseDataUrl()`, `getDocumentManagementUrl()`, `getWorkAllocationApiUrl()`, `getCaseFlagsRefdataApiUrl()`, etc.) (`app.config.ts:27-120`).
 

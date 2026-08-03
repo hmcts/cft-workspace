@@ -167,11 +167,11 @@ Configuration (`SchedulerConfiguration.java:19-31`):
 - `StaleLettersTask`: `lockAtLeastFor = "PT15S"`, `lockAtMostFor = "PT30S"`
 - `daily-letter-upload-summary` and other report tasks: `lockAtLeastFor = "PT5S"`
 
-`SchedulerConfiguration` depends on `flyway`/`flywayInitializer` beans to guarantee migrations have run before ShedLock attempts to acquire locks. ShedLock version: 6.10.0 (`build.gradle:244-245`).
+`SchedulerConfiguration` depends on `flyway`/`flywayInitializer` beans to guarantee migrations have run before ShedLock attempts to acquire locks. ShedLock is on major 6.x (`build.gradle`).
 
 ## SFTP integration
 
-The service uses the SSHJ library (`com.hierynomus:sshj:0.40.0`) for SFTP operations.
+The service uses the SSHJ library (`com.hierynomus:sshj`) for SFTP operations.
 
 **Connection model** (`FtpClient.java:218-263`):
 

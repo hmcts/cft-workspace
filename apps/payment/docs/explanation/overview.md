@@ -20,7 +20,6 @@ sources:
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java
   - ccpay-payment-app:settings.gradle
-  - ccpay-payment-app:build.gradle
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -73,7 +72,6 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "9347d7418c0407d72eaf4dc231a1abde2718f472"
   "ccpay-payment-app:settings.gradle": "7bafc8bc5e167ac022ea09d0d178dda6df95e09b"
-  "ccpay-payment-app:build.gradle": "74a3ede3b24465a46cf74d310808a6a57451d3a7"
 ---
 
 ## TL;DR

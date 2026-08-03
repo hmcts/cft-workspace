@@ -10,7 +10,6 @@ sources:
   - em-media-viewer:README.md
   - em-media-viewer:projects/media-viewer/ng-package.json
   - em-media-viewer:projects/media-viewer/src/public_api.ts
-  - em-media-viewer:package.json
   - em-media-viewer:projects/media-viewer/src/lib/toolbar/toolbar-button-visibility.service.ts
   - em-media-viewer:projects/media-viewer/src/lib/redaction/services/redaction-api.service.ts
   - em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts
@@ -49,7 +48,6 @@ sources_sha:
   "em-media-viewer:README.md": "cb1055c515b2ef4270bce54cdbe991247f3583d6"
   "em-media-viewer:projects/media-viewer/ng-package.json": "a2c84c421d8b92aaf03c3a85772b26ee6becdbbc"
   "em-media-viewer:projects/media-viewer/src/public_api.ts": "e7f09d756b2fde6fec08da292390d51c70112d58"
-  "em-media-viewer:package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
   "em-media-viewer:projects/media-viewer/src/lib/toolbar/toolbar-button-visibility.service.ts": "fbb1f9f029644e8c81fec863ed570a508d1764ba"
   "em-media-viewer:projects/media-viewer/src/lib/redaction/services/redaction-api.service.ts": "0731a078e06501e2754da52365795c5ad3c2b6ee"
   "em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts": "fa3728864c83874e15ea556857123115bc616eb6"

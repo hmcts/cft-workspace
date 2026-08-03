@@ -107,7 +107,7 @@ XUI operates a dual-layer feature-flag system:
 
 2. **Client-side LaunchDarkly flags** — dynamically evaluated per-user in the browser. These control UI feature visibility, route guards, and CCD toolkit configuration. They stream updates in real-time via the LD SDK's EventSource connection.
 
-The BFF does **not** run a server-side LD SDK (`launchdarkly-node-server-sdk`). All LD evaluation happens client-side in Angular using `launchdarkly-js-client-sdk: 3.8.1` (webapp pins this version; common-lib declares `^3.3.0` as a peer dependency).
+The BFF does **not** run a server-side LD SDK (`launchdarkly-node-server-sdk`). All LD evaluation happens client-side in Angular using `launchdarkly-js-client-sdk` (major 3.x — the webapp pins an exact patch version; common-lib declares a `^3` peer dependency).
 
 ### Purpose and CI/CD philosophy
 

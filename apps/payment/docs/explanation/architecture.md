@@ -6,7 +6,6 @@ product: payment
 audience: both
 sources:
   - ccpay-payment-app:settings.gradle
-  - ccpay-payment-app:build.gradle
   - ccpay-payment-app:api/src/main/resources/application.properties
   - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-master.xml
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java
@@ -56,7 +55,6 @@ confluence:
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
   "ccpay-payment-app:settings.gradle": "7bafc8bc5e167ac022ea09d0d178dda6df95e09b"
-  "ccpay-payment-app:build.gradle": "74a3ede3b24465a46cf74d310808a6a57451d3a7"
   "ccpay-payment-app:api/src/main/resources/application.properties": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-master.xml": "d186319bdd2f53eeea8c6696dcaa973b62fef4e4"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
@@ -149,7 +147,7 @@ graph TD
 
 ## The hub: ccpay-payment-app
 
-A multi-module Gradle project assembled into a single Spring Boot 3.4 / Java 21 fat jar running on port 8080 (`ccpay-payment-app:build.gradle:191-213`).
+A multi-module Gradle project assembled into a single Spring Boot 3.4 / Java 21 fat jar running on port 8080 (`ccpay-payment-app:build.gradle`).
 
 ### Internal modules
 
@@ -386,7 +384,7 @@ All Java services use PostgreSQL with Liquibase-managed schemas. No service uses
 
 Liquibase auto-runs on startup: `spring.liquibase.enabled=${SPRING_LIQUIBASE_ENABLED:true}` (`ccpay-payment-app:api/src/main/resources/application.properties:25`). The Jenkins pipeline for each service calls `enableDbMigration('ccpay')`.
 
-A Gradle task `./gradlew migratePostgresDatabase` is available on `ccpay-payment-app` for manual migration (`ccpay-payment-app:build.gradle:281-287`).
+A Gradle task `./gradlew migratePostgresDatabase` is available on `ccpay-payment-app` for manual migration (`ccpay-payment-app:build.gradle`).
 
 ## Authentication and S2S
 

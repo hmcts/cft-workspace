@@ -5,15 +5,11 @@ diataxis: how-to
 product: em
 audience: both
 sources:
-  - em-stitching-api:build.gradle
   - em-stitching-api:src/cftlib/java/uk/gov/hmcts/reform/em/stitching/cftlib/CftLibConfig.java
   - em-stitching-api:src/cftlib/resources/docker-compose-local.yml
-  - em-annotation-api:build.gradle
   - em-annotation-api:src/cftlib/java/uk/gov/hmcts/reform/em/annotation/cftlib/CftLibConfig.java
-  - em-native-pdf-annotator-app:build.gradle
   - em-native-pdf-annotator-app:src/cftlib/java/uk/gov/hmcts/reform/em/npa/redaction/cftlib/CftLibConfig.java
   - em-native-pdf-annotator-app:src/cftlib/resources/docker-compose-local.yml
-  - em-hrs-api:build.gradle
   - em-hrs-api:src/cftlib/java/uk/gov/hmcts/reform/em/hrs/cftlib/CftLibConfig.java
   - em-hrs-api:src/cftlib/resources/docker-compose-local.yml
 status: reviewed
@@ -37,15 +33,11 @@ confluence:
     space: "RSE"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "em-stitching-api:build.gradle": "ba43d5346b387b0b78bba09d92e1c95e69339f2c"
   "em-stitching-api:src/cftlib/java/uk/gov/hmcts/reform/em/stitching/cftlib/CftLibConfig.java": "248c283029d42edf340adf573bfe82c89ff9a06a"
   "em-stitching-api:src/cftlib/resources/docker-compose-local.yml": "7d5acb4f93cfd6be8b08286521bb3450a0f2c9f4"
-  "em-annotation-api:build.gradle": "f086b4c6eeb7a52f5cca15c511d74976c69eb6a4"
   "em-annotation-api:src/cftlib/java/uk/gov/hmcts/reform/em/annotation/cftlib/CftLibConfig.java": "ec97bb95c09e500d78f7a95517ed16bb3a6f4d94"
-  "em-native-pdf-annotator-app:build.gradle": "8257ef96e3d34d14addcd35b600b1bc96dd8eb9a"
   "em-native-pdf-annotator-app:src/cftlib/java/uk/gov/hmcts/reform/em/npa/redaction/cftlib/CftLibConfig.java": "718ed1a6ce7faba5fa757f444be083486cee5856"
   "em-native-pdf-annotator-app:src/cftlib/resources/docker-compose-local.yml": "a0bc4b6c4879ce836bdc90f57295f746b391d86e"
-  "em-hrs-api:build.gradle": "b396664680aafb1c188a3d7691266aa1deeeca26"
   "em-hrs-api:src/cftlib/java/uk/gov/hmcts/reform/em/hrs/cftlib/CftLibConfig.java": "2b91f3dbb6217677d09c5042d3d189c692608179"
   "em-hrs-api:src/cftlib/resources/docker-compose-local.yml": "02a2b73d70fbc57f454d35f00a04541d9d3bca2d"
 ---
@@ -92,7 +84,7 @@ sources_sha:
 
 3. Wait for startup. The task provisions IDAM roles (`caseworker`, `caseworker-publiclaw`) and imports the CCD definition from `src/aat/resources/adv_annotation_functional_tests_ccd_def.xlsx` (`CftLibConfig.java:16-19`).
 
-4. The annotation API is available at `http://localhost:8080`. Hot-reload is active via `spring-boot-devtools` (`build.gradle:223`).
+4. The annotation API is available at `http://localhost:8080`. Hot-reload is active via `spring-boot-devtools` (`build.gradle`).
 
 ## Run em-stitching-api locally
 
@@ -107,7 +99,7 @@ sources_sha:
    ```bash
    ./gradlew bootWithCCD
    ```
-   On first run, the `loadEnvSecrets` task fetches secrets from the `em-stitching-aat` Key Vault and writes them to `.aat-env`. If you need to refresh secrets later, run `./gradlew reloadEnvSecrets` (`build.gradle:433`).
+   On first run, the `loadEnvSecrets` task fetches secrets from the `em-stitching-aat` Key Vault and writes them to `.aat-env`. If you need to refresh secrets later, run `./gradlew reloadEnvSecrets` (`build.gradle`).
 
 4. The task launches a `docker-compose-local.yml` that starts:
    - **DM Store** on port `4603` (connected to the `evidence` database on cftlib's Postgres at `host.docker.internal:6432`)
@@ -140,7 +132,7 @@ sources_sha:
    ```bash
    ./gradlew bootWithCCD
    ```
-   Secrets are fetched from the `em-npa-aat` Key Vault (secret name: `em-npa-dot-env`) on first run. Docker containers (DM Store + Azurite) are launched from `src/cftlib/resources/docker-compose-local.yml`. The additional databases created are `emnpa,evidence` (`build.gradle:611`).
+   Secrets are fetched from the `em-npa-aat` Key Vault (secret name: `em-npa-dot-env`) on first run. Docker containers (DM Store + Azurite) are launched from `src/cftlib/resources/docker-compose-local.yml`. The additional databases created are `emnpa,evidence` (`build.gradle`).
 
 3. `CftLibConfig` creates profiles for `bundle-tester@gmail.com` and `redactionTestUser2@redactiontest.com` (jurisdiction `PUBLICLAW`, case type `CCD_BUNDLE_MVP_TYPE_ASYNC`), provisions roles (`caseworker`, `caseworker-publiclaw`, `ccd-import`), configures AM role assignments, and imports `src/aat/resources/adv_redaction_functional_tests_ccd_def.xlsx`.
 
@@ -157,7 +149,7 @@ sources_sha:
    ```bash
    ./gradlew bootWithCCD
    ```
-   Secrets are fetched from the `em-hrs-api-aat` Key Vault (secret name: `em-hrs-api-dot-env`). Docker containers are launched -- **Azurite only** (no DM Store, unlike stitching/NPA). The additional database is `emhrs` (`build.gradle:569`). The HRS API runs on port `8081` (configured via `HRS_API_SERVER_PORT`).
+   Secrets are fetched from the `em-hrs-api-aat` Key Vault (secret name: `em-hrs-api-dot-env`). Docker containers are launched -- **Azurite only** (no DM Store, unlike stitching/NPA). The additional database is `emhrs` (`build.gradle`). The HRS API runs on port `8081` (configured via `HRS_API_SERVER_PORT`).
 
 3. `CftLibConfig` provisions multiple test users with HRS-specific roles (`caseworker-hrs`, `caseworker-hrs-searcher`, `cft-ttl-manager`, `caseworker-hrs-systemupdate`). It also configures AM role assignments by looking up the IDAM user ID for the searcher user. The CCD definition imported is `src/functionalTest/resources/CCD_HRS_v1.8-AAT.xlsx`.
 

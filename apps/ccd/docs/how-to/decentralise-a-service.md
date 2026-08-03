@@ -19,7 +19,6 @@ sources:
   - ccd-data-store-api:src/main/resources/application.properties
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java
-  - pcs-api:build.gradle
 examples_extracted_from:
   - apps/pcs/pcs-api/src/main/java/uk/gov/hmcts/reform/pcs/ccd/event/TestCaseGeneration.java
 status: confluence-augmented
@@ -68,7 +67,6 @@ sources_sha:
   "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "de6364b8cf1f27eddbd50422b7f604b4e35634a4"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "2aecb7993e5e958ff90b63f5bf46b5d7a45ab638"
-  "pcs-api:build.gradle": "b1bbfa1bcecff68a2d03a0d812be35be6fbf2dd6"
 ---
 
 # Decentralise a Service
@@ -107,7 +105,7 @@ ccd {
 ```
 
 This causes the plugin to pull in the `decentralised-runtime` dependency and wire
-`ServicePersistenceController` automatically (`build.gradle:98-102` in pcs-api).
+`ServicePersistenceController` automatically (`build.gradle` in pcs-api).
 
 > `runtimeIndexing` is separate from `decentralised` -- it controls whether the CCD
 > definition is re-resolved at startup. Enable it when running locally or in preview.

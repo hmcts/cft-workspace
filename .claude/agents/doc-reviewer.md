@@ -41,6 +41,8 @@ Derive `<product>` from the path: it's the segment after `apps/` and before `/do
 - Page claims behaviour the code does not exhibit.
 - Code example diverges materially from current source.
 - Endpoint paths, JSON keys, role names misnamed.
+- An exact `x.y.z` dependency version recorded in the body (see below) — flag it and replace it
+  with the major version or a pointer to the source of truth.
 
 ## What does NOT count
 
@@ -48,6 +50,11 @@ Derive `<product>` from the path: it's the segment after `apps/` and before `/do
 - Length. Don't insist a page be longer or shorter.
 - Missing topics that aren't in the brief. The brief is upstream of the page; if a topic is missing from the brief itself, that's `.plan.yaml`'s job.
 - Pages that lack a See also section — the linker may have skipped them; that's a Phase 5 issue, not a review issue.
+- A **major** version being slightly behind (`major 7.x` when the repo is on 7.x) — majors are
+  what we document deliberately. Only flag a major that is actually wrong.
+- Version-like strings that are stable identifiers rather than dependency versions: Flyway
+  migration IDs (`V1.0.42`), API path versions (`/v2/`), Confluence page titles, IP addresses,
+  and placeholder versions in tag/release instructions.
 
 ## Output
 

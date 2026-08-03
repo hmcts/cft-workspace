@@ -22,7 +22,6 @@ sources:
   - em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts
   - em-media-viewer:projects/media-viewer/src/lib/viewers/unsupported-viewer/unsupported-viewer.component.ts
   - em-media-viewer:projects/media-viewer/ng-package.json
-  - em-media-viewer:package.json
   - em-media-viewer:README.md
   - em-icp-api:api/routes/sessions.ts
   - em-icp-api:api/model/interfaces.ts
@@ -74,7 +73,6 @@ sources_sha:
   "em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts": "fa3728864c83874e15ea556857123115bc616eb6"
   "em-media-viewer:projects/media-viewer/src/lib/viewers/unsupported-viewer/unsupported-viewer.component.ts": "353aadba4f2c7f0d85b9815b931a82d0de8662c0"
   "em-media-viewer:projects/media-viewer/ng-package.json": "a2c84c421d8b92aaf03c3a85772b26ee6becdbbc"
-  "em-media-viewer:package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
   "em-media-viewer:README.md": "cb1055c515b2ef4270bce54cdbe991247f3583d6"
   "em-icp-api:api/routes/sessions.ts": "738fef6ffb0390b60945df12a14f17bfd28ffdea"
   "em-icp-api:api/model/interfaces.ts": "0f1f0e91169d8c69a356c250ba05ff2ac13c185d"

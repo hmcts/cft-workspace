@@ -30,7 +30,6 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java
-  - pcs-api:build.gradle
 examples_extracted_from:
   - apps/pcs/pcs-api/src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java
 status: confluence-augmented
@@ -93,7 +92,6 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "de6364b8cf1f27eddbd50422b7f604b4e35634a4"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "2aecb7993e5e958ff90b63f5bf46b5d7a45ab638"
-  "pcs-api:build.gradle": "b1bbfa1bcecff68a2d03a0d812be35be6fbf2dd6"
 ---
 
 # Decentralisation
@@ -366,7 +364,7 @@ ccd {
 }
 ```
 
-Setting `decentralised = true` pulls in the `decentralised-runtime` dependency and wires `ServicePersistenceController` automatically (`build.gradle:98-102` in pcs-api). The service does **not** write this controller itself.
+Setting `decentralised = true` pulls in the `decentralised-runtime` dependency and wires `ServicePersistenceController` automatically (`build.gradle` in pcs-api). The service does **not** write this controller itself.
 
 ### 2. Implement `CaseView`
 

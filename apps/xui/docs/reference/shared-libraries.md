@@ -5,7 +5,6 @@ diataxis: reference
 product: xui
 audience: both
 sources:
-  - rpx-xui-common-lib:projects/exui-common-lib/package.json
   - rpx-xui-common-lib:projects/exui-common-lib/src/lib/exui-common-lib.module.ts
   - rpx-xui-common-lib:projects/exui-common-lib/src/public-api.ts
   - rpx-xui-node-lib:src/index.ts
@@ -58,7 +57,6 @@ confluence:
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-common-lib:projects/exui-common-lib/package.json": "376786e3e045fa80786f869896e4eb9148fccf2f"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/exui-common-lib.module.ts": "189415163133256e8e494105c62e9d2259e98294"
   "rpx-xui-common-lib:projects/exui-common-lib/src/public-api.ts": "f980531694894f3fbef1a5e2f8a2b452f12e1974"
   "rpx-xui-node-lib:src/index.ts": "0015bb7837ab8261bed0df08bbf678f7ec88dbc6"
@@ -92,11 +90,13 @@ sources_sha:
 
 ## Library summary
 
-| Library | npm package | Current version | Runtime | Primary purpose |
-|---------|-------------|-----------------|---------|-----------------|
-| rpx-xui-common-lib | `@hmcts/rpx-xui-common-lib` | 3.2.14 | Angular (browser) | Shared UI components, services, directives |
-| rpx-xui-node-lib | `@hmcts/rpx-xui-node-lib` | 2.30.21 | Node/Express (BFF) | Auth, session, security middleware |
-| rpx-xui-translation | `rpx-xui-translation` | 1.2.9 | Angular (browser) | Welsh-language translation pipe and service |
+| Library | npm package | Major | Runtime | Primary purpose |
+|---------|-------------|-------|---------|-----------------|
+| rpx-xui-common-lib | `@hmcts/rpx-xui-common-lib` | 3.x | Angular (browser) | Shared UI components, services, directives |
+| rpx-xui-node-lib | `@hmcts/rpx-xui-node-lib` | 2.x | Node/Express (BFF) | Auth, session, security middleware |
+| rpx-xui-translation | `rpx-xui-translation` | 1.x | Angular (browser) | Welsh-language translation pipe and service |
+
+Exact published versions are not recorded here — check each library's `package.json` on master, or npm. Only major versions are documented, since those are the ones that carry breaking-change meaning.
 
 ## Consuming applications
 
@@ -140,10 +140,10 @@ When upgrading Angular (e.g. the v20 upgrade), the bottom-up order is:
 | Attribute | Value |
 |-----------|-------|
 | npm package | `@hmcts/rpx-xui-common-lib` |
-| Version | 3.2.14 |
+| Major version | 3.x |
 | Repo path | `apps/xui/rpx-xui-common-lib` |
 | Library source | `projects/exui-common-lib/` |
-| Build tool | `ng-packagr` v20.3.0 |
+| Build tool | `ng-packagr` |
 | Angular module | `ExuiCommonLibModule` |
 | Component prefix | `xuilib-` |
 | Publish scope | `@hmcts` (public) |
@@ -164,7 +164,7 @@ When upgrading Angular (e.g. the v20 upgrade), the bottom-up order is:
 |------------|-------|
 | `launchdarkly-js-client-sdk` | Required for `LaunchDarklyService` |
 | `ngx-pagination` | Pagination component support |
-| `rpx-xui-translation` | Pinned to pre-release `1.1.2-CME-780-9` in peer deps |
+| `rpx-xui-translation` | Pinned to an exact version in peer deps (not a range) — bumping it needs a coordinated release |
 | `@ng-idle/core`, `@ng-idle/keepalive` | Session idle detection |
 
 ### Versioning notes
@@ -179,7 +179,7 @@ When upgrading Angular (e.g. the v20 upgrade), the bottom-up order is:
 | Attribute | Value |
 |-----------|-------|
 | npm package | `@hmcts/rpx-xui-node-lib` |
-| Version | 2.30.21 |
+| Major version | 2.x |
 | Repo path | `apps/xui/rpx-xui-node-lib` |
 | Entry point | `src/index.ts` |
 | Sub-modules | `src/auth/`, `src/session/`, `src/common/` |
@@ -301,7 +301,7 @@ Beyond the five standard auth routes, the library registers an error-handling re
 | Attribute | Value |
 |-----------|-------|
 | npm package | `rpx-xui-translation` |
-| Version | 1.2.9 |
+| Major version | 1.x |
 | Repo path | `apps/xui/rpx-xui-translation` |
 | Library source | `projects/rpx-xui-translation/` |
 | Build tool | `ng-packagr` |

@@ -8,8 +8,6 @@ sources:
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/public-api.ts
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/ng-package.json
   - ccd-case-ui-toolkit:angular.json
-  - ccd-case-ui-toolkit:package.json
-  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.module.ts
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts
@@ -52,8 +50,6 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/public-api.ts": "d8781265f59485c3c9545882f6019114fadf3bd0"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/ng-package.json": "28beefe025ff4a81ca74779ef804b668ab9e0907"
   "ccd-case-ui-toolkit:angular.json": "d1ab32c3066c97424724ff6690e4cc2ec1ed2c54"
-  "ccd-case-ui-toolkit:package.json": "47ef5a9b35cbbfdc2edf440a213c4ddaf50dc973"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "47ef5a9b35cbbfdc2edf440a213c4ddaf50dc973"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.module.ts": "543bacc3071f7ed6bf163a74bd5314ccbc9741d1"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "9b885551a65a6c03184556275bd356abc2f4ebe2"
@@ -275,21 +271,23 @@ This invokes `ng build ccd-case-ui-toolkit-lib` which runs ng-packagr, producing
 
 You must update the version in **both** package.json files -- they must match:
 
-- Root: `package.json` (currently `7.3.52`)
-- Library: `projects/ccd-case-ui-toolkit/package.json` (currently `7.3.52`)
+- Root: `package.json`
+- Library: `projects/ccd-case-ui-toolkit/package.json`
 
-<!-- DIVERGENCE: Confluence says "the preversion hook runs lint, test, and build automatically" and the draft says "npm version patch" triggers this. While the preversion hook does exist in package.json:38 (it runs "npm run ci" which is lint+test+build), the actual publish mechanism is GitHub Actions triggered by a GitHub Release event, not by the postversion hook pushing a tag. The postversion hook pushes to master, but publishing only happens when you create a Release on GitHub. Source wins. -->
+Read the current version out of the root `package.json` rather than relying on a number quoted here — the toolkit publishes patch releases frequently.
+
+<!-- DIVERGENCE: Confluence says "the preversion hook runs lint, test, and build automatically" and the draft says "npm version patch" triggers this. While the preversion hook does exist in package.json (it runs "npm run ci" which is lint+test+build), the actual publish mechanism is GitHub Actions triggered by a GitHub Release event, not by the postversion hook pushing a tag. The postversion hook pushes to master, but publishing only happens when you create a Release on GitHub. Source wins. -->
 
 Version numbers follow [semver](https://semver.org/) with the convention:
 - Feature team releases: bump the **minor** version (e.g. `7.4.0`)
-- PET team / patch releases: bump the **patch** version (e.g. `7.3.53`)
+- PET team / patch releases: bump the **patch** version (e.g. `7.3.99`)
 - Pre-releases: append a label (e.g. `7.4.0-fix-link-defect` or `7.4.0-alpha`)
 
 ### Publishing workflow
 
 1. Merge your PR to `master` with the updated version numbers.
 2. Go to <https://github.com/hmcts/ccd-case-ui-toolkit/releases/new>.
-3. Create a new tag of the form `v<version>` (e.g. `v7.3.53`) targeting `master`.
+3. Create a new tag of the form `v<version>` (e.g. `v7.3.99`) targeting `master`.
 4. Enter the release title (the version number) and a brief description of changes.
 5. For a **full release**: leave "This is a pre-release" unchecked. The GitHub Action publishes to npm with the `latest` dist-tag.
 6. For a **pre-release**: check "This is a pre-release". The GitHub Action publishes to npm with the `next` dist-tag.
@@ -308,7 +306,7 @@ Before publishing:
 
 You can publish a pre-release from any branch (not just master):
 
-1. Tag your branch: `git tag v7.3.53-my-feature && git push origin v7.3.53-my-feature`
+1. Tag your branch: `git tag v7.3.99-my-feature && git push origin v7.3.99-my-feature`
 2. Create a GitHub Release targeting your branch, with the pre-release checkbox selected.
 3. The Action builds from that branch and publishes with the `next` dist-tag.
 
@@ -321,7 +319,7 @@ In each consuming app (`rpx-xui-webapp`, `rpx-xui-manage-organisations`, `rpx-xu
 ```json
 {
   "dependencies": {
-    "@hmcts/ccd-case-ui-toolkit": "7.3.53"
+    "@hmcts/ccd-case-ui-toolkit": "7.3.99"
   }
 }
 ```
