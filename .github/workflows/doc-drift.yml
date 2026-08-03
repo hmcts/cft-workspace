@@ -5,14 +5,8 @@ name: Weekly doc drift
 # This job runs weekly, finds the pages whose cited sources have changed, has
 # Claude re-read the source and correct the prose, then pushes to master.
 #
-# Setup this workflow needs (see docs/how-to/doc-drift-pipeline.md):
-#   secrets.CLAUDE_CODE_APP_ID / CLAUDE_CODE_PRIVATE_KEY — hmcts org secrets,
-#     already available here. The Claude app does need installing on this repo
-#     for the token to be mintable at all. Reaching the OTHER cited repos is
-#     mostly free: 69 of the 70 are public and clone anonymously even with a
-#     token that can't see them. Only the private one (rpx-xui-dev-utils) needs
-#     the app installed to be checked, and ci-clone-cited skips it if not.
-#   this repo added to the trust policy of the shared HMCTSClaudeGitHubActionsRole.
+# Setup notes, including which repos the token can and can't reach:
+# docs/how-to/doc-drift-pipeline.md
 
 on:
   schedule:
@@ -46,16 +40,13 @@ jobs:
         with:
           app-id: ${{ secrets.CLAUDE_CODE_APP_ID }}
           private-key: ${{ secrets.CLAUDE_CODE_PRIVATE_KEY }}
-          # The cited repos live alongside this one in the hmcts org, and the
-          # token must reach all of them.
+          # Widen the token beyond this repo so it can clone the cited ones.
           owner: ${{ github.repository_owner }}
 
       - name: Checkout workspace
         uses: actions/checkout@v6
         with:
           token: ${{ steps.app-token.outputs.token }}
-          # Full history: the push at the end needs a real branch, and
-          # `--record` amends tracked files.
           fetch-depth: 0
 
       - name: Install mikefarah/yq
@@ -79,12 +70,14 @@ jobs:
 
       - name: Check for drift
         id: check
+        # `bash` not the default `bash -e`: doc-drift exits non-zero when it
+        # FINDS drift, which is the case we want to act on, not fail on.
+        shell: bash
         run: |
           set -uo pipefail
-          # Never lazily fetch a blob: the clones are --filter=blob:none, and a
-          # silent per-file fetch would turn a 20-second check into a very long
-          # one. doc-drift only needs commits and trees. Via GITHUB_ENV so it
-          # also reaches the Claude step's shell, not just this one.
+          # The clones are blobless, so any accidental blob read would fetch
+          # per-file over the network. Fail loudly instead. GITHUB_ENV so the
+          # Claude step inherits it too.
           export GIT_NO_LAZY_FETCH=1
           echo 'GIT_NO_LAZY_FETCH=1' >> "$GITHUB_ENV"
 
@@ -96,9 +89,17 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-          # `stale` = a cited file changed since the page was written.
-          # `broken` = a cited file no longer exists on its ref (moved, renamed,
-          # deleted, or a merged feature branch) — also needs a human-grade fix.
+          # doc-drift exits 1 both for "found drift" and, via die(), for a real
+          # failure — so the exit code can't be trusted on its own. Require the
+          # summary line instead: without it the run died early, and reporting
+          # "no drift" would be a false all-clear.
+          if ! grep -qE '^[0-9]+ fresh$' /tmp/drift.txt; then
+            echo "::error::doc-drift did not produce a summary — treating as failure"
+            exit 1
+          fi
+
+          # Counts both stale and broken pages; the indent distinguishes
+          # per-page lines from the summary totals.
           affected=$(grep -cE '^  [^ ]+\.md:' /tmp/drift.txt)
           echo "affected=$affected" >> "$GITHUB_OUTPUT"
           if (( affected > 0 )); then
@@ -119,11 +120,7 @@ jobs:
         if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          # Shared HMCTS Bedrock role, same one cath-service and
-          # expressjs-monorepo-template use. Not a secret — an ARN is just an
-          # account ID plus a role name; the role's trust policy is what
-          # decides which repos can assume it, which is why this repo has to be
-          # added there before the job can authenticate.
+          # Shared HMCTS role; this repo must be in its trust policy.
           role-to-assume: arn:aws:iam::313941174580:role/HMCTSClaudeGitHubActionsRole
           aws-region: eu-west-1
 
