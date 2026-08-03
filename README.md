@@ -11,9 +11,10 @@ git clone git@github.com:hmcts/cft-workspace.git
 cd cft-workspace
 
 # One-time auth prerequisites (on the host):
-gh auth login                # GitHub
-az login                     # Azure (AAT environments, Key Vault)
-ssh -T git@github.com        # confirm SSH
+gh auth login                 # GitHub
+az login                      # Azure (AAT environments, Key Vault)
+az acr login --name hmctsprod # devcontainer image
+ssh -T git@github.com         # confirm SSH
 
 # Open in VS Code and accept "Reopen in Container" 
 # the devcontainer's post-create runs scripts/bootstrap.
