@@ -26,6 +26,10 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/ApplicationParams.java
   - ccd-data-store-api:src/main/resources/application.properties
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/DocumentValidator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/CoreCaseDataApplication.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/common/Categories.json
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_CaseFileView_1/CaseField.json
 examples_extracted_from:
@@ -80,6 +84,12 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java": "b58f7f447730bf5ec8f9bca0bd831c1abe2b6db0"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/ApplicationParams.java": "6bd724e7501334211b25c150e57a1180f2df758d"
   "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/DocumentValidator.java": "ac8b88cf8cff30d213c21d5e23226091d982e259"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/CoreCaseDataApplication.java": "6bd724e7501334211b25c150e57a1180f2df758d"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java"
+  : "e3fca30b92506584a590ae203811d60202129d2d"
+  ? "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql"
+  : "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
   "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/common/Categories.json": "cc98c315a8670172db3c1af0f4dcd0553cc76f0d"
   ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_CaseFileView_1/CaseField.json"
   : "cc98c315a8670172db3c1af0f4dcd0553cc76f0d"
@@ -95,7 +105,7 @@ sources_sha:
 - The data store serves the tree via `GET /categoriesAndDocuments/{caseRef}` and moves documents between folders via `PUT /documentData/caseref/{caseRef}`.
 - XUI renders it when a `ComponentLauncher` field carries `display_context_parameter` `#ARGUMENT(CaseFileView)`, surfaced through a `caseFileView` tab.
 - CFV is the **organisation/presentation** layer only — documents are still stored and served through CDAM, and viewed via the separate Media Viewer. It is not bundling/stitching.
-- CFV 1.1 adds an `upload_timestamp` sub-field that the data store auto-stamps on newly-uploaded documents — but only for case types on the `UPLOAD_TIMESTAMP_FEATURED_CASE_TYPES` whitelist.
+- CFV 1.1 adds an `upload_timestamp` sub-field that the data store auto-stamps on newly-uploaded documents — but only for case types on the `UPLOAD_TIMESTAMP_FEATURED_CASE_TYPES` whitelist. It needs no definition change, the whitelist gates only CCD's *stamping* (not the attribute itself), and **decentralised services must populate it themselves**.
 
 ## Defining the folder tree (categories)
 
@@ -163,6 +173,41 @@ Moving a document fires a `DocumentUpdated` system event (see [the data-store en
 CFV 1.1 introduced an `upload_timestamp` sub-field on the `Document` base type, used by ExUI to sort the tree by recency. The data store auto-populates it: on case-event submission, `CaseDocumentTimestampService.addUploadTimestamps(...)` finds document URLs present in the modified case data but **not** in the version already in the database (i.e. newly-uploaded documents) and stamps them with the current UTC time, formatted `yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS` (`CaseDocumentTimestampService.java:41,54-88`).
 
 This is gated per case type. Stamping only runs when the case type appears in `ccd.upload-timestamp-featured-case-types` (env `UPLOAD_TIMESTAMP_FEATURED_CASE_TYPES`, `application.properties:273`; `ApplicationParams.java:191`). Onboarding a service to 1.1 therefore means (a) including `upload_timestamp` in the service's `Document` Java object and (b) asking CCD to add the case type to that whitelist — there is no per-definition switch.
+
+### No definition change is needed
+
+`upload_timestamp` is **not** definition metadata. `Document` is a leaf `field_type` row with no complex members (`V0001__Base_version.sql:2564`), and the string `upload_timestamp` appears nowhere in `ccd-definition-store-api`. The sub-field lives in the data store's model and validator only.
+
+So onboarding to 1.1 adds no `CaseField`, `ComplexTypes`, or `AuthorisationCaseField` row, and services using the SDK emit nothing new — `uk.gov.hmcts.ccd.sdk.type.Document` is annotated `@ComplexType(name = "Document", generate = false)` (`Document.java:17`), meaning the generator references the base type by name and never emits a sheet for it.
+
+### The whitelist gates stamping, not the attribute
+
+The whitelist has exactly one call site — the early return in `addUploadTimestamps` (`CaseDocumentTimestampService.java:66`, via `isCaseTypeUploadTimestampFeatureEnabled` at `:353`). Nothing else in the data store consults it.
+
+In particular `DocumentValidator` validates `upload_timestamp` **unconditionally** whenever the attribute is present (`DocumentValidator.java:106-112`, `:157-174`) — there is no whitelist check on that path. So a service that populates the attribute itself gets it stored, returned, and sorted on whether or not its case type is whitelisted. The whitelist only decides whether *CCD* fills the attribute in for you.
+
+That distinction matters for decentralised services, which have to populate it themselves — see [Decentralised services must own `upload_timestamp`](#decentralised-services-must-own-upload_timestamp) below.
+
+### Decentralised services must own `upload_timestamp`
+
+For a decentralised case type CCD's auto-population is ineffective, regardless of the whitelist.
+
+`addUploadTimestamps` runs *before* the persistence branch, on both the create and update paths (`CreateCaseEventService.java:246` with the `isDecentralisedCase` branch at `:275`; `SubmitCaseTransaction.java:146` with the branch at `:166`). So the stamp is applied to the in-flight payload and does reach the service in the `/ccd-persistence` submit body — but it is applied to CCD's *JSON projection* of the case, not to the service's own tables.
+
+Whether it survives is entirely up to the service. Where a service builds its `Document` values in its `CaseView` from its own domain rows — the normal pattern — the next read rebuilds them from those rows and any value CCD injected is simply not consulted. The attribute is therefore only as durable as the service's own persistence of it.
+
+The practical consequence: **a decentralised service should set `upload_timestamp` on the read path from its own stored upload time**, and treat CCD's stamping as something it does not rely on. This is generally an improvement in fidelity — the service knows when the file was actually uploaded, whereas CCD infers "new" by diffing `document_url` values between the stored and incoming case at event-submission time.
+
+Two things follow:
+
+- **Use UTC.** CCD's own stamp is `LocalDateTime.now(clock)` against a `utcClock` bean that is `Clock.systemUTC()` (`CaseDocumentTimestampService.java:47,77`; `CoreCaseDataApplication.java:50`), formatted `yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS`. The value is a zone-less local time whose wall-clock reading is UTC. A service converting from an instant should convert through `ZoneOffset.UTC` explicitly rather than the JVM default zone, so the value doesn't depend on the pod's `TZ`.
+- **Every `Document`-typed field needs it, not just the obvious collection.** `buildCategorisedDocumentDictionary` extracts *all* `Document`-typed paths from the case (`CategoriesAndDocumentsService.java:129-147`), so any document field a service projects reaches CFV. A field left without the attribute sorts as "older" — see [Sorting behaviour](#sorting-behaviour).
+
+### Sorting behaviour
+
+`buildDocument` parses whatever `upload_timestamp` string is present and does not synthesise one when it is absent (`CategoriesAndDocumentsService.java:169-177`). Documents with no timestamp sort as **older** than any timestamped document.
+
+Historical documents are deliberately **not** backfilled as part of 1.1, so any case type has a tail of untimestamped documents that will sort to the bottom under newest-first. <!-- CONFLUENCE-ONLY: the no-backfill decision is recorded in the CFV v2 requirements page (1632906761); source shows only the absent-timestamp handling. -->
 
 ## The data-store endpoints
 
@@ -351,3 +396,5 @@ The following fragments are taken from the `FT_CaseFileView_1` case type in the 
 - [Stitching](stitching.md) — assembling documents into bundles (distinct from CFV organisation).
 - [Data Types](data-types.md) — the `Document` field type and its `category_id` sub-field.
 - [CDAM API reference](../reference/api-cdam.md) — the CDAM document API.
+- [Decentralisation](decentralisation.md#values-ccd-writes-into-case-data-are-not-automatically-durable) — why a decentralised service has to own `upload_timestamp`, and the general rule behind it.
+- [Store a document](../how-to/store-a-document.md#decentralised-services-setting-category_id-dynamically) — the read-path pattern for setting `category_id`, filename, and `upload_timestamp`.

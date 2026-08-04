@@ -15,6 +15,7 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java
   - ccd-data-store-api:src/main/resources/application.properties
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getevents/AuditEventLoader.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseAuditEventRepository.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java
@@ -77,6 +78,8 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java"
+  : "b58f7f447730bf5ec8f9bca0bd831c1abe2b6db0"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getevents/AuditEventLoader.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseAuditEventRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2c5e11485c5e17da845232984205437ee223296a"
@@ -327,6 +330,19 @@ Decentralised case types skip `aboutToSubmit` and `submitted` HTTP callbacks ent
 `CreateCaseEventService` bypasses `saveCaseDetails` for decentralised cases and calls `DecentralisedCreateCaseEventService.submitDecentralisedEvent()` instead (`CreateCaseEventService.java:284`).
 
 Audit history for decentralised cases is loaded by `DecentralisedAuditEventLoader` (rather than `LocalAuditEventLoader`), which calls `GET /ccd-persistence/cases/{ref}/history` on the service.
+
+### Values CCD writes into case data are not automatically durable
+
+A subtler consequence of "the JSON is only a projection": several CCD features work by *enriching the case-data payload* mid-submission. On a centralised case type the enriched JSON is what gets persisted, so the enrichment is durable by construction. On a decentralised case type it is not — the payload is handed to the service, and what survives is whatever the service chose to store.
+
+The pattern to watch for is a data-store service that mutates `caseDetails.getData()` **before** the `isDecentralised` branch. Those mutations reach the service in the `/ccd-persistence` submit body, so they are visible to the `Submit<T,S>` handler — but if the handler doesn't persist them into its own tables, the next read rebuilds the field from domain rows and the value is gone. `CaseFileView`'s `upload_timestamp` stamping is a worked example: `addUploadTimestamps` runs at `CreateCaseEventService.java:246`, well before the branch at `:275` (and likewise `SubmitCaseTransaction.java:146` before `:166`).
+
+Two rules of thumb:
+
+- **If a CCD-derived attribute matters to you, own it.** Populate it in your `CaseView` from your own stored data rather than relying on CCD to inject it. This is usually higher-fidelity anyway, because your domain model knows the real answer where CCD is inferring one from a JSON diff.
+- **Feature whitelists that gate CCD-side enrichment are mostly inert for you.** Ask separately whether the *consumer* of the attribute (ExUI, a validator, a search index) is gated too. Often it isn't, which means a decentralised service can light the feature up on its own by populating the attribute, without waiting on a central config change.
+
+Note this cuts the other way for the derived data CCD deliberately keeps locally — `resolvedTTL` and case links are re-synchronised by `SynchronisedCaseProcessor` after the service commits (see [Revision](#revision-the-new-concurrency-primitive)), precisely because CCD, not the service, remains their owner.
 
 ## Where event data lives
 
