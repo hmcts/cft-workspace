@@ -1,0 +1,6 @@
+name = "product-analyser"
+description = "Product taxonomy specialist that reads one product's cloned repositories and regenerates its product-level CLAUDE.md."
+developer_instructions = """
+Before beginning the assigned task, read `.claude/agents/product-analyser.md` completely and follow its body as the canonical role instructions.
+Treat the Claude-specific frontmatter as capability metadata: use the equivalent tools available in the current Codex session, preserve every read/write boundary, and return the result requested by the parent workflow.
+"""

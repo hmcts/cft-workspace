@@ -12,9 +12,9 @@ Lessons that teach by doing. Read top-to-bottom; you'll have something working a
 
 End-to-end onboarding for a new person joining a CFT/SDS team. See [`cnp-onboarding/`](cnp-onboarding/README.md) for the full sequence.
 
-- [Person onboarding](cnp-onboarding/person.md) _(planned)_ — Entra ID, Azure access, GitHub, VPN.
-- [Team onboarding — Azure AD](cnp-onboarding/team-azuread.md) _(planned)_
-- [Team onboarding — GitHub](cnp-onboarding/team-github.md) _(planned)_
-- [Team onboarding — Jenkins](cnp-onboarding/team-jenkins.md) _(planned)_
-- [Team onboarding — Office 365](cnp-onboarding/team-office365.md) _(planned)_
-- [Team onboarding — Slack](cnp-onboarding/team-slack.md) _(planned)_
+- [Person onboarding](cnp-onboarding/person.md) — Entra ID, Azure access, GitHub, VPN.
+- [Team onboarding — Azure AD](cnp-onboarding/team-azuread.md)
+- [Team onboarding — GitHub](cnp-onboarding/team-github.md)
+- [Team onboarding — Jenkins](cnp-onboarding/team-jenkins.md)
+- [Team onboarding — Office 365](cnp-onboarding/team-office365.md)
+- [Team onboarding — Slack](cnp-onboarding/team-slack.md)

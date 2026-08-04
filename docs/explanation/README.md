@@ -4,17 +4,17 @@ Conceptual background that helps you understand *why* CFT works the way it does.
 
 ## Platform
 
-- [Cloud Native Platform](cloud-native-platform.md) _(planned)_ — what CNP is, the principles behind it, and the infrastructure shape.
+- [Cloud Native Platform](cloud-native-platform.md) — what CNP is, the principles behind it, and the infrastructure shape.
 
 ## Engineering principles
 
 See [`principles/`](principles/README.md).
 
-- [Coding in the open](principles/coding-in-the-open.md) _(planned)_
-- [Continuous delivery](principles/continuous-delivery.md) _(planned)_
-- [DevOps](principles/devops.md) _(planned)_
-- [Programming](principles/programming.md) _(planned)_
-- [Testing](principles/test.md) _(planned)_
+- [Coding in the open](principles/coding-in-the-open.md)
+- [Continuous delivery](principles/continuous-delivery.md)
+- [DevOps](principles/devops.md)
+- [Programming](principles/programming.md)
+- [Testing](principles/test.md)
 
 ## CCD platform
 

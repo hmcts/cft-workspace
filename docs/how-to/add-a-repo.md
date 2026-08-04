@@ -31,8 +31,9 @@ After it finishes:
 git add workspace.yaml
 git commit -m "add <repo> to manifest"
 
-# Refresh the product's taxonomy (e.g. apps/nfdiv after adding a new nfdiv repo)
-/docs-generate-product-md <product>
+# Refresh the product's taxonomy (e.g. apps/nfdiv after adding a new nfdiv repo).
+# Claude Code: /docs-generate-product-md <product>
+# Codex:      $docs-generate-product-md <product>
 
 # Refresh INDEX.md
 ./scripts/index
@@ -48,7 +49,7 @@ git add INDEX.md && git commit -m "refresh index"
 | Java/Node library | `libs/<repo>` |
 | Flux config, AKS module, jenkins shared lib | `platops/<repo>` |
 
-The taxonomy in each repo's `CLAUDE.md` carries the platform-vs-team distinction — no separate top-level dir needed.
+The taxonomy in each product directory's `CLAUDE.md` carries the platform-vs-team distinction — no separate top-level directory is needed.
 
 ## Pinning a branch
 
