@@ -1,10 +1,10 @@
 # cft-workspace
 
-Workspace-level guidance for Claude Code. The user is an HMCTS engineer using this workspace to navigate, search, and modify across many CFT repos at once.
+Workspace-level guidance for AI coding tools. Claude Code loads this file directly; Codex loads it through the repository's `AGENTS.md` adapter. The user is an HMCTS engineer using this workspace to navigate, search, and modify across many CFT repos at once.
 
 ## What this repo is
 
-This repo (`hmcts/cft-workspace`) tracks **scaffolding only** — devcontainer, scripts, Claude assets, docs, and the manifest. The actual HMCTS source lives in independently-cloned repos under `apps/`, `libs/`, `platops/`. Those clones are gitignored at this level — never `git add` their contents, never assume the workspace repo is a monorepo.
+This repo (`hmcts/cft-workspace`) tracks **scaffolding only** — devcontainer, scripts, AI-tool configuration, docs, and the manifest. The actual HMCTS source lives in independently-cloned repos under `apps/`, `libs/`, `platops/`. Those clones are gitignored at this level — never `git add` their contents, never assume the workspace repo is a monorepo.
 
 ```
 apps/<product>/<repo>      # CFT apps — both shared platform (ccd/, xui/, idam/, …)

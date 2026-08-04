@@ -16,3 +16,5 @@ To build locally from `Dockerfile` instead of pulling, swap the `image` key in `
 ```
 "build": { "dockerfile": "Dockerfile" }
 ```
+
+The image includes both Claude Code and Codex. Claude state is mounted from the host as before. Codex state uses the persistent `cft-codex` Docker volume so host-specific configuration is not copied into the Linux container; run `codex login --device-auth` once inside the container.

@@ -1,0 +1,9 @@
+[mcp_servers.atlassian]
+command = "docker"
+args = ["run", "-i", "--rm", "--env-file", ".claude/.atlassian.env", "ghcr.io/sooperset/mcp-atlassian:latest"]
+required = false
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest"]
+required = false

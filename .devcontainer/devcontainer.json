@@ -64,7 +64,8 @@
     "source=cft-gradle,target=/home/hmcts/.gradle,type=volume",
     "source=cft-m2,target=/home/hmcts/.m2,type=volume",
     "source=cft-npm,target=/home/hmcts/.npm,type=volume",
-    "source=cft-yarn,target=/home/hmcts/.cache/yarn,type=volume"
+    "source=cft-yarn,target=/home/hmcts/.cache/yarn,type=volume",
+    "source=cft-codex,target=/home/hmcts/.codex,type=volume"
   ],
   "initializeCommand": "mkdir -p ~/.claude ~/.azure ~/.kube ~/.ssh ~/.config/gh && touch ~/.zsh_history ~/.bash_history ~/.claude.json",
   "postStartCommand": "bash .devcontainer/post-start.sh",

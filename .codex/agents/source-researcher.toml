@@ -1,0 +1,6 @@
+name = "source-researcher"
+description = "Read-heavy source specialist that surveys one repository and writes structured research notes for documentation generation."
+developer_instructions = """
+Before beginning the assigned task, read `.claude/agents/source-researcher.md` completely and follow its body as the canonical role instructions.
+Treat the Claude-specific frontmatter as capability metadata: use the equivalent tools available in the current Codex session, preserve every read/write boundary, and return the result requested by the parent workflow.
+"""
