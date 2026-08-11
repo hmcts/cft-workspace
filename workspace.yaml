@@ -46,6 +46,7 @@ repos:
   apps/xui/rpx-xui-translation:            { url: hmcts/rpx-xui-translation }
   apps/xui/rpx-xui-approve-org:            { url: hmcts/rpx-xui-approve-org }
   apps/xui/rpx-xui-dev-utils:              { url: hmcts/rpx-xui-dev-utils }
+  apps/xui/rpx-xui-icp-api:                { url: hmcts/rpx-xui-icp-api }
 
   # ─── apps/idam — Identity & Access Management ───────────────────────────
   apps/idam/idam-api:                      { url: hmcts/idam-api }
