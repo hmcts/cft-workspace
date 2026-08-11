@@ -86,7 +86,8 @@ All three apps authenticate end-users through IDAM OIDC, with OAuth2 client IDs 
 `xuimowebapp`, and `xuiapproveorgwebapp` respectively, and obtain S2S tokens from
 `rpe-service-auth-provider`.
 
-Manage Cases embeds `@hmcts/media-viewer` and proxies `/icp/sessions` to `rpx-xui-icp-api`.
+Manage Cases embeds `@hmcts/media-viewer`; its `/icp/sessions` integration is implemented by
+repository `rpx-xui-icp-api` and remains deployed under the `em-icp` runtime service identity.
 The API validates the caller's IDAM token, creates or retrieves the presentation session, issues
 an Azure Web PubSub client token, and stores session and participant state in Redis.
 
