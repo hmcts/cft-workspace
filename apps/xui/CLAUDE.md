@@ -87,9 +87,10 @@ All three apps authenticate end-users through IDAM OIDC, with OAuth2 client IDs 
 `rpe-service-auth-provider`.
 
 Manage Cases embeds `@hmcts/media-viewer`; its `/icp/sessions` integration is implemented by
-repository `rpx-xui-icp-api` and remains deployed under the `em-icp` runtime service identity.
-The API validates the caller's IDAM token, creates or retrieves the presentation session, issues
-an Azure Web PubSub client token, and stores session and participant state in Redis.
+repository `rpx-xui-icp-api`. During the build-only migration stage, the live endpoint remains
+the existing `em-icp` service. A later controlled cutover will introduce the XUI runtime before
+traffic moves. The API validates the caller's IDAM token, creates or retrieves the presentation
+session, issues an Azure Web PubSub client token, and stores session and participant state in Redis.
 
 ## CCD touchpoints
 
@@ -133,5 +134,6 @@ XUI acts as the UI orchestration layer for those flows but does not implement th
   data) and is not deployed or included in any app bundle.
 - `ccd-case-ui-toolkit` is published as `@hmcts/ccd-case-ui-toolkit` on npm and versioned
   independently; all three deployed apps pin a specific patch version in their `package.json`.
-- The ICP repository moved into the XUI namespace while its runtime identifiers intentionally
-  remain `em-icp`, including its Helm chart, service host, image path, Key Vault, and Web PubSub.
+- The ICP repository is owned in the XUI namespace. The build-only migration stage temporarily
+  retains the live `em-icp` runtime; a separate reviewed change will introduce XUI chart, image,
+  infrastructure and service identities before the EM runtime is retired.
