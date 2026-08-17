@@ -213,6 +213,15 @@ repos:
   apps/fis/fis-bulk-scan-api:              { url: hmcts/fis-bulk-scan-api }
   apps/fis/fis-hmc-api:                    { url: hmcts/fis-hmc-api }
 
+  # ─── apps/finrem — Financial Remedy service team ────────────────────────
+  apps/finrem/finrem-case-orchestration-service: { url: hmcts/finrem-case-orchestration-service }
+  apps/finrem/finrem-ccd-definitions:            { url: hmcts/finrem-ccd-definitions }
+  apps/finrem/finrem-citizen-ui:                 { url: hmcts/finrem-citizen-ui }
+  apps/finrem/finrem-task-configuration:         { url: hmcts/finrem-task-configuration }
+  apps/finrem/finrem-wa-post-deployment-ft-tests: { url: hmcts/finrem-wa-post-deployment-ft-tests }
+  apps/finrem/finrem-shared-infrastructure:      { url: hmcts/finrem-shared-infrastructure }
+  apps/finrem/finrem-slack-alerts:               { url: hmcts/finrem-slack-alerts }
+
   # ─── apps/probate — Probate service team ───────────────────────────────
   apps/probate/probate-back-office:      { url: hmcts/probate-back-office }
   apps/probate/probate-business-service: { url: hmcts/probate-business-service }
