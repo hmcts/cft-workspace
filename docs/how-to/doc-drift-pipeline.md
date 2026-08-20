@@ -172,6 +172,23 @@ The job's `permissions: contents: write` block does **not** grant this. That
 governs the default `GITHUB_TOKEN`; the push uses the app token, whose scope
 comes from the app installation. Only an org admin can widen it.
 
+**As of 2026-08-20 it does not have it, and this is what blocks the pipeline.**
+The probe below reports:
+
+```
+permissions: {"admin":false,"maintain":false,"pull":false,"push":false,"triage":false}
+remote: Permission to hmcts/cft-workspace.git denied to hmctsclaudecode[bot].
+fatal: unable to access 'https://github.com/hmcts/cft-workspace.git/': 403
+```
+
+So every weekly run reconciles pages and then throws the work away. Until an
+org admin grants the app `contents: write` here, nothing else in this document
+will make a fix land. Re-run the probe to see whether that has happened.
+
+Note `"pull": false` alongside a checkout that works fine — the clone succeeds
+anonymously because the repo is public, which is why read access proves nothing
+about the push.
+
 **To check, don't guess: run the probe.** `.github/workflows/app-token-probe.yml`
 (**Actions → App token probe → Run workflow**) mints a token exactly as
 doc-drift does, reports what the installation says it can do, then pushes a
