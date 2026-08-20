@@ -39,12 +39,12 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagDetail.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagLauncher.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagVisibility.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
-  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "4d82832e6bc76a8c6b1b0ebc4ab877001e1e47f3"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "5daf60c31eeb61da276722c2639fa50d279a26a8"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20220113_12977__RDM-12977_FlagLauncher_base_type.sql": "9304f0e4e41568acb18273ce8687207c3260ba63"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20230510_4515__CCD-4515__AmendFlagDetails.sql": "0f191293fe71b7d9cc6d0ac5d6889c0bfaa87d33"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20230920_4820__CCD-4820_Updating_Flags.sql": "e066e9400dd107f7b9ba6264d884ce101f2041b6"
-  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java": "531d5b6842f81c82b1bac65c790500acc73523f8"
-  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java": "268bdafb8c6c3a5d235ae399d84108a51a008f22"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java": "6b347077cfc5d995740d6272751fbbd8f97c98b4"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java": "6b347077cfc5d995740d6272751fbbd8f97c98b4"
   "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java": "9f7737ceceb64587f7c2a5bd9b0616092cfe4ba2"
   "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java": "544975f6b47e5ba67d6b7e85b961bee60c6e9dc3"
   "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/citizen/ReasonableAdjustmentsController.java": "f32a0b22372a52872c3165a62d79b77e36521f8b"
@@ -179,7 +179,9 @@ In PRL, `CaseData` carries both:
 - `Flags caseFlags` at line 714 (`prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java:714`)
 - `AllPartyFlags allPartyFlags` at line 786, which holds up to 5 applicants, 5 respondents, solicitors, and barristers — each typed `Flags` (`prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java`).
 
-`CaseFlagsWaService` iterates all `Flags`-typed fields on `AllPartyFlags` using Java reflection rather than typed iteration, so field names like `caApplicant1ExternalFlags` must exactly match the reflection-based lookup (`prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java:115`).
+`CaseFlagsWaService` iterates the `Flags`-typed fields on `AllPartyFlags` using Java reflection rather than typed iteration, so field names like `caApplicant1ExternalFlags` must exactly match the reflection-based lookup (`prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java:273-281`).
+
+The sweep is no longer unconditional. `getRelevantAllPartyFlagFields` filters out solicitor flag fields for parties who are not legally represented, so an unrepresented party's solicitor flags are excluded from aggregation entirely (`CaseFlagsWaService.java:284-315`). That filter is driven by field-name patterns, which makes those particular names load-bearing rather than merely conventional: `caApplicantSolicitor<N>ExternalFlags` / `caApplicantSolicitor<N>InternalFlags` and the respondent equivalents are matched by regex with `<N>` read as a 1-based index into `CaseData.applicants` / `.respondents`, while the FL401 fields `daApplicantSolicitorExternalFlags`, `daApplicantSolicitorInternalFlags` and their respondent counterparts are matched as exact strings. A field whose name merely contains `Solicitor` but fits none of those patterns is included. Representation is read as `PartyDetails.doTheyHaveLegalRepresentation == yes` or `PartyDetails.user.solicitorRepresented == Yes`.
 
 ### Setting `visibility` and `groupId` (v2.1)
 
@@ -255,12 +257,12 @@ Per the Case Flags HLD, the canonical set is `"Requested" | "Active" | "Inactive
 
 <!-- DIVERGENCE: An older draft of this page listed only "Active", "Inactive", "Deleted" alongside "Requested". The HLD canonical set replaces "Deleted" with "Not approved" — flags cannot be deleted (per HLD architectural decision: "After a flag is set on a case it cannot be removed, but may be deactivated"). Source SDK does not enforce values either way; HLD wins as the documented standard. -->
 
-`"Requested"` is a magic-string constant in PRL's `CaseFlagsWaService` (not an enum — `CaseFlagsWaService.java:38`). The WA task lifecycle is gated on this value:
+`"Requested"` is a magic-string constant in PRL's `CaseFlagsWaService` (not an enum — `CaseFlagsWaService.java:42`). The WA task lifecycle is gated on this value:
 
-- `setUpWaTaskForCaseFlagsEventHandler` (`CaseFlagsWaService.java:43-49`) publishes a `CaseFlagsEvent` that creates the WA task and sets `isCaseFlagsTaskCreated` to `Yes`.
-- `checkCaseFlagsToCreateTask` (`CaseFlagsWaService.java:84-93`) compares before/after data; when all previously-requested flags have been resolved, it resets `isCaseFlagsTaskCreated` to `No`.
-- `checkAllRequestedFlagsAndCloseTask` fires `CLOSE_REVIEW_RA_REQUEST_TASK` once **all** flags are no longer `"Requested"` (`CaseFlagsWaService.java:51-75`).
-- An additional gate field `isCaseFlagsTaskCreated` (`YesOrNo`) must be `Yes` before the close logic will execute (`CaseFlagsWaService.java:60`).
+- `setUpWaTaskForCaseFlagsEventHandler` (`CaseFlagsWaService.java:49-55`) publishes a `CaseFlagsEvent` that creates the WA task and sets `isCaseFlagsTaskCreated` to `Yes`.
+- `checkCaseFlagsToCreateTask` (`CaseFlagsWaService.java:93-105`) compares before/after data; when all previously-requested flags have been resolved, it resets `isCaseFlagsTaskCreated` to `No`.
+- `checkAllRequestedFlagsAndCloseTask` fires `CLOSE_REVIEW_RA_REQUEST_TASK` once **all** flags are no longer `"Requested"` (`CaseFlagsWaService.java:57-84`).
+- An additional gate field `isCaseFlagsTaskCreated` (`YesOrNo`) must be `Yes` before the close logic will execute (`CaseFlagsWaService.java:70`).
 
 The HLD architectural decision is that "the raising or deactivating of a flag should be able to trigger a Work Allocation task and/or any service-specific logic. That is up to the service to define and manage." PRL's `CaseFlagsWaService` is one such service-side implementation.
 
@@ -307,7 +309,7 @@ PRL's `CaseFlagsController` at `/caseflags/*` handles four stages:
 
 A separate pair of endpoints (`/review-lang-sm/about-to-start`, `/review-lang-sm/about-to-submit`) handles language and sign/spoken-language flags via `FlagsService.prepareSelectedReviewLangAndSmReq` and `FlagsService.validateNewFlagStatus` (`CaseFlagsController.java:171-216`).
 
-Deep-copying flags during `setSelectedFlags` is done via a Jackson round-trip to avoid mutating originals (`CaseFlagsWaService.java:242-248`).
+Deep-copying flags during `setSelectedFlags` is done via a Jackson round-trip to avoid mutating originals (`CaseFlagsWaService.java:326-332`).
 
 ---
 

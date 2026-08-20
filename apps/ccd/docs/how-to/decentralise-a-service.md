@@ -54,7 +54,7 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "9fe79e8e30e98faf96dc3411d069b09a08a2a295"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fe79e8e30e98faf96dc3411d069b09a08a2a295"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql"
   : "85f32117928bda311dd7c752f185ba9cd47c7464"
@@ -64,9 +64,9 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPI.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPIInterceptor.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
-  "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "de6364b8cf1f27eddbd50422b7f604b4e35634a4"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "2aecb7993e5e958ff90b63f5bf46b5d7a45ab638"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "a2e5c9892a3a612b44af41cd14091271de38b1c4"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "e00246fd7f6870e3e737d286b5a5725dab466681"
 ---
 
 # Decentralise a Service
@@ -121,6 +121,7 @@ This causes the plugin to pull in the `decentralised-runtime` dependency and wir
 @Component
 public class MyCaseView implements CaseView<MyCase, State> {
     @Override
+    @Transactional(readOnly = true)
     public MyCase getCase(CaseViewRequest<State> request) {
         MyCaseEntity entity = repo.findByCaseReference(request.caseRef())
             .orElseThrow(() -> new CaseNotFoundException(request.caseRef()));
@@ -131,8 +132,14 @@ public class MyCaseView implements CaseView<MyCase, State> {
 }
 ```
 
-Reference: `PCSCaseView.getCase()` (`pcs-api:src/.../PCSCaseView.java:82`). The two-overload
+Reference: `PCSCaseView.getCase()` (`pcs-api:src/.../PCSCaseView.java:104-105`). The two-overload
 form `getCase(request, blobCase)` is for legacy blob-based services only.
+
+Annotate `getCase` `@Transactional(readOnly = true)`, as PCS does. The SDK does not open a
+transaction for you before calling the bean, so assembling the projection from a JPA entity graph
+outside one leaves you either issuing a separate query per association or hitting
+`LazyInitializationException` — and a read-only transaction keeps Hibernate from flushing dirty
+state back out of what is meant to be a pure read.
 
 ---
 
@@ -177,10 +184,15 @@ Key types (`ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/h
 
 ### 4. Configure SDK Flyway migrations
 
-`DecentralisedDataConfiguration` (`@AutoConfiguration(before = FlywayAutoConfiguration.class)`)
+`DecentralisedFlywayAutoConfiguration` (`@AutoConfiguration(before = FlywayAutoConfiguration.class)`)
 registers a `FlywayMigrationStrategy` that runs SDK migrations against schema `ccd`
 from `classpath:dataruntime-db/migration` before your own migrations run
-(`DecentralisedDataConfiguration.java:17-50`).
+(`DecentralisedFlywayAutoConfiguration.java:24-44`). The bean used to live on
+`DecentralisedDataConfiguration`, which now pulls it in with `@ImportAutoConfiguration`;
+the behaviour is unchanged. Giving it its own class is what lets it be named in the
+Spring Boot test-slice imports files — `JdbcTest.imports`, `DataJdbcTest.imports`,
+`JooqTest.imports` and `DataJpaTest.imports` each list it, so a slice test, which loads
+only the auto-configurations it names, still gets the SDK schema migrated.
 
 The SDK creates the following tables in the `ccd` schema (among others):
 
@@ -215,7 +227,7 @@ ccd.decentralised.case-type-service-urls[PCS]=http://localhost:4013
 
 Env-var form: `CCD_DECENTRALISED_CASE-TYPE-SERVICE-URLS_PCS=http://localhost:3206`. In preview
 environments set `CASE_TYPE_SUFFIX=pr-123` to namespace the case type ID
-(`CaseType.java:44-48`).
+(`CaseType.java:64-80`).
 
 > **Performance:** the resolver uses a Caffeine LRU cache (100k entries, ~10MB) for routing.
 > Expect ~25ms extra latency per decentralised hop.
@@ -244,10 +256,22 @@ In your `CCDConfig.configure()` or `configureDecentralised()`, set the callback 
 generated webhook URLs point to your service:
 
 ```java
-builder.setCallbackHost(System.getenv().getOrDefault("CASE_API_URL", "http://localhost:3206"));
+@Value("${caseApi.url}")
+private String caseApiUrl;
+
+@Override
+public void configure(final ConfigBuilder<PCSCase, State, AccessProfile> builder) {
+    builder.setCallbackHost(caseApiUrl);
+    // ...
+}
 ```
 
-(`pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java:51-97`)
+(`pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java:58-59,103-105`)
+
+PCS injects the host from Spring configuration rather than reading `System.getenv()` directly, so
+the value comes from `caseApi.url` in `application.yaml` and follows the usual property-override
+rules. Reading `CASE_API_URL` from the environment inline, as some older services do, works too —
+it just bypasses Spring's property resolution.
 
 ---
 

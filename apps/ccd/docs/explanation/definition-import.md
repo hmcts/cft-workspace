@@ -76,7 +76,7 @@ sources_sha:
   : "70a1523ad356b828a6e094f4246effdeeeadda7b"
   ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/client/HighLevelCCDElasticClient.java"
   : "3e97a6f49f81af7cdaa0eceee2c9a52ecd2e6fd5"
-  "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/config/CacheConfiguration.java": "17d07ce00bfceff5f7825a7a20217ded4bb0c207"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/definition/DefaultCaseDefinitionRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
 ---

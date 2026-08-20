@@ -55,17 +55,17 @@ diataxis: explanation
 product: ccd
 sources_sha:
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/CaseAssignmentController.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/CaseAssignedUserRolesController.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/CaseAssignedUserRolesController.java": "2a75e87cff749c0316fff4bc3ebf0dc3ce2d36e4"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/CaseAssignmentService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/cau/CaseAccessOperation.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentServiceHelperImpl.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RoleAssignment.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/CaseAssignmentService.java": "1b4425f359f0fb88bb92a9287488b35dd8f10adb"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/cau/CaseAccessOperation.java": "58a5b7d2164633bf1166e9360a57628af83b422b"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java": "b6a8f0db1eec277476c44fffbb3b35f0622f5443"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentServiceHelperImpl.java": "357731efe592be4c0d58ad4b8d703ee55dace314"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RoleAssignment.java": "4bd9e4e1154254c77b8024b96176b1eda375b470"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/domain/ChangeOrganisationRequest.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/domain/ApprovalStatus.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/domain/ApprovalStatus.java": "fc9e28727c63bab92cecc2d3e115f78299738347"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/datastore/CaseDetails.java": "fd47890952be0b44521441cdb43233ef61268ce2"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/ApplicationParams.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/ApplicationParams.java": "32da595b1c98b8495914f867502c256ec433d114"
   "aac-manage-case-assignment:src/main/resources/application.yaml": "9910b14cfb1fcad7a811420150a69864df3bf528"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/CaseAccessService.java": "b509326d3eefbb50e825485237675ec4117beebe"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/AccessProcess.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
@@ -234,7 +234,9 @@ Both flows ultimately affect who can access a case, but they are separate mechan
 
 The NoC `applyDecision` path (`ApplyNoCDecisionService:163,200`) bulk-assigns all PRD org members of the incoming organisation and bulk-removes those of the outgoing organisation. This also goes through data-store `/case-users`, not AMRAS directly.
 
-The auto-approval flow inside `POST /noc/noc-requests` (MCA-06) takes a third path: when the COR's defaulted `ApprovalStatus` is `"1"` (Approved) and the invoker is a solicitor in the case's jurisdiction, the API auto-assigns each matching case role on the invoker via a single call to data-store's `Add Case-Assigned Users and Roles` endpoint.
+The auto-approval flow inside `POST /noc/noc-requests` (MCA-06) takes a third path: when the COR's defaulted `ApprovalStatus` is `"1"` (Approved) and the invoker is a solicitor in the case's jurisdiction, the API may auto-assign each matching case role on the invoker via a single call to data-store's `Add Case-Assigned Users and Roles` endpoint.
+
+Since CCD-5334 that auto-assignment is conditional on the invoker's existing access. `RequestNoticeOfChangeService` first calls data-store `GET /internal/cases/{caseId}/access-metadata` and inspects `accessGrants`; if the invoker already holds a `STANDARD` grant on the case, no case roles are assigned, because standard access already gives them what the case roles would (`RequestNoticeOfChangeService.java:237-249`). Only when `STANDARD` is absent does the older assign-the-roles path run. Note the guard is on a non-null response: if the access-metadata call yields null, nothing is assigned at all, so a data-store that does not serve that endpoint silently disables auto-assignment rather than falling back to it.
 
 ## Specific and Challenged access
 

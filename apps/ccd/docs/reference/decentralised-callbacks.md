@@ -57,7 +57,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/PersistenceStrategyResolver.java": "079679807d1f7becaaef398a2991ddcaf5c46235"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/DelegatingCaseDetailsRepository.java": "3f31c2b5662bbfbe8d341fb02ce3688124b5cdd6"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPIInterceptor.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
-  "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedCaseEvent.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedAuditEvent.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedSubmitEventResponse.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
@@ -70,7 +70,7 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "05e79e063aacd4ec9393d10254a9697bd37b2b50"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "9fe79e8e30e98faf96dc3411d069b09a08a2a295"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fe79e8e30e98faf96dc3411d069b09a08a2a295"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2c5e11485c5e17da845232984205437ee223296a"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
@@ -493,7 +493,7 @@ On `POST /ccd-persistence/cases`:
    - Otherwise, routes to `LegacyCallbackSubmissionHandler` (fires standard CCD webhooks).
 3. `DecentralisedSubmissionHandler.apply()` resolves event config from `ResolvedConfigRegistry`, deserialises case data to the typed domain class, and calls `submitHandler.submit(EventPayload)`.
 
-`DecentralisedDataConfiguration` runs SDK Flyway migrations from `classpath:dataruntime-db/migration` in schema `ccd` before application migrations. It is `@ConditionalOnMissingBean(FlywayMigrationStrategy.class)`.
+`DecentralisedFlywayAutoConfiguration` runs SDK Flyway migrations from `classpath:dataruntime-db/migration` in schema `ccd` before application migrations. It is `@ConditionalOnMissingBean(FlywayMigrationStrategy.class)`. `DecentralisedDataConfiguration` imports it via `@ImportAutoConfiguration`; the bean lived on that class until the split.
 
 The `build.gradle` opt-in:
 

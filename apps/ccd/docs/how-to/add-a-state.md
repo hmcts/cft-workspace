@@ -40,7 +40,7 @@ title: Add a State
 diataxis: how-to
 product: ccd
 sources_sha:
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventTypeBuilder.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/EventTypeBuilderImpl.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"

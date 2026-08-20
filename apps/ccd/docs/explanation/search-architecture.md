@@ -59,7 +59,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/elasticsearch/ElasticsearchCaseSearchOperation.java": "6bd724e7501334211b25c150e57a1180f2df758d"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/global/GlobalSearchServiceImpl.java": "051411831ba3771976e7e6b6a2eb72fcccd2045f"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/processor/GlobalSearchProcessorService.java": "64ac13de0e0876cd2d3b86f2dbf862f61417d541"
-  "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
   ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/SearchInputCaseFieldEntity.java"
   : "bda0438d09f29d99f546185907272748a1224c49"
   ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/SearchResultCaseFieldEntity.java"
@@ -353,6 +353,12 @@ If `reindex=true` is passed at import time, definition-store sets the current in
 For incompatible changes, definition-store's `ElasticsearchErrorHandler` raises a tailored exception identifying the offending case type. Note that reindexing is not guaranteed to recover 100% of cases — old values incompatible with the new mapping must be migrated in the data store DB by the owning service before they become searchable again.
 
 On test environments, setting `ELASTIC_SEARCH_FAIL_ON_IMPORT=false` lets definition-store skip the ES initialisation entirely (use sparingly — leaves indexes out of sync).
+
+### A new base type needs mapping on both sides
+
+The ES mapping for a base type is configured twice, in two repos, and both must agree. Definition-store names the mapping template per type under `elasticsearch.typeMappings` (`elastic-search-support/src/main/resources/application.yml`), which is what gets pushed to the index on import. Data-store separately lists the types it treats as text when it builds queries, in `elasticsearch.type-mappings.defaultText` (`application.properties`). The definition-store config carries a comment saying as much: a type mapped to `defaultText` there has to be declared in the data-store property too.
+
+`RichTextArea` is the worked example — CCD-7988 added it to both, plus `ccd.messaging.type-mappings.RichTextArea=SimpleText` so the message publisher renders it as text for downstream consumers. Miss the data-store side and the field indexes correctly but is not recognised as text when queries are built; miss the messaging side and the case-event messages carry no usable representation of it.
 
 ### Field searchability
 

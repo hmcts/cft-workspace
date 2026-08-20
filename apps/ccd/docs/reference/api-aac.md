@@ -45,14 +45,14 @@ product: ccd
 sources_sha:
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/CaseAssignmentController.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/CaseAssignedUserRolesController.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/CaseAssignedUserRolesController.java": "2a75e87cff749c0316fff4bc3ebf0dc3ce2d36e4"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/domain/ChangeOrganisationRequest.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java": "b6a8f0db1eec277476c44fffbb3b35f0622f5443"
   "aac-manage-case-assignment:src/main/resources/application.yaml": "9910b14cfb1fcad7a811420150a69864df3bf528"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ChallengeAnswerValidator.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ApplyNoCDecisionService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ChallengeAnswerValidator.java": "fc7cd8f87fa589d5d66f638d463b1e2f8b18af4b"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ApplyNoCDecisionService.java": "1b4425f359f0fb88bb92a9287488b35dd8f10adb"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/errorhandling/noc/NoCValidationError.java": "fd47890952be0b44521441cdb43233ef61268ce2"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/domain/PreviousOrganisation.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/domain/PreviousOrganisation.java": "ac5d35317d10ba7fb3b843baf305e68292d5e133"
 ---
 
 # API: AAC (aac-manage-case-assignment)
@@ -198,6 +198,7 @@ All NoC endpoints share the same error-code vocabulary, defined in `NoCValidatio
 | `multiple-noc-requests-on-case` | More than one change request found on the case | questions, verify, request |
 | `insufficient-privileges` | Insufficient privileges for notice of change request | questions, verify, request |
 | `noc-event-unavailable` | No NoC events available for this case type | questions, verify, request |
+| `failed-service-noc-validation-id` | Failed service validation: %s (the placeholder is the case type ID) | check-noc-approval |
 | `noc-in-progress` | Ongoing NoC request in progress | questions, verify, request |
 | `invalid-case-role` | CaseRole field within ChangeOrganisationRequest matched none or more than one OrganisationPolicy on the case | request |
 | `missing-cor-case-role-id` | Missing ChangeOrganisationRequest.CaseRoleID %s in the case definition | request |

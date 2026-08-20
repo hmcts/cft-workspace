@@ -29,7 +29,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java": "b58f7f447730bf5ec8f9bca0bd831c1abe2b6db0"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java": "013ed140d477b8ef8ea079619d0b6e0a96d89fa2"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCD.java": "6b11c958ff5a6acaebbd19987c9b4706158b108b"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java": "6b11c958ff5a6acaebbd19987c9b4706158b108b"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "document-management-store-app:src/main/resources/application.yaml": "e37f459dc0a2bbda59e687d605b89084e1733c82"
   "cnp-flux-config:apps/dm-store/dm-store/aat.yaml": "65fd2b10f1aecfe0b4d36c1c2af86db76acf2674"
   "cnp-flux-config:apps/dm-store/dm-store/prod.yaml": "7206749603bbe46b201e2044bc7f86172727d27b"

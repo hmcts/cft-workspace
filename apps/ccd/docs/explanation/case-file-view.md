@@ -71,11 +71,11 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casefileview/CategoriesAndDocumentsService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casefileview/FileViewDocumentService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "libs/ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CaseCategory.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
-  "libs/ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  "libs/ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "libs/ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java": "013ed140d477b8ef8ea079619d0b6e0a96d89fa2"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "6a082439702a917c186720a837526f8c968c29d0"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/case-file-view-field.component.ts"
-  : "b239d2859f3c5ec11025a5597f8e639806521c36"
+  : "335a72b64bdac28348840ca53fb03c38e4834825"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/components/case-file-view-folder/case-file-view-folder.component.ts"
   : "a805d467a9ac1ffd57c709719912ff707854b7ca"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/documentdata/DocumentDataRequest.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
@@ -83,13 +83,11 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/DefaultCreateEventOperation.java": "aa61dd252c0e9a2607835f1034c7dcf0376eebba"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java": "b58f7f447730bf5ec8f9bca0bd831c1abe2b6db0"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/ApplicationParams.java": "6bd724e7501334211b25c150e57a1180f2df758d"
-  "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/DocumentValidator.java": "ac8b88cf8cff30d213c21d5e23226091d982e259"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/CoreCaseDataApplication.java": "6bd724e7501334211b25c150e57a1180f2df758d"
-  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java"
-  : "e3fca30b92506584a590ae203811d60202129d2d"
-  ? "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql"
-  : "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
   "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/common/Categories.json": "cc98c315a8670172db3c1af0f4dcd0553cc76f0d"
   ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_CaseFileView_1/CaseField.json"
   : "cc98c315a8670172db3c1af0f4dcd0553cc76f0d"
@@ -263,6 +261,21 @@ The PUT runs through `AuthorisedCreateEventOperation.createCaseSystemEvent` (`Au
 
 The `attribute_path` is **de-indexed**: collection numeric indices are replaced by the collection item's `id` value, so the path is stable across reordering (e.g. `nationalityProof.documentEvidence`, not `nationalityProof.0.documentEvidence`) (`FileViewDocumentService.java:79-87`).
 
+### What the user sees when a move fails
+
+The toolkit no longer reports every failure as a permissions problem. `CaseFileViewFieldComponent.moveDocumentError` (`case-file-view-field.component.ts:155-181`) switches on the HTTP status:
+
+| Status | Message |
+|---|---|
+| 400 | "The request was invalid. Check the document path and destination folder." |
+| 401, 403 | "You do not have permission to move this document to the selected folder." |
+| 404 | "The document or destination folder could not be found." |
+| 409 | "This case changed since you opened it. Refresh and try again." |
+| 503, 504 | "The service is temporarily unavailable. Please try again in a moment." |
+| anything else, including 500 and any non-`HttpErrorResponse` | "We couldn't move the document. Please try again." |
+
+Note the mismatch with the server: all four validation failures above — including the stale `case_version` check — come back as **400**, not 409, so a genuine concurrent-edit conflict surfaces as the generic "request was invalid" message rather than the "refresh and try again" one that was written for it. The 409 branch is currently unreachable from this endpoint.
+
 ## Category resolution
 
 When building the tree, the data store walks all `Document`-typed fields and decides each document's folder using `CategoriesAndDocumentsService.resolveDocumentCategory` (`CategoriesAndDocumentsService.java:179-193`), in priority order:
@@ -276,7 +289,7 @@ So a document whose stored `category_id` references a now-deleted category surfa
 
 ## How XUI renders it
 
-CFV lives in `ccd-case-ui-toolkit` under the `palette` component family. It activates when a `ComponentLauncher` field has `display_context_parameter` set to `#ARGUMENT(CaseFileView)`: `PaletteService` resolves that argument and maps `CaseFileView` to `CaseFileViewFieldComponent` for both read and write contexts (`palette.service.ts:60`).
+CFV lives in `ccd-case-ui-toolkit` under the `palette` component family. It activates when a `ComponentLauncher` field has `display_context_parameter` set to `#ARGUMENT(CaseFileView)`: `PaletteService` resolves that argument and maps `CaseFileView` to `CaseFileViewFieldComponent` for both read and write contexts (`palette.service.ts:62`).
 
 <!-- DIVERGENCE: the EUI "Low Level Design - Case File View" (id 1329660520) describes adding a dedicated `CaseFileView` *base field type* to the palette switch. The shipped toolkit instead activates CFV via a generic `ComponentLauncher` field keyed on the `#ARGUMENT(CaseFileView)` display-context parameter (palette.service.ts). The dedicated-field-type design was superseded by the ComponentLauncher mechanism. Source wins. -->
 

@@ -63,7 +63,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/search/MetaData.java": "bf6f9ecc0149aba4c80456c27b6d5fef74616ad7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Search.java": "13b5729ed4cda7019a9487095888171eb91ccf6a"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SearchField.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
 ---
 
 # Work Basket

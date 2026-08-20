@@ -51,17 +51,17 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagDetail.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagLauncher.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagVisibility.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
-  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "4d82832e6bc76a8c6b1b0ebc4ab877001e1e47f3"
-  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java": "0433376e83a1001e75f42e1d775e3035ca257145"
-  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "8ea172728014eb8e47eb0914bde427846940fba2"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java": "a3eb4d238899d2957cc65251aad0a455c981dc93"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "7ecd3406d5fee931756c2bcfd72921c58085966e"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/PartyFlags.java": "acdc7d611fe8457205536e12e8fae907fa04282d"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerCreateCaseFlag.java": "1c9413a213871f149b50f20eabed0669c370f758"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerManageCaseFlag.java": "1c9413a213871f149b50f20eabed0669c370f758"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/service/CaseFlagsService.java": "ac082843f9435e0fdd0d81a64b2317aad7d37e68"
   "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java": "544975f6b47e5ba67d6b7e85b961bee60c6e9dc3"
   "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java": "9f7737ceceb64587f7c2a5bd9b0616092cfe4ba2"
-  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java": "531d5b6842f81c82b1bac65c790500acc73523f8"
-  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java": "268bdafb8c6c3a5d235ae399d84108a51a008f22"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java": "6b347077cfc5d995740d6272751fbbd8f97c98b4"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java": "6b347077cfc5d995740d6272751fbbd8f97c98b4"
 ---
 
 # Implement Case Flags
@@ -166,7 +166,7 @@ public class PartyFlags {
 }
 ```
 
-PRL takes the same approach with a flat `AllPartyFlags` holder containing one `Flags` field per party (`AllPartyFlags.java`). Field names inside such a holder are iterated at runtime via Java reflection (`CaseFlagsWaService.java:115-117`); rename them with care.
+PRL takes the same approach with a flat `AllPartyFlags` holder containing one `Flags` field per party (`AllPartyFlags.java`). Field names inside such a holder are iterated at runtime via Java reflection (`CaseFlagsWaService.java:273-281`); rename them with care. PRL additionally skips solicitor flag fields for unrepresented parties, keyed off the field name — see [Reasonable adjustments](implement-reasonable-adjustments.md#8-align-allpartyflags-field-names).
 
 The `Flags`, `FlagDetail`, and `FlagLauncher` types are pre-built CCD complex types — annotated `@ComplexType(name="Flags", generate=false)` etc. (`Flags.java`, `FlagDetail.java`, `FlagLauncher.java`). You do **not** need to define them in your spreadsheet; the definitions are built into CCD as base types (`FieldTypeDefinition.java:38`, `FieldTypeUtils.java:48`).
 
@@ -358,11 +358,11 @@ The CCD/XUI "Manage Flag" event handles status transitions in-component. Many se
 
 PRL implements this with a `REVIEW_FLAGS` event and three callbacks:
 
-- **`aboutToStart`**: scan all `Flags` fields for items with `status == "Requested"`, populate a wrapper so the caseworker sees only open items (`CaseFlagsWaService.java:105-142`).
+- **`aboutToStart`**: scan all `Flags` fields for items with `status == "Requested"`, populate a wrapper so the caseworker sees only open items (`CaseFlagsWaService.java:120-171`).
 - **`aboutToSubmit`**: validate the most-recently-modified flag is no longer `"Requested"`, update it in place, return errors if validation fails (`CaseFlagsController.java:125-152`).
-- **`submitted`**: if no flags remain `"Requested"`, fire a WA task-close event (`CaseFlagsWaService.java:51-75`).
+- **`submitted`**: if no flags remain `"Requested"`, fire a WA task-close event (`CaseFlagsWaService.java:57-84`).
 
-To trigger a WA review task when a new flag is raised, publish an internal Spring event from a `setup-wa-task` callback. Gate on `isCaseFlagsTaskCreated == YES` (`CaseFlagsWaService.java:60`).
+To trigger a WA review task when a new flag is raised, publish an internal Spring event from a `setup-wa-task` callback. Gate on `isCaseFlagsTaskCreated == YES` (`CaseFlagsWaService.java:70`).
 
 ## Step 7 - Wire up the controller endpoint
 
@@ -428,7 +428,7 @@ A banner is shown at the top of every case tab if the case has any `FlagDetail` 
 
 - **`FlagLauncher` is mandatory per tab/event** — without it the user sees an empty event (the `Flags` data is hidden). Each must have a unique field ID; reusing one across tabs is unsupported. A typo in `#ARGUMENT(...)` (e.g. `#ARG(CREATE)`) silently degrades to "no component" with no validation error.
 - **Status strings are not validated by CCD.** The four-value vocabulary is a contract between your callbacks and XUI; a typo breaks WA logic silently.
-- **Reflection on a party-flag holder**: field names like `applicant1Flags` are used as strings at runtime (`CaseFlagsWaService.java:115`). Rename fields only with a coordinated code change.
+- **Reflection on a party-flag holder**: field names like `applicant1Flags` are used as strings at runtime (`CaseFlagsWaService.java:273-281`). Rename fields only with a coordinated code change.
 - **Do not redefine `Flags`/`FlagDetail`/`FlagLauncher`** — the SDK's `@ComplexType(generate=false)` relies on them being CCD base types (`FieldTypeUtils.java:48`).
 - **`RetainHiddenValue=Yes` is mandatory** on every hidden `Flags` field and on complex sub-fields containing `Flags`. Forgetting it wipes flag data on event submission.
 - **`groupId` must match** across internal and external `Flags` for the same party (v2.1) — otherwise XUI displays the party twice.
@@ -452,6 +452,7 @@ PRL's `CaseFlagsController` (`apps/prl/prl-cos-api/.../CaseFlagsController.java`
 
 - `about-to-start`: calls `caseFlagsWaService.setSelectedFlags(caseData)` to populate a wrapper with only `"Requested"` flags.
 - `about-to-submit`: calls `validateAllFlags()` to find the most-recently-modified flag. If still `"Requested"`, returns `errors.add("Please select status other than Requested")`. Otherwise calls `searchAndUpdateCaseFlags()` to write the new status into the case data map.
+  `validateAllFlags` returns `null` when there is nothing to review — no wrapper, an empty `selectedFlags`, or flags with no `details` — and the controller turns that into `errors.add("No case flag selected to review")` rather than dereferencing it. Worth copying if you implement the same pattern: the sort-then-take-first idiom throws on an empty list otherwise.
 - `submitted`: calls `checkAllRequestedFlagsAndCloseTask()` — if no flags remain `"Requested"`, fires a WA task-close event.
 
 <!-- source: apps/prl/prl-cos-api/src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java:44-161 -->

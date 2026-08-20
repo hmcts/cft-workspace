@@ -67,13 +67,13 @@ sources_sha:
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/domain/ChangeOrganisationRequest.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/datastore/CaseDetails.java": "fd47890952be0b44521441cdb43233ef61268ce2"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/NoticeOfChangeQuestions.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/VerifyNoCAnswersService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ChallengeAnswerValidator.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ApplyNoCDecisionService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
-  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/VerifyNoCAnswersService.java": "fe70fb40c8240b3e072da827fef3e1f6ef767c27"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ChallengeAnswerValidator.java": "fc7cd8f87fa589d5d66f638d463b1e2f8b18af4b"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ApplyNoCDecisionService.java": "1b4425f359f0fb88bb92a9287488b35dd8f10adb"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java": "b6a8f0db1eec277476c44fffbb3b35f0622f5443"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/repository/DefaultDataStoreRepository.java": "fd47890952be0b44521441cdb43233ef61268ce2"
   ? "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/definitionstore/DefinitionStoreApiClientConfig.java"
-  : "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  : "d47afee2b0d0a33ff20746c78f631834ac04251e"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/errorhandling/noc/NoCValidationError.java": "fd47890952be0b44521441cdb43233ef61268ce2"
   "aac-manage-case-assignment:src/main/resources/application.yaml": "9910b14cfb1fcad7a811420150a69864df3bf528"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/NoticeOfChange.java": "e0518056b0b4b00f457c8049abf201ee1dedd83b"
@@ -81,7 +81,7 @@ sources_sha:
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemRequestNoticeOfChange.java": "db56d640f5ad39b385c99da8d543544c0d6a201c"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemApplyNoticeOfChange.java": "9b1337e16b348bdc96f18c2081556a637d86395f"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/client/AssignCaseAccessClient.java": "8c795dc52f33c8ec5c8be87e50de105ca2d94434"
-  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "8ea172728014eb8e47eb0914bde427846940fba2"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "7ecd3406d5fee931756c2bcfd72921c58085966e"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseRoleID.java": "8c795dc52f33c8ec5c8be87e50de105ca2d94434"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java": "331e5ff869da788ba5aad52abafc2fce18aba416"
 ---
@@ -412,6 +412,15 @@ AAC returns structured error codes in its responses. The full set from `NoCValid
 | `missing-cor-case-role-id` | CaseRoleID in COR definition is missing |
 | `answers-mismatch-questions` | Number of answers does not match number of questions |
 | `no-answer-provided-for-question` | No answer was provided for a specific question ID |
+| `failed-service-noc-validation-id` | Your `ApplyNoCDecision` callback rejected the decision — see below |
+
+`failed-service-noc-validation-id` (CCD-5513) is the one code your own service controls. When AAC
+triggers the NoC decision event from `POST /noc/check-noc-approval` and the data store comes back with
+`callback_response_status: INCOMPLETE_CALLBACK` *and* a non-empty `callback_error_message`, AAC raises
+this code rather than the generic callback failure, formatting the case type ID into the message
+(`DefaultDataStoreRepository.java:285-296`). Returning errors from your about-to-submit callback on the
+NoC decision event is therefore how you veto a change of representation; if you return
+`INCOMPLETE_CALLBACK` with no message you get an unstructured 500 instead.
 
 Additionally, XUI surfaces user-facing messages (from EUI API spec):
 - "Not a valid case reference" — no case with that reference exists

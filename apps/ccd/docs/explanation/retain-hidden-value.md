@@ -86,8 +86,8 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java": "5aac4f32ba9d903d5fde3474938c9afaaee510b8"
   ? "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_RetainHiddenValue/CaseEventToFields.json"
   : "2b17ab5d70837b8124aba352007d503882853843"
-  "ccd-config-generator:sdk/ccd-config-generator/src/test/java/uk/gov/hmcts/reform/fpl/CCDConfig.java": "c7f310e6f229b8d22b82eedcd428590ab00d2f84"
-  "ccd-config-generator:sdk/ccd-config-generator/src/test/java/uk/gov/hmcts/reform/fpl/model/CaseData.java": "2969f7223b78ee519ad7b054b016f0fa21fe2dcb"
+  "ccd-config-generator:sdk/ccd-config-generator/src/test/java/uk/gov/hmcts/reform/fpl/CCDConfig.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
+  "ccd-config-generator:sdk/ccd-config-generator/src/test/java/uk/gov/hmcts/reform/fpl/model/CaseData.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
 ---
 
 # RetainHiddenValue

@@ -56,7 +56,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/CaseEventMessageService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/message/MessageQueueCandidateEntity.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AbstractDefaultGetCaseViewOperation.java": "80adc76067063ba3c3600fb3e0674b41bfe5426f"
-  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "4d82832e6bc76a8c6b1b0ebc4ab877001e1e47f3"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "5daf60c31eeb61da276722c2639fa50d279a26a8"
   "ccd-data-store-api:src/main/resources/db/migration/V0001__Base_version.sql": "2dc4bd32091d4f764d6ac7150265d04ed016bd1b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPI.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceClient.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"

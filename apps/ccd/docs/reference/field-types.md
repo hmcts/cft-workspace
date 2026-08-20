@@ -85,7 +85,7 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ListValue.java": "4f0c9ded1ba53dfb7a23fed2e5c7997c68c32f1c"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/FieldTypeEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/CaseFieldEntity.java": "6ad5468e76b9ce8c56d74d619b2b5c79cdee63e9"
-  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java": "0433376e83a1001e75f42e1d775e3035ca257145"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java": "a3eb4d238899d2957cc65251aad0a455c981dc93"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20230723_4590__CCD-4590_CreateCaseMessage.sql": "3b65b115949cb8611696670a331d992bbd6c322b"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20230724_4590__CCD-4590_CreateCaseQueriesCollection.sql": "3b65b115949cb8611696670a331d992bbd6c322b"
@@ -94,7 +94,7 @@ sources_sha:
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_4__GA4_CaseAccessGroups_collection.sql": "0433376e83a1001e75f42e1d775e3035ca257145"
   ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/DisplayContextParameterValidator.java"
   : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
-  "ccd-definition-store-api:elastic-search-support/src/main/resources/application.yml": "3e97a6f49f81af7cdaa0eceee2c9a52ecd2e6fd5"
+  "ccd-definition-store-api:elastic-search-support/src/main/resources/application.yml": "a3eb4d238899d2957cc65251aad0a455c981dc93"
   ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java"
   : "70a1523ad356b828a6e094f4246effdeeeadda7b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/search/MetaData.java": "bf6f9ecc0149aba4c80456c27b6d5fef74616ad7"
@@ -120,6 +120,7 @@ CCD field types are declared in the `FieldType` column of the `CaseField` spread
 |---|---|---|---|---|
 | `Text` | `{"type": "string"}` | length (chars) — definable on `CaseField` and on element rows in `ComplexTypes`. **Min/max length cannot be set on a `Text` inside a `Collection`** — wrap it in a Complex type instead. <!-- CONFLUENCE-ONLY: not verified in source --> | none | `text` + `.keyword` sub-field (lowercase normalizer) |
 | `TextArea` | `{"type": "string"}` | length | none | same as `Text` |
+| `RichTextArea` | `{"type": "string"}` — HTML markup | **`Min` only** (see below) | none | same as `Text` |
 | `Number` | `{"type": "number"}` (stored as string) | numeric value (min ≤ value ≤ max) | none | `double` |
 | `MoneyGBP` | string of pennies, e.g. `"1200"` for £12.00 | value in **pennies** | none | `double` <!-- DIVERGENCE: previous draft claimed `long`, but `application.yml:77` maps `MoneyGBP: defaultDouble`. Source wins. --> |
 | `Date` | `{"type": "string", "format": "date"}` — `YYYY-MM-DD` | earliest / latest date (`dd/mm/yyyy` in `Min`/`Max`) | none | `date` (with `ignore_malformed: true`; no `format` constraint at index level) |
@@ -129,6 +130,19 @@ CCD field types are declared in the `FieldType` column of the `CaseField` spread
 | `Postcode` | `{"type": "string"}` | length | `^([A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA)$` (`V0001__Base_version.sql:2540–2542`) | `keyword` <!-- DIVERGENCE: the type is registered as `Postcode` (lowercase 'c') in `field_type` and `application.yml`, not `PostCode`. Source wins. --> |
 | `YesOrNo` | `{"type": "string", "enum": ["Yes", "No"]}` | n/a | none | `keyword` |
 | `Label` | not persisted | n/a — display only | n/a | **not indexed** (`application.yml: ccdIgnoredTypes`) |
+
+`RichTextArea` is the newest base type, added by CCD-7988
+(`V20260721_7988__CCD-7988_RichTextArea_base_type.sql`, a bare `field_type` insert with no
+regex and no bounds). It stores HTML rather than plain text, and two things distinguish it
+from `TextArea`:
+
+- **`Max` is not enforced server-side.** `RichTextAreaValidator` checks only `Min`, where
+  `TextValidator` checks `Max`, `Min` and the regex. A `Max` set on a `RichTextArea` field
+  imports cleanly and is then ignored by the data store.
+- **The sanitisation rejection happens in the browser, not the API.** The `ccd-case-ui-toolkit`
+  validator raises an `unsafeRichText` error, surfaced as "Potentially unsafe HTML content is
+  not allowed in this field". The data store performs no equivalent check, so anything reaching
+  it through a non-XUI client is stored as supplied.
 
 Notes that apply to most primitives:
 - `Min`/`Max` on `CaseField` set bounds at the top level; for the same primitive used as a sub-field of a Complex type, set them on the element row in `ComplexTypes`.

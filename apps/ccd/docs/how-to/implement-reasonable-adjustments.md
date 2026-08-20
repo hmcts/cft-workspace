@@ -64,8 +64,8 @@ diataxis: how-to
 product: ccd
 sources_sha:
   "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/citizen/ReasonableAdjustmentsController.java": "f32a0b22372a52872c3165a62d79b77e36521f8b"
-  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java": "268bdafb8c6c3a5d235ae399d84108a51a008f22"
-  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java": "531d5b6842f81c82b1bac65c790500acc73523f8"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java": "6b347077cfc5d995740d6272751fbbd8f97c98b4"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java": "6b347077cfc5d995740d6272751fbbd8f97c98b4"
   "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/handlers/CaseFlagsEventHandler.java": "4bb672408ad349fb744d7952bdd1ef669e854d57"
   "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java": "9f7737ceceb64587f7c2a5bd9b0616092cfe4ba2"
   "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java": "544975f6b47e5ba67d6b7e85b961bee60c6e9dc3"
@@ -151,7 +151,7 @@ private Flags caseFlags;                          // CaseData.java:714
 private AllPartyFlags allPartyFlags;              // CaseData.java:786
 ```
 
-`AllPartyFlags` holds up to five applicants, five respondents, solicitors, and barristers — each typed `Flags`. Field names such as `caApplicant1ExternalFlags` must match exactly the names used by the introspection logic in `CaseFlagsWaService` (`CaseFlagsWaService.java:115`).
+`AllPartyFlags` holds up to five applicants, five respondents, solicitors, and barristers — each typed `Flags`. Field names such as `caApplicant1ExternalFlags` must match exactly the names used by the introspection logic in `CaseFlagsWaService` (`CaseFlagsWaService.java:273-281`).
 
 `Flags` (`libs/ccd-config-generator:sdk/.../type/Flags.java`) carries: `partyName`, `roleOnCase`, `details` (collection of `FlagDetail`), and — new in v2.1 — `visibility` (`Internal` / `External`, **not enforced by CCD**) and `groupId` (UUID; services may use any string).
 
@@ -208,7 +208,7 @@ PRL is the first service consuming the shared **"Flags Microsite"** — a citize
 
 ### 4. Set flag status to "Requested" on submission
 
-When a citizen (or LR) submits an RA request, set `FlagDetail.status = "Requested"` on the relevant party flag. This is the trigger string that downstream WA logic watches for (`CaseFlagsWaService.java:38`).
+When a citizen (or LR) submits an RA request, set `FlagDetail.status = "Requested"` on the relevant party flag. This is the trigger string that downstream WA logic watches for (`CaseFlagsWaService.java:42`).
 
 ```java
 flagDetail.setStatus("Requested");   // magic string — not an enum
@@ -238,7 +238,7 @@ event.submittedCallback((payload, caseDetails) ->
 
 > **WA task not created for draft applications.** When a support request is submitted as part of a draft application (before case creation), no WA task is raised. The RA flags are instead reviewed as part of the "Check Application" task. Only flags submitted or edited **after case creation** trigger the `CREATE_WA_TASK_FOR_CTSC_CASE_FLAGS` flow. <!-- CONFLUENCE-ONLY: draft-application WA suppression from PRL requirements (page 1712767862). -->
 
-<!-- DIVERGENCE: An earlier draft of this page said "checkCaseFlagsToCreateTask sets isCaseFlagsTaskCreated = Yes when a task is raised." That's wrong. Source (`CaseFlagsWaService.java:84-93`) shows it sets the flag to **No** when transitioning from "had requested flags" to "no requested flags". The `Yes` setter lives in `CaseFlagsEventHandler.java:39`. Source wins. -->
+<!-- DIVERGENCE: An earlier draft of this page said "checkCaseFlagsToCreateTask sets isCaseFlagsTaskCreated = Yes when a task is raised." That's wrong. Source (`CaseFlagsWaService.java:93-105`) shows it sets the flag to **No** when transitioning from "had requested flags" to "no requested flags". The `Yes` setter lives in `CaseFlagsEventHandler.java:39`. Source wins. -->
 
 ### 6. Configure the caseworker review event
 
@@ -246,9 +246,9 @@ Define a CCD event for caseworkers to review RA requests. Wire its callbacks to:
 
 | Stage | Endpoint | Purpose |
 |---|---|---|
-| `about-to-start` | `/caseflags/about-to-start` | Collects all `"Requested"` flags into `ReviewRaRequestWrapper.selectedFlags` (`CaseFlagsWaService.java:105-142`). Deep-copies via Jackson round-trip (line 242–248). |
+| `about-to-start` | `/caseflags/about-to-start` | Collects all `"Requested"` flags into `ReviewRaRequestWrapper.selectedFlags` (`CaseFlagsWaService.java:120-171`). Deep-copies via Jackson round-trip (line 326–332). |
 | `about-to-submit` | `/caseflags/about-to-submit` | Validates the most-recently-modified flag is no longer `"Requested"` (`CaseFlagsController.java:125-152`). If the user left a flag at `"Requested"`, returns the validation error `"Please select status other than Requested"`. |
-| `submitted` | `/caseflags/submitted-to-close-wa-task` | If **all** flags on the case are no longer `"Requested"`, fires CCD system event `CLOSE_REVIEW_RA_REQUEST_TASK` and sets `isCaseFlagsTaskCreated = No` (`CaseFlagsWaService.java:51-75`). |
+| `submitted` | `/caseflags/submitted-to-close-wa-task` | If **all** flags on the case are no longer `"Requested"`, fires CCD system event `CLOSE_REVIEW_RA_REQUEST_TASK` and sets `isCaseFlagsTaskCreated = No` (`CaseFlagsWaService.java:57-84`). |
 
 For language and special-measures flags there is a parallel review path via `/review-lang-sm/about-to-start` and `/review-lang-sm/about-to-submit` (`CaseFlagsController.java:171-216`).
 
@@ -256,11 +256,22 @@ For language and special-measures flags there is a parallel review path via `/re
 
 ### 7. Handle deep-copy correctly
 
-`CaseFlagsWaService.setSelectedFlags` deep-copies flags via a Jackson round-trip (`writeValueAsString` then `readValue`) to avoid mutating originals (`CaseFlagsWaService.java:242-248`). If you extend or override this method, preserve that pattern — in-place mutation will corrupt the before/after comparison used by the WA task gate.
+`CaseFlagsWaService.setSelectedFlags` deep-copies flags via a Jackson round-trip (`writeValueAsString` then `readValue`) to avoid mutating originals (`CaseFlagsWaService.java:326-332`). If you extend or override this method, preserve that pattern — in-place mutation will corrupt the before/after comparison used by the WA task gate.
 
 ### 8. Align AllPartyFlags field names
 
-`AllPartyFlags` is introspected via Java reflection to iterate all `Flags`-typed fields generically (`CaseFlagsWaService.java:115-117`, `221-239`). Any field added to `AllPartyFlags` must be of type `Flags` and follow the naming convention already used (e.g. `caApplicant1ExternalFlags`). A mismatch will cause silent skipping — the field won't be included in `"Requested"` flag aggregation.
+`AllPartyFlags` is introspected via Java reflection to iterate its `Flags`-typed fields generically (`CaseFlagsWaService.java:273-281`, `253-271`). Any field added to `AllPartyFlags` must be of type `Flags` and follow the naming convention already used (e.g. `caApplicant1ExternalFlags`). A mismatch will cause silent skipping — the field won't be included in `"Requested"` flag aggregation.
+
+Solicitor flag fields get a second filter on top of that. `shouldIncludeFieldForCurrentRepresentation` (`CaseFlagsWaService.java:284-315`) drops a solicitor field when the corresponding party is not legally represented, so those names are matched rather than just conventional:
+
+| Field-name form | Matched how | Represented party resolved from |
+|---|---|---|
+| `caApplicantSolicitor<N>ExternalFlags` / `…InternalFlags` | regex, `<N>` is a 1-based index | `CaseData.applicants` |
+| `caRespondentSolicitor<N>ExternalFlags` / `…InternalFlags` | regex, `<N>` is a 1-based index | `CaseData.respondents` |
+| `daApplicantSolicitorExternalFlags` / `daApplicantSolicitorInternalFlags` | exact string | `CaseData.applicantsFL401` |
+| `daRespondentSolicitorExternalFlags` / `daRespondentSolicitorInternalFlags` | exact string | `CaseData.respondentsFL401` |
+
+A party counts as represented when `doTheyHaveLegalRepresentation == yes` or `user.solicitorRepresented == Yes`. An index out of range, or a missing party, excludes the field. If you name a solicitor field so it *nearly* matches one of these patterns — a zero-padded index, say — it falls through to the default `true` and is always included, which is the failure mode to watch for: the flags appear for parties with no solicitor.
 
 ### 9. Map flag codes — never display strings
 

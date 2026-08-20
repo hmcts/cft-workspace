@@ -53,7 +53,7 @@ sources_sha:
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/Service.java": "732ec28c7a68359452f0e767b5bd605d10608e61"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
-  "platops/cnp-flux-config:apps/ccd/ccd-case-document-am-api/prod.yaml": "543ee646edac937f53f4dfb16d762b29160d9c9c"
+  "platops/cnp-flux-config:apps/ccd/ccd-case-document-am-api/prod.yaml": "51608cee72db3e528bf2ac2da20e3ef6e6b80f5f"
 ---
 
 # API: CDAM (Case Document Access Management)

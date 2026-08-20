@@ -42,11 +42,11 @@ title: Config Generator API reference
 diataxis: reference
 product: ccd
 sources_sha:
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java": "fd407422cd1c80859f3374209a54562d6dbf38f3"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/HasRole.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/HasRole.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCD.java": "6b11c958ff5a6acaebbd19987c9b4706158b108b"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CaseCategory.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
@@ -89,6 +89,8 @@ Top-level interface. `T` = case data class, `S` = state enum, `R` = role enum.
 | `searchParty()` | `SearchPartyBuilder` | Configure global search party fields. |
 | `caseRoleToAccessProfile(R role)` | `CaseRoleToAccessProfileBuilder` | Map a case role to an IDAM access profile. |
 | `categories(R role)` | `CaseCategoryBuilder` | Define Case File View document categories (role-scoped). |
+| `accessType(String accessTypeId)` | `AccessTypeBuilder` | Declare an organisational access type row. See [Group access](../explanation/group-access.md#sdk-support). |
+| `accessTypeRole(String accessTypeId)` | `AccessTypeRoleBuilder` | Declare a role's participation in an access type. The declarative alternative is `HasRole.getAccessGroups()`. |
 | `workBasketResultFields()` | `SearchBuilder` | Configure workbasket result list columns. |
 | `workBasketInputFields()` | `SearchBuilder` | Configure workbasket input (filter) fields. |
 | `searchResultFields()` | `SearchBuilder` | Configure search result columns. |
@@ -413,6 +415,7 @@ Role enum contract. Your role enum must implement `HasRole`:
 |---|---|---|
 | `getRole()` | `String` | The CCD role string (e.g. `"caseworker-divorce-solicitor"`). |
 | `getCaseTypePermissions()` | `String` | CRUD string for case-type level access (e.g. `"CRU"`). |
+| `getAccessGroups()` | `List<CCDAccessGroup>` | Optional (`default List.of()`). The organisational access groups this role participates in; the SDK derives the matching `AccessType` and `AccessTypeRole` rows from them at build time. See [Group access](../explanation/group-access.md#sdk-support). |
 
 Example:
 
@@ -471,6 +474,7 @@ public class MyCaseConfig implements CCDConfig<MyCaseData, State, UserRole> {
 | `Address` | `Address` | UK address (unvalidated). |
 | `AddressUK` | `AddressUK` | Validated UK address fields. |
 | `AddressGlobal` / `AddressGlobalUK` | `AddressGlobal` | International address variants. |
+| `CaseAccessGroup` | `CaseAccessGroup` | Entry in the `CaseAccessGroups` collection that data store maintains. `@ComplexType(generate = false)` — the type is predefined by the definition store. Declare it as `@JsonProperty("CaseAccessGroups") List<ListValue<CaseAccessGroup>>`; the JSON name must match exactly. See [Group access](../explanation/group-access.md). |
 | `CaseLink` | `CaseLink` | Reference to another CCD case. |
 | `CaseLocation` | `CaseLocation` | HMCTS court/region location. |
 | `Document` | `Document` | URL + binary URL + filename + categoryId + uploadTimestamp. |
