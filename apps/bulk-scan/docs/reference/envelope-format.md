@@ -15,6 +15,10 @@ sources:
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/blob/InputNonScannableItem.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/util/OcrDataDeserializer.java
   - bulk-scan-processor:src/main/resources/application.yaml
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorCode.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorMsg.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/ErrorNotificationSender.java
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -23,7 +27,7 @@ examples_extracted_from:
 confluence:
   - id: "1775307063"
     title: "Technical Specification V1.4"
-    last_modified: "2024-06-06T00:00:00Z"
+    last_modified: "2026-07-01T00:00:00Z"
     space: "RBS"
   - id: "1933856272"
     title: "Metadata files for Bulk Scan"
@@ -41,8 +45,14 @@ confluence:
     title: "Bulk scan - Developer FAQs"
     last_modified: "2023-06-30T00:00:00Z"
     space: "DATS"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorCode.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorMsg.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  ? "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/ErrorNotificationSender.java"
+  : "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  ? "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java"
+  : "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
   "bulk-scan-processor:src/main/resources/metafile-schema.json": "a9760b42dfbaea2ce67ad4678ad0f64694ee0d91"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/processor/ZipFileProcessor.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/MetafileJsonValidator.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
@@ -84,13 +94,15 @@ The outer ZIP is digitally signed using SHA256withRSA. The supplier signs `envel
 
 | Entry | Required | Constraints |
 |-------|----------|-------------|
-| `metadata.json` | Yes (exactly one) | Must be a `.json` file; validated against `metafile-schema.json` |
+| `metadata.json` | Yes (exactly one) | Must be a `.json` file — **any** name is accepted; validated against `metafile-schema.json` |
 | `*.pdf` | Yes (one or more) | Each PDF referenced by a `scannable_items[].file_name` entry |
 | Any other extension | Forbidden | Triggers `NonPdfFileFoundException` and envelope rejection |
 
 The inner ZIP is processed by `ZipFileProcessor.getZipContentDetail` which iterates entries: `.json` extension files are read as metadata bytes, `.pdf` extension files are recorded by name, and anything else causes immediate rejection (`ZipFileProcessor.java:113-135`).
 
-Individual PDFs are size-checked against a 300 MB limit (`ZipFileProcessor.MAX_PDF_SIZE = 314_572_800`) before upload. Exceeding this triggers blob rejection to the `*-rejected` container (`ZipFileProcessor.java:68-79`).
+Technical Specification V1.4 §5.5.2 names the metadata file `metafile.json`, while the rest of the same page (and the schema itself) calls it `metadata.json`. Neither name is enforced: `getZipContentDetail` selects on the `.json` extension alone.
+
+Individual PDFs are size-checked against a 300 MB limit (`ZipFileProcessor.MAX_PDF_SIZE = 314_572_800`, `ZipFileProcessor.java:29`). This check is **not** part of envelope validation — it runs during the upload-documents task, after the envelope row already exists in the database. See [Troubleshoot envelope failures](../how-to/troubleshoot-envelope-failures.md#diagnose-an-oversized-pdf) for what actually happens when it trips.
 
 <!-- DIVERGENCE: Confluence Technical Specification V1.4 says max file size is 75MB, but bulk-scan-processor:ZipFileProcessor.java:29 shows MAX_PDF_SIZE = 314_572_800 (300MB). Source wins. -->
 
@@ -324,6 +336,13 @@ Each Azure Blob Storage container maps to a jurisdiction and one or more PO boxe
 
 Source: `application.yaml:136-185`
 
+These eight are the complete set — `containers.mappings` has no other entries. `privatelaw` is additionally gated on `enabled: ${PRIVATELAW_ENABLED:false}`, so it is off unless the environment turns it on.
+
+Technical Specification V1.4 §5.3 lists two further containers, `crime` and `pcq`, and lists `divorce` under the legacy name `divorce → nfd`. `crime` and `pcq` have no `containers.mappings` entry, so `bulk-scan-processor` never polls them; they are `blob-router-service` routing destinations only.
+<!-- CONFLUENCE-ONLY: `crime` and `pcq` containers; blob-router-service is not cloned in this workspace, so the routing side cannot be verified here. Absence confirmed in bulk-scan-processor:src/main/resources/application.yaml. -->
+
+SAS token issuance covers a wider set than the mappings: `accesstoken.serviceConfig` names ten services — the eight containers above plus `bulkscan` and `bulkscanauto` — each with `validity: ${SAS_TOKEN_VALIDITY:300}`.
+
 Rejected envelopes are moved to a `{container}-rejected` container (e.g. `sscs-rejected`).
 
 ## Document subtypes
@@ -343,20 +362,60 @@ The `document_sub_type` field is a dynamic, jurisdiction-specific list. The subt
 
 ## Error notification codes
 
-When envelope processing fails, the system sends an error notification to the scanning supplier via HTTPS POST. The notification includes the following error codes:
+`ErrorCode` (`bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorCode.java`) defines **eight** values. Only four are ever raised by `bulk-scan-processor`:
 
-| Error Code | Meaning |
-|-----------|---------|
-| `ERR_FILE_LIMIT_EXCEEDED` | A document exceeded the maximum file size |
-| `ERR_METAFILE_INVALID` | The metadata.json failed schema or business-rule validation |
-| `ERR_AV_FAILED` | Antivirus scan detected a threat |
-| `ERR_SIG_VERIFY_FAILED` | Digital signature verification failed (non-repudiation) |
-| `ERR_RESCAN_REQUIRED` | A specific document needs to be rescanned |
-| `ERR_ZIP_PROCESSING_FAILED` | General ZIP processing failure |
+| Error Code | Meaning | Raised by the processor? |
+|-----------|---------|--------------------------|
+| `ERR_METAFILE_INVALID` | Metadata failed schema or business-rule validation | Yes |
+| `ERR_ZIP_PROCESSING_FAILED` | Invalid ZIP file content | Yes |
+| `ERR_SERVICE_DISABLED` | Service disabled in this environment | Yes |
+| `ERR_PAYMENTS_DISABLED` | Payments not allowed for this container, or not in this environment | Yes |
+| `ERR_AV_FAILED` | Antivirus scan failed | No — raised by `blob-router-service` |
+| `ERR_SIG_VERIFY_FAILED` | Signature does not match the ZIP content | No — raised by `blob-router-service` |
+| `ERR_FILE_LIMIT_EXCEEDED` | Size too big | No — appears nowhere but the enum |
+| `ERR_RESCAN_REQUIRED` | A document needs rescanning | No — appears nowhere but the enum |
 
-The notification payload includes `zip_file_name`, `po_box`, `error_code`, `error_description`, and optionally `document_control_number` (for document-specific errors) and `reference_id`.
+The AV and signature checks happen upstream in `blob-router-service`, which is not cloned in this workspace; `ERR_FILE_LIMIT_EXCEEDED` and `ERR_RESCAN_REQUIRED` are declared but unreferenced across both cloned repos. Do not read the enum as a list of notifications a supplier can expect from the processor.
 
-<!-- CONFLUENCE-ONLY: error notification codes and payload from Technical Specification V1.4, not verified in source -->
+Which validation raises which code:
+
+| Code | Exceptions |
+|------|-----------|
+| `ERR_METAFILE_INVALID` | `ContainerJurisdictionPoBoxMismatchException`, `DisallowedDocumentTypesException`, `DuplicateDocumentControlNumbersInEnvelopeException`, `FileNameIrregularitiesException`, `InvalidEnvelopeSchemaException`, `OcrDataNotFoundException`, `OcrPresenceException`, `OcrValidationException`, `ZipNameNotMatchingMetaDataException` |
+| `ERR_ZIP_PROCESSING_FAILED` | `DuplicateDocumentControlNumberException`, `InvalidZipEntriesException`, `MetadataNotFoundException`, `NonPdfFileFoundException` |
+| `ERR_SERVICE_DISABLED` | `ServiceDisabledException` |
+| `ERR_PAYMENTS_DISABLED` | `PaymentsDisabledException` |
+
+### Notification payload
+
+The payload the supplier receives is **not** the payload the processor emits. There are two hops:
+
+`bulk-scan-processor` publishes an `ErrorMsg` to the `notifications` Service Bus queue (`ErrorNotificationSender.java:88`) with these fields:
+
+| Field | Value as sent by the processor |
+|-------|-------------------------------|
+| `id` | `{containerName}_{zipFileName}` — used as the message ID |
+| `eventId` | The processor's event ID |
+| `zip_file_name` | The rejected ZIP's name |
+| `jurisdiction` | **The container name**, not the jurisdiction from the mapping table |
+| `po_box` | A comma-joined list of **every** PO box mapped to that container — not the PO box the envelope declared |
+| `document_control_number` | Always `null` |
+| `error_code` | One of the four codes above |
+| `error_description` | The exception message |
+| `service` | Always `"bulk_scan_processor"` |
+| `container` | The container name |
+
+`reform-scan-notification-service` then consumes that message, allocates a `reference_id`, and POSTs an `ErrorNotificationRequest` (`zip_file_name`, `po_box`, `error_code`, `error_description`, `reference_id`) to the supplier's endpoint under HTTP basic auth, expecting `201 Created` with an `ErrorNotificationResponse` containing `notification_id`.
+
+`ErrorMsg` carries TODOs to drop `id` and `eventId` once the application stops sending error notifications itself.
+
+<!-- CONFLUENCE-ONLY: the outbound ErrorNotificationRequest shape, basic auth and 201 response are from Technical Specification V1.4 §6.1; reform-scan-notification-service is not cloned in this workspace. Note also that the spec's Exela swagger annotates its error_code enum as "to be defined by Exela for notification handling. Below are suggested ones" — it is not authoritative. -->
+
+### Document control numbers
+
+`metafile-schema.json` constrains `document_control_number` only as `^[0-9]+$` — any length passes envelope validation. The Payments API is stricter: `BulkScanPayment.java` requires exactly 21 digits.
+
+<!-- DIVERGENCE: Technical Specification V1.4 §5.5.4 states "Document Control Numbers will be formatted as 2225000771011109024" — 19 digits. ccpay-bulkscanning-app's BulkScanPayment enforces @Size(min = 21, max = 21). A 19-digit DCN passes envelope validation and is then rejected by the payments API. Source wins. -->
 
 ## Examples
 

@@ -38,7 +38,7 @@ examples_extracted_from:
 confluence:
   - id: "1775307063"
     title: "Technical Specification V1.4"
-    last_modified: "unknown"
+    last_modified: "2026-07-01"
     space: "RBS"
   - id: "1638182762"
     title: "Bulk Scan, Bulk print & FaCT Useful Links"
@@ -60,7 +60,7 @@ confluence:
     title: "Bulk Scan Prototype"
     last_modified: "unknown"
     space: "DATS"
-confluence_checked_at: "2026-05-13T12:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/BlobProcessorTask.java": "ac5ee8dbac634179a557c12e09779457e22e34ad"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/processor/BlobManager.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
@@ -151,23 +151,24 @@ By the time `bulk-scan-processor` polls the bulk-scan storage account, each blob
 
 ### Container-to-jurisdiction mapping
 
-Each jurisdiction has a dedicated blob container. As of the Technical Specification V1.4:
+Each jurisdiction has a dedicated blob container. The processor polls exactly the eight containers in its own `containers.mappings`:
 
-| Service | Container |
-|---|---|
-| SSCS | `sscs` |
-| Probate | `probate` |
-| Divorce/NFD | `nfd` |
-| FinRem | `finrem` |
-| CMC | `cmc` |
-| Public Law | `publiclaw` |
-| Private Law | `privatelaw` |
-| Crime | `crime` |
-| PCQ | `pcq` |
+| Service | Container | Jurisdiction |
+|---|---|---|
+| SSCS | `sscs` | SSCS |
+| Probate | `probate` | PROBATE |
+| Divorce | `divorce` | DIVORCE |
+| NFD | `nfd` | DIVORCE |
+| FinRem | `finrem` | DIVORCE |
+| CMC | `cmc` | CMC |
+| Public Law | `publiclaw` | PUBLICLAW |
+| Private Law | `privatelaw` | PRIVATELAW |
 
-Crime and PCQ follow a different flow: `blob-router-service` dispatches to their own storage accounts without bulk-scan-processor involvement. The processor only handles CFT services.
+Source: `bulk-scan-processor:src/main/resources/application.yaml`. Three containers share the `DIVORCE` jurisdiction, and `privatelaw` is gated on `enabled: ${PRIVATELAW_ENABLED:false}`.
 
-<!-- CONFLUENCE-ONLY: container list from Technical Specification V1.4, last verified 06/06/2024. May have changed since. -->
+Crime and PCQ appear in the supplier-facing container list but not here: `blob-router-service` dispatches them to their own storage accounts without bulk-scan-processor involvement. The processor only handles CFT services.
+
+<!-- CONFLUENCE-ONLY: `crime` and `pcq` come from Technical Specification V1.4 section 5.3, which presents its list as "an example only, on the 6th June 2024" and still names `divorce` under the legacy `divorce → nfd` mapping. Their absence from containers.mappings is verified; the routing itself is in the uncloned blob-router-service. -->
 
 ## Stage 1: Blob polling and lease acquisition
 

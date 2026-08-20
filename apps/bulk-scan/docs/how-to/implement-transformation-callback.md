@@ -39,9 +39,9 @@ confluence:
     space: "RBS"
   - id: "1051493435"
     title: "1) Bulk Scanning - Service Onboarding and Live service changes Information"
-    last_modified: "unknown"
+    last_modified: "2026-07-01"
     space: "RBS"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/model/request/TransformationRequest.java"
   : "d3a809222612c0bf26d215b484ab75b5fdf5e914"

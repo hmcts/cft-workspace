@@ -17,6 +17,8 @@ sources:
   - bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/config/AsyncConfiguration.java
   - bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/config/RetryConfig.java
   - bulk-scan-payment-processor:src/main/resources/application.yaml
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java
+  - bulk-scan-processor:src/main/resources/application.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -40,14 +42,17 @@ confluence:
     space: "RBS"
   - id: "1712766455"
     title: "Payments and Fee Reg E2E Flows"
-    last_modified: "unknown"
+    last_modified: "2026-08-01"
     space: "DTSFP"
   - id: "1604492884"
     title: "NFD Bulk Scan Payments"
     last_modified: "unknown"
     space: "RP"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
+  ? "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java"
+  : "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
+  "bulk-scan-processor:src/main/resources/application.yaml": "143488c2c25b4bee56e4c8d5201c280a37c0c0d9"
   "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/controllers/PaymentController.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
   "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/service/PaymentService.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
   "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/service/PaymentHubHandlerService.java": "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
@@ -93,7 +98,7 @@ The Bulk Scanning payment channel exists because citizens may choose to engage w
 - Postal Order
 - Cash (accepted per the HLD, despite early scope documents excluding it)
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: the business rationale is from Confluence. The accepted set is corroborated in source: ccpay-bulkscanning-app validates `method` against {"Cash", "Cheque", "PostalOrder"}. -->
 
 **What Exela handles for payments:**
 
@@ -103,7 +108,7 @@ The Bulk Scanning payment channel exists because citizens may choose to engage w
 4. Before banking cheques, Exela obtains a payment reference from Pay Hub and imprints it on the back of the cheque.
 5. Cheques/postal orders are then banked via G4S collection using Bank Giro Credit slips.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: the suppliers operational handling of payment instruments is described only in Confluence; none of it is observable from any repo in this workspace. -->
 
 **Banking reconciliation** (handled externally, not by bulk-scan-payment-processor):
 
@@ -111,7 +116,7 @@ The Bulk Scanning payment channel exists because citizens may choose to engage w
 - In case of banking errors (e.g. amount mismatch), the bank shares the scanned cheque image (which has the PayHub payment reference imprinted on the back) with Liberata for reconciliation.
 - Payment data is retained for 7 years per HMCTS data retention policy.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: Liberata reconciliation and the retention period are policy and third-party process, documented only in Confluence. The Liberata-facing side of Pay Hub lives in ccpay-payment-app, not in any bulk-scan repo. -->
 
 ## PO Box to site ID mapping
 
@@ -128,9 +133,11 @@ The mapping is declared in `application.yaml:28-55` and loaded at startup by `Si
 | PRIVATELAW        | `13235`               | `SITE_ID_PRIVATELAW`      |                     |
 | BULKSCAN          | `BULKSCANPO`, `BULKSCANPO1` | `SITE_ID_BULKSCAN`   |                     |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Source: `bulk-scan-payment-processor:src/main/resources/application.yaml` (`site-mappings.sites`). These six are the complete set.
 
-The "Known site ID values" column is populated from Confluence E2E test documentation (page 1712766455) which references `AA08` for Probate and `AA07` in other examples. Actual values are injected at runtime from Azure Key Vault.
+<!-- CONFLUENCE-ONLY: the "Known site ID values" column comes from Confluence E2E test documentation (page 1712766455), which references `AA08` for Probate and `AA07` in other examples. The real values are injected at runtime from Azure Key Vault and are not in any repo. -->
+
+**There is no site mapping for `publiclaw`.** The processor declares `paymentsEnabled: ${PAYMENTS_ENABLED_PUBLICLAW:false}` for the `publiclaw` container (PO box 12879), but 12879 is absent from `site-mappings.sites`. If public law payments are ever enabled, every payment message will fail with `SiteNotFoundException` until a mapping is added. The same is true of `sscs` (12626/13150/13618) and `cmc` (12747), but those two containers declare no `paymentsEnabled` key at all, so the gap is expected there.
 
 Multiple PO Boxes can map to the same site ID (e.g. Probate's two boxes). The `siteName` field in configuration is informational only and never sent to Pay Hub. Notably, FinRem and NFD share the `DIVORCE` siteName but have distinct site IDs — the siteName has no functional significance.
 
@@ -205,7 +212,9 @@ The `source` column in Pay Hub's database tracks provenance: `Exela` after the f
 
 After payment is linked to a case, a caseworker uses the **PayBubble** UI (`paybubble.{env}.platform.hmcts.net`) to allocate the unallocated payment to a service request (fee). This allocation step is entirely within the Pay Hub domain and not handled by `bulk-scan-payment-processor`.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+To backdate a payment for testing without waiting out the lag window, Pay Hub exposes `PATCH /payments/ccd_case_reference/{ccd_case_number}/lag_time/{lag_time}`.
+
+<!-- CONFLUENCE-ONLY: the two-status lifecycle, the `source` column progression (Exela then Both) and the lag_time endpoint come from Confluence page 1712766455, a QA runbook. The envelope_payment_status and source columns belong to ccpay-bulkscanning-app; the status transitions themselves were not traced in source. -->
 
 ### The Exela pre-registration call
 
@@ -222,14 +231,25 @@ Separately from `bulk-scan-payment-processor`, Exela calls Pay Hub directly (`PO
 }
 ```
 
-Field constraints from Confluence:
-- `bank_giro_credit_slip_number`: 6 digits, starts with `96`
-- `document_control_number`: exactly 21 digits, unique per payment instrument
-- `method`: one of `cheque`, `cash`, `postal_order`
+Field constraints, from `ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java`:
+
+| Field | Constraint as enforced |
+|-------|-----------------------|
+| `document_control_number` | `@NotBlank`, must match `-?\d+(\.\d+)?`, and **exactly 21 digits** (`@Size(min = 21, max = 21)`) |
+| `amount` | `@NotNull`, `@DecimalMin("0.01")`, `@Digits(integer = 10, fraction = 2)` |
+| `currency` | `@NotBlank`; validated against `{"GBP"}` using `equalsIgnoreCase` |
+| `method` | `@NotBlank`; validated against `{"Cash", "Cheque", "PostalOrder"}` using `equalsIgnoreCase` |
+| `bank_giro_credit_slip_number` | `@NotNull`, `@Min(0)`, `@Digits(integer = 6, fraction = 0)` — i.e. **up to** 6 digits |
+| `banked_date` | `@NotBlank`; must match `\d{4}-\d{2}-\d{2}`, parsed non-leniently, and **must not be in the future** |
+
+Two corrections to the values commonly quoted for this endpoint:
+
+- `method` and `currency` are compared case-insensitively, so `cheque` and `Cheque` both work — but `postal_order` does **not**. The accepted spelling is `PostalOrder` (no separator).
+- `bank_giro_credit_slip_number` is bounded at 6 digits, not fixed at 6, and nothing enforces the `96` prefix. Slip numbers starting `96` are a banking convention, not a validation rule — do not rely on it when matching records.
+
+<!-- DIVERGENCE: Confluence describes bank_giro_credit_slip_number as "6 digits, starts with 96" and method as one of `cheque`/`cash`/`postal_order`. Source enforces at most 6 digits with no prefix rule, and rejects `postal_order`. Source wins. -->
 
 This call is authenticated with an S2S token for the `ccpay_bubble` microservice. It happens **before** `bulk-scan-payment-processor` is involved — the DCN must already exist in Pay Hub before the orchestrator triggers the `/payment/create` flow.
-
-<!-- CONFLUENCE-ONLY: not verified in source -->
 
 ## The update-payment flow (exception record to service case)
 
@@ -291,7 +311,7 @@ Adding a new jurisdiction to bulk-scan-payment-processor requires:
 
 Expected volumes (from NFD onboarding): approximately 330 payments/month for a typical jurisdiction (NFD). Probate and Divorce likely have higher volumes.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: the Exela change request, Liberata coordination and volume figures are commercial/operational steps documented only in Confluence. Steps 1, 3 and 6 are verifiable: site-mappings and idam.users are in bulk-scan-payment-processor application.yaml, and the CCD event/field in bulk-scan-ccd-definitions. -->
 
 ## Examples
 

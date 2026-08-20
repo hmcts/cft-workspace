@@ -17,6 +17,11 @@ sources:
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CcdApi.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/CreateExceptionRecord.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/processedenvelopes/ProcessedEnvelopeNotifier.java
+  - bulk-scan-processor:src/main/resources/application.yaml
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorMsg.java
+  - bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/controllers/PaymentController.java
+  - bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/client/payhub/PayHubClient.java
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -26,7 +31,7 @@ confluence:
     space: "DATS"
   - id: "1775307063"
     title: "Technical Specification V1.4"
-    last_modified: "unknown"
+    last_modified: "2026-07-01"
     space: "RBS"
   - id: "1638182762"
     title: "Bulk Scan, Bulk print & FaCT Useful Links"
@@ -40,8 +45,16 @@ confluence:
     title: "Bulk scan - Service operations guide"
     last_modified: "unknown"
     space: "DATS"
-confluence_checked_at: "2026-05-13T12:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
+  "bulk-scan-processor:src/main/resources/application.yaml": "143488c2c25b4bee56e4c8d5201c280a37c0c0d9"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorMsg.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  ? "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/controllers/PaymentController.java"
+  : "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  ? "bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/client/payhub/PayHubClient.java"
+  : "573adcb4159c2fd29e4de20a83fbb7a39edc9e5e"
+  ? "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java"
+  : "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/BlobProcessorTask.java": "ac5ee8dbac634179a557c12e09779457e22e34ad"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/OrchestratorNotificationService.java": "ac5ee8dbac634179a557c12e09779457e22e34ad"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/processor/DocumentProcessor.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
@@ -110,8 +123,8 @@ sequenceDiagram
     Proc->>ASB: Consume processed-envelopes ACK
     Proc->>Blob: Delete original blob
     Supplier->>APIM: POST /bulk-scan-payment (payment meta)
-    PayProc->>ASB: Consume from 'payments' queue
-    PayProc->>PayHub: Register/update payment
+    Orch->>PayProc: POST /payment/create (DCNs from envelope)
+    PayProc->>PayHub: POST /bulk-scan-payments
 ```
 
 ## Stage 0: Blob Router — upload and dispatch
@@ -133,10 +146,22 @@ The supplier uploads an **outer ZIP** to the `reformscan` storage account. This 
   +-- signature                              (digital signature of envelope.zip)
 ```
 
-The `blob-router-service` (`reform-scan` resource group) verifies the digital signature using the supplier's pre-shared public key (SHA256WITHRSA, 1024-bit key, renewed every six months) and dispatches the inner `envelope.zip` content to the appropriate jurisdiction container in the `bulkscan` storage account (e.g. `sscs`, `probate`, `nfd`, `finrem`, `publiclaw`, `privatelaw`, `cmc`, `crime`, `pcq`).
+The `blob-router-service` (`reform-scan` resource group) verifies the digital signature using the supplier's pre-shared public key (SHA256WITHRSA, 1024-bit key, renewed every six months) and dispatches the inner `envelope.zip` content to the appropriate jurisdiction container in the `bulkscan` storage account (`sscs`, `probate`, `divorce`, `nfd`, `finrem`, `cmc`, `publiclaw`, `privatelaw`).
 
-If signature verification or other pre-processing fails, `blob-router-service` publishes an error notification to the `reform-scan-notification-service`, which sends a callback to the supplier's notification endpoint with an `ErrorNotificationRequest` containing `zip_file_name`, `po_box`, `error_code`, and `error_description`. Error codes include: `ERR_FILE_LIMIT_EXCEEDED`, `ERR_METAFILE_INVALID`, `ERR_AV_FAILED`, `ERR_SIG_VERIFY_FAILED`, `ERR_RESCAN_REQUIRED`, `ERR_ZIP_PROCESSING_FAILED`.
-<!-- CONFLUENCE-ONLY: Error notification flow to supplier via reform-scan-notification-service — not verified in source -->
+The supplier-facing container list also includes `crime` and `pcq`. Those are `blob-router-service` routing destinations only — neither appears in `bulk-scan-processor`'s `containers.mappings` (`bulk-scan-processor:src/main/resources/application.yaml`), so envelopes landing there are not picked up by the processor pipeline described below.
+<!-- CONFLUENCE-ONLY: `crime` and `pcq` containers named in Technical Specification V1.4 §5.3; absent from bulk-scan-processor's containers.mappings, and blob-router-service is not cloned in this workspace -->
+
+<!-- DIVERGENCE: Technical Specification V1.4 §5.3 presents its container list as "an example only, on the 6th June 2024". Source wins. -->
+
+If signature verification or other pre-processing fails, `blob-router-service` publishes an error notification to the `reform-scan-notification-service`, which sends a callback to the supplier's notification endpoint with an `ErrorNotificationRequest` containing `zip_file_name`, `po_box`, `error_code`, `error_description` and `reference_id`, under HTTP basic auth, expecting `201 Created` with a `notification_id` in reply.
+
+Error notification is a **two-hop** flow, and the two hops carry different payloads:
+
+1. The producing service (`blob-router-service`, or `bulk-scan-processor` for the failures in Stage 2) publishes an `ErrorMsg` to the `notifications` Service Bus queue.
+2. `reform-scan-notification-service` consumes that message, allocates a `reference_id`, and POSTs an `ErrorNotificationRequest` to the supplier.
+
+`ErrorMsg` has no `reference_id` — that field is added by the notification service. See [Envelope format](../reference/envelope-format.md#error-notification-codes) for the full field list and the eight `ErrorCode` values.
+<!-- CONFLUENCE-ONLY: reform-scan-notification-service's outbound ErrorNotificationRequest, basic auth and 201 response come from Technical Specification V1.4 §6.1; that repo is not cloned in this workspace. The inbound ErrorMsg half is verified in bulk-scan-processor. -->
 
 ## Stage 1: Processor — blob intake
 
@@ -241,16 +266,15 @@ A known issue is that CCD treats all 4xx and 5xx errors from service team callba
 
 ## Stage 4: Payment processing
 
-`bulk-scan-payment-processor` (port 8583) handles the payment side of the pipeline. The scanning supplier sends payment metadata to the APIM-hosted `POST /bulk-scan-payment` endpoint after banking cheques/postal orders. This data flows into the `payments` Azure Service Bus queue.
+Payment data reaches Pay Hub by two independent routes that meet on the DCN.
 
-The payment processor consumes these messages and:
+**Route 1 — the supplier's own payment metadata.** After banking cheques/postal orders, the scanning supplier POSTs to the APIM-hosted `POST /bulk-scan-payment` endpoint, which is served by `ccpay-bulkscanning-app` (a Payments repo, not a Bulk Scan one). Payment methods accepted are `Cash`, `Cheque` and `PostalOrder`, and the only currency accepted is `GBP` — both compared case-insensitively. Each payment carries `document_control_number`, `amount`, `currency`, `method`, `bank_giro_credit_slip_number` and `banked_date` (`ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java`).
 
-1. Maps the PO box to a site ID
-2. Calls Pay Hub (`PAY_HUB_URL`) to register a new payment for the exception record
-3. When a caseworker converts the exception record to a service case, updates the existing payment reference in Pay Hub
+**Route 2 — the envelope's DCNs.** `bulk-scan-payment-processor` (port 8583) exposes `POST /payment/create` and `POST /payment/update` and is called **over HTTP by the orchestrator** when an envelope carries payment DCNs. It maps the PO box to a site ID and calls Pay Hub via Feign — `POST /bulk-scan-payments` to register, `PUT /bulk-scan-payments?exception_reference=…` to re-point the payment when a caseworker converts the exception record to a service case (`bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/client/payhub/PayHubClient.java`).
 
-Payment methods supported: `Cheque`, `PostalOrder`, `Cash`. Each payment carries a `document_control_number` (unique DCN), `amount`, `currency` (GBP only), `method`, `bank_giro_credit_slip_number`, and `banked_date`.
-<!-- CONFLUENCE-ONLY: Payment API fields (amount, currency, method, bgc_slip_number, banked_date) — not verified in source -->
+The payment processor has **no** Service Bus listener — there is no `payments` queue. Its `src/main/java` contains only `PaymentController` and `RootController`, with no `ServiceBus` or `@JmsListener` reference anywhere.
+
+<!-- DIVERGENCE: `document_control_number` is documented in Technical Specification V1.4 §5.6 with the 19-digit example `2225000771011109024`, but `BulkScanPayment.java` enforces `@Size(min = 21, max = 21)`. The processor's own `metafile-schema.json` bounds the DCN only as `^[0-9]+$`, so a 19-digit DCN passes envelope validation and is then rejected by the payments API. Source wins. -->
 
 ## Exception Record creation rules
 

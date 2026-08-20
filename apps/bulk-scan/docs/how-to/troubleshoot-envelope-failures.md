@@ -18,6 +18,13 @@ sources:
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/ReportsController.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/entity/Status.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/envelopes/EnvelopeMessageProcessor.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/ErrorNotificationSender.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorMsg.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorCode.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/UploadEnvelopeDocumentsService.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/exceptions/FileSizeExceedMaxUploadLimit.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/entity/ProcessEvent.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/common/Event.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -35,10 +42,20 @@ confluence:
     space: "DATS"
   - id: "1775307063"
     title: "Technical Specification V1.4"
-    last_modified: "unknown"
+    last_modified: "2026-07-01"
     space: "RBS"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
+  ? "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/ErrorNotificationSender.java"
+  : "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorMsg.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorCode.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  ? "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/UploadEnvelopeDocumentsService.java"
+  : "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  ? "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/exceptions/FileSizeExceedMaxUploadLimit.java"
+  : "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/entity/ProcessEvent.java": "2b43e4fa15ff5c6c837d0b8f207b54b3cc29b61c"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/common/Event.java": "77a26ce3d10483278a94f3148a618b69f1e66cbe"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/processor/EnvelopeProcessor.java": "ac5ee8dbac634179a557c12e09779457e22e34ad"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/MetafileJsonValidator.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/EnvelopeValidator.java": "1a4ed083d2ce4288859c9449cf36cb5f7e0a45b0"
@@ -89,13 +106,12 @@ sources_sha:
 
 ## Diagnose validation failures
 
-Validation failures happen before the envelope is persisted to the DB. The blob remains in the input container (or is moved to `{container}-rejected`).
+Validation failures happen before the envelope is persisted to the DB. The blob remains in the input container (or is moved to `{container}-rejected`). Each of these throws a subclass of `EnvelopeRejectionException`, which `FileContentProcessor` routes to `FileRejector.handleInvalidBlob` — that sends the supplier notification and then moves the blob. The 300 MB PDF size limit is *not* one of these; see [Diagnose an oversized PDF](#diagnose-an-oversized-pdf).
 
 3. Check processor logs for the envelope filename. Common validation error types:
 
    - **`InvalidEnvelopeSchemaException`** — the `metadata.json` inside the ZIP failed JSON Schema draft-04 validation (`MetafileJsonValidator.java`). Required fields: `po_box`, `jurisdiction`, `delivery_date`, `opening_date`, `zip_file_createddate`, `zip_file_name`, `envelope_classification`, `scannable_items`. The schema enforces `additionalProperties: false` — any unknown field causes rejection.
    - **`NonPdfFileFoundException`** — the ZIP contains a file that is neither `.pdf` nor `.json` (`ZipFileProcessor.java:113-135`).
-   - **`FileSizeExceedMaxUploadLimit`** — a PDF exceeds 300 MB (`ZipFileProcessor.java:68-79`). The blob is moved to `{container}-rejected` immediately.
    - **Container/jurisdiction mismatch** — `EnvelopeValidator.assertContainerMatchesJurisdictionAndPoBox` checks that the container name, jurisdiction, and PO box triple matches a `containers.mappings` entry (`EnvelopeValidator.java:210-233`).
    - **`OcrDataNotFoundException`** — classification is `NEW_APPLICATION` or `SUPPLEMENTARY_EVIDENCE_WITH_OCR` but no FORM/SSCS1 document carries OCR data (`EnvelopeValidator.java:92-125`).
 
@@ -108,17 +124,40 @@ Validation failures happen before the envelope is persisted to the DB. The blob 
 
 6. Verify the container/jurisdiction/PO box triple matches a configured mapping. Known production mappings:
 
-   <!-- CONFLUENCE-ONLY: not verified in source -->
-
    | Jurisdiction | Container | PO Box values |
    |---|---|---|
-   | SSCS | sscs | 12626, 13150 |
+   | SSCS | sscs | 12626, 13150, 13618 |
    | CMC | cmc | 12747 |
+   | DIVORCE | divorce | 12706 |
    | DIVORCE | nfd | 13226 |
    | DIVORCE | finrem | 12746 |
    | PROBATE | probate | 12625, 12624 |
    | PUBLICLAW | publiclaw | 12879 |
    | PRIVATELAW | privatelaw | 13235 |
+
+   Source: `bulk-scan-processor:src/main/resources/application.yaml` (`containers.mappings`). These eight are the complete set. Note that three separate containers map to the `DIVORCE` jurisdiction, so jurisdiction alone is never enough to identify the container — always check the triple.
+
+## Diagnose an oversized PDF
+
+`FileSizeExceedMaxUploadLimit` is easy to mistake for a validation failure. It is not one, and it behaves differently from everything in the previous section:
+
+- It extends `RuntimeException`, **not** `EnvelopeRejectionException`, so it does not go through `FileRejector`.
+- It is thrown from `ZipFileProcessor.checkFileSizeAgainstUploadLimit`, reached only via `extractPdfFiles` from `UploadEnvelopeDocumentsService.processBlobContent` — i.e. during the **upload-documents** task, long after the envelope row was created.
+- The handler moves the blob to `{container}-rejected`, records a `FILE_SIZE_EXCEED_UPLOAD_LIMIT_FAILURE` event, sets the envelope status to `COMPLETED`, saves it, and throws `FailedUploadException`.
+- **No error notification is sent to the supplier.** There is no `ERR_FILE_LIMIT_EXCEEDED` message on the `notifications` queue.
+
+So the symptom is an envelope that reached `COMPLETED` with a rejected blob and a silent supplier. Search for the `FILE_SIZE_EXCEED_UPLOAD_LIMIT_FAILURE` event rather than expecting a notification:
+
+```sql
+SELECT pe.container, pe.zipfilename, e.status, pe.reason, pe.createdat
+FROM process_events pe
+LEFT JOIN envelopes e
+  ON e.container = pe.container AND e.zipfilename = pe.zipfilename
+WHERE pe.event = 'FILE_SIZE_EXCEED_UPLOAD_LIMIT_FAILURE'
+ORDER BY pe.createdat DESC;
+```
+
+`process_events` has no envelope foreign key — `envelope_id` was dropped in migration `V007__Envelope_upgrade.sql`, so `(container, zipfilename)` is the only way to correlate the two tables.
 
 ## Inspect rejected blobs in Azure Storage
 
@@ -332,17 +371,31 @@ Validation failures happen before the envelope is persisted to the DB. The blob 
 
 ## Error notification to supplier
 
-31. When envelope processing fails at the validation stage, the supplier is notified via an HTTPS POST to their configured notification endpoint. The error notification payload includes:
+31. When envelope processing fails at the validation stage, the processor publishes an `ErrorMsg` to the `notifications` Service Bus queue (`ErrorNotificationSender.java:88`). `reform-scan-notification-service` consumes it and POSTs an `ErrorNotificationRequest` to the supplier's endpoint. The processor's message carries:
 
-    | Field | Description |
-    |-------|-------------|
+    | Field | Value as sent by the processor |
+    |-------|-------------------------------|
+    | `id` | `{container}_{zipFileName}` — the ASB message ID |
+    | `eventId` | The processor's event ID |
     | `zip_file_name` | Name of the failing zip file |
-    | `po_box` | PO Box the envelope was addressed to |
-    | `error_code` | One of: `ERR_FILE_LIMIT_EXCEEDED`, `ERR_METAFILE_INVALID`, `ERR_AV_FAILED`, `ERR_SIG_VERIFY_FAILED`, `ERR_RESCAN_REQUIRED`, `ERR_ZIP_PROCESSING_FAILED` |
+    | `jurisdiction` | **The container name**, not the mapped jurisdiction |
+    | `po_box` | A comma-joined list of **all** PO boxes mapped to that container — not the one the envelope declared |
+    | `error_code` | One of `ERR_METAFILE_INVALID`, `ERR_ZIP_PROCESSING_FAILED`, `ERR_SERVICE_DISABLED`, `ERR_PAYMENTS_DISABLED` |
     | `error_description` | Human-readable error message |
-    | `document_control_number` | Present only for rescan/filesize issues with a specific document |
+    | `document_control_number` | Always `null` |
+    | `service` | Always `"bulk_scan_processor"` |
+    | `container` | The container name |
 
-    This notification is sent by `reform-scan-notification-service`, not by the processor directly. If the supplier reports they did not receive a notification, check that service's logs and connectivity.
+    Two traps when reading a notification during an incident:
+
+    - `jurisdiction` and `po_box` are **not** the envelope's values. Both are derived from the container, so a `ContainerJurisdictionPoBoxMismatchException` notification shows the *expected* PO boxes, never the offending one. Get that from the metadata or the processor log.
+    - `ERR_AV_FAILED` and `ERR_SIG_VERIFY_FAILED` never come from the processor — they come from `blob-router-service`, before the blob reaches the jurisdiction container. If you see one, stop looking in the processor's logs and database. `ERR_FILE_LIMIT_EXCEEDED` and `ERR_RESCAN_REQUIRED` are declared in `ErrorCode.java` but raised nowhere in either cloned repo.
+
+    Oversized PDFs produce **no** notification at all — see [Diagnose an oversized PDF](#diagnose-an-oversized-pdf).
+
+    If the supplier reports they did not receive a notification, check `reform-scan-notification-service`'s logs and connectivity, and confirm the message actually reached the `notifications` queue (its namespace is overridden via `QUEUE_NOTIFICATIONS_NAMESPACE`, so it may not be in the same namespace as `envelopes` and `processed-envelopes`).
+
+<!-- CONFLUENCE-ONLY: the supplier-facing ErrorNotificationRequest shape (which adds a reference_id), its HTTP basic auth and the expected 201 + notification_id response come from Technical Specification V1.4 §6.1; reform-scan-notification-service is not cloned in this workspace. -->
 
 ## Clearing test data (lower environments only)
 

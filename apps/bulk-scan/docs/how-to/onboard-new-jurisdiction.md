@@ -19,6 +19,8 @@ sources:
   - bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseField.json
   - bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseEvent.json
   - bulk-scan-ccd-definitions:definitions/privatelaw/data/sheets/CaseEvent.json
+  - ccpay-bulkscanning-app:src/main/resources/application.yaml
+  - ccpay-bulkscanning-app:charts/ccpay-bulkscanning-api/values.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -28,7 +30,7 @@ examples_extracted_from:
 confluence:
   - id: "1051493435"
     title: "1) Bulk Scanning - Service Onboarding and Live service changes Information"
-    last_modified: "2026-03-14T00:00:00Z"
+    last_modified: "2026-07-01T00:00:00Z"
     space: "RBS"
   - id: "1064666568"
     title: "Technical prerequisites and information for Service on-boarding with Phase 2 Bulk scanning for case creation."
@@ -46,8 +48,10 @@ confluence:
     title: "Bulk scan - Service operations guide"
     last_modified: "2024-12-01T00:00:00Z"
     space: "DATS"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
+  "ccpay-bulkscanning-app:src/main/resources/application.yaml": "1b54d11d83d0faf661f1c591bf676db77d01ee9e"
+  "ccpay-bulkscanning-app:charts/ccpay-bulkscanning-api/values.yaml": "8679c385f4de79fa233dcd0a4f138a372086d5ea"
   "bulk-scan-processor:src/main/resources/application.yaml": "143488c2c25b4bee56e4c8d5201c280a37c0c0d9"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/config/ContainerMappings.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/OcrValidator.java": "3b463d31c663cb0e155239467383b7732a64feaa"
@@ -80,9 +84,11 @@ sources_sha:
 - A CCD jurisdiction already registered (e.g. `SSCS`, `PROBATE`, `PUBLICLAW`).
 - Your service deployed with S2S registration so the orchestrator can call it.
 - Familiarity with the CCD definition JSON sheet format used in `bulk-scan-ccd-definitions`.
-- Agreement with the scanning supplier (XBP/Exela) on form templates, OCR field naming, and data types — documented in a Service Implementation Pack (SIP). Start this at least 8 weeks before your target go-live date.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+- Agreement with the scanning supplier (XBP/Exela) on form templates, OCR field naming, and data types — documented in a Service Implementation Pack (SIP). There are **two** SIP spreadsheets, one per phase: SIP Phase 1 for supplementary evidence, SIP Phase 2 for OCR case creation. Complete the one matching the phase you are onboarding. Start this at least 8 weeks before your target go-live date.
+<!-- CONFLUENCE-ONLY: SIP process, phase split and lead time come from Confluence page 1051493435; this is a commercial/business process with no source-code footprint. -->
 - If your service uses payments, whitelist your service in `ccpay-bulkscanning-app` (see Step 9b below).
+- Confirm with the BSP team whether your service needs to import the **Bulk Scanning Library** — the onboarding checklist asks for it, describing it as configured by the BSP project to keep behaviour consistent across CFT.
+<!-- CONFLUENCE-ONLY: the Bulk Scanning Library requirement comes from Confluence page 1051493435. No such artefact is declared in any `*.gradle` across apps/, libs/ or platops/ — a workspace-wide search for `bsp-common`, `bulk-scan-shared`, `uk.gov.hmcts.reform.bsp` and other `bulkscan`-flavoured coordinates found nothing. Treat as unconfirmed. -->
 
 ## Step 1: Provision the Azure Blob Storage container
 
@@ -132,6 +138,9 @@ accesstoken:
 The token endpoint is `GET /token/{serviceName}` — the `serviceName` must exactly equal the container name (`bulk-scan-processor:src/main/java/.../services/SasTokenGeneratorService.java:57-60`).
 
 ## Step 4: Write the Exception Record CCD definition
+
+How much of this step applies depends on the phase you are onboarding. Phase 1 (supplementary evidence) needs the Exception Record case type plus supplementary-evidence and cover-sheet handling. Phase 2 (OCR case creation) needs all of that, plus the Transformation API wiring and the field mapping that lands OCR data on your case fields.
+<!-- CONFLUENCE-ONLY: the phase-by-phase CCD configuration split comes from Confluence page 1051493435. -->
 
 Create a new directory `definitions/yourservice/data/sheets/` in `bulk-scan-ccd-definitions` with the standard JSON sheet files. Copy from an existing jurisdiction (e.g. `privatelaw`) and adapt:
 
@@ -340,26 +349,27 @@ Without both flags, envelopes in your new container will not be processed or for
 
 If your service's envelopes contain payment Document Control Numbers (DCNs), you must also whitelist your service in the `ccpay-bulkscanning-app` repository so that `bulk-scan-payment-processor` can register payments with Pay Hub on your behalf.
 
-Add your service's S2S name to the `trusted.s2s.service.names` list in `ccpay-bulkscanning-app`'s `application.yaml` and `values.yaml`:
-<!-- CONFLUENCE-ONLY: not verified in source -->
+There are **two** separate S2S lists in `ccpay-bulkscanning-app` and a caller must appear in both:
 
 ```yaml
-# values.yaml
-S2S_AUTHORISED_SERVICES: payment_app,ccpay_bubble,...,xui_webapp,yourservice
+# charts/ccpay-bulkscanning-api/values.yaml:19 — feeds auth.provider.service.client.services
+S2S_AUTHORISED_SERVICES: payment_app,ccpay_bubble,cmc,bulk_scan_payment_processor,api_gw,probate_frontend,divorce_frontend,ccd_gw,xui_webapp,ccpay_gw
 
-# application.yaml
+# src/main/resources/application.yaml:76-79
 trusted:
   s2s:
     service:
-      names: ccpay_bubble,...,payment_app,yourservice
+      names: ccpay_bubble,cmc,bulk_scan_payment_processor,api_gw,probate_frontend,divorce_frontend,ccd_gw,payment_app
 ```
+
+In practice the caller is `bulk_scan_payment_processor`, which is already on both lists — a new *jurisdiction* does not normally need a new entry, because the payment processor calls on the jurisdiction's behalf. Add your own S2S name only if your service calls the bulk-scanning API directly. Note the two lists are not identical in source (`xui_webapp` and `ccpay_gw` appear only in the chart value), so check both before concluding a name is whitelisted.
 
 Also ensure `paymentsEnabled: true` is set in the processor container mapping (Step 2).
 
 ## Step 10: Agree OCR field mappings with scanning supplier
 
 Before integration testing can begin, you must complete the form-configuration process with the scanning supplier (XBP/Exela):
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: the whole supplier-facing change process in this step comes from Confluence page 1051493435; it is a commercial process with no source-code footprint. Attachment templates on that page were last refreshed for 2026-R / April 2026 — re-download rather than reusing a saved copy. -->
 
 1. Create an OCR field specification spreadsheet per form (see [SIP template on Confluence](https://tools.hmcts.net/confluence/pages/viewpage.action?pageId=1051493435)). Each row defines:
    - Form section and data item
@@ -368,7 +378,15 @@ Before integration testing can begin, you must complete the form-configuration p
    - Whether the field is required
    - Business rules and action if required field is missing (reject, create draft, contact appellant, populate default)
 
-2. Submit an **XBP Change Request form** including: volumes, operational process changes, implementation date, dependencies, and urgency.
+2. Pick the right form for the size of the change — these are not interchangeable:
+
+   | Form | Use it for | Must state |
+   |------|-----------|------------|
+   | **XBP Change Request Form** | Anything that changes what the supplier scans, OCRs or how they route it | Volumes, operational process changes, **implementation date**, **known dependencies**, **urgency** |
+   | **HMCTS Process Change Form** | Small operational changes only | The operational change being made |
+   | **CCN (Contract Change Notice) Annex A** | Changes with a contractual/commercial impact | Per the Annex A template |
+
+   Templates are attached to Confluence page 1051493435 and were refreshed for **2026-R / April 2026** — download the current version rather than reusing a saved copy.
 
 3. Key considerations for OCR field design:
    - Checkbox values: agree with the supplier on representations (`True`/`False`, `T`/`F`, etc.)

@@ -40,13 +40,13 @@ confluence:
     space: "DATS"
   - id: "1051493435"
     title: "1) Bulk Scanning - Service Onboarding and Live service changes Information"
-    last_modified: "unknown"
+    last_modified: "2026-07-01"
     space: "RBS"
   - id: "1531419216"
     title: "Bulk Scan Prototype"
     last_modified: "unknown"
     space: "DATS"
-confluence_checked_at: "2026-05-13T12:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/BlobProcessorTask.java": "ac5ee8dbac634179a557c12e09779457e22e34ad"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/OrchestratorNotificationService.java": "ac5ee8dbac634179a557c12e09779457e22e34ad"
@@ -70,7 +70,7 @@ sources_sha:
 
 - Bulk Scan is a pipeline that ingests scanned paper envelopes from Azure Blob Storage, creates or updates CCD cases, and registers payments in Pay Hub. The full system spans two resource groups: `reform-scan` (blob-router, notification-service) and `bulk-scan` (processor, orchestrator, payment-processor).
 - **bulk-scan-processor** (port 8581) polls blob containers, validates ZIPs, uploads PDFs to CDAM, persists envelope state in PostgreSQL, and publishes notifications to the `envelopes` Azure Service Bus queue.
-- **bulk-scan-orchestrator** (port 8582) consumes from the `envelopes` ASB queue, creates/updates CCD cases (or Exception Records), and publishes completion messages to the `processed-envelopes` queue. Messages are retried up to the Azure `max-delivery-count` (configured to 300) before dead-lettering.
+- **bulk-scan-orchestrator** (port 8582) consumes from the `envelopes` ASB queue, creates/updates CCD cases (or Exception Records), and publishes completion messages to the `processed-envelopes` queue. Messages are retried up to the Azure `max-delivery-count` (`ENVELOPES_QUEUE_MAX_DELIVERY_COUNT`, reported as 300 in production) before dead-lettering.
 - **bulk-scan-payment-processor** (port 8583) receives HTTP calls from the orchestrator, registers payment DCNs in Pay Hub, and updates CCD exception records to mark payment processing complete.
 - Azure Service Bus queues (`envelopes`, `processed-envelopes`, `notifications`) are the primary inter-service transport; JMS/ActiveMQ is an alternative toggled by `JMS_ENABLED`.
 - The system serves three customer types: **CFT** (full case creation/update/payments), **Crime** (file routing only, no CCD interaction), and **PCQ** (file routing only). Only CFT services use the orchestrator and payment processor.
@@ -143,7 +143,7 @@ flowchart LR
 
 ## Upstream: blob-router and notification service
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: blob-router-service and reform-scan-notification-service are described from Confluence ("Bulk scan - Architecture", Technical Specification V1.4 section 6.1). Neither repo is cloned in this workspace, so nothing in this section is checkable against source here. -->
 
 The three core bulk-scan services are preceded by two upstream services in the `reform-scan` resource group. These are maintained by the same team but live in separate repositories (`blob-router-service`, `reform-scan-notification-service`):
 
@@ -270,7 +270,9 @@ sequenceDiagram
 
 **Queue: `processed-envelopes`** — Carries `ProcessedEnvelope` JSON published by the orchestrator after successful CCD action. Message ID is the envelope UUID. Content-type is `application/json`.
 
-**Dead-letter handling**: Invalid messages (unparseable JSON) are dead-lettered immediately. Recoverable failures (HTTP errors, CCD timeouts) cause the message lock to expire and the message to be redelivered up to `max-delivery-count` (configured via `ENVELOPES_QUEUE_MAX_DELIVERY_COUNT`; production is set to **300**, chosen so that retries span at least 24 hours). The orchestrator runs a `CleanupEnvelopesDlqTask` to manage the DLQ.
+**Dead-letter handling**: Invalid messages (unparseable JSON) are dead-lettered immediately. Recoverable failures (HTTP errors, CCD timeouts) cause the message lock to expire and the message to be redelivered up to `max-delivery-count` (configured via `ENVELOPES_QUEUE_MAX_DELIVERY_COUNT`; production is reported as **300**, chosen so that retries span at least 24 hours). The orchestrator runs a `CleanupEnvelopesDlqTask` to manage the DLQ.
+
+<!-- DIVERGENCE: the 300 figure comes from Confluence (page 1638182762). Source shows only that the value is configurable via ${ENVELOPES_QUEUE_MAX_DELIVERY_COUNT} (EnvelopeMessageProcessor.java:45); the effective value is an Azure Service Bus queue property set in platops infrastructure config, not in this repo. Do not treat 300 as a code-level guarantee. -->
 
 **Stale envelopes**: An envelope becomes "stale" when the orchestrator encounters a non-recoverable error that it cannot distinguish from a transient failure. A common scenario: a service team's callback returns an error (e.g. 503), CCD wraps it as a generic `CallbackException` (returning 502 to the orchestrator), and the orchestrator treats it as potentially recoverable. The envelope is then retried up to the max delivery count before finally being dead-lettered. The processor exposes `GET /envelopes/stale-incomplete-envelopes` to surface these cases for operational attention.
 
@@ -280,11 +282,11 @@ sequenceDiagram
 |---------|----------|------------|
 | reform-scan-blob-router | PostgreSQL (Flexible v15) | `envelopes` (dispatch status per file) |
 | reform-scan-notification-service | PostgreSQL (Flexible v15) | notification tracking |
-| bulk-scan-processor | PostgreSQL (Flexible v15) | `envelope`, `scannable_item`, `process_event`, `payments`, `shedlock` (64 migrations) |
+| bulk-scan-processor | PostgreSQL (Flexible v15) | `envelopes`, `scannable_items`, `non_scannable_items`, `process_events`, `payments`, `shedlock` (56 migrations) |
 | bulk-scan-orchestrator | PostgreSQL (Flexible v15) | `callback_result`, `payment`, `update_payment` (2 migrations) |
 | bulk-scan-payment-processor | None | — |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: PostgreSQL flavour/version and the blob-router and notification-service rows come from Confluence "Bulk scan - Service operations guide"; those two repos are not cloned. The bulk-scan-processor and -orchestrator rows are verified against their own db/migration directories. -->
 All PostgreSQL instances are Azure Flexible Server v15, with resource groups named `<service>-flexible-postgres-db-v15-data-prod`.
 
 ## Operational monitoring
@@ -305,7 +307,7 @@ Daily email reports are sent at 06:00 (configurable via `REPORTS_CRON`) to confi
 - `reform-scan-prod` — blob-router, notification-service
 - `bulk-scan-prod` — processor, orchestrator, payment-processor
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: Application Insights instance grouping and alerting come from Confluence "Bulk scan - Service operations guide"; these are infrastructure settings held in platops repos, not in the service repos. -->
 **Shuttering**: Bulk Scan has no frontend shuttering capability. If processing needs to be paused, the scheduled tasks can be disabled individually via their `*_ENABLED` environment variables, leaving files in blob storage until re-enabled.
 
 ## Authentication
@@ -319,7 +321,7 @@ All three services use the same authentication pattern:
 
 ## Customer types and integration phases
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: customer-type split and phase definitions come from Confluence pages 1051493435 and 1457304529. Crime and PCQ have no containers.mappings entry in bulk-scan-processor, which is consistent with them bypassing this pipeline, but the routing itself lives in the uncloned blob-router-service. -->
 
 The Bulk Scan system serves three distinct customer types with different integration depths:
 
@@ -347,9 +349,14 @@ Service teams onboarding to Phase 2 must provide:
 3. An **update endpoint** (called for `SUPPLEMENTARY_EVIDENCE_WITH_OCR` envelopes to update existing cases)
 4. CCD definitions for their Exception Record case type
 
+The CCD configuration required differs by phase: Phase 1 needs the Exception Record case type plus supplementary-evidence and cover-sheet handling; Phase 2 additionally needs the Transformation API wiring and the field mapping from OCR data onto case fields.
+
+The onboarding checklist also asks whether the service has imported the **Bulk Scanning Library** — described as configured by the BSP project and needed to keep behaviour consistent across CFT.
+<!-- CONFLUENCE-ONLY: the Bulk Scanning Library requirement comes from Confluence page 1051493435 ("Bulk Scanning - Service Onboarding and Live service changes Information"). No such artefact is declared in any `*.gradle` across apps/, libs/ or platops/ — a workspace-wide search for `bsp-common`, `bulk-scan-shared`, `uk.gov.hmcts.reform.bsp` and other `bulkscan`-flavoured coordinates found nothing. Treat the requirement as unconfirmed and ask the BSP team what it now refers to. -->
+
 ## Decoupling prototype (future direction)
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: the 2022 decoupling prototype is described only in Confluence; the cited branch lives on the uncloned blob-router-service, so its existence cannot be confirmed from this workspace. -->
 
 A 2022 prototype explored decoupling the architecture so that service teams pull their own envelopes from the blob-router via REST API endpoints and process them using a shared Java library within their own service. This would eliminate the need for the processor, orchestrator, and payment-processor as central services. The prototype (branch `DTSSE-1285/prototype` on `blob-router-service`) demonstrated feasibility but has not been adopted in production. The current architecture remains as documented above.
 

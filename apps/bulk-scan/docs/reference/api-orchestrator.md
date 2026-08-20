@@ -30,7 +30,7 @@ confluence:
     space: "RBS"
   - id: "1775307063"
     title: "Technical Specification V1.4"
-    last_modified: "unknown"
+    last_modified: "2026-07-01"
     space: "RBS"
   - id: "1914807879"
     title: "DTS-SSCS-FT: CM - Spike: Bulk Scan"
@@ -42,9 +42,9 @@ confluence:
     space: "PL"
   - id: "1051493435"
     title: "1) Bulk Scanning - Service Onboarding and Live service changes Information"
-    last_modified: "unknown"
+    last_modified: "2026-07-01"
     space: "RBS"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationClient.java": "6d8494debc6cedcc3edb339b126ae3d43c5bd32d"
   ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/model/request/TransformationRequest.java"
@@ -90,7 +90,7 @@ All callbacks receive a standard CCD callback payload containing `case_details` 
 
 The controller also accepts `Authorization` (IDAM token) and `user-id` headers from CCD, which are forwarded to downstream services for caseworker-context operations (`CcdCallbackController.java:48-49`).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: the CCD-side event and callback-URL wiring that drives these endpoints is documented in Confluence pages 1064666568 and 1051493435. It lives in each service teams own CCD definition, so it cannot be verified from the orchestrator source. -->
 The CCD event definition for `createNewCase` must set `RetriesTimeoutURLAboutToSubmitEvent` to 30 seconds because the callback involves multiple microservice calls. The default 5s timeout may lead to occasional failures shown by CCD despite successful case creation.
 
 ## Transformation URL Contract
@@ -274,7 +274,7 @@ Services must adhere to these rules when returning updated case data:
 - **Add scanned documents** from the exception record's `scanned_documents` to the case's `scannedDocuments` collection, ensuring no duplicates (checked by `control_number`). The orchestrator will only call the update endpoint if the exception record contains documents not already present in the case.
 - After calling the service, the orchestrator injects `exceptionRecordReference` into each newly-added scanned document entry before submitting to CCD (`SupplementaryEvidenceUpdater.java:132-133`).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: these are obligations on the service teams own endpoint, stated in Confluence page 1064666568. The orchestrator does not enforce them, so they are not checkable in source; the third bullet is the only one with a source citation. -->
 These constraints are documented in the Confluence onboarding guide (page 1064666568, section 2.3.4).
 
 ## Service Configuration
@@ -361,7 +361,7 @@ Service teams onboarding with bulk scan phase 2 must configure their CCD definit
 
 4. **`CallBackURLAboutToSubmitEvent`** for the `createNewCase` event must point to `{orchestrator-host}/callback/create-new-case`.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: the CCD definition requirements in this section come from Confluence pages 1064666568 and 1051493435. They are satisfied in each services own CCD definition repo, not in orchestrator source; bulk-scan-ccd-definitions shows a worked example for privatelaw. -->
 The `RetriesTimeoutURLAboutToSubmitEvent` column for `createNewCase` should be set to 30 seconds (default 5s is insufficient for the multi-service-call chain).
 
 Source: Confluence page 1064666568 section 2.1, confirmed by `EventIds.java:10-11`
