@@ -24,6 +24,10 @@ sources:
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java
+  - rpx-xui-webapp:api/noc/index.ts
+  - rpx-xui-webapp:src/models/environmentConfig.model.ts
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java
 status: confluence-augmented
 confluence:
   - id: "1875854371"
@@ -36,7 +40,7 @@ confluence:
     space: "SPT"
   - id: "1923744323"
     title: "Decentralised professional journeys"
-    last_modified: "2026-04-29T00:00:00Z"
+    last_modified: "2026-05-15T00:00:00Z"
     space: "RRFM"
   - id: "1890781043"
     title: "HLD CCD - 5.0"
@@ -46,7 +50,7 @@ confluence:
     title: "Decentralised Data Storage Scope Of Delivery"
     last_modified: "2026-04-29T00:00:00Z"
     space: "DSRDI"
-confluence_checked_at: "2026-04-29T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 last_reviewed: 2026-04-29T00:00:00Z
 title: Decentralised Callbacks -- `/ccd-persistence/*` Contract
 diataxis: reference
@@ -74,6 +78,11 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2c5e11485c5e17da845232984205437ee223296a"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:src/models/environmentConfig.model.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  ? "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java"
+  : "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
 ---
 
 # Decentralised Callbacks -- `/ccd-persistence/*` Contract
@@ -99,27 +108,43 @@ ccd.decentralised.case-type-service-urls[PCS_PR_]=https://pcs-api-pr-%s.preview.
 ccd.decentralised.case-type-service-urls[PCS]=http://pcs-api
 ```
 
-Rules:
-- Keys are **lowercased** at load time; matching is case-insensitive.
-- **Longest-prefix wins** when multiple keys could match.
-- A URL may contain a single `%s` placeholder for PR-number substitution in preview environments. Only one placeholder is allowed.
+Rules (`PersistenceStrategyResolver.java:60-72,108-160,171-203`):
+- Keys are **lowercased** in `setCaseTypeServiceUrls`; the incoming case type ID is lowercased before matching, so matching is case-insensitive.
+- **Longest-prefix wins** when several keys match. A tie between two keys of the *same* length is not resolved silently — the resolver throws `IllegalStateException("Ambiguous configuration for case type ...")`.
+- A URL may contain a single `%s` placeholder, substituted with the part of the case type ID after the matched prefix. Two placeholders throw; so does a match whose suffix is blank (a `%s` template keyed on the whole case type ID).
+- An unparseable resolved URL throws `IllegalStateException`, not a runtime 500 at call time.
 - Absence of a URL for a case type means it is centralised (default behaviour).
+
+> ExUI resolves the same prefix map for its own redirect and NoC routing, but its
+> `getConfiguredCaseType` sorts the matches by length descending and takes the first — so where
+> data-store raises `IllegalStateException` on an equal-length tie, ExUI silently picks one.
+> Keep the two configurations unambiguous.
 
 `DelegatingCaseDetailsRepository` checks `resolver.isDecentralised(caseDetails)` -- if true, writes throw `UnsupportedOperationException` (pointers are immutable); reads route through `ServicePersistenceClient.getCase()`. Event submissions go through `DecentralisedCreateCaseEventService`.
 
 ### Performance: local-first routing and caching
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-
 The resolver employs a **local-first** strategy:
 
-1. Always queries the local Postgres database first to fetch the `case_data` row.
-2. Uses the `case_type_id` from that row to determine routing.
-3. An in-memory **Caffeine LRU cache** maps case reference to case type ID, avoiding a DB round trip for frequently accessed ("hot") cases.
+1. Where only a case reference is known, `getCaseTypeByReference` resolves the case type from the
+   local pointer row via `CasePointerRepository.findCaseTypeByReference`.
+2. That `case_type_id` is what prefix matching then routes on.
+3. An in-memory **Caffeine LRU cache** keyed `Long reference -> String caseTypeId` fronts the
+   lookup, avoiding a DB round trip for frequently accessed ("hot") cases.
 
-The cache is sized to ~100k entries (~10 MB). In production, the busiest hour sees approximately 15k unique cases modified.
+The cache is `Caffeine.newBuilder().maximumSize(100_000)`, which the constructor comment sizes at
+"around 100 bytes per entry ... up to 10MB of memory" (`PersistenceStrategyResolver.java:49-57`).
+Note it has **no** TTL or expiry — entries are only evicted by size, which is safe because a case's
+case type never changes.
 
-Expected additional latency for decentralised case retrieval (source: Confluence LLD):
+Overloads that already hold a `CaseDetails` (`isDecentralised(CaseDetails)`,
+`resolveUriOrThrow(CaseDetails)`) skip both the cache and the DB and route straight off
+`caseDetails.getCaseTypeId()`.
+
+Expected additional latency for decentralised case retrieval:
+
+<!-- CONFLUENCE-ONLY: the per-hop latency budget below, and the "busiest hour sees ~15k unique cases modified" sizing figure that justifies the 100k cache, are from the LLD. Neither is derivable from source — the resolver hard-codes maximumSize(100_000) without recording where the number came from. -->
+
 
 | Hop | p50 latency |
 |---|---|
@@ -152,9 +177,15 @@ If the subsequent `submitEvent` call to the decentralised service fails:
 
 ### Dangling pointers
 
-If CCD crashes before cleanup executes, a dangling pointer may remain. These are invisible to API consumers (not indexed, not retrievable). To ensure eventual cleanup, a **1-year `resolvedTTL`** is set on new pointers where the service has not configured one. On the first successful event the TTL is either removed or set to the service-configured value.
+If CCD crashes before cleanup executes, a dangling pointer may remain. These are invisible to API consumers (not indexed, not retrievable). To ensure eventual cleanup, a **1-year `resolvedTTL`** is set on new pointers where the service has not supplied one — `DANGLING_POINTER_EXPIRY_TIMEOUT_YEARS = 1L`, applied as `LocalDate.now().plusYears(1)` only when `pointer.getResolvedTTL() == null` (`CasePointerRepository.java:28,47-51`). `updateResolvedTtl` overwrites it once the service reports its own value.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Deletion is also `REQUIRES_NEW`, so it commits regardless of the outer transaction's fate. The delete statement is guarded:
+
+```sql
+delete from case_data where reference = :caseReference and data = cast('{}' as jsonb)
+```
+
+The empty-`data` predicate means cleanup can never remove a real centralised case row by accident; if the guard matches nothing the repository logs at ERROR and moves on rather than failing the request (`CasePointerRepository.java:78-95`).
 
 ### Column usage for case pointers
 
@@ -172,8 +203,10 @@ If CCD crashes before cleanup executes, a dangling pointer may remain. These are
 | `data` | Full JSONB payload | Empty `{}` |
 | `data_classification` | Field-level classifications | Empty `{}` |
 | `supplementary_data` | Supplementary JSONB | `NULL` |
-| `resolved_ttl` | Computed TTL date | Computed by CCD from decentralised data during events |
-| `version` | Optimistic lock integer | Tracks last-processed decentralised revision |
+| `resolved_ttl` | Computed TTL date | Computed by CCD from decentralised data during events; defaulted to `now + 1 year` at creation if the service supplied none |
+| `version` | Optimistic lock integer | `NULL` at creation; thereafter tracks the last-processed decentralised revision (written by `SynchronisedCaseProcessor`) |
+
+Every value in that column is set explicitly in `CasePointerRepository.persistCasePointerAndInitId`, which clones the submitted `CaseDetails` and then blanks it (`data`/`data_classification` to `Map.of()`, `securityClassification` to `RESTRICTED`, `lastModified`/`lastStateModifiedDate`/`version` to `null`, `state` to `""`) before handing it to `caseDetailsRepository.set` (`CasePointerRepository.java:37-53`).
 
 ---
 
@@ -358,6 +391,42 @@ Same cross-validation of `caseReference` / `caseTypeId` as the list endpoint. Re
 
 ---
 
+## Notice-of-change delegation (a separate contract)
+
+`/ccd-persistence/*` is not the only contract a decentralised service can be asked to serve. If
+the case type is listed in ExUI's `DECENTRALISED_CASE_TYPE_CONFIG` with a `nocBaseUrl`, ExUI's
+Node BFF forwards two of the three NoC calls to the **service** instead of to
+`aac-manage-case-assignment` (`rpx-xui-webapp:api/noc/index.ts:34-80`):
+
+| ExUI BFF route | Forwarded to | Path appended to the base URL |
+|---|---|---|
+| `GET /noc/noc-questions?case_id=` | always AAC | `/noc/noc-questions?case_id=` |
+| `POST /noc/verify-noc-answers` | `nocBaseUrl` when configured | `/noc/verify-noc-answers` |
+| `POST /noc/noc-requests` | `nocBaseUrl` when configured | `/noc/noc-requests` |
+
+The paths are identical to AAC's own (`NoticeOfChangeController` is `@RequestMapping("/noc")` with
+`VERIFY_NOC_ANSWERS = "/verify-noc-answers"` and `REQUEST_NOTICE_OF_CHANGE_PATH = "/noc-requests"`),
+so a service implements the same shape AAC does. Both request bodies are `{ case_id, answers[] }`
+where `case_id` is a 16-digit `@LuhnCheck`ed string and `answers` is a non-empty list of
+`SubmittedChallengeAnswer`.
+
+Two consequences worth knowing:
+
+- **Challenge questions stay centralised.** `noc-questions` is never delegated, so the questions
+  themselves remain statically configured in the case definition and served by AAC.
+- **Delegation depends on a session cache.** ExUI reads the case type from the `noc-questions`
+  response and stores it in the session under `nocCaseTypesByCaseId`; the other two routes resolve
+  `nocBaseUrl` from that cache. A `verify-noc-answers` or `noc-requests` call whose session has no
+  cached case type falls back to AAC, whatever the config says.
+- **`nocBaseUrl` is BFF-only.** The browser-side `DecentralisedCaseTypeConfig` interface declares
+  just `webUrl` (`rpx-xui-webapp:src/models/environmentConfig.model.ts:6-10`); `nocBaseUrl` is typed
+  locally in `api/noc/index.ts` and never reaches the Angular app.
+
+Prefix matching and `%s` templating work exactly as for `webUrl` — see
+[Decentralise a service, step 10](../how-to/decentralise-a-service.md#10-optional-exui-decentralised-journeys).
+
+---
+
 ## Idempotency requirements
 
 | Requirement | Detail |
@@ -463,7 +532,7 @@ The message body is a `MessageInformation` JSON document carrying case reference
 
 ## Elasticsearch indexing
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: the Logstash provisioning model and external-versioning rules below come from the Decentralised data persistence LLD. The SDK ships only the queue side — ccd.es_queue and its trigger, in dataruntime-db/migration/V0010 — and neither ccd-data-store-api nor ccd-config-generator contains any Logstash pipeline config, so the operational half cannot be verified against either repo. -->
 
 Search remains unchanged from the client perspective (all searches go through CCD's Elasticsearch APIs). The data flow changes for decentralised cases:
 

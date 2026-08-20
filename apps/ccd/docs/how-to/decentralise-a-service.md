@@ -19,11 +19,17 @@ sources:
   - ccd-data-store-api:src/main/resources/application.properties
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java
+  - rpx-xui-webapp:src/cases/utils/decentralised-redirect.util.ts
+  - rpx-xui-webapp:api/noc/index.ts
+  - rpx-xui-webapp:config/custom-environment-variables.json
+  - rpx-xui-webapp:src/cases/components/case-task/case-task.component.ts
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/VerifyNoCAnswersRequest.java
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeRequest.java
 examples_extracted_from:
   - apps/pcs/pcs-api/src/main/java/uk/gov/hmcts/reform/pcs/ccd/event/TestCaseGeneration.java
 status: confluence-augmented
 last_reviewed: "2026-04-29T00:00:00Z"
-confluence_checked_at: "2026-04-29T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 confluence:
   - id: "1875854371"
     title: "Decentralised data persistence"
@@ -32,7 +38,7 @@ confluence:
   - id: "1923744323"
     title: "Decentralised professional journeys"
     space: "RRFM"
-    last_modified: "2026-02-05"
+    last_modified: "2026-05-15"
   - id: "1915164147"
     title: "Decentralising Data HLSA"
     space: "RCCD"
@@ -44,7 +50,7 @@ confluence:
   - id: "1945640575"
     title: "ExUI Decentralisation (Platform Enablement) HLSA"
     space: "POFCC"
-    last_modified: "2026-02-23"
+    last_modified: "2026-06-15"
 title: Decentralise a Service
 diataxis: how-to
 product: ccd
@@ -67,6 +73,14 @@ sources_sha:
   "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "a2e5c9892a3a612b44af41cd14091271de38b1c4"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "e00246fd7f6870e3e737d286b5a5725dab466681"
+  "rpx-xui-webapp:src/cases/utils/decentralised-redirect.util.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:src/cases/components/case-task/case-task.component.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  ? "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/VerifyNoCAnswersRequest.java"
+  : "dfa7debe58dc4710124070b6a29448dfda6fce67"
+  ? "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeRequest.java"
+  : "dfa7debe58dc4710124070b6a29448dfda6fce67"
 ---
 
 # Decentralise a Service
@@ -329,14 +343,88 @@ TTL changes must be synchronised back to CCD via dedicated system events.
 
 ### 10. (Optional) ExUI decentralised journeys
 
-If your service provides a **custom frontend** for certain events (e.g., high-volume judicial
-workflows), prefix the CCD event ID with `ext:` (e.g., `ext:createOrder`) and configure ExUI
-with `DECENTRALISED_EVENT_BASE_URLS` mapping your case type to your frontend's base URL.
-ExUI then redirects the browser to
-`:base_url/cases/:case_ref/event/:event_id?expected_sub=:idam_user_id` (or the case-create
-variant). Your frontend must verify the IDAM session and redirect back to ExUI on completion.
+If your service provides a **custom frontend** for certain events (e.g. high-volume judicial
+workflows), prefix the CCD event ID with `ext:` (e.g. `ext:createOrder`) and add your case type
+to ExUI's `DECENTRALISED_CASE_TYPE_CONFIG`. This has shipped in `rpx-xui-webapp`; it is not
+something the SDK provides.
 
-<!-- CONFLUENCE-ONLY: ext: prefix convention and ExUI delegation model from the ExUI Decentralisation HLSA; not in SDK source -->
+```json
+DECENTRALISED_CASE_TYPE_CONFIG={
+  "PCS": {
+    "webUrl": "https://pcs-frontend.service.gov.uk",
+    "nocBaseUrl": "https://pcs-api.service.core-compute.internal/ccd"
+  }
+}
+```
+
+The env var is parsed as JSON into the config key `decentralisedCaseTypeConfig`, which defaults
+to `{}` — so services that do not opt in are unaffected
+(`rpx-xui-webapp:config/custom-environment-variables.json:144-147`, `config/default.json:121`).
+
+**Matching is by case-type prefix, not exact case type.** Both the browser-side redirect and the
+Node BFF's NoC routing lowercase the configured keys and the incoming case type, keep every key
+the case type starts with, then take the **longest** match. A `%s` in `webUrl`/`nocBaseUrl` is
+replaced with whatever follows the matched prefix in the *original-cased* case type, and trailing
+slashes are stripped. So a `PCS` key with `webUrl: "https://pcs%s.preview.platform.hmcts.net"`
+resolves case type `PCS-PR-123` to `https://pcs-PR-123.preview.platform.hmcts.net` — one key
+covers all your preview environments.
+
+#### Event redirects
+
+`buildDecentralisedEventUrl` returns a URL only when the event ID starts with `ext:` **and** the
+case type resolves to a `webUrl`; otherwise the standard ExUI journey continues, which is what
+keeps the feature backward compatible. The two shapes are:
+
+| Entry point | Redirect target |
+|---|---|
+| Existing case (`case-home.component.ts`) | `:web_url/cases/:case_id/event/:event_id?expected_sub=:idam_user_id` |
+| Case create (`case-create.effects.ts`) | `:web_url/cases/case-create/:jurisdiction/:case_type/:event_id?expected_sub=:idam_user_id` |
+
+Every path segment is `encodeURIComponent`-escaped. `expected_sub` is read from the session's
+`userDetails` (`id`, falling back to `uid`) and is **omitted entirely** if that lookup fails — so
+treat a missing `expected_sub` as "cannot check", not as "session is fine".
+
+For task deep links, ExUI substitutes `${[EXPECTED_SUB]}` in the task description with the
+URL-encoded IDAM ID. Unlike `${[CASE_REFERENCE]}`, `${[case_id]}` and `${[id]}`, this placeholder
+is **not** in the component's `VARIABLES` list — it is replaced in a separate branch guarded on a
+truthy `expectedSub`, so if the session has no `userDetails` the literal `${[EXPECTED_SUB]}` is
+left in the rendered link (`rpx-xui-webapp:src/cases/components/case-task/case-task.component.ts:74-84`).
+
+#### Notice of change
+
+If your decentralised case type owns an unbounded multiparty party/representative model, the
+centralised NoC implementation does not fit it — it assumes static case-role-to-case-field
+mappings and one organisation policy per case role. ExUI keeps the NoC *screens* central and
+delegates the *decision* to you via `nocBaseUrl`:
+
+| ExUI BFF route | Forwarded to | Notes |
+|---|---|---|
+| `GET /noc/noc-questions?case_id=` | **always** AAC | challenge questions stay in the case definition |
+| `POST /noc/verify-noc-answers` | `nocBaseUrl` if configured, else AAC | request shape follows AAC's `VerifyNoCAnswersRequest` |
+| `POST /noc/noc-requests` | `nocBaseUrl` if configured, else AAC | request shape follows AAC's `RequestNoticeOfChangeRequest` |
+
+Both payloads are `{ case_id, answers[] }`, with `case_id` a 16-digit Luhn-checked string
+(`aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/`).
+
+One trap: ExUI learns the case type from the `noc-questions` **response** and caches it in the
+session under `nocCaseTypesByCaseId`. `verify-noc-answers` and `noc-requests` resolve `nocBaseUrl`
+from that cache, so a request that arrives without the questions call having happened in the same
+session falls back to AAC (`rpx-xui-webapp:api/noc/index.ts:63-80,89-113`).
+
+Your service must make the NoC decision server-side: authenticate the user, check their
+organisation membership, and trust nothing from the client beyond the case reference and the
+submitted answers.
+
+#### Your frontend's responsibilities
+
+Verify the IDAM session on entry — redirect to IDAM if there is none, and if there is one, compare
+the authenticated subject with `expected_sub` and re-authenticate on mismatch. `expected_sub` is a
+session-consistency hint, **not** a credential or proof of identity. On completion, cancellation or
+handled failure, redirect back to a deterministic ExUI location (usually the case details page).
+
+<!-- CONFLUENCE-ONLY: the HLSA also prescribes a tactical logout handoff — the service frontend clears its own session then redirects to ExUI's GET /auth/logout, which ends the IDAM session via /o/endSession. XUI needs no change for this (auth.service.ts already calls /auth/logout), but nothing in pcs-frontend references expected_sub or /auth/logout at origin/master, so the receiving half is still a proposal. -->
+
+<!-- DIVERGENCE: the ExUI Decentralisation HLSA names the config item `DECENTRALISED_EVENT_BASE_URLS or equivalent` and describes it as a case-type-to-base-URL map. What shipped is `DECENTRALISED_CASE_TYPE_CONFIG`, a case-type-prefix map to an object with `webUrl` and `nocBaseUrl`. Source wins. -->
 
 ---
 
