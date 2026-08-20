@@ -8,6 +8,8 @@ sources:
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java
+  - ccpay-payment-app:api/src/main/resources/application.properties
   - ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/GovPayClient.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/GovPayDelegatingPaymentService.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/Payment.java
@@ -38,17 +40,19 @@ confluence:
     space: "DTSFP"
   - id: "1958058001"
     title: "Service Callback LLD"
-    last_modified: "unknown"
+    last_modified: "2026-06-01"
     space: "DTSFP"
   - id: "1973292244"
     title: "Real Time PBA Payments LLD"
-    last_modified: "unknown"
+    last_modified: "2026-08-01"
     space: "DTSFP"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/GovPayClient.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/GovPayDelegatingPaymentService.java": "4ad418c9d46f4d82cf3cc50a83620cfe86a17d42"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/Payment.java": "5c28ea10564258d9c193bead87675b85afa50c21"
@@ -182,9 +186,9 @@ After the status-update job (or a PBA payment action) publishes to `ccpay-servic
 
 1. The `ccpay-function-node` Azure Function picks up the message from the topic subscription.
 2. It reads the `serviceCallbackUrl` property from the message and POSTs the payment status JSON to that URL with `ServiceAuthorization` header (S2S token for `payment_app`).
-3. If the service responds with anything other than HTTP 2xx, the function retries up to **5 additional times** (6 total attempts), spaced **30 minutes apart**.
+3. If the service responds with anything other than HTTP 2xx, the function retries up to **5 additional times** (6 total attempts), spaced **30 minutes apart**. Any status in the range `200 <= status < 300` counts as success — the Service Callback LLD calls this out explicitly because services often assume only 200 or 201 are accepted.
 4. After all retries are exhausted, the message is dead-lettered.
-<!-- CONFLUENCE-ONLY: The 6-attempt / 30-minute retry mechanic is documented in Confluence (Service Callback LLD) but the retry configuration lives in ccpay-function-node (not in ccpay-payment-app source). Not verified in source -->
+<!-- CONFLUENCE-ONLY: The 6-attempt / 30-minute retry mechanic is documented in Confluence (Service Callback LLD, page 1958058001, and FAQ Service Support, page 1815114088) but the retry configuration lives in ccpay-function-node (not in ccpay-payment-app source). Not verified in source. Note that the LLD describes the status update as simply ending once retries are exhausted; it does not say the message is dead-lettered. The dead-letter claim in step 4 comes from the operational runbook (page 1791332488) and Step 7 below. -->
 
 ### Common reasons a callback fails to arrive
 
@@ -200,8 +204,8 @@ After the status-update job (or a PBA payment action) publishes to `ccpay-servic
 | Endpoint | Callback source | Stored in |
 | --- | --- | --- |
 | `POST /service-request` | Request body field `call_back_url` | `payment_fee_link.service_request_callback_url` |
-| `POST /service-request/{ref}/card-payments` | Query parameter `service-callback-url` | `payment.service_callback_url` |
-| `POST /card-payments` (legacy) | Query parameter `service-callback-url` | `payment.service_callback_url` |
+| `POST /service-request/{ref}/card-payments` | Request header `service-callback-url` | `payment.service_callback_url` |
+| `POST /card-payments` (legacy) | Request header `service-callback-url` | `payment.service_callback_url` |
 | `POST /service-request/{ref}/pba-payments` | Inherited from service request | `payment_fee_link.service_request_callback_url` |
 
 ## Step 6: Diagnose PBA payment failures
@@ -212,9 +216,12 @@ For PBA (credit account) payments stuck as `pending` or returned as `failed`:
 
 Services operate on one of two PBA configurations:
 
-- **PBA Config 2** (current standard): PayHub calls Liberata in real-time to validate the PBA account before accepting the payment. Failures surface immediately.
+- **PBA Config 2** (current standard): PayHub calls Liberata to validate the PBA account before accepting the payment. Failures surface immediately.
 - **PBA Config 1** (legacy): PayHub skips Liberata and sets payment status to `pending`. Reconciliation happens asynchronously later. A payment stuck as `pending` under Config 1 is expected behaviour until reconciliation completes.
-<!-- CONFLUENCE-ONLY: The distinction between PBA Config 1 and Config 2 is documented in Confluence (Real Time PBA Payments LLD) but the config toggle mechanism is not clearly named in source code. not verified in source -->
+
+Which mode a service is on is driven by the `pba.config1.service.names` property (`PBA_CONFIG1_SERVICE_NAMES`, comma-separated, default `dummy` — `application.properties:218`). A service whose name appears in that list takes the Config 1 branch; anything else takes Config 2. Both PBA entry points read the same list: `CreditAccountPaymentController.java:81,120` for `POST /credit-account-payments` and `ServiceRequestDomainServiceImpl.java:129-130` for the service-request endpoint. In the Config 1 branch PayHub logs "Setting status to pending" and sets the status directly without any Liberata call (`CreditAccountPaymentController.java:157-160`) — so if you are diagnosing an unexpected `pending`, check this property in the environment's config before looking at Liberata at all. The source carries a comment marking the whole branch as removable "once all Services are on-boarded to PBA Config 2" (`CreditAccountPaymentController.java:116-117`).
+
+Note that Config 2's check is **not** the same thing as the designed real-time PBA model: today Config 2 validates the account and settles the money later via reconciliation. See [Overview](../explanation/overview.md#real-time-pba-in-design).
 
 ### Check the Liberata account status (Config 2)
 

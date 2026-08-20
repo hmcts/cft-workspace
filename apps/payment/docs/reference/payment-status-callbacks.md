@@ -12,6 +12,9 @@ sources:
   - ccpay-payment-app:api/src/main/resources/application.properties
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentStatusDto.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentReference.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/mapper/ServiceRequestDtoDomainMapper.java
   - ccpay-service-request-cpo-update-service:src/main/java/uk/gov/hmcts/reform/config/servicebus/ServiceBusConfiguration.java
   - ccpay-service-request-cpo-update-service:src/main/java/uk/gov/hmcts/reform/services/CpoUpdateServiceImpl.java
   - ccpay-service-request-cpo-update-service:src/main/java/uk/gov/hmcts/reform/dtos/requests/CpoUpdateServiceRequest.java
@@ -25,7 +28,7 @@ examples_extracted_from:
 confluence:
   - id: "1958058001"
     title: "Service Callback LLD"
-    last_modified: "2025-03-28"
+    last_modified: "2026-06-01"
     space: "DTSFP"
   - id: "1794553235"
     title: "Service Callback LLD (NEW +Payment Failures WIP)"
@@ -47,7 +50,7 @@ confluence:
     title: "Cron Job Matrix"
     last_modified: "2025-01-01"
     space: "RSTR"
-confluence_checked_at: "2026-05-13"
+confluence_checked_at: "2026-08-20"
 sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
@@ -56,6 +59,9 @@ sources_sha:
   "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentStatusDto.java": "0cf6e7d5ce9bdb8418b6627d44867a1e83dc1981"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentReference.java": "d7a9437816824a5d44c10c5738180cba36b40501"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/mapper/ServiceRequestDtoDomainMapper.java": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
   "ccpay-service-request-cpo-update-service:src/main/java/uk/gov/hmcts/reform/config/servicebus/ServiceBusConfiguration.java": "a21fecc631d099d3e44146d87d5b7481ab2a8b24"
   "ccpay-service-request-cpo-update-service:src/main/java/uk/gov/hmcts/reform/services/CpoUpdateServiceImpl.java": "a21fecc631d099d3e44146d87d5b7481ab2a8b24"
   "ccpay-service-request-cpo-update-service:src/main/java/uk/gov/hmcts/reform/dtos/requests/CpoUpdateServiceRequest.java": "f9256a429a09119a246a95a54f463e1a099031aa"
@@ -65,7 +71,7 @@ sources_sha:
 
 - `ccpay-payment-app` publishes payment-status updates to two Azure Service Bus (ASB) topics: `ccpay-service-callback-topic` (card/PBA payment status callbacks to service teams) and `ccpay-service-request-cpo-update-topic` (service-request updates forwarded to the Case Payment Orders API).
 - Messages are published via `TopicClientProxy` with a 3-attempt retry and exponential backoff (`1s * attemptNumber`).
-- The external consumer `ccpay-functions-node` (Azure Function, Node.js) reads from `ccpay-service-callback-topic`, authenticates with S2S as `payment_app`, and sends a PUT request to the service's registered callback URL. It retries 6 times at 30-minute intervals before dead-lettering.
+- The external consumer `ccpay-functions-node` (Azure Function, Node.js) reads from `ccpay-service-callback-topic`, authenticates with S2S as `payment_app`, and sends a PUT request to the service's registered callback URL. Any 2XX response counts as success; otherwise it makes up to 5 further attempts at 30-minute intervals (6 in total) and then gives up.
 - The `ccpay-service-callback-topic` carries either a `PaymentDto` (legacy path) or `PaymentStatusDto` (Ways2Pay path) JSON payload with a `serviceCallbackUrl` message property.
 - The `ccpay-service-request-cpo-update-topic` carries a `ServiceRequestCpoDto` (snake_case JSON) consumed by `ccpay-service-request-cpo-update-service`.
 <!-- REVIEW: FF4j flag name is wrong. The actual flag name is "payment-callback-service" (from CallbackService.FEATURE in model/src/main/java/uk/gov/hmcts/payment/api/service/CallbackService.java:8), not "service-callback". -->
@@ -78,7 +84,7 @@ sources_sha:
 | `ccpay-service-callback-topic` | Card/PBA payment status callbacks to service teams | `CallbackServiceImpl`, `ServiceRequestDomainServiceImpl` | `ccpay-functions-node` (Azure Function) -> service teams via their registered `serviceCallbackUrl` |
 | `ccpay-service-request-cpo-update-topic` | Service-request payment status updates | `ServiceRequestDomainServiceImpl` | `ccpay-service-request-cpo-update-service` -> CPO API |
 
-<!-- DIVERGENCE: Confluence (FAQ page 1815114088) says ccpay-function-node retries 6 times at 30-minute intervals, but ccpay-functions-node is not in the workspace repos and cannot be verified in source. The publisher-side retry in TopicClientProxy.java:17 is confirmed as 3 attempts with linear backoff. Source wins for the publisher; the consumer retry is documented from Confluence. -->
+<!-- DIVERGENCE: Confluence (FAQ page 1815114088 and Service Callback LLD 1958058001) says ccpay-function-node retries at 30-minute intervals for up to 5 attempts beyond the first, but ccpay-functions-node is not in the workspace repos and cannot be verified in source. The publisher-side retry in TopicClientProxy.java:17 is confirmed as 3 attempts with linear backoff. Source wins for the publisher; the consumer retry is documented from Confluence. -->
 
 ## Connection configuration
 
@@ -99,11 +105,14 @@ Services register their callback URL at payment/service-request creation time. T
 | Endpoint | Callback URL source | DB location |
 |---|---|---|
 | `POST /service-request` | `call_back_url` in request body | `payment_fee_link.service_request_callback_url` |
-| `POST /service-request/{ref}/card-payments` | `service-callback-url` URL parameter | `payment.service_callback_url` |
-| `POST /card-payments` (legacy) | `service-callback-url` URL parameter | `payment.service_callback_url` |
+| `POST /service-request/{ref}/card-payments` | `service-callback-url` request header | `payment.service_callback_url` |
+| `POST /service-request/{ref}/pba-payments` | inherited from the service request | `payment_fee_link.service_request_callback_url` |
+| `POST /card-payments` (legacy) | `service-callback-url` request header | `payment.service_callback_url` |
 | `POST /credit-account-payments` (legacy PBA) | N/A | N/A (no callback) |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+`service-callback-url` is an HTTP **header**, not a query parameter, on both endpoints that accept it (`CardPaymentController.java:119`, `ServiceRequestController.java:322`).
+
+**Which column is actually read at send time depends on the path, not on where the URL was stored.** The Ways2Pay sends go through `ServiceRequestDomainService.sendMessageToTopic(dto, url)` and are always passed `paymentFeeLink.getCallBackUrl()` — the `payment_fee_link` column — for PBA payments (`ServiceRequestDomainServiceImpl.java:283,294`) and for the card status check (`ServiceRequestController.java:359`). Only `CallbackServiceImpl.callback()` consults `payment.service_callback_url`, and it prefers that column over the `payment_fee_link` one when both are populated. So a W2P card payment that supplied the `service-callback-url` header can be called back on either URL depending on which code path fires, and a service request created without `call_back_url` will get no callback from the Ways2Pay paths even if the header was supplied.
 
 ## Message format: `ccpay-service-callback-topic`
 
@@ -154,7 +163,7 @@ Source: `PaymentStatusDto.java` and `PaymentReference.java` -- both annotated wi
 | `payment.payment_amount` | BigDecimal | Amount of this specific payment |
 | `payment.payment_reference` | String | Payment reference, format `RC-NNNN-NNNN-NNNN-NNNN` |
 | `payment.payment_method` | String | `"card"` or `"payment by account"` |
-| `payment.case_reference` | String | Service-specific case reference (may be empty) |
+| `payment.case_reference` | String | Service-specific case reference, captured when the service creates the service request — empty if the service request was created in PayBubble instead |
 | `payment.account_number` | String | PBA account number (empty for card payments) |
 
 ### Callback delivery to services
@@ -166,9 +175,9 @@ The `ccpay-functions-node` Azure Function (not in this workspace) consumes messa
 | HTTP method | PUT |
 | `ServiceAuthorization` header | S2S token for microservice `payment_app` |
 | `Content-Type` header | `application/json` |
-| Expected success response | HTTP 200 or 201 |
-| Retry on failure | 6 attempts, 30 minutes apart |
-| After retry exhaustion | Message is dead-lettered |
+| Expected success response | Any 2XX (the LLD notes that services often assume 200 or 201, but anything in `200 <= status < 300` is accepted) |
+| Retry on failure | Up to 5 further attempts, 30 minutes apart — 6 deliveries in total |
+| After retry exhaustion | The LLD states the status update to the service simply ends; it does not describe the message as dead-lettered |
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
@@ -187,7 +196,9 @@ The Payment Status Update Job looks for card payments that are:
 1. Online card payments (not telephony)
 2. Status of "Initiated" in the DB (shown as "created")
 3. GOV.UK Pay status differs from the recorded status
-4. Callback URL provided in either the `payment` table or `payment_fee_link` table
+4. Callback URL provided in the `payment` table — if absent, the `payment_fee_link` table is checked instead
+
+The job only ever responds to **online card payments**. Failed/disputed payments, refunds, and telephony payments are all out of its scope, so none of them produce a callback from this route.
 
 **Important**: If a service calls `GET /card-payments/{reference}` (legacy status check), this updates the payment status in the DB but does **not** trigger a callback. The Payment Status Update Job will then skip that payment because it is no longer "Initiated". The service must handle the status response itself.
 
@@ -309,8 +320,9 @@ Connects to `ccpay-service-request-cpo-update-topic/.../subscriptions/serviceReq
 |---|---|---|---|
 | 1 | Payment status updated by another endpoint (e.g. `GET /card-payments/{ref}`) | Payment Status Update Job skips it; no callback sent | Service must handle the status from the API response directly |
 | 2 | Service Bus message lost | Case stuck at payment stage | Manual callback (see operational procedures) |
-| 3 | Service endpoint returns non-2XX | Function-node retries 6 times at 30-min intervals, then dead-letters | Investigate service logs; manual resend if needed |
+| 3 | Service endpoint returns non-2XX | Function-node makes up to 5 further attempts at 30-min intervals, then stops | Investigate service logs; manual resend if needed |
 | 4 | Callback URL not stored in DB | No callback possible | Ensure `call_back_url` / `service-callback-url` passed at creation |
+| 6 | Service request created without `call_back_url`, callback URL supplied only as the `service-callback-url` header | The Ways2Pay paths read `payment_fee_link.service_request_callback_url` and find nothing, so no callback is published | Pass `call_back_url` on `POST /service-request` — do not rely on the header alone for W2P flows |
 | 5 | Azure Service Bus unavailable | `TopicClientProxy` throws after 3 retries | Message logged as error; no automatic recovery |
 
 <!-- CONFLUENCE-ONLY: not verified in source -->

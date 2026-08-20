@@ -15,6 +15,7 @@ sources:
   - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/enums/ReportType.java
   - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/CaseReferenceRequest.java
   - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/utils/BulkScanningUtils.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -39,13 +40,13 @@ confluence:
     space: "RBS"
   - id: "1712766455"
     title: "Payments and Fee Reg E2E Flows"
-    last_modified: "2024-06-26"
+    last_modified: "2026-08-01"
     space: "DTSFP"
   - id: "1440508905"
     title: "Auto case creation - Bulk scan payments"
     last_modified: "2020-09-15"
     space: "RP"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/PaymentController.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
   "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/SearchController.java": "dc758cec8bf9cc5afd33ee4ee56ce8c8785b40bc"
@@ -57,6 +58,7 @@ sources_sha:
   "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/enums/ReportType.java": "3cc18ee81ff0e74a0d5488b80d5c6489ebec64e7"
   "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/CaseReferenceRequest.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
   "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/utils/BulkScanningUtils.java": "ee41159e2bc5e93c1184c27855c905a82b53ff86"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
 ---
 
 ## TL;DR
@@ -140,8 +142,16 @@ Sent by Exela when payment processing is complete.
 | `amount` | decimal | Payment amount |
 | `currency` | string | `GBP` only (`BulkScanPayment:112`) |
 | `method` | string | One of: `Cash`, `Cheque`, `PostalOrder` (`BulkScanPayment:106`) |
-| `bank_giro_credit_slip_number` | integer | Max 6 digits, required (`BulkScanPayment:68`) |
+| `bank_giro_credit_slip_number` | integer | Max 6 digits, non-negative, required (`BulkScanPayment:68`) |
 | `banked_date` | string | `YYYY-MM-DD` format, must not be a future date (`BulkScanPayment:83`) |
+
+`method` and `currency` are plain `String` fields validated by `@AssertFalse` hooks that compare with
+`equalsIgnoreCase` (`BulkScanPayment.java:103-115`), so `"cheque"`, `"Cheque"` and `"CHEQUE"` are all accepted —
+worked examples in Confluence use the lowercase forms. This is a property of those two validators specifically,
+not of the `accept-case-insensitive-enums` Jackson setting, which applies to the genuine enums elsewhere in the API.
+
+`bank_giro_credit_slip_number` is validated only for sign and length; the operational convention that BGC slip
+numbers start `96` is not enforced in source, so a slip number outside that range will be accepted.
 
 **Response**: 201 Created on success; 409 Conflict if metadata for the DCN already exists (`PaymentController:77`).
 
@@ -218,6 +228,27 @@ Trusted S2S callers: `ccpay_bubble`, `cmc`, `bulk_scan_payment_processor`, `api_
 5. After processing, `PATCH /bulk-scan-payments/{dcn}/status/{status}` marks the envelope as `PROCESSED`.
 
 Note: Steps 1 and 2 can arrive in either order. The system handles both "Exela first" and "Bulk-scan metadata first" orderings; whichever arrives second triggers the `COMPLETE` transition.
+
+Three different parties drive steps 1–3, and each authenticates as its own S2S microservice. Observationally the
+progression through `envelope_payment` is: after step 1 the row reads `envelope_payment_status = INCOMPLETE`,
+`source = Exela`; after step 2 it reads `COMPLETE`, `source = Both`. If step 2 supplied `is_exception_record: true`,
+step 3's `PUT` populates `envelope_case.ccd_reference` with the real case while
+`envelope_case.exception_record_reference` retains the value originally sent as the `ccd_case_number` — the DCN is
+the only join key that spans all three calls.
+
+### Making a bulk-scan payment refund-eligible in a test environment
+
+Bulk-scan payments carry the longest refund waiting period of any channel (20 days for cheque and postal order,
+5 days for cash), so a freshly-created test payment will not offer the refund action. `ccpay-payment-app` exposes a
+support endpoint to shift the payment date backwards:
+
+```
+PATCH /payments/ccd_case_reference/{ccd_case_number}/lag_time/{lag_time}
+```
+
+Handled by `PaymentController.java:134-139` in `ccpay-payment-app`, this backdates every payment on the case so the
+lag check passes. See [Refunds API — lag period](api-refunds.md#lag-period) for the thresholds and the
+`refund-remission-lagtime-feature` flag that gates the check.
 
 ### Auto-case creation impact
 
