@@ -33,7 +33,7 @@ confluence:
     space: "AM"
   - id: "1593576197"
     title: "AM applications feature flags"
-    last_modified: "unknown"
+    last_modified: "2026-08-01T00:00:00Z"
     space: "AM"
   - id: "1675777466"
     title: "WA R4 ORM Refresh"
@@ -43,7 +43,7 @@ confluence:
     title: "LLD - Organisation Role Mapping Service"
     last_modified: "unknown"
     space: "AM"
-confluence_checked_at: "2026-05-13T12:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/config/BatchConfig.java": "1dab3801131feb14a32b7ccedd3ad96b0982ab70"
   "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
@@ -266,7 +266,9 @@ The flags are managed via the `DB_FEATURE_FLAG_ENABLE` environment variable in O
 | `ccd_bypass_1_0` | Bypasses Drools validation for test jurisdictions | Off (by design) |
 | `wa_bypass_1_0` | Bypasses Drools validation for WA test jurisdictions | Off (by design) |
 
-<!-- CONFLUENCE-ONLY: The full list of per-jurisdiction DB flags and their prod status is maintained in the "AM applications feature flags" Confluence page (id: 1593576197). -->
+The full per-jurisdiction DB-flag inventory with prod status is in
+[ORM API reference → Feature flags](../reference/api-org-role-mapping.md#feature-flags),
+derived from the `flag_config` migrations rather than from Confluence.
 
 ## Data retention policy
 

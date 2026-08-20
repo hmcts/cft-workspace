@@ -51,13 +51,13 @@ confluence:
     space: "AM"
   - id: "1593576197"
     title: "AM applications feature flags"
-    last_modified: "unknown"
+    last_modified: "2026-08-01T00:00:00Z"
     space: "AM"
   - id: "1446904483"
     title: "Judicial Booking Mapping Rules"
     last_modified: "unknown"
     space: "AM"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/servicebus/CRDTopicConsumerNew.java": "175b92db711bc975d09a26f5d9561b1577299667"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/servicebus/JRDTopicConsumerNew.java": "175b92db711bc975d09a26f5d9561b1577299667"
@@ -352,7 +352,7 @@ ORM uses two types of feature flags:
 **DB flags** (stored in `flag_config` table, per-environment): follow the naming convention `{service}_{wa|hearing}_{major}_{minor}`. Examples:
 - `civil_wa_1_0` through `civil_wa_2_5` — Civil work allocation roles, incrementally added
 - `sscs_hearing_1_0` — SSCS hearing-specific roles
-- `employment_wa_1_0` through `employment_wa_3_0` — Employment Tribunal
+- `employment_wa_1_0` through `employment_wa_1_5`, then `employment_wa_3_0` — Employment Tribunal (there is no `2_x`)
 - `iac_jrd_1_0`, `iac_jrd_1_1` — IAC judicial reference data integration
 
 Each flag version typically corresponds to a new set of Drools rules being enabled for that jurisdiction. Flags are toggled independently per environment (preview, demo, aat, perftest, ithc, prod).
@@ -364,7 +364,10 @@ Each flag version typically corresponds to a new set of Drools rules being enabl
 - `jbs-query-bookings-api-flag` — toggles JBS query bookings API
 - `jbs-create-bookings-api-flag` — toggles JBS create bookings API
 
-<!-- CONFLUENCE-ONLY: The complete flag inventory with per-environment status is maintained on the "AM applications feature flags" Confluence page (ID 1593576197). The naming convention and LD flag purposes above are derived from that page. not verified in source -->
+The full DB-flag inventory, derived by replaying the `flag_config` migrations, is in
+[ORM API reference → Feature flags](../reference/api-org-role-mapping.md#feature-flags).
+The LD flag purposes above come from the "AM applications feature flags" Confluence page
+(ID 1593576197); no LD flag key appears in ORM source.
 
 ## Key configuration
 

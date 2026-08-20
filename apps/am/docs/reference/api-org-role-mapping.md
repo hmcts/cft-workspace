@@ -18,6 +18,10 @@ sources:
   - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/servicebus/JRDTopicConsumerNew.java
   - am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql
   - am-org-role-mapping-service:src/main/resources/db/migration/V1.2__new_flag_config_table.sql
+  - am-org-role-mapping-service:src/main/resources/db/migration/V1.7__iac_1_0_base_flag_deletion.sql
+  - am-org-role-mapping-service:src/main/resources/db/migration/V20260622_117__POFCC-117_Enable_possessions_wa_1_0_Prod.sql
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java
+  - am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -39,7 +43,7 @@ confluence:
     space: "AM"
   - id: "1593576197"
     title: "AM applications feature flags"
-    last_modified: "unknown"
+    last_modified: "2026-08-01T00:00:00Z"
     space: "AM"
   - id: "1658260403"
     title: "Architecture"
@@ -49,7 +53,7 @@ confluence:
     title: "Work Allocation Common ORG and CASE Roles"
     last_modified: "unknown"
     space: "AM"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/controller/RefreshController.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
   "am-org-role-mapping-service:src/main/resources/application.yaml": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
@@ -64,6 +68,10 @@ sources_sha:
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/servicebus/JRDTopicConsumerNew.java": "175b92db711bc975d09a26f5d9561b1577299667"
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql": "4634ca2f2028547d964f2f1deb111816ffa5da75"
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.2__new_flag_config_table.sql": "f096b045752bcaf71c4a3871bdb5dd950b7e1bbc"
+  "am-org-role-mapping-service:src/main/resources/db/migration/V1.7__iac_1_0_base_flag_deletion.sql": "7267dc8eb768dc198426de205418bba334763410"
+  "am-org-role-mapping-service:src/main/resources/db/migration/V20260622_117__POFCC-117_Enable_possessions_wa_1_0_Prod.sql": "2e01f7521d23c6ba3e96cf345e68638ae4fbd02d"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
+  "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
 ---
 
 ## TL;DR
@@ -326,26 +334,63 @@ ORM uses a dual-layer feature flagging system:
 
 DB flags in the `flag_config` table control which Drools mapping rules are active. Flag names follow the pattern `<service>_wa_<major>_<minor>` (e.g. `civil_wa_2_3`) or `<service>_hearing_<major>_<minor>`. Each flag is scoped to an environment and service.
 
-Currently onboarded services with active ORM flags (prod):
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- IAC: `iac_1_1`, `iac_jrd_1_0`, `iac_wa_1_2` through `iac_wa_1_7`
-- Civil: `civil_wa_1_0` through `civil_wa_2_5`
-- Private Law: `privatelaw_wa_1_0` through `privatelaw_wa_1_8`
-- Public Law: `publiclaw_wa_1_0` through `publiclaw_wa_2_2`
-- Employment: `employment_wa_1_0` through `employment_wa_3_0`
-- SSCS: `sscs_wa_1_0`, `sscs_wa_1_2`, `sscs_wa_1_3`, `sscs_wa_1_5`, `sscs_hearing_1_0`
-- Special Tribunals (CIC): `st_cic_wa_1_0` through `st_cic_wa_1_1`
+Every flag is registered by a Flyway migration named
+`V{yyyyMMdd}_{ticket}__{JIRA-TICKET}_{FLAG}_base_flag_addition.sql`, which inserts one
+row per environment (`local` and `pr` `true`, everything else `false`). A later
+`Enable_<flag>_Prod` migration flips the higher environments on. Each flag also has a
+constant in `FeatureFlagEnum.java`.
+
+Replaying every `flag_config` migration in Flyway order gives the following state:
+
+| `service_name` | Prod-enabled by migration | Prod-enabled outside the migrations | Off in prod |
+|---|---|---|---|
+| `iac` | `iac_jrd_1_1`, `iac_wa_1_2`--`iac_wa_1_7` | `iac_1_1`, `iac_jrd_1_0` | `iac_wa_1_8`, `hrs_1_0` |
+| `civil` | `civil_wa_1_1`--`civil_wa_2_5` | `civil_wa_1_0` | -- |
+| `privatelaw` | `privatelaw_wa_1_1`--`privatelaw_wa_1_9`, `privatelaw_hearing_1_0` | `privatelaw_wa_1_0` | -- |
+| `publiclaw` | `publiclaw_wa_1_0`--`publiclaw_wa_2_2`, `publiclaw_hearing_1_0` | -- | -- |
+| `employment` | `employment_wa_1_0`--`employment_wa_1_5`, `employment_wa_3_0` | -- | -- |
+| `sscs` | `sscs_wa_1_0`, `sscs_wa_1_2`, `sscs_wa_1_3`, `sscs_wa_1_5` | `sscs_hearing_1_0` | `sscs_wa_1_1`, `sscs_wa_1_4`, `sscs_hearing_1_1` |
+| `st_cic` | `st_cic_wa_1_0`, `st_cic_wa_1_1` | -- | `st_cic_wa_1_2`, `st_cic_wa_1_3` |
+| `pofcc` | `possessions_wa_1_0` | -- | -- |
+| `probate` | -- | -- | `probate_wa_1_0` |
+| `divorce` | -- | -- | `fr_wa_1_0` |
+
+The middle column is the awkward one. Those five flags are the earliest ones, from
+before the `Enable_<flag>_Prod` migration convention existed: their base migration
+inserted `prod = false` and no migration ever flipped them, yet the AM feature-flags
+page records them as live in prod. They were turned on out of band — via
+`DB_FEATURE_FLAG_ENABLE` or a Flux value — so the migrations are not a complete record
+of prod state for them. Check the environment before relying on either source.
+
+There is no `employment_wa_2_x` — Employment jumps from `1_5` to `3_0`.
+`iac_1_0` no longer exists; `V1.7__iac_1_0_base_flag_deletion.sql` removed it.
+
+Beware that `service_name` is copy-pasted between migrations and does not always
+match the flag's service. `civil_wa_1_1`, `privatelaw_wa_1_2`, `privatelaw_wa_1_3` and
+`hrs_1_0` are all registered under `service_name = 'iac'`, and `publiclaw_wa_1_7`
+under `'privatelaw'`. Query `flag_config` by `flag_name`, not by `service_name`.
+
+<!-- DIVERGENCE: the AM feature-flags Confluence page lists possessions_wa_1_0 as prod=false, but V20260622_117__POFCC-117_Enable_possessions_wa_1_0_Prod.sql enables it in prod. Source wins. -->
+
 
 ### LaunchDarkly flags (operational toggles)
+
+<!-- CONFLUENCE-ONLY: no LaunchDarkly flag key appears anywhere in ORM source -->
 
 | Flag key | Purpose | Prod status |
 |----------|---------|-------------|
 | `orm-jrd-org-role` | Toggle JRD ASB message consumption | Live |
+| `orm-judicial-refresh-role-api` | Toggle the judicial refresh API (shared with JBS) | Live |
 | `orm-refresh-role` | Enable/disable refresh API functionality | Not Live |
 | `orm-refresh-job-enable` | Enable/disable refresh job invocation | Not Live |
 | `orm-base-flag` | Test flag for FTA scenarios (aat only) | Not Live |
+| `get-db-drools-flag` | Expose DB flag status to functional tests in lower envs (shared with RAS and JBS) | Not Live |
 
-Note: the `application.yaml` comment states "LD is not used but legacy configuration is retained" -- current source retains LD SDK config but may not actively use it for feature decisions.
+These keys come from the AM feature-flags page, not from code. `application.yaml` keeps
+only `launchdarkly.sdk.environment`, above the comment "LD is not used but legacy
+configuration is retained" — no LD flag key appears anywhere in ORM source, so nothing
+in the running service reads them. Treat the table as a record of what was once wired
+up rather than of live behaviour.
 
 ## Configuration reference
 
@@ -381,11 +426,13 @@ The following services have ORM mapping rules deployed and active:
 | SSCS | Live | Hearings complete, WA config active |
 | Employment Tribunals | Live | |
 | Special Tribunals (CIC) | Live | |
-| HRS (Hearing Recording) | In development | Flag: `hrs_1_0` |
-| Possessions | Onboarding | Flag: `possessions_wa_1_0` |
-| Probate | Onboarding | Flag: `probate_wa_1_0` |
-| Financial Remedy | Draft | Not yet signed off |
-<!-- CONFLUENCE-ONLY: not verified in source -->
+| Possessions | Live | Flag `possessions_wa_1_0`, prod-enabled June 2026 (`POFCC-117`) |
+| HRS (Hearing Recording) | In development | Flag `hrs_1_0` registered, off in prod |
+| Probate | In development | Flag `probate_wa_1_0` registered, off in prod |
+| Financial Remedy | In development | Flag `fr_wa_1_0` registered (`COT-1208`), off in prod |
+
+Every service in this table has a Drools rule package listed in
+`META-INF/kmodule.xml`; the Status column reflects whether its flag is on in prod.
 
 ## Role ID mapping (CRD Role ID to ORM Role Name)
 
