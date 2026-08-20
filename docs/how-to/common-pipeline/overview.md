@@ -7,7 +7,7 @@ audience: both
 ---
 # Common pipeline
 
-> To get onboarded to the common pipeline please see [Jenkins onboarding](../../tutorials/cnp-onboarding/team-jenkins.md).
+> To get onboarded to the common pipeline please see [Jenkins setup](../new-component/jenkins-repository.md).
 
 The common pipeline is a Jenkins pipeline defined by [code](https://github.com/hmcts/cnp-jenkins-library)
 which implements Continuous Delivery to production while enforcing a standard set of
@@ -89,13 +89,15 @@ End to end process:
     - updating the github flux repo with the new image name
 13. Flux will see new changes and deploy new pod
 
+More information on how Jenkins works can be found on the [jenkins-agents](jenkins-agents.md) page.
+
 ### Finding your pipeline
 
 Within Jenkins, there exists the concept of organisation folders. This enables Jenkins to scan a GitHub Organization to discover repositories and automatically create managed pipelines for them.
 
 Your pipeline will exist within a specific organisation folder which should have been defined when the pipeline integration was first configured.
 
-See Step 4 of [Jenkins Onboarding](../../tutorials/cnp-onboarding/team-jenkins.md) for details.
+See [Jenkins setup](../new-component/jenkins-repository.md#scan-jenkins) for details.
 
 ### Finding your application
 

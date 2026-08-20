@@ -1,29 +1,30 @@
 ---
-title: Create a Github Repository
+title: Create a GitHub Repository
 topic: github-repo
 diataxis: how-to
 product: workspace
 audience: both
 ---
-# Create a Github Repository
+# Create a GitHub Repository
 
-Any developer added to [hmcts org](https://github.com/hmcts) is able to create a new Github repo.
+Any developer added to the [HMCTS GitHub organisation](https://github.com/hmcts) can create a new GitHub repository.
 
+If you do not have access, follow [GitHub onboarding](../../tutorials/cnp-onboarding/person-github.md#join-github).
 
 1. Naming convention for repository is `{product}-{component}`. For product-level (shared) infrastructure, the name should be `{product}-shared-infrastructure`. [More info](./infrastructure-as-code.md#product-and-component-level-infrastructure)
-2. If you are creating a NodeJS front end or Java backend component, you may want to use a template. These templates provide all the boiler plate code needed for a new app.
+2. If you are creating a NodeJS front end or Java backend component, you may want to use a template. These templates provide the boilerplate code needed for a new app.
     - [spring-boot-template](https://github.com/hmcts/spring-boot-template)
     - [expressjs-template](https://github.com/hmcts/expressjs-template)
     - Alternatively you can simply create a blank directory. If so, we recommend you draw inspiration from an existing working repository.
-3. Repository should be public. [Gov UK guidance](https://www.gov.uk/service-manual/technology/making-source-code-open-and-reusable)
-4. Do not add any collaborators outside the organisation. All access needs to be managed with GitHub teams and not users.
+3. Repositories should be public. See [GOV.UK guidance](https://www.gov.uk/service-manual/technology/making-source-code-open-and-reusable).
+4. Do not add collaborators from outside the organisation. Access must be managed with GitHub teams, not individual users.
 
-    _Note: You need to remove the user level admin access you got while creating the repository after you have added your team admins with the admin role._
+    _Note: Remove the user-level admin access you received when creating the repository after you have added your team admins with the admin role._
 
-5. Find or create your Github Team in [Team Onboarding](../../tutorials/cnp-onboarding/README.md). Give your team members the following access to the Repo.
+5. Find or create your GitHub team in [GitHub](../../tutorials/cnp-onboarding/team-github.md). Give your team members the following access to the repository.
     <table>
      <tr>
-       <th>Github team</th>
+       <th>GitHub team</th>
        <th>Role</th>
      </tr>
      <tr>
@@ -36,7 +37,7 @@ Any developer added to [hmcts org](https://github.com/hmcts) is able to create a
      </tr>
     </table>
 
-6. Add a branch protection rule for `master` branch with the recommended settings below. This is in https://github.com/[REPO]/settings/branches, then clicking "Add rule" beside Branch protection rules.
+6. Add a branch protection rule for the `master` branch with the recommended settings below. This is in `https://github.com/[REPO]/settings/branches`, then clicking "Add rule" beside Branch protection rules.
    - Enable `Require a pull request before merging` and `Require approvals` (minimum 1)
-   - Choose which status checks needs to be mandatory for merging PRs. The standard Jenkins check is `continuous-integration/jenkins/pr-merge` (this can be done only after checks like Jenkins have been run once)
+   - Choose which status checks need to be mandatory for merging PRs. The standard Jenkins check is `continuous-integration/jenkins/pr-merge` (this can be done only after Jenkins checks have run once)
    - We recommend enabling `Do not allow bypassing the above settings`.

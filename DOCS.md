@@ -187,7 +187,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Automated dependency updates | automated-dependency-updates | `docs/how-to/automated-dependency-updates.md` |
 | workspace | how-to | Azure Frontdoor Web Application Firewall Debug | afd-waf | `docs/how-to/afd-waf.md` |
 | workspace | how-to | Common pipeline | overview | `docs/how-to/common-pipeline/overview.md` |
-| workspace | how-to | Create a Github Repository | github-repo | `docs/how-to/new-component/github-repo.md` |
+| workspace | how-to | Create a GitHub Repository | github-repo | `docs/how-to/new-component/github-repo.md` |
 | workspace | how-to | Create App Registrations with Federated Credentials for GitHub Actions | federated-credentials | `docs/how-to/federated-credentials.md` |
 | workspace | how-to | Creating a new subscription | creating-a-new-subscription | `docs/how-to/creating-a-new-subscription.md` |
 | workspace | how-to | ElasticSearch | elasticsearch | `docs/how-to/new-component/elasticsearch.md` |
@@ -203,6 +203,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | How to run and maintain the doc-drift pipeline | doc-drift-pipeline | `docs/how-to/doc-drift-pipeline.md` |
 | workspace | how-to | Infrastructure as Code | infrastructure-as-code | `docs/how-to/new-component/infrastructure-as-code.md` |
 | workspace | how-to | Java | publish-java-library | `docs/how-to/common-pipeline/publish-java-library.md` |
+| workspace | how-to | Jenkins agents | jenkins-agents | `docs/how-to/common-pipeline/jenkins-agents.md` |
 | workspace | how-to | Jenkins setup | jenkins-repository | `docs/how-to/new-component/jenkins-repository.md` |
 | workspace | how-to | Load balancer configuration | load-balancer-configuration | `docs/how-to/path-to-live/load-balancer-configuration.md` |
 | workspace | how-to | Make a new Virtual Network accessible over the VPN | connect-via-vpn | `docs/how-to/connect-via-vpn.md` |

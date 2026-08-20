@@ -141,7 +141,7 @@ entries:
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/github-repo.md
     source: cloud-native-platform/new-component/github-repo.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/gitops-flux.md
     source: cloud-native-platform/new-component/gitops-flux.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -161,10 +161,17 @@ entries:
   # --- how-to/common-pipeline ---
   - target: how-to/common-pipeline/overview.md
     source: cloud-native-platform/common-pipeline/common-pipeline.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: how-to/common-pipeline/jenkins-agents.md
+    source: cloud-native-platform/common-pipeline/jenkins-agents.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/common-pipeline/publish-java-library.md
     source: cloud-native-platform/common-pipeline/publishing-libraries/java.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+    notes: >-
+      deliberately not taking b72bdef's jitpack hunk, which links the
+      `repo_name/tag/` placeholder (a dead link) and code-spans the real example
+      — we keep the example linked
   - target: how-to/common-pipeline/publish-nodejs-library.md
     source: cloud-native-platform/common-pipeline/publishing-libraries/nodejs.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
