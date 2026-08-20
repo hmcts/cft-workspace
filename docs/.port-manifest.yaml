@@ -17,8 +17,8 @@ upstream_path_root: source
 
 # Bookkeeping: when the bulk port last ran end-to-end. Per-entry synced_sha
 # may diverge from this if individual pages have been refreshed since.
-last_full_sync_at: 2026-04-28
-last_full_sync_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+last_full_sync_at: 2026-08-20
+last_full_sync_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
 
 entries:
 
