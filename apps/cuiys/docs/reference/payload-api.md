@@ -22,10 +22,13 @@ status: draft
 confluence:
   - id: "1680476343"
     title: "Payload Specification"
+    last_modified: "2026-07-01T00:00:00Z"
     space: "CUIRA"
   - id: "1712514145"
     title: "Developer Integration Guide"
+    last_modified: "unknown"
     space: "CUIRA"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "cui-ra:src/main/constants/route.ts": "8733768f0ade2a82cd91e0d5ecddd9a0871a6bee"
   "cui-ra:src/main/routes.ts": "8733768f0ade2a82cd91e0d5ecddd9a0871a6bee"

@@ -40,9 +40,9 @@ confluence:
     space: "EXUI"
   - id: "1658264080"
     title: "Retrospectives"
-    last_modified: "2026-04-01T00:00:00Z"
+    last_modified: "2026-07-01T00:00:00Z"
     space: "EXUI"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translate.pipe.ts": "6f57537ed9a9b4f36330c1e371f5e7e462dc89e7"
   "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.service.ts": "f4c2f5216765fa1b1fcd753d0a71278f172b7690"

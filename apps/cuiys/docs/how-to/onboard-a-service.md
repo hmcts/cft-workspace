@@ -13,10 +13,13 @@ status: draft
 confluence:
   - id: "1933858855"
     title: "CUIYS Onboarding Guide"
+    last_modified: "2026-05-13T00:00:00Z"
     space: "CUIRA"
   - id: "1933858875"
     title: "CUIYS Onboarding - Context and Background"
+    last_modified: "unknown"
     space: "CUIRA"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "cui-ra:src/main/controllers/apiController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
   "cui-ra:src/main/controllers/dataController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
