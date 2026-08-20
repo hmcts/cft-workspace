@@ -43,36 +43,36 @@ jobs:
           private-key: ${{ secrets.CLAUDE_CODE_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
-      - name: What the token says it can do
+      - name: Context (do not read this as the answer)
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -uo pipefail
-          # An installation token's effective access is reflected in the repo
-          # object's `permissions` block. Read-only, so this cannot do harm —
-          # and unlike the collaborators API it reports the *installation's*
-          # access rather than "none" for every app.
+          # Logged for context only. Every API route into this question lies:
+          #
+          #   * repos/{repo}/collaborators/{bot}/permission returns "none" even
+          #     for repos where the app demonstrably works — apps are not
+          #     collaborators.
+          #   * GET /repos/{repo} authenticated as the installation reported
+          #     {"push": false} on 2026-08-20 in the same run whose push
+          #     SUCCEEDED. So this is not a reliable read either.
+          #
+          # Hence the design of this workflow: the push in the next step is the
+          # only ground truth, and it is the only step allowed to fail the job.
           if ! perms=$(gh api "repos/$GITHUB_REPOSITORY" --jq '.permissions' 2>&1); then
-            echo "::error::token cannot even READ $GITHUB_REPOSITORY — the app is probably not installed here"
+            echo "::warning::could not read repo metadata — see the push below for the real answer"
             printf '%s\n' "$perms"
-            exit 1
+            exit 0
           fi
-          echo "permissions: $perms"
+          echo "reported permissions (unreliable): $perms"
           {
-            echo '## Token permissions'
+            echo '## Reported permissions'
+            echo 'Context only — GitHub has reported `"push": false` here on a run'
+            echo 'whose push succeeded. The push result below is authoritative.'
             echo '```json'
             printf '%s\n' "$perms"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-
-          # Advisory only — the push below is the ground truth. A token can
-          # report push:false here and still be fine, and vice versa, so don't
-          # fail the job on it.
-          if [[ "$perms" == *'"push":true'* ]]; then
-            echo "::notice::token reports write access"
-          else
-            echo "::warning::token does NOT report write access — expect the push below to 403"
-          fi
 
       - name: Checkout
         uses: actions/checkout@v6

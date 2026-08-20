@@ -160,8 +160,10 @@ What does need checking is the **Claude GitHub App's permissions on
 here — the secrets are just a key, and `create-github-app-token` mints a token
 scoped to wherever that app is actually installed.
 
-The app needs **`contents: write`** on this repo, and read access is not
-enough — read gets you all the way to a commit and then fails:
+The app in question is **HMCTSClaudeCode** (slug `hmctsclaudecode`, app id
+`2670524`, owned by `hmcts`), pushing as `hmctsclaudecode[bot]`. It needs
+`contents: write` **on this repo**, and read is not enough — read gets you all
+the way to a commit and then fails:
 
 ```
 remote: Permission to hmcts/cft-workspace.git denied to hmctsclaudecode[bot].
@@ -172,41 +174,42 @@ The job's `permissions: contents: write` block does **not** grant this. That
 governs the default `GITHUB_TOKEN`; the push uses the app token, whose scope
 comes from the app installation. Only an org admin can widen it.
 
-**As of 2026-08-20 it does not have it, and this is what blocks the pipeline.**
-The probe below reports:
+This was the state from the pipeline's creation until **2026-08-20**: the app
+could read but not write, so every weekly run reconciled pages and then threw
+the work away. Granted that morning, and confirmed by the probe pushing a
+scratch branch. If it regresses, it is fixed on:
 
-```
-permissions: {"admin":false,"maintain":false,"pull":false,"push":false,"triage":false}
-remote: Permission to hmcts/cft-workspace.git denied to hmctsclaudecode[bot].
-fatal: unable to access 'https://github.com/hmcts/cft-workspace.git/': 403
-```
+> Org settings → GitHub Apps → HMCTSClaudeCode → Configure → Repository access
 
-So every weekly run reconciles pages and then throws the work away. Until an
-org admin grants the app `contents: write` here, nothing else in this document
-will make a fix land. Re-run the probe to see whether that has happened.
-
-Note `"pull": false` alongside a checkout that works fine — the clone succeeds
-anonymously because the repo is public, which is why read access proves nothing
-about the push.
-
-**To check, don't guess: run the probe.** `.github/workflows/app-token-probe.yml`
-(**Actions → App token probe → Run workflow**) mints a token exactly as
-doc-drift does, reports what the installation says it can do, then pushes a
-scratch branch and deletes it. It answers the write question in ~20 seconds with
-no Bedrock spend, instead of waiting 45 minutes and £20 for a full run to tell
-you the same thing. It never touches master.
-
-Don't try to answer this from the API instead. The obvious probe misleads:
+**Do not try to answer "can it push?" from the API.** Every route into that
+question misreports, which is why this repo has a probe workflow that pushes for
+real. Two traps, both hit while diagnosing this:
 
 ```
 $ gh api repos/hmcts/cft-workspace/collaborators/hmctsclaudecode%5Bbot%5D/permission --jq .permission
-none
+none        # even for repos where the app demonstrably works — apps aren't collaborators
 ```
 
-Apps aren't collaborators, so that endpoint reports `none` even for repos where
-the app demonstrably works. `GET /repos/{owner}/{repo}` **authenticated as the
-installation** does reflect real access, which is what the probe reads — but the
-push is the only ground truth, so the probe does both.
+```
+permissions: {"admin":false,"maintain":false,"pull":false,"push":false,"triage":false}
+            # GET /repos/{repo} as the installation — and this was the run whose push SUCCEEDED
+```
+
+The second is the nastier one: it reads like a definitive `push: false` and it is
+simply not. Nor does the app's own declared permission set settle it —
+`GET /apps/hmctsclaudecode` is public and has always reported
+`"contents": "write"`, which says what the app *may* be granted, not what this
+repo's installation actually granted. And read access proves nothing either way,
+because this repo is public: the checkout and the cited clones succeed
+anonymously whatever the token can do.
+
+A real push is the only ground truth, so **run the probe**:
+`.github/workflows/app-token-probe.yml` (**Actions → App token probe → Run
+workflow**) mints a token exactly as doc-drift does, logs the reported
+permissions as context, then pushes a scratch branch and deletes it. Only the
+push can fail the job. It answers the question in ~20 seconds with no Bedrock
+spend, instead of waiting 45 minutes and £20 for a full run to tell you the same
+thing, and it never touches master.
 
 The "Verify the work actually landed" step fails the job when a push doesn't
 land. It compares `HEAD` against `origin/master` rather than just checking for a
