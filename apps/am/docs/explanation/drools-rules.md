@@ -76,7 +76,7 @@ sources_sha:
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/DroolConfig.java": "d2e8dba140653845b1d8ac5664ed045d04a926cb"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ValidationModelService.java": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
   "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
-  "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "f2c71dea6e9fc93641f7c24ceb6123d73d392f68"
+  "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/DroolConfig.java": "5123dc2c5c4d127394df67e80c538e5122088d28"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RequestMappingService.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
   "am-org-role-mapping-service:src/main/resources/validationrules/core/core.drl": "37fcddad0d4f0e3d838a53cbc175216801c62992"
@@ -142,7 +142,7 @@ For caseworker users this is a single-stage process. For judicial users it is tw
 
 Both services follow a similar layout under `src/main/resources/`:
 
-**ORM directories** (10 jurisdictions):
+**ORM directories** (12 — 11 jurisdictions plus the shared `core/`):
 ```
 validationrules/
   core/           # shared queries, logging, hearing role globals
@@ -155,9 +155,16 @@ validationrules/
   stcic/          # Special Tribunals / CIC
   hrs/            # Hearing Recording Service
   probate/        # Probate
+  fr/             # Financial Remedy (the DIVORCE jurisdiction, service code ABA2)
+  possessions/    # Possessions (the PCS jurisdiction, service code AAA3)
 ```
 
-**RAS directories** (37 `.drl` files across 17 packages):
+The directory name is not always the jurisdiction name: `Jurisdiction.FR` carries
+`"DIVORCE"` and `Jurisdiction.POSSESSIONS` carries `"PCS"`, and it is that name — not
+the package — that lands in the `JURISDICTION` attribute of the derived role
+assignment.
+
+**RAS directories** (37 `.drl` files across 18 packages, 16 of them loaded):
 ```
 validationrules/
   core/           # shared rules (ORM trust, pattern validation, rejection, case data, specific/challenged/excluded access)
@@ -172,7 +179,7 @@ validationrules/
   employment/     # Employment case-role validation
   stcic/          # Special Tribunals case-role validation
   probate/        # Probate case-role validation
-  possessions/    # Possessions case-role validation (in development)
+  possessions/    # Possessions (PCS) case-role validation
   ccd/            # CCD service-trust rules
   prm/            # Professional role mapping validation
   wa/             # WA test jurisdiction bypass (lower envs only)
@@ -181,6 +188,12 @@ validationrules/
 ```
 
 Note: The `dev/` package is excluded from `kmodule.xml`. The `wa/` and `test/` packages are loaded but gated by feature flags that are always `false` in production.
+
+Flag-gating is the ORM convention, not a RAS guarantee. RAS's `possessions/` rules
+import `FeatureFlag` and `FeatureFlagEnum` but never reference either in a `when`
+clause, and there is no possessions constant in RAS's `FeatureFlagEnum` — so those
+rules are live in every environment. Read the `when` clause rather than assuming a
+flag exists.
 
 ### ORM rule file naming convention
 
@@ -243,8 +256,13 @@ Both services use the same mechanism:
   validationrules.core, validationrules.iac, validationrules.sscs,
   validationrules.civil, validationrules.privatelaw, validationrules.publiclaw,
   validationrules.employment, validationrules.stcic, validationrules.hrs,
-  validationrules.probate
+  validationrules.probate, validationrules.fr, validationrules.possessions
   ```
+- Unlike RAS, every `validationrules.*` package present in the source tree is
+  listed here — ORM has no equivalent of RAS's excluded `dev/` and `prm/`
+  packages. So a new jurisdiction directory is inert until it is added to this
+  list, and `kmodule.xml` is the authoritative answer to "which jurisdictions
+  does ORM map?"
 
 ## Facts Inserted Into Working Memory
 
@@ -304,7 +322,12 @@ DB flags follow a consistent naming pattern: `{jurisdiction}_{feature}_{major}_{
 - `publiclaw_wa_2_2` — Public Law WA release 2.2
 - `disposer_1_0` — Case disposer support
 
-As of the latest Confluence flag registry, RAS has ~15 DB flags and ORM has ~55+ DB flags. New jurisdictions are on-boarded by adding new flags and their corresponding `.drl` rules files.
+Counting the constants in each service's `FeatureFlagEnum` — the authoritative list,
+since a flag with no constant is never loaded — RAS has 14 and ORM has 74. (An older
+Confluence flag registry says ~15 and ~55+; the ORM figure has simply been overtaken.)
+The count only grows: new jurisdictions are on-boarded by adding flags alongside their
+`.drl` files, and flags are rarely retired even once permanently enabled in
+production.
 
 ### LaunchDarkly vs DB flags
 

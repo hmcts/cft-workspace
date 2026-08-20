@@ -53,7 +53,7 @@ confluence:
     space: "AM"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "f2c71dea6e9fc93641f7c24ceb6123d73d392f68"
+  "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
   "am-org-role-mapping-service:src/main/resources/validationrules/core/core.drl": "37fcddad0d4f0e3d838a53cbc175216801c62992"
   "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-caseworker-mapping.drl": "172d397ac2e19a02dd1002c167c78b8808346234"
   "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-office-holder-mapping.drl": "c15c7771f4f24dbfecdc81514fe9f16c2546ed6c"
@@ -62,7 +62,7 @@ sources_sha:
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RequestMappingService.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/DroolConfig.java": "5123dc2c5c4d127394df67e80c538e5122088d28"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/DBFlagConfigurtion.java": "8cfe7e78243ad32c6ace946dbf71b253857fd487"
-  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java": "7373b7ddfa64d9e91983b82761d8291a5759120e"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/helper/AssignmentRequestBuilder.java": "b829373f4c4976248de36658b4a273ae170700e0"
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.2__new_flag_config_table.sql": "f096b045752bcaf71c4a3871bdb5dd950b7e1bbc"
 ---
@@ -103,7 +103,13 @@ validationrules/
     ...
 ```
 
-Existing jurisdictions declared in `kmodule.xml` (source of truth): `iac`, `sscs`, `civil`, `privatelaw`, `publiclaw`, `employment`, `stcic`, `hrs`, `probate` (plus `core`). All rule packages are loaded into a single stateless Kie session named `org-role-mapping-validation-session`.
+Existing jurisdictions declared in `kmodule.xml` (source of truth): `iac`, `sscs`, `civil`, `privatelaw`, `publiclaw`, `employment`, `stcic`, `hrs`, `probate`, `fr`, `possessions` (plus `core`). All rule packages are loaded into a single stateless Kie session named `org-role-mapping-validation-session`.
+
+`fr` (Financial Remedy) is the most recent addition — see
+[Register a new jurisdiction](#register-a-new-jurisdiction-if-needed) for what
+onboarding it actually touched. Note the package name need not match the
+jurisdiction name it maps to: `Jurisdiction.FR` carries `"DIVORCE"`, and
+`Jurisdiction.POSSESSIONS` carries `"PCS"`.
 
 The naming convention per jurisdiction is:
 
@@ -328,7 +334,7 @@ Every rule is guarded by a `FeatureFlag` condition. You must register the flag i
 YOUR_FLAG_NAME("your_flag_name"),
 ```
 
-Flag naming convention: `{jurisdiction}_{type}_{major}_{minor}` where `{type}` is typically `wa` (Work Allocation), `hearing`, or `jrd`. Examples: `civil_wa_1_0`, `sscs_hearing_1_0`, `iac_jrd_1_0`, `employment_wa_3_0`, `probate_wa_1_0`.
+Flag naming convention: `{jurisdiction}_{type}_{major}_{minor}` where `{type}` is typically `wa` (Work Allocation), `hearing`, or `jrd`. Examples: `civil_wa_1_0`, `sscs_hearing_1_0`, `iac_jrd_1_0`, `employment_wa_3_0`, `probate_wa_1_0`, `fr_wa_1_0`. The prefix follows the rule package, so it is `fr_wa_1_0` even though the jurisdiction it maps is `DIVORCE`.
 
 10. Add a Flyway migration to insert the flag into `flag_config`. The table schema is `(id, flag_name, env, service_name, status)`. Create a new file under `src/main/resources/db/migration/`:
 
@@ -345,7 +351,11 @@ INSERT INTO flag_config (flag_name, env, service_name, status) VALUES ('your_fla
 
 <!-- DIVERGENCE: Confluence "AM applications feature flags" shows flags enabled in most lower envs from the start, but source code (e.g. V1.10__employment_wa_base_flag_addition.sql) shows new flags set to 'false' in aat/demo/perftest/ithc/prod and only 'true' in local/pr. Flags are later enabled by separate migrations. Source wins. -->
 
-Set `status=false` for `prod` (and typically `aat`/`demo`/`perftest`/`ithc`) initially -- enable in lower environments via separate Flyway migrations after merge, then enable in prod only after testing. The migration file naming convention is `V{version}__{JIRA-TICKET}_description.sql` (e.g. `V1.10__employment_wa_base_flag_addition.sql`).
+Set `status=false` for `prod` (and typically `aat`/`demo`/`perftest`/`ithc`) initially -- enable in lower environments via separate Flyway migrations after merge, then enable in prod only after testing. Migrations are now date-and-ticket versioned: `V{yyyyMMdd}_{ticket}__{JIRA-TICKET}_{FLAG}_base_flag_addition.sql`, e.g. `V20260526_1208__COT-1208_FR_WA_1_0_base_flag_addition.sql`. Older files use a plain `V{n.n}__` version; copy the newest file in `db/migration/` rather than the oldest.
+
+`{jurisdiction}` in the `service_name` column is the **jurisdiction name, not the rule package**, where the two differ — FR's rows say `divorce`.
+
+Step 10 is not optional and skipping it does not merely leave the flag off. `DBFlagConfigurtion` iterates every `FeatureFlagEnum` value at startup and dereferences the row it finds without a null check, so a constant with no `flag_config` row for the running environment throws an NPE and the service fails to boot.
 
 **Flag loading behaviour** (`DBFlagConfigurtion.java` + `RequestMappingService.java:218-239`):
 - On startup, `DBFlagConfigurtion` (a `CommandLineRunner`) loads all `FeatureFlagEnum` values from the `flag_config` table into a static `ConcurrentHashMap<String, Boolean>`.
@@ -375,14 +385,34 @@ Set `status=false` for `prod` (and typically `aat`/`demo`/`perftest`/`ithc`) ini
                 validationrules.stcic,
                 validationrules.hrs,
                 validationrules.probate,
+                validationrules.fr,
+                validationrules.possessions,
                 validationrules.{newjur}">
     <ksession name="org-role-mapping-validation-session" type="stateless"/>
 </kbase>
 ```
 
-Current jurisdictions in source: `iac`, `sscs`, `civil`, `privatelaw`, `publiclaw`, `employment`, `stcic`, `hrs`, `probate` (plus `core`).
+Current jurisdictions in source: `iac`, `sscs`, `civil`, `privatelaw`, `publiclaw`, `employment`, `stcic`, `hrs`, `probate`, `fr`, `possessions` (plus `core`). Every package that exists in the source tree is listed here — ORM has no deliberately-excluded packages the way RAS does — so a `validationrules/{newjur}/` directory that isn't in this list is silently inert.
 
 12. Create the directory `src/main/resources/validationrules/{newjur}/` and add your `.drl` files.
+
+**What onboarding a jurisdiction actually costs.** Financial Remedy went in as one
+commit (`COT-1206: FR WA onboarding (Mappings)`, ORM PR #2821, August 2026), and it
+is the best template to work from. Beyond the four `.drl` files
+(`fr-admin`, `fr-ctsc`, `fr-judicial-office-holder`, `fr-judicial-org-role`) and the
+`kmodule.xml` line, it also needed:
+
+| Change | Why |
+|---|---|
+| `Jurisdiction.FR` enum constant | Maps the package to a jurisdiction name and its CCD service codes — `FR` carries `"DIVORCE"` and `ABA2`. The rules match on `hasValidServiceCode(Jurisdiction.FR)` and write `Jurisdiction.FR.getName()` into the assignment's `JURISDICTION` attribute |
+| One `FeatureFlagEnum` constant (`FR_WA_1_0`) | Every new rule is gated on it — see [Add the FeatureFlag](#add-the-featureflag) |
+| A Flyway migration seeding that flag into `flag_config`, one row per env | Not optional. `DBFlagConfigurtion.run` loops over every `FeatureFlagEnum` value at boot and calls `.getStatus()` on the row it finds with no null check, so an enum constant with no row for the current env is an NPE during startup — the service doesn't come up. Its `service_name` follows the jurisdiction name, so FR's rows say `divorce`, not `fr` |
+| Additions to `CaseType`, `WorkType`, `JudicialOfficeHolder` constants, and the JRD `Appointment`/`AdditionalRole` enums | The office strings, case types and work types the new rules match on have to exist as constants first |
+| A helper on `CaseWorkerAccessProfile` (`hasSkillMatching(regex)`) | Where the rules need a question asking of staff data that the profile couldn't yet answer |
+| Unit tests per rule file, a judicial integration test, and functional-test data (`F-020`/`F-021` features plus `td.json` snippets) | The bulk of the diff: ~5,200 of its ~6,250 added lines are tests and test data, against ~1,050 under `src/main` |
+
+So the `.drl` files are the small part. Budget for the enums, the flag migration,
+and above all the test data.
 
 ## Deprecate an existing rule
 
@@ -630,6 +660,13 @@ INSERT INTO flag_config (flag_name, env, service_name, status) VALUES ('employme
 
 Note: flags default to `false` in all deployed environments; they are enabled separately once the rules are deployed and tested. `local` and `pr` environments default to `true` to support development and PR test runs.
 
+The `V1.10__` prefix above is the old numbering. New migrations are date-and-ticket
+versioned — `V<yyyyMMdd>_<ticket>__<TICKET>_<FLAG>_base_flag_addition.sql`, e.g.
+`V20260526_1208__COT-1208_FR_WA_1_0_base_flag_addition.sql`. Copy the naming from the
+newest file in `db/migration/`, not from this example. The later
+`..._Enable_<flag>_Prod.sql` migrations are how a flag is turned on in production
+once the rules have proven out, which is a separate change from adding it.
+
 ### kmodule.xml adding a new jurisdiction (real source)
 
 ```xml
@@ -646,7 +683,9 @@ Note: flags default to `false` in all deployed environments; they are enabled se
                     validationrules.employment,
                     validationrules.stcic,
                     validationrules.hrs,
-                    validationrules.probate">
+                    validationrules.probate,
+                    validationrules.fr,
+                    validationrules.possessions">
         <ksession name="org-role-mapping-validation-session" type="stateless"/>
     </kbase>
 </kmodule>
