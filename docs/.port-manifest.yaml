@@ -115,7 +115,7 @@ entries:
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
   - target: how-to/managing-manual-key-vault-secrets.md
     source: cloud-native-platform/guides/managing-manual-key-vault-secrets.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/postgresql-singleserver-to-flexibleserver-migration-dms.md
     source: cloud-native-platform/guides/postgresql-singleserver-to-flexibleserver-migration-dms.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -153,10 +153,10 @@ entries:
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/infrastructure-as-code.md
     source: cloud-native-platform/new-component/infrastructure-as-code.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/secrets-management.md
     source: cloud-native-platform/new-component/secrets-management.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
 
   # --- how-to/common-pipeline ---
   - target: how-to/common-pipeline/overview.md

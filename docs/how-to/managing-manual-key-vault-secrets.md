@@ -28,7 +28,7 @@ The concept here is a separate Key Vault for your manually created secrets and t
 
 ### Setup Secret Store
 
-Start by creating your Secret Store Key Vault Repositories following [Create a Github Repository](new-component/github-repo.md).
+Start by creating your Secret Store Key Vault repositories following [Create a GitHub Repository](new-component/github-repo.md).
 You can then add your Key Vault using the [CNP-Module-Key-Vault](https://github.com/hmcts/cnp-module-key-vault) for example [PIP-Shared-Infrastructure-Bootstrap](https://github.com/hmcts/pip-shared-infrastructure-bootstap)
 
 ### Import Secrets to Project Key Vault
