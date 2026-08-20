@@ -20,9 +20,9 @@ status: verified
 sources_sha:
   "sptribs-case-api:charts/sptribs-case-api/Chart.yaml": "2ea4d5f7e49caf86bf7ecae4cbb62de174b13981"
   "sptribs-case-api:charts/sptribs-case-api/values.yaml": "2ea4d5f7e49caf86bf7ecae4cbb62de174b13981"
-  "sptribs-case-api:charts/sptribs-case-api/values.wa.preview.template.yaml": "b88a5372465bdc044a55f60807ab14cc8c5be229"
+  "sptribs-case-api:charts/sptribs-case-api/values.wa.preview.template.yaml": "f3663f74852a15b006bc7e80bbbc5c5774345d3c"
   "cnp-flux-config:apps/sptribs/preview/aso/sptribs-postgres-config.yaml": "8e7d09ac38d68ff1241f6f03999f5a466a44d1a8"
-  "wa-shared-infrastructure:aat.tfvars": "8486ff92aaf6395eb59b608ae4b27c806cd413bd"
+  "wa-shared-infrastructure:aat.tfvars": "98e59f0635166193c0b4f278b5e2e9f6dea281fc"
   "cnp-jenkins-library:vars/helmInstall.groovy": "4c15a676f5a47e1773d1ee47e1254af22276a8a0"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/clients/RoleAssignmentServiceApi.java": "8a21818f6814d7331d13f2cd1f5ee1169a906ccf"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
@@ -247,6 +247,16 @@ additional_managed_identities_access = ["et", "sptribs", "civil", "ia", "sscs", 
 (`pcs` is the entry we added.) This is consumed by `cnp-module-key-vault` to add a `secrets get`
 access policy for your identity. Once the WA team merges and applies it, the CSI mount succeeds and
 pods leave `Init:0/1`.
+
+> **The same repo holds a second variable you will need later — but not for preview.**
+> `allowed_jurisdictions` becomes the SQL filter on the shared WA Service Bus subscription rules
+> (`servicebus.tf`: `sql_filter = "jurisdiction_id IN (${var.allowed_jurisdictions})"`), and it is set
+> per environment in `aat.tfvars`, `demo.tfvars`, `ithc.tfvars`, `perftest.tfvars` and `prod.tfvars`.
+> A jurisdiction missing from it has its CCD case events silently filtered out of the topic — no
+> error, just no tasks. Preview is unaffected, because the wa overlay provisions its *own* Service Bus
+> namespace (Step 2) rather than using the shared one, which is why this isn't a preview prerequisite.
+> Add your jurisdiction per environment as you promote; note `prod.tfvars` is deliberately the most
+> conservative list, so getting into AAT does not mean you are in prod.
 
 **Diagnosing the 403:**
 
