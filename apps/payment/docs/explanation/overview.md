@@ -15,6 +15,7 @@ sources:
   - ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/GovPayClient.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PciPalPaymentService.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AccountServiceImpl.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/ReferenceUtil.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java
@@ -45,7 +46,7 @@ confluence:
     space: "DTSFP"
   - id: "1958058001"
     title: "Service Callback LLD"
-    last_modified: "unknown"
+    last_modified: "2026-06-01"
     space: "DTSFP"
   - id: "1952812626"
     title: "Ways to Pay for Citizens"
@@ -53,9 +54,9 @@ confluence:
     space: "DTSFP"
   - id: "1958061399"
     title: "Real Time PBA Payments HLD"
-    last_modified: "unknown"
+    last_modified: "2026-06-01"
     space: "DTSFP"
-confluence_checked_at: "2026-05-13T12:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
@@ -67,6 +68,7 @@ sources_sha:
   "ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/GovPayClient.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PciPalPaymentService.java": "cd90241f94938ecec08b8768ce5e2bb4fc4fa5ab"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AccountServiceImpl.java": "db1fcc54a4fb30ca256c1fa1b465d65369ae653b"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/ReferenceUtil.java": "f200d99c269e2871d1dfdce27187cad4b02c2c73"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
@@ -79,8 +81,8 @@ sources_sha:
 - HMCTS Fees & Pay (`ccpay-payment-app`) is the central payment gateway; it wraps GOV.UK Pay (card), PCI-PAL (telephony), and Liberata (Pay By Account) behind a unified REST API with IDAM + S2S authorisation.
 - Service teams never call GOV.UK Pay or PCI-PAL directly; they call the Payment API which routes to the correct provider, maps credentials per-service, and persists a structured payment reference (format `RC-XXXX-XXXX-XXXX-XXXC` with Luhn check digit) for reconciliation.
 - The "Service Request" model is the strategic integration pattern: services create a service request, attach payments to it, and receive status callbacks -- enabling retry without duplicate records.
-- Payment-status callbacks flow through Azure Service Bus to a Function Node that delivers PUT requests to consuming services with retry (5 attempts at 30-minute intervals).
-- Liberata reconciles payment data twice per day via `/payments` and `/reconciliation-payments` endpoints; a Real Time PBA initiative is shifting PBA payments to instant Liberata validation with no overnight reconciliation needed.
+- Payment-status callbacks flow through Azure Service Bus to a Function Node that delivers PUT requests to consuming services, retrying up to 5 further times at 30-minute intervals if the service does not return a 2XX.
+- Liberata reconciles payment data twice per day via `/payments` and `/reconciliation-payments` endpoints; a Real Time PBA initiative is designed to shift PBA payments to instant Liberata validation with no overnight reconciliation needed, but is not yet in source.
 - The service is NOT CCD-based. It records `ccd_case_number` against payment records but does not store case data in CCD.
 
 ## Platform responsibilities
@@ -180,18 +182,20 @@ Liberata integration uses OAuth2 password grant for token acquisition (`Liberata
 <!-- CONFLUENCE-ONLY: not verified in source -->
 The PBA API has evolved through multiple versions (v1, v2, v3). New services are expected to integrate with **PBA v3** (via the service-request endpoint `POST /service-request/{ref}/pba-payments`). PBA payments are ultimately settled through **direct debit** by Liberata.
 
-### Real Time PBA (in development)
+### Real Time PBA (in design)
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-The current PBA model relies on credit-limit checks using data updated overnight, meaning decisions can be based on information up to 24 hours old. A "Real Time PBA" initiative is changing this:
+<!-- CONFLUENCE-ONLY: design-only; verified absent from source at origin/master — LiberataService (model module) still has only getAccessToken() with an OAuth2 password grant, and there is no pbaPayment() method, no Sanctum token/refresh endpoints, and no PBA_PAYMENT_RECONCILIATION_IGNORE property. See architecture.md for the full absence check. -->
+The current PBA model relies on credit-limit checks using data updated overnight, meaning decisions can be based on information up to 24 hours old. A "Real Time PBA" initiative is designed to change this:
 
 - The RC transaction reference is generated **upfront** (before calling Liberata), so every request is tracked from the start.
-- PayHub calls the **new** Liberata PBA API which validates the account and debits it in real time.
-- Outcomes are instant: `Success` or `Failed` with no overnight reconciliation needed for these transactions.
+- PayHub calls a **new** Liberata PBA payment API which validates the account and debits it in one call, replacing the current pattern of checking the account and settling later.
+- Outcomes are instant: `Success` or `Failed` with no overnight reconciliation needed for these transactions — PBA payments are to be excluded from the `/reconciliation-payments` feed via a new environment-variable toggle.
 - Transactions can enter a `Pending` state if the Liberata API times out; a scheduled job monitors pending transactions and brings them to a terminal state.
 - Idempotency is enforced to prevent duplicate transactions.
 
 This enables bulk-claim scenarios (Civil, TEC) where multiple PBA payments in a batch need real-time credit validation to avoid exceeding limits.
+
+The design is deliberately contained: the HLD states that the rules for allowing a transaction do not change, Liberata still decides success or failure, and the PayHub API contract stays as it is — only the backend service layer changes, so consuming services need do nothing. Two things do change beyond PayHub's internals. The legacy `POST /credit-account-payments` endpoint is to be **retired**, with FPL the last remaining consumer needing to move to `POST /service-request/{ref}/pba-payments`; this is tracked as the design's principal dependency, because the legacy endpoint is not idempotent and making it real-time would risk duplicate payments. And PBA payments on IAC cases will **fail** if the `surname` and `case_reference` supplementary data is missing, rather than proceeding without it. The new Liberata API also moves authentication to Laravel Sanctum sliding-session bearer tokens; see [Architecture](architecture.md#real-time-pba-processing-in-design) for the token lifecycle and the error-code remapping.
 
 ### Bulk scan (cash/cheque)
 
@@ -345,7 +349,7 @@ These are the values stored in the `payment_status` table:
 | Success | `success` | Payment completed successfully |
 | Failed | `failed` | Payment rejected by provider |
 | Cancelled | `cancelled` | Payment cancelled by user or service |
-| Pending | `pending` | PBA awaiting verification (Real Time PBA) |
+| Pending | `pending` | PBA payment accepted without a live Liberata check — today this means a PBA Config 1 service (`pba.config1.service.names`); under Real Time PBA it would also cover a payment awaiting the Liberata response |
 | Error | `error` | System error from provider |
 
 ### Cross-system status mapping

@@ -11,6 +11,9 @@ sources:
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/IdempotencyServiceImpl.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java
@@ -34,7 +37,7 @@ confluence:
     space: "DTSFP"
   - id: "1958058001"
     title: "Service Callback LLD"
-    last_modified: "unknown"
+    last_modified: "2026-06-01"
     space: "DTSFP"
   - id: "1952811686"
     title: "Payment Methods"
@@ -42,7 +45,7 @@ confluence:
     space: "DTSFP"
   - id: "1958061399"
     title: "Real Time PBA Payments HLD"
-    last_modified: "unknown"
+    last_modified: "2026-06-01"
     space: "DTSFP"
   - id: "1890795875"
     title: "Services integration with Payments & Service Requests (Orders / Invoices) for Card Payments"
@@ -52,7 +55,7 @@ confluence:
     title: "Bulk Scan for Cash/Cheque/PO"
     last_modified: "unknown"
     space: "DTSFP"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "ccpay-payment-app:settings.gradle": "7bafc8bc5e167ac022ea09d0d178dda6df95e09b"
   "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
@@ -60,6 +63,9 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/IdempotencyServiceImpl.java": "7a5df2f161deebfb9cf3e7e0941bd0cdc21318de"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java": "5c28ea10564258d9c193bead87675b85afa50c21"
@@ -208,7 +214,7 @@ Defined in `PaymentStatus.java` (`ccpay-payment-app:model/src/main/java/uk/gov/h
 | Status | Description |
 |--------|-------------|
 | `created` | Payment initiated (shown as "Initiated" in PayBubble UI) |
-| `pending` | Used for real-time PBA transactions awaiting Liberata response |
+| `pending` | PBA payment recorded without a live Liberata account check. Today this is the PBA Config 1 journey: services listed in `pba.config1.service.names` skip the Liberata call entirely and the payment is set straight to `pending` (`api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java:157-160`, default `dummy` at `application.properties:218`). Under the designed real-time model it would also cover a transaction awaiting the Liberata response |
 | `success` | Payment confirmed by the provider |
 | `failed` | Payment failed at the provider |
 | `cancelled` | Payment cancelled by the user |
@@ -234,7 +240,7 @@ When a payment reaches a terminal state (success or failure), the platform publi
 1. **Publisher**: `CallbackServiceImpl` in `ccpay-payment-app` publishes a JSON message with the `serviceCallbackUrl` as a message property. It checks `payment.getServiceCallbackUrl()` first, then falls back to `paymentFeeLink.getCallBackUrl()` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:46-89`).
 2. **Transport**: Azure Service Bus topic `ccpay-service-callback-topic` with subscription `serviceCallbackPremiumSubscription`.
 3. **Consumer**: `ccpay-functions-node` (an Azure Function, not in the payment repos) reads messages from the subscription and sends HTTP PUT requests to the service's callback URL.
-4. **Retry**: If the service does not respond with HTTP 200/201, the function retries up to 5 times at 30-minute intervals before giving up.
+4. **Retry**: If the service does not respond with a 2XX, the function retries up to 5 further times at 30-minute intervals before giving up. (Services commonly assume only 200 and 201 count as success; the Service Callback LLD is explicit that anything in `200 <= status < 300` is accepted.)
 
 <!-- CONFLUENCE-ONLY: The ccpay-functions-node retry behaviour (5 retries at 30 min) is documented in Confluence "Service Callback LLD" but the function code is not in the payment product repos — not verified in source -->
 
@@ -284,17 +290,26 @@ The platform supports four payment channels, each with specific rules:
 
 <!-- CONFLUENCE-ONLY: Telephony rule "must cover all outstanding fees" and "partial telephony payments not permitted" documented in Confluence "Payment Methods" page — not verified in source -->
 
-### Real-time PBA processing (in development)
+### Real-time PBA processing (in design)
 
-The PBA integration is moving from overnight reconciliation to real-time processing. Under the new model:
+The PBA integration is planned to move from overnight reconciliation to real-time processing. Under the new model:
 
 - An RC transaction reference is created immediately when the request is received (before the Liberata call).
-- PayHub calls the new real-time Liberata PBA API to validate the account and debit in real-time.
+- PayHub calls a new real-time Liberata PBA payment API (`POST /api/payment`) which validates the account **and debits it** in one call, replacing today's separate account-check-then-reconcile pattern.
 - The transaction status moves through `Pending` then to `Success` or `Failed` based on the response.
-- Overnight reconciliation is eliminated for PBA transactions.
+- Overnight reconciliation is eliminated for PBA transactions — the `/reconciliation-payments` feed is to skip PBA payments, gated by a new environment variable (the LLD proposes `PBA_PAYMENT_RECONCILIATION_IGNORE`).
 - Failure mode: if the Liberata call times out, the transaction remains in `Pending` -- a scheduled job monitors for stuck pending transactions.
 
-<!-- CONFLUENCE-ONLY: Real-time PBA flow is documented as WIP in Confluence "Real Time PBA Payments HLD" (DTSFP space, version 24) — not verified as fully deployed in source -->
+Three further design decisions are worth knowing about because they change externally-visible behaviour:
+
+- **Authentication changes shape.** The new Liberata API is a Laravel 12 application secured with Laravel Sanctum, using a sliding-session bearer token: `POST /api/auth/token` to obtain one, `POST /api/auth/refresh` to roll it, and a grace period during which the old token still works but responses carry an `X-Token-Expiring: true` header. PayHub is expected to cache the token with its `expires_at` and refresh before full expiry.
+- **The API surface does not change.** The LLD is explicit that only the backend service layer changes, so consuming services should see no difference in the PayHub request or response contracts.
+- **Liberata's error codes collapse onto HTTP 403.** Today the account check distinguishes insufficient funds, on-hold, and deleted accounts by HTTP status; the new payment API returns 403 for all of them with a numeric error code. The design intends to map error code 1 back to HTTP 402 (`CA-E0001`) and error code 4 back to HTTP 412 (`CA-E0003`) so that PayHub's own responses stay stable — this matters because `IdempotencyServiceImpl.HTTP_CODE_ALLOWABLE_RETRIES` keys off those codes to decide whether a failed PBA payment may be retried.
+- **IAC payments will fail closed.** PBA payments on IAC cases are to be rejected outright (HTTP 412, idempotency record completed) when the `surname` and `case_reference` supplementary data is missing, rather than proceeding without it. An email alert to the IAC team is desired but not yet designed, and may land in a later release.
+
+<!-- CONFLUENCE-ONLY: Real-time PBA is design-only. Verified absent from source at origin/master: model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java exposes only getAccessToken() (OAuth2 password grant reading liberata.oauth2.token.url and returning access_token) — the pbaPayment() method the LLD marks NEW does not exist anywhere in ccpay-payment-app; api/src/main/resources/application.properties:81-90 still configures bpacustomerportal.liberata.com/pba/public/api/v2/account with liberata.oauth2.token.url / authorize.url, with no Sanctum /api/auth/token or /api/auth/refresh endpoint; and no PBA_PAYMENT_RECONCILIATION_IGNORE property exists. Documented from Confluence "Real Time PBA Payments HLD" (1958061399) and "Real Time PBA Payments LLD" (1973292244). -->
+
+The old `POST /credit-account-payments` endpoint is slated for retirement as part of this work, with FPL the remaining consumer that must migrate to `POST /service-request/{ref}/pba-payments`. That migration is a hard dependency: the legacy endpoint has only limited idempotency support, so making it real-time without moving FPL off it would carry a duplicate-payment risk. See [Overview](overview.md#real-time-pba-in-design).
 
 ## Responsibility boundary
 

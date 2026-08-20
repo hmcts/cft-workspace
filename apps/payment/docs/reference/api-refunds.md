@@ -16,6 +16,9 @@ sources:
   - ccpay-refunds-app:src/main/resources/application.yaml
   - ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/utils/RefundsUtil.java
   - ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundNotificationServiceImpl.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/RefundEligibilityUtil.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/service/RefundRemissionEnableServiceImpl.java
+  - ccpay-payment-app:api/src/main/resources/application.properties
   - ccpay-payment-api-gateway:cft-api-mgmt.tf
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
@@ -30,7 +33,7 @@ confluence:
     space: "DTSFP"
   - id: "1952818350"
     title: "Refunds - Business Rules"
-    last_modified: "unknown"
+    last_modified: "2026-06-01"
     space: "DTSFP"
   - id: "1952816727"
     title: "Refunds - Journey & Status Validation Scenarios"
@@ -52,7 +55,7 @@ confluence:
     title: "GOV.UK Notify and templates"
     last_modified: "unknown"
     space: "DTSFP"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsController.java": "98e5f4161db82b39d5e472d3ca4bbb212bfe6cd6"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsActionController.java": "98e5f4161db82b39d5e472d3ca4bbb212bfe6cd6"
@@ -65,6 +68,9 @@ sources_sha:
   "ccpay-refunds-app:src/main/resources/application.yaml": "fcda3a69f83a92e6cd7b8292a99a9bfa349090a3"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/utils/RefundsUtil.java": "1c8b7b924ea8aa9367a3c89bd489154ca5f62026"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundNotificationServiceImpl.java": "3749385a4df78f606ecf839387fd0f26328d8709"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/RefundEligibilityUtil.java": "a13eb9234676634eda91b7dbf48b0662eb89af67"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/service/RefundRemissionEnableServiceImpl.java": "65bcad2ffb092e534b051dbb0349914658506a57"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-api-gateway:cft-api-mgmt.tf": "851a3bd62e0d7ff6a42288faecaef9b80f259be0"
 ---
 
@@ -75,6 +81,7 @@ sources_sha:
 - Refund references follow the format `RF-NNNN-NNNN-NNNN-NNNN`.
 - The state machine drives: Sent for approval -> Approved -> Accepted/Rejected/Expired; with branches for Update required, Cancelled, Reissued, Closed.
 - LaunchDarkly flag `refunds-release` gates most user-facing endpoints (returns 503 when `true`); the Liberata callback and jobs endpoints are ungated.
+- Refund eligibility (the post-payment waiting period) is decided in `ccpay-payment-app`, not here, behind the `refund-remission-lagtime-feature` flag; the thresholds are per payment method and configured in hours.
 - Notifications are dispatched indirectly via `ccpay-notifications-service`, not GOV.UK Notify directly. Template selection depends on `refundInstructionType` (`SendRefund` vs `RefundWhenContacted`) and notification type (EMAIL vs LETTER).
 
 ## Endpoints
@@ -308,28 +315,62 @@ Feature flags:
 
 ## Business rules and eligibility
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+A refund becomes possible when money has already been taken and the balance turns out to be in the payer's favour — an overpayment, a payment made in error, a case withdrawn after payment, or a retrospective remission that creates a refundable balance.
 
 Refunds are governed by business rules that determine when a refund is permitted:
 
 | Condition | Requirement |
 |-----------|-------------|
 | Payment status | Must be **successful** |
-| Lag period (Telephony / Online Card) | 5 days must have elapsed |
-| Lag period (Bulk Scan / Allocation) | 20 days must have elapsed |
+| Lag period | A per-payment-method waiting period must have elapsed since the payment was last updated (see below) |
 | Overall balance | Must be positive (overpayment exists) |
 | Concurrent assessments | Only one refund assessment per payment at a time |
 
-A refund assessment period begins when the request is "Sent for Approval" and ends when it is approved by a team leader. During this window, no additional refund requests for the same payment may be initiated.
+### Lag period
+
+The lag period is **not** enforced in `ccpay-refunds-app` — it is decided upstream in `ccpay-payment-app`, which
+computes a per-payment `refundEnable` flag that PayBubble uses to decide whether to offer the refund action at
+all. `RefundRemissionEnableServiceImpl.returnRefundEligible()` requires the payment to be `success` **and** the
+lag period to have elapsed **and** the caller to hold the service-specific refund role. The elapsed time is
+measured in whole hours from `payment.date_updated`
+(`api/src/main/java/uk/gov/hmcts/payment/api/service/RefundRemissionEnableServiceImpl.java:75-80`), then compared
+against a per-payment-method threshold in `RefundEligibilityUtil.getRefundEligiblityStatus()`.
+
+The thresholds are configured in **hours**, not days:
+
+| Payment method | Property | Default | Equivalent |
+|---|---|---|---|
+| `card` (including telephony, which is a channel on a card payment) | `card.lag.time` | 144 | 6 days |
+| `cash` | `cash.lag.time` | 120 | 5 days |
+| `cheque` | `cheques.lag.time` | 480 | 20 days |
+| `postal order` | `postalorders.lag.time` | 480 | 20 days |
+| `payment by account` | `pba.lag.time` | 96 | 4 days |
+
+Source: `RefundEligibilityUtil.java:10-54`, `application.properties:224-228`.
+
+The whole lag check is behind the LaunchDarkly flag **`refund-remission-lagtime-feature`**, which defaults to
+`false`. With the flag off, eligibility falls back to "payment is `success` and the caller holds the refund role"
+and no waiting period applies at all — so an environment where refunds appear immediately is not necessarily
+misconfigured, it may simply have the flag off. The same flag and the same lag calculation also gate *remission*
+eligibility via `returnRemissionEligible()`.
+
+<!-- DIVERGENCE: Confluence "Refunds - Business Rules" (page 1952818350) gives the lag period as a two-row table — "Telephony / Online Card: 5 days" and "Bulk Scan / Allocation: 20 days". Source disagrees on the card figure (144 hours = 6 days, not 5) and covers five payment methods rather than two, with cash at 5 days and PBA at 4. Source wins. -->
+
+### Assessment period
+
+A refund assessment period begins when the request is "Sent for Approval" and ends when it is approved by a team leader. During this window, no additional refund requests for the same payment may be initiated; once the assessment completes, a fresh request may be raised if the balance still warrants one.
 
 **Key constraints:**
 
 - Upfront remissions are **not refundable**
-- Retrospective remissions require at least one successful payment before creating a refundable balance
-- The maximum refund is limited by both the remission amount and the apportioned payment amount
+- Retrospective remissions require at least one successful payment before creating a refundable balance — failed payments alone do not enable one
+- The maximum refund is limited by both the remission amount and the apportioned payment amount, so refund calculations must respect the payment apportionment rules
 - The remission amount and refund amount are not always equal
+- A refund may still be rejected downstream for processing or settlement reasons — see the Payit journey below
 
-Source: Confluence "Refunds - Business Rules" (DTSFP space)
+The refund workflow is a two-role separation of duties: a **Requestor** creates and submits the request, and an **Approver** (team leader) approves, rejects, or sends it back for revision. Source enforces the separation by refusing a review from the IDAM user who created the refund (`RefundReviewServiceImpl.java:140-150`).
+
+<!-- CONFLUENCE-ONLY: the positive-balance rule, the one-assessment-per-payment rule, and the apportionment ceiling come from Confluence "Refunds - Business Rules" (DTSFP, page 1952818350); they are not expressed as a single named check in either ccpay-refunds-app or ccpay-payment-app. -->
 
 ## Refund instruction types
 

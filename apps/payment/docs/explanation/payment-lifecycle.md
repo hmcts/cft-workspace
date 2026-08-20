@@ -13,6 +13,10 @@ sources:
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/GovPayDelegatingPaymentService.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PciPalPaymentService.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AccountServiceImpl.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/mapper/PBAStatusErrorMapper.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/IdempotencyServiceImpl.java
+  - ccpay-payment-app:api/src/main/resources/application.properties
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/Payment.java
@@ -46,7 +50,7 @@ confluence:
     space: "DTSFP"
   - id: "1958061399"
     title: "Real Time PBA Payments HLD"
-    last_modified: "unknown"
+    last_modified: "2026-06-01"
     space: "DTSFP"
   - id: "1952811620"
     title: "Service Request Cancellations"
@@ -56,7 +60,7 @@ confluence:
     title: "Service Requests Overview"
     last_modified: "unknown"
     space: "DTSFP"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
@@ -66,6 +70,10 @@ sources_sha:
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/GovPayDelegatingPaymentService.java": "4ad418c9d46f4d82cf3cc50a83620cfe86a17d42"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PciPalPaymentService.java": "cd90241f94938ecec08b8768ce5e2bb4fc4fa5ab"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AccountServiceImpl.java": "db1fcc54a4fb30ca256c1fa1b465d65369ae653b"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java": "5c28ea10564258d9c193bead87675b85afa50c21"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/mapper/PBAStatusErrorMapper.java": "89b67ec9107bf106e0f07b0e31bf3bb996a30ba8"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/IdempotencyServiceImpl.java": "7a5df2f161deebfb9cf3e7e0941bd0cdc21318de"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/Payment.java": "5c28ea10564258d9c193bead87675b85afa50c21"
@@ -164,13 +172,14 @@ sequenceDiagram
 Key implementation details:
 
 - `POST /credit-account-payments` is handled by `CreditAccountPaymentController:117-186`.
-- Services listed in `pba.config1.service.names` bypass the Liberata balance check entirely; their payments are created with status `pending` (legacy flow).
+- Services listed in `pba.config1.service.names` bypass the Liberata balance check entirely; their payments are created with status `pending` (legacy flow). The property defaults to `dummy` (`application.properties:218`) and is read at `CreditAccountPaymentController.java:81,120`; the branch that sets `pending` without calling Liberata is at `CreditAccountPaymentController.java:157-160`, carrying a source comment marking it removable "once all Services are on-boarded to PBA Config 2".
 - The Liberata call uses OAuth2 password grant (`LiberataService:36-58`) and is wrapped with a Resilience4j `@CircuitBreaker` and `@TimeLimiter` (named `retrievePbaAccountTimeLimiter`) in `AccountServiceImpl.java`.
 - Liberata account statuses map to HTTP responses: `DELETED` -> 410, `ON_HOLD` -> 412, `NOT_FOUND` -> 404 (`AccountController:58-77`).
 - A duplicate payment check (`paymentValidator.checkDuplication()`) runs before the Liberata call (`CreditAccountPaymentController:161`).
-- **Real-time PBA processing**: The platform is transitioning to real-time PBA validation. In the new model, the RC reference is created immediately upon request (before the Liberata call), the payment is set to `Pending`, and the outcome is updated to `Success` or `Failed` based on the real-time Liberata response. This eliminates the need for overnight reconciliation for PBA transactions.
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- A scheduled job handles the failure mode where transactions remain stuck in `Pending` (e.g. due to network failure or Liberata timeout) by checking pending transactions and bringing them to an end state.
+- **Real-time PBA processing (in design)**: the Real Time PBA Payments HLD describes moving PBA off the two-step "validate now, settle overnight" model. In the designed flow the RC reference is created immediately upon request (before the Liberata call), the payment is set to `Pending`, and the outcome is updated to `Success` or `Failed` from a single Liberata call that both validates the account and debits it. That removes the need for nightly reconciliation of PBA transactions, so real-time PBA payments would be excluded from `/reconciliation-payments`. The design also retires `POST /credit-account-payments` (see [Architecture](architecture.md#real-time-pba-processing-in-design) for the full picture, including the change of Liberata auth scheme and the IAC fail-closed behaviour).
+<!-- CONFLUENCE-ONLY: design-only. Verified absent from source at origin/master: LiberataService (model module) exposes only getAccessToken() over an OAuth2 password grant, there is no pbaPayment() method anywhere, and application.properties:81-90 still configures the v2 account-lookup URL. -->
+- A scheduled job would handle the failure mode where transactions remain stuck in `Pending` (e.g. due to network failure or Liberata timeout) by checking pending transactions and bringing them to an end state. No such job exists in source today.
+<!-- CONFLUENCE-ONLY: design-only, part of the Real Time PBA HLD. -->
 
 ### Telephony payments (PCI-PAL)
 
@@ -249,6 +258,11 @@ For PBA payments against service requests, Liberata error codes map to specific 
 | `CA-E0003` | PBA account on hold | 412 Precondition Failed |
 | `CA-E0001` | Insufficient funds | 402 Payment Required |
 
+The codes are raised in `PBAStatusErrorMapper.java:31,44,52` and translated to HTTP statuses in `ServiceRequestController.java:223-227`.
+
+Under the designed real-time PBA model these codes would arrive differently: Liberata's payment API returns HTTP 403 with a body-level reason code rather than distinct HTTP statuses, so PayHub would map 403/1 to 402 `CA-E0001` and 403/4 to 412 `CA-E0003`. The `CA-E0004`/410 case is not part of that mapping.
+<!-- CONFLUENCE-ONLY: design-only, from the Real Time PBA Payments HLD/LLD. Source today reads Liberata's account-lookup response, not a payment-API error body. -->
+
 ### Status callbacks
 
 When a card payment status is retrieved (`GET /card-payments/{internal-reference}/status`), the service publishes the updated status to the `ccpay-service-callback-topic` (`ServiceRequestController:351`). The consuming service's callback URL is stored as `serviceCallbackUrl` on the payment record.
@@ -275,7 +289,7 @@ The `payment_status` table holds these values (`PaymentStatus.java`):
 | `success` | Provider confirmed payment completed |
 | `failed` | Provider rejected the payment |
 | `cancelled` | Payment cancelled by user or timeout |
-| `pending` | PBA config1 services (legacy) — awaiting offline reconciliation |
+| `pending` | PBA payment recorded without a live Liberata check — today this means a PBA Config 1 service (`pba.config1.service.names`), awaiting offline reconciliation |
 | `error` | An error occurred during processing |
 
 ### Display status mapping (`PayStatusToPayHubStatus`)
@@ -318,7 +332,7 @@ Liberata (the **Middle Office supplier**) pulls payment data for financial recon
 
 These endpoints are exposed through the Azure API Management gateway configured in `ccpay-payment-api-gateway`. They are external-path endpoints requiring S2S authentication only (no IDAM user token).
 
-The reconciliation process ensures that payment records in Fees & Payments match financial transactions from payment providers, discrepancies are identified and investigated, and financial reporting remains accurate. With the move to real-time PBA processing, nightly reconciliation is no longer required for PBA transactions that receive an immediate outcome from Liberata.
+The reconciliation process ensures that payment records in Fees & Payments match financial transactions from payment providers, discrepancies are identified and investigated, and financial reporting remains accurate. All PBA payments go through it today. The designed real-time PBA model would take PBA transactions that receive an immediate outcome from Liberata out of scope — the HLD proposes excluding them from `/reconciliation-payments` behind a new environment toggle — but nothing in source does that yet.
 
 ## Scheduled status synchronisation
 
@@ -429,7 +443,8 @@ The `event` field in the extended callback format identifies the source workflow
 
 Services integrating with Fees & Payments should handle these scenarios:
 
-- **Duplicate payment requests** — the idempotency mechanism (`IdempotencyKeys` entity, `requestHashCode` check) prevents double-charging on PBA service-request payments. Card payments have separate duplicate detection via `paymentValidator.checkDuplication()`.
+- **Duplicate payment requests** — the idempotency mechanism (`IdempotencyKeys` entity, `requestHashCode` check) prevents double-charging on PBA service-request payments. Card payments have separate duplicate detection via `paymentValidator.checkDuplication()`. A recorded response is only replayable — i.e. the caller may retry the same idempotency key — for the statuses in `IdempotencyServiceImpl.HTTP_CODE_ALLOWABLE_RETRIES`, which at `origin/master` is `{ 504, 500, 412, 402, 410 }` (`IdempotencyServiceImpl.java:20`). Anything else is treated as a settled outcome and returned as-is.
+<!-- DIVERGENCE: The Real Time PBA Payments LLD states this array is {504, 500, 412, 402} and that "the only HTTP code missing is HTTP 410 for deleted accounts". Source already includes 410, so that gap has been closed. Source wins. -->
 - **Payment session expiry** — GOV.UK Pay payment links expire; the scheduled status update job will detect these and transition the payment to `Failed`.
 - **Failed redirects** — if the citizen does not complete the GOV.UK Pay journey, the payment stays in `created` status until the scheduled job picks it up.
 - **Declined payments** — the `decline` status from the provider maps to display status `Declined`, distinguishing it from hard failures.
