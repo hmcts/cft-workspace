@@ -52,6 +52,21 @@ CI is the authority here: it clones fresh every week.
 - `timeout_minutes` — the job's budget, 60 by default. See
   [When the run doesn't fit the budget](#when-the-run-doesnt-fit-the-budget).
 
+**Lint the workflow before you push a change to it.** An invalid expression
+doesn't produce an error you can read — the run dies in two seconds with
+"This run likely failed because of a workflow file issue", no job, no annotation,
+and nothing the API will tell you. [`actionlint`](https://github.com/rhysd/actionlint)
+names the line and the reason:
+
+```bash
+actionlint .github/workflows/*.yml
+```
+
+It caught `timeout-minutes: ${{ github.event.inputs.timeout_minutes || 60 }}`
+immediately — `timeout-minutes` must be a *number* and a dispatch input is
+always a *string*, so it needs `fromJSON(...)`. Two burnt dispatches to discover
+what one lint run says outright.
+
 It clones the cited repos, runs the source-mode check, and if anything is
 stale or broken, hands the report to Claude to reconcile the prose against the
 current source, re-record the SHAs, and **commit**. The workflow pushes, not

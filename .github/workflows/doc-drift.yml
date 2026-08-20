@@ -45,12 +45,14 @@ jobs:
     # mid-run. That is survivable by design (see the token notes below and in
     # docs/how-to/doc-drift-pipeline.md), but it is why nothing after the clone
     # step may use `steps.app-token`.
-    # `github.event.inputs`, not `inputs`: the latter is not an available
-    # context here and makes the whole workflow file invalid, which GitHub
-    # reports only as "This run likely failed because of a workflow file issue"
-    # with no annotation to read. Both spellings are strings; the numeric field
-    # coerces. On a schedule `github.event.inputs` is null, so 60 applies.
-    timeout-minutes: ${{ github.event.inputs.timeout_minutes || 60 }}
+    # fromJSON is not decoration: `timeout-minutes` must be a number, and a
+    # dispatch input arrives as a string however it is declared, so the bare
+    # expression makes the whole workflow file invalid. GitHub reports that as a
+    # 2-second run with "This run likely failed because of a workflow file
+    # issue" and NO readable annotation — see runs 32374407154 and 32374573234.
+    # `actionlint` names it in full; reach for that rather than bisecting.
+    # On a schedule the input is absent, so this is '60'.
+    timeout-minutes: ${{ fromJSON(github.event.inputs.timeout_minutes || '60') }}
     permissions:
       contents: write
       id-token: write
