@@ -170,13 +170,20 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | wa | explanation | Dmn Task Configuration | dmn | `apps/wa/docs/explanation/dmn-task-configuration.md` |
 | wa | explanation | Overview | overview | `apps/wa/docs/explanation/overview.md` |
 | wa | explanation | Task Lifecycle | task-lifecycle | `apps/wa/docs/explanation/task-lifecycle.md` |
+| workspace | tutorials | Azure | person-azure | `docs/tutorials/cnp-onboarding/person-azure.md` |
+| workspace | tutorials | Developer tools | person-developer-tools | `docs/tutorials/cnp-onboarding/person-developer-tools.md` |
 | workspace | tutorials | Getting started | getting-started | `docs/tutorials/getting-started.md` |
+| workspace | tutorials | GitHub | person-github | `docs/tutorials/cnp-onboarding/person-github.md` |
 | workspace | tutorials | GitHub | team-github | `docs/tutorials/cnp-onboarding/team-github.md` |
+| workspace | tutorials | Jenkins | person-jenkins | `docs/tutorials/cnp-onboarding/person-jenkins.md` |
 | workspace | tutorials | Jenkins | team-jenkins | `docs/tutorials/cnp-onboarding/team-jenkins.md` |
+| workspace | tutorials | Microsoft Entra ID | person-entra-id | `docs/tutorials/cnp-onboarding/person-entra-id.md` |
 | workspace | tutorials | Microsoft Entra ID | team-azuread | `docs/tutorials/cnp-onboarding/team-azuread.md` |
 | workspace | tutorials | Office 365 | team-office365 | `docs/tutorials/cnp-onboarding/team-office365.md` |
 | workspace | tutorials | Person | person | `docs/tutorials/cnp-onboarding/person.md` |
+| workspace | tutorials | Slack | person-slack | `docs/tutorials/cnp-onboarding/person-slack.md` |
 | workspace | tutorials | Slack | team-slack | `docs/tutorials/cnp-onboarding/team-slack.md` |
+| workspace | tutorials | VPN | person-vpn | `docs/tutorials/cnp-onboarding/person-vpn.md` |
 | workspace | how-to | Automated dependency updates | automated-dependency-updates | `docs/how-to/automated-dependency-updates.md` |
 | workspace | how-to | Azure Frontdoor Web Application Firewall Debug | afd-waf | `docs/how-to/afd-waf.md` |
 | workspace | how-to | Common pipeline | overview | `docs/how-to/common-pipeline/overview.md` |
@@ -196,6 +203,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | How to run and maintain the doc-drift pipeline | doc-drift-pipeline | `docs/how-to/doc-drift-pipeline.md` |
 | workspace | how-to | Infrastructure as Code | infrastructure-as-code | `docs/how-to/new-component/infrastructure-as-code.md` |
 | workspace | how-to | Java | publish-java-library | `docs/how-to/common-pipeline/publish-java-library.md` |
+| workspace | how-to | Jenkins setup | jenkins-repository | `docs/how-to/new-component/jenkins-repository.md` |
 | workspace | how-to | Load balancer configuration | load-balancer-configuration | `docs/how-to/path-to-live/load-balancer-configuration.md` |
 | workspace | how-to | Make a new Virtual Network accessible over the VPN | connect-via-vpn | `docs/how-to/connect-via-vpn.md` |
 | workspace | how-to | Managing Manual Key Vault Secrets | managing-manual-key-vault-secrets | `docs/how-to/managing-manual-key-vault-secrets.md` |

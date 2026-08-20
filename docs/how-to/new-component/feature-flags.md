@@ -30,7 +30,7 @@ End to end Process:
 ### Accessing LaunchDarkly
 
 Developers automatically get access by being part of 'DTS CFT Developers' or 'DTS SDS Developers', non-developers can get access with the 'DTS LaunchDarkly' group.
-see [onboarding](../../tutorials/cnp-onboarding/person.md) process to request access. You will need to login from [myapps.microsoft.com](https://myapps.microsoft.com/hmcts.net).
+See [Microsoft Entra ID](../../tutorials/cnp-onboarding/person-entra-id.md) to request access. You will need to login from [myapps.microsoft.com](https://myapps.microsoft.com/hmcts.net).
 
 After you've logged in once you will be able to login from [app.launchdarkly.com](https://app.launchdarkly.com/).
 

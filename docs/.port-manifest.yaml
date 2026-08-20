@@ -23,24 +23,48 @@ last_full_sync_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
 entries:
 
   # --- tutorials/cnp-onboarding ---
+  # Upstream split person onboarding into one page per system in aa8eda9; our
+  # tree is flat, so those pages are prefixed person-* rather than nested.
   - target: tutorials/cnp-onboarding/person.md
     source: cloud-native-platform/onboarding/person/index.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: tutorials/cnp-onboarding/person-entra-id.md
+    source: cloud-native-platform/onboarding/person/entra-id.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: tutorials/cnp-onboarding/person-azure.md
+    source: cloud-native-platform/onboarding/person/azure.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: tutorials/cnp-onboarding/person-vpn.md
+    source: cloud-native-platform/onboarding/person/vpn.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: tutorials/cnp-onboarding/person-slack.md
+    source: cloud-native-platform/onboarding/person/slack.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: tutorials/cnp-onboarding/person-github.md
+    source: cloud-native-platform/onboarding/person/github.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: tutorials/cnp-onboarding/person-jenkins.md
+    source: cloud-native-platform/onboarding/person/jenkins.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: tutorials/cnp-onboarding/person-developer-tools.md
+    source: cloud-native-platform/onboarding/person/developer-tools.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: tutorials/cnp-onboarding/team-azuread.md
     source: cloud-native-platform/onboarding/team/azuread.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: tutorials/cnp-onboarding/team-github.md
-    source: cloud-native-platform/onboarding/team/github.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    source: cloud-native-platform/onboarding/team/github-repositories.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+    notes: upstream renamed team/github.html.md.erb in aa8eda9
   - target: tutorials/cnp-onboarding/team-jenkins.md
     source: cloud-native-platform/onboarding/team/jenkins.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: tutorials/cnp-onboarding/team-office365.md
     source: cloud-native-platform/onboarding/team/office365.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: tutorials/cnp-onboarding/team-slack.md
     source: cloud-native-platform/onboarding/team/slack.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
 
   # --- how-to/path-to-live ---
   - target: how-to/path-to-live/front-door.md
@@ -67,7 +91,7 @@ entries:
   # --- how-to/troubleshooting ---
   - target: how-to/troubleshooting.md
     source: cloud-native-platform/troubleshooting/index.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
     notes: inlined _clusters.md partial; rewrote absolute-path links to Diátaxis paths
 
   # --- how-to (CNP guides) ---
@@ -114,7 +138,7 @@ entries:
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/feature-flags.md
     source: cloud-native-platform/new-component/feature-flags.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/github-repo.md
     source: cloud-native-platform/new-component/github-repo.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -123,7 +147,10 @@ entries:
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
   - target: how-to/new-component/helm-chart.md
     source: cloud-native-platform/new-component/helm-chart.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: how-to/new-component/jenkins-repository.md
+    source: cloud-native-platform/new-component/jenkins-repository.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/infrastructure-as-code.md
     source: cloud-native-platform/new-component/infrastructure-as-code.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555

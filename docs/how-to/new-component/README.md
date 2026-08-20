@@ -4,6 +4,7 @@ Standing up a brand-new microservice on CNP.
 
 - [Infrastructure as code](infrastructure-as-code.md)
 - [GitHub repo](github-repo.md)
+- [Jenkins repository setup](jenkins-repository.md)
 - [Helm chart](helm-chart.md)
 - [GitOps / Flux](gitops-flux.md)
 - [Feature flags](feature-flags.md)
