@@ -190,6 +190,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Create a GitHub Repository | github-repo | `docs/how-to/new-component/github-repo.md` |
 | workspace | how-to | Create App Registrations with Federated Credentials for GitHub Actions | federated-credentials | `docs/how-to/federated-credentials.md` |
 | workspace | how-to | Creating a new subscription | creating-a-new-subscription | `docs/how-to/creating-a-new-subscription.md` |
+| workspace | how-to | Database infrastructure | database-infrastructure | `docs/how-to/database-infrastructure.md` |
 | workspace | how-to | ElasticSearch | elasticsearch | `docs/how-to/new-component/elasticsearch.md` |
 | workspace | how-to | Environment schedule | auto-shutdown | `docs/how-to/auto-shutdown.md` |
 | workspace | how-to | External IP addresses (Egress) | external-ip-addresses | `docs/how-to/external-ip-addresses.md` |
@@ -208,6 +209,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Load balancer configuration | load-balancer-configuration | `docs/how-to/path-to-live/load-balancer-configuration.md` |
 | workspace | how-to | Make a new Virtual Network accessible over the VPN | connect-via-vpn | `docs/how-to/connect-via-vpn.md` |
 | workspace | how-to | Managing Manual Key Vault Secrets | managing-manual-key-vault-secrets | `docs/how-to/managing-manual-key-vault-secrets.md` |
+| workspace | how-to | Migrating from `cnp-module-redis` to `terraform-module-azure-managed-redis` | migrating-to-managed-redis | `docs/how-to/migrating-to-managed-redis.md` |
 | workspace | how-to | Node.js | publish-nodejs-library | `docs/how-to/common-pipeline/publish-nodejs-library.md` |
 | workspace | how-to | Operational Acceptance Testing | oat | `docs/how-to/path-to-live/oat.md` |
 | workspace | how-to | Postgresql single server to flexible server migration using Azure DMS | postgresql-singleserver-to-flexibleserver-migration-dms | `docs/how-to/postgresql-singleserver-to-flexibleserver-migration-dms.md` |
@@ -215,6 +217,8 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Profile a Java application running in an AKS cluster | profile-java-app-in-aks | `docs/how-to/profile-java-app-in-aks.md` |
 | workspace | how-to | Public DNS | public-dns | `docs/how-to/path-to-live/public-dns.md` |
 | workspace | how-to | Publishing container images to ACR from GitHub Actions | publishing-acr-images | `docs/how-to/publishing-acr-images.md` |
+| workspace | how-to | Python services | python | `docs/how-to/new-component/python.md` |
+| workspace | how-to | Release Categorisation | release-sizing | `docs/how-to/release-sizing.md` |
 | workspace | how-to | Sandbox Cleardown | sandbox-cleardown | `docs/how-to/sandbox-cleardown.md` |
 | workspace | how-to | Secrets Management | secrets-management | `docs/how-to/new-component/secrets-management.md` |
 | workspace | how-to | Shutter Implementation and Design | shutter | `docs/how-to/path-to-live/shutter.md` |
@@ -225,6 +229,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | reference | Angular Web Performance | angular-web-performance | `docs/reference/standards/angular-web-performance.md` |
 | workspace | reference | API design | apis | `docs/reference/cnp-standards/apis.md` |
 | workspace | reference | APIs | apis | `docs/reference/practices/apis.md` |
+| workspace | reference | Authentication and authorization | authentication-and-authorization | `docs/reference/standards/authentication-and-authorization.md` |
 | workspace | reference | Backend applications | backends | `docs/reference/practices/backends.md` |
 | workspace | reference | Certificates | certificates | `docs/reference/practices/certificates.md` |
 | workspace | reference | Cookies | cookies | `docs/reference/standards/cookies.md` |
@@ -246,6 +251,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | explanation | Code in the Open | coding-in-the-open | `docs/explanation/principles/coding-in-the-open.md` |
 | workspace | explanation | Continuous delivery | continuous-delivery | `docs/explanation/principles/continuous-delivery.md` |
 | workspace | explanation | DevOps | devops | `docs/explanation/principles/devops.md` |
+| workspace | explanation | Pipeline Best Practices | pipeline-best-practices | `docs/explanation/principles/pipeline-best-practices.md` |
 | workspace | explanation | Programming | programming | `docs/explanation/principles/programming.md` |
 | workspace | explanation | Testing | test | `docs/explanation/principles/test.md` |
 | xui | how-to | Add A Component | toolkit | `apps/xui/docs/how-to/add-a-component.md` |

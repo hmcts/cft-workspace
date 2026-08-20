@@ -31,7 +31,9 @@ Standing up a brand-new microservice on CNP. See [`new-component/`](new-componen
 
 - [Infrastructure as code](new-component/infrastructure-as-code.md)
 - [GitHub repo](new-component/github-repo.md)
+- [Jenkins repository setup](new-component/jenkins-repository.md)
 - [Helm chart](new-component/helm-chart.md)
+- [Python services](new-component/python.md)
 - [GitOps / Flux](new-component/gitops-flux.md)
 - [Feature flags](new-component/feature-flags.md)
 - [Elasticsearch](new-component/elasticsearch.md)
@@ -42,6 +44,7 @@ Standing up a brand-new microservice on CNP. See [`new-component/`](new-componen
 Build/release using the shared CNP pipeline. See [`common-pipeline/`](common-pipeline/README.md).
 
 - [Common pipeline overview](common-pipeline/overview.md)
+- [Jenkins agents](common-pipeline/jenkins-agents.md)
 - [Publishing a Java library](common-pipeline/publish-java-library.md)
 - [Publishing a Node.js library](common-pipeline/publish-nodejs-library.md)
 
@@ -51,14 +54,17 @@ Build/release using the shared CNP pipeline. See [`common-pipeline/`](common-pip
 - [Automated dependency updates](automated-dependency-updates.md)
 - [Connect via VPN](connect-via-vpn.md)
 - [Create a new subscription](creating-a-new-subscription.md)
+- [Database infrastructure](database-infrastructure.md) — PostgreSQL Flexible Server creation and JIT production access
 - [Federated credentials](federated-credentials.md)
 - [Flyway database migrations](flyway-database-migrations.md)
 - [Manage manual Key Vault secrets](managing-manual-key-vault-secrets.md)
+- [Migrate to Azure Managed Redis](migrating-to-managed-redis.md)
 - [PostgreSQL single→flexible migration (DMS)](postgresql-singleserver-to-flexibleserver-migration-dms.md)
 - [PostgreSQL single→flexible migration (Portal)](postgresql-singleserver-to-flexibleserver-migration-portal.md)
 - [Profile a Java app in AKS](profile-java-app-in-aks.md)
 - [PR URL preview environments](pr-url.md)
 - [Publishing container images to ACR from GitHub Actions](publishing-acr-images.md)
+- [Release categorisation](release-sizing.md) — which releases need governance beyond peer approval
 - [Update Redis to zone-redundant](update-redis-with-zone-redundant.md)
 
 ## Environments

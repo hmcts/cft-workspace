@@ -8,3 +8,4 @@ Frontend, backend, and language standards.
 - [TypeScript](typescript.md)
 - [Java](java.md)
 - [Cookies](cookies.md)
+- [Authentication and authorization](authentication-and-authorization.md)

@@ -128,9 +128,22 @@ entries:
   - target: how-to/pr-url.md
     source: cloud-native-platform/guides/pr-url.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+  - target: how-to/migrating-to-managed-redis.md
+    source: cloud-native-platform/guides/migrating-to-managed-redis.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: how-to/release-sizing.md
+    source: cloud-native-platform/guides/release-sizing.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/update-redis-with-zone-redundant.md
     source: cloud-native-platform/guides/update-redis-with-zone-redundant.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+
+  # --- how-to (CNP infrastructure) ---
+  - target: how-to/database-infrastructure.md
+    source: cloud-native-platform/infrastructure/database/index.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+    notes: H1 "Database" widened to "Database infrastructure" — upstream relies on
+      its nav breadcrumb for context, our flat how-to/ tree does not have one
 
   # --- how-to/new-component ---
   - target: how-to/new-component/elasticsearch.md
@@ -153,6 +166,9 @@ entries:
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/infrastructure-as-code.md
     source: cloud-native-platform/new-component/infrastructure-as-code.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: how-to/new-component/python.md
+    source: cloud-native-platform/new-component/python.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/secrets-management.md
     source: cloud-native-platform/new-component/secrets-management.html.md.erb
@@ -227,6 +243,9 @@ entries:
   - target: reference/standards/frontend-web-performance.md
     source: standards/standards/frontend-web-performance.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: reference/standards/authentication-and-authorization.md
+    source: standards/standards/authentication-and-authorization.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
 
   # --- reference (engineering practices) ---
   - target: reference/practices/apis.md
@@ -263,6 +282,11 @@ entries:
   - target: explanation/principles/devops.md
     source: standards/principles/devops.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+  - target: explanation/principles/pipeline-best-practices.md
+    source: standards/principles/pipeline-best-practices.html.md.erb
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+    notes: dropped the "runnable locally" link — upstream points at
+      guides/local-development.html, which does not exist upstream
   - target: explanation/principles/programming.md
     source: standards/principles/programming.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
@@ -285,6 +309,7 @@ dropped:
   - cloud-native-platform/common-pipeline/index.html.md.erb
   - cloud-native-platform/common-pipeline/publishing-libraries/index.html.md.erb
   - cloud-native-platform/guides/index.html.md.erb
+  - cloud-native-platform/infrastructure/index.html.md.erb
   - cloud-native-platform/new-component/index.html.md.erb
   - cloud-native-platform/onboarding/index.html.md.erb
   - cloud-native-platform/onboarding/team/index.html.md.erb
