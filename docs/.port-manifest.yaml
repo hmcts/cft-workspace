@@ -59,7 +59,7 @@ entries:
     notes: inlined _front-door-endpoints.md partial
   - target: how-to/path-to-live/shutter.md
     source: cloud-native-platform/path-to-live/shutter.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/path-to-live/tls-certificates.md
     source: cloud-native-platform/path-to-live/tls-certificates.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -85,7 +85,7 @@ entries:
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
   - target: how-to/federated-credentials.md
     source: cloud-native-platform/guides/federated-credentials.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/flyway-database-migrations.md
     source: cloud-native-platform/guides/flyway-database-migrations.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -177,10 +177,10 @@ entries:
   # --- reference (engineering standards) ---
   - target: reference/standards/angular.md
     source: standards/standards/angular.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/standards/angular-web-performance.md
     source: standards/standards/angular-web-performance.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/standards/typescript.md
     source: standards/standards/typescript.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -192,7 +192,7 @@ entries:
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
   - target: reference/standards/frontend-web-performance.md
     source: standards/standards/frontend-web-performance.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
 
   # --- reference (engineering practices) ---
   - target: reference/practices/apis.md
