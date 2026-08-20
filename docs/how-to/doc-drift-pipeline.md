@@ -41,7 +41,7 @@ CI is the authority here: it clones fresh every week.
 ## The weekly workflow
 
 `.github/workflows/doc-drift.yml` runs 06:00 UTC Monday, and on demand via
-**Actions → Weekly doc drift → Run workflow**. Two dispatch inputs:
+**Actions → Weekly doc drift → Run workflow**. Three dispatch inputs:
 
 - `dry_run` — report drift without letting Claude edit or push.
 - `verbose` — log Claude's full output, including its reasoning. Off by default
@@ -49,6 +49,8 @@ CI is the authority here: it clones fresh every week.
   needs explaining, since otherwise the action logs only its init and result
   JSON and a no-op run is indistinguishable from a broken one. You no longer
   need it to diagnose a failed push — that happens in its own step now.
+- `timeout_minutes` — the job's budget, 60 by default. See
+  [When the run doesn't fit the budget](#when-the-run-doesnt-fit-the-budget).
 
 It clones the cited repos, runs the source-mode check, and if anything is
 stale or broken, hands the report to Claude to reconcile the prose against the
@@ -122,8 +124,8 @@ guessing.
 ### App tokens expire after exactly one hour
 
 This one is worth internalising, because it is invisible until it bites. A
-GitHub App installation token dies **one hour** after it is minted, and
-`timeout-minutes` on this job is 60. Mint one token at the top and use it at the
+GitHub App installation token dies **one hour** after it is minted, and this job
+is budgeted for at least that long. Mint one token at the top and use it at the
 end, and you are racing the clock with no warning that you lost:
 
 ```
@@ -144,7 +146,45 @@ it — `scripts/ci-clone-cited` strips the token from each clone's remote
 locally.
 
 If you add a step that talks to GitHub, give it the fresh token, not
-`steps.app-token.outputs.token`.
+`steps.app-token.outputs.token`. On any run longer than an hour that first token
+is *certainly* dead by the end, so this isn't a race — it's a guarantee. What
+keeps the run working anyway is that nothing after the clone step needs it:
+`ci-clone-cited` rewrites each clone's remote to its public URL, so Claude's
+lazy blob fetches go out anonymously for the whole run.
+
+One consequence to know about: `claude-code-action` has its own `always()`
+teardown steps that use the token you passed it. On a long run those can fail on
+the expired credential, which fails the **Fix drift with Claude** step even
+though Claude's work was fine. That is why `Push to master` is gated on
+`always()` and not on the Claude step succeeding.
+
+### When the run doesn't fit the budget
+
+Claude reconciles pages one at a time and commits **once, at the end**. So the
+job is all-or-nothing: if it hits `timeout-minutes` mid-way, every page it
+reconciled is lost. That has happened twice — 2026-08-10 (38 pages) and
+2026-08-20 (70 pages, cancelled at the 60-minute wall having committed nothing).
+
+A normal weekly delta is a handful of pages and fits 60 minutes easily. A
+**backlog** doesn't, and the backlog is self-feeding: every run that fails to
+land its work leaves the same pages stale for next week, plus whatever drifted
+since. Roughly a page every 45 seconds is what the 2026-08-20 run managed.
+
+To clear one, dispatch with `timeout_minutes` raised — 180 for ~70 pages. Costs
+a few tens of pounds of Bedrock, and it is still all-or-nothing, so check the
+run rather than assuming.
+
+If that stops being good enough, the fix is per-page commits, and it needs a
+change to `scripts/doc-drift` first. `--record` has no per-page scope — it pins
+every page it discovers, unconditionally, "correct as of now", and the finest
+scope available is `--product=<slug>`. So a run that reconciled 10 of CCD's 40
+pages and then recorded would pin the other 30 as fresh without reading them,
+turning the drift report green over prose nobody checked. That is a worse
+failure than losing the run, which is why per-page commits are not the current
+design. Either add a `--page=<path>` scope to `--record`, or have Claude commit
+prose edits as it goes and record all the SHAs in one final pass — the second
+needs no script change and degrades honestly, since an interrupted run just
+leaves those pages still reported stale.
 
 ### Required setup
 

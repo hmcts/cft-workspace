@@ -22,6 +22,10 @@ on:
         description: "Log Claude's full output (this repo is public — tool results become world-readable)"
         type: boolean
         default: false
+      timeout_minutes:
+        description: 'Job budget. 60 fits a normal weekly delta; raise it to clear a backlog'
+        type: number
+        default: 60
 
 permissions:
   contents: read
@@ -33,7 +37,15 @@ concurrency:
 jobs:
   drift:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # A dispatch input rather than a constant, so a one-off catch-up run can be
+    # given a bigger budget without leaving the weekly cron on a 3-hour leash.
+    # Scheduled runs get no inputs at all — `|| 60` is the schedule's value.
+    #
+    # Anything above 60 guarantees the token minted at the top of this job dies
+    # mid-run. That is survivable by design (see the token notes below and in
+    # docs/how-to/doc-drift-pipeline.md), but it is why nothing after the clone
+    # step may use `steps.app-token`.
+    timeout-minutes: ${{ inputs.timeout_minutes || 60 }}
     permissions:
       contents: write
       id-token: write
@@ -248,7 +260,20 @@ jobs:
           owner: ${{ github.repository_owner }}
 
       - name: Push to master
-        if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        # always(), not the implicit success(): a commit that exists must reach
+        # master even when the step that produced it did not end cleanly. Two
+        # ways that happens, both observed:
+        #   * The job hits timeout-minutes. The 2026-08-20 run was cancelled at
+        #     the 60-minute wall and this step was SKIPPED — had Claude
+        #     committed by then, the work would have been thrown away for the
+        #     third week running.
+        #   * claude-code-action runs its own always() post-steps using the
+        #     token we handed it, which on a long run expired hours earlier. A
+        #     failure in that teardown says nothing about the commit's validity.
+        # Cancellation does not stop always() steps — proven by the fresh-token
+        # step above succeeding in that same cancelled run. The guard below
+        # makes this safe to run unconditionally: no commit, no push.
+        if: always() && steps.check.outputs.drift == 'true' && inputs.dry_run != true
         env:
           TOKEN: ${{ steps.push-token.outputs.token }}
         run: |
@@ -259,10 +284,6 @@ jobs:
           # done. If the app lacks contents:write, the 403 shows up right here.
           # Same header mechanism actions/checkout uses — keeps the token out of
           # the remote URL so a git error can't echo it.
-          header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
-          remote="https://github.com/$GITHUB_REPOSITORY.git"
-          gitc() { git -c "http.extraheader=$header" "$@"; }
-
           # "Nothing genuinely needed changing" is a legitimate outcome, and the
           # checked-out SHA is the honest baseline for telling it apart from a
           # lost commit.
@@ -270,6 +291,20 @@ jobs:
             echo "::notice::Claude made no commit — nothing to push"
             exit 0
           fi
+
+          # Under always() this step can be reached with the token step failed
+          # or skipped. An empty token builds a malformed Authorization header,
+          # which GitHub answers with a 401 — reporting an auth problem in place
+          # of the real one, exactly the kind of misdirection this rewrite
+          # exists to remove. Say what actually happened instead.
+          if [[ -z "$TOKEN" ]]; then
+            echo "::error::no token — could not push $(git rev-parse --short HEAD); see the token step above"
+            exit 1
+          fi
+
+          header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          remote="https://github.com/$GITHUB_REPOSITORY.git"
+          gitc() { git -c "http.extraheader=$header" "$@"; }
 
           # Two attempts. A human pushing to master mid-run gets the commit
           # rejected as non-fast-forward; Claude only ever touches docs, so the
