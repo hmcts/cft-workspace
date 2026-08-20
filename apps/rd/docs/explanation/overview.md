@@ -15,6 +15,8 @@ sources:
   - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/controller/request/UserSearchRequest.java
   - rd-caseworker-ref-api:src/main/resources/application.yaml
   - rd-location-ref-api:src/main/resources/application.yaml
+  - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtVenue.java
+  - rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql
   - rd-commondata-api:src/main/resources/application.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
@@ -37,7 +39,7 @@ confluence:
     space: "RTRD"
   - id: "1973487027"
     title: "Location Reference Data - Court Venue Changes V2"
-    last_modified: "2026-05-11"
+    last_modified: "2026-05-13"
     space: "RTRD"
   - id: "1457299643"
     title: "Integration of new services with PRD (Professional Reference Data)"
@@ -45,9 +47,9 @@ confluence:
     space: "RTRD"
   - id: "1904127333"
     title: "Location Reference Data API Usage Report"
-    last_modified: "unknown"
+    last_modified: "2026-05-13"
     space: "DTSRD"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/external/OrganisationExternalController.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
   "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/OrganisationInternalController.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
@@ -59,6 +61,8 @@ sources_sha:
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/controller/request/UserSearchRequest.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
   "rd-caseworker-ref-api:src/main/resources/application.yaml": "7f0f71f1b67983565653410fb473aefea4d925f9"
   "rd-location-ref-api:src/main/resources/application.yaml": "0348cf42d7f36f5959fa7b671eebd32282f7fcfa"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtVenue.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-commondata-api:src/main/resources/application.yaml": "94c35993b5eda2a490b168dcd5414eaa5f4e748b"
 ---
 
@@ -69,7 +73,7 @@ sources_sha:
 - Each service secures endpoints with S2S token validation and IDAM OAuth2/OIDC; each declares its own `s2s-authorised.services` allowlist. New services must follow a formal integration onboarding process (JIRA ticket, NFR sign-off, S2S whitelisting, integration testing).
 - Two additional batch-loader jobs (`rd-commondata-dataload`, `rd-location-ref-data-load`) run as Kubernetes CronJobs to ingest CSV reference data from Azure Blob Storage.
 - `rd-judicial-api` is the only service with an external third-party data feed (the eLinks judiciary middleware API).
-- LRD is actively developing V2 court venue endpoints that normalise the flat `court_venue` table into separate name, address, and contact entities (in progress, May 2026).
+- LRD moved court venues to service-level granularity in July 2026 — `court_venue.service_code` is now part of the unique key and `court_type_id` is deprecated. The wider V2 normalisation into separate name/address/contact entities is still design-only.
 
 ## The RD service suite
 
@@ -219,10 +223,14 @@ Key LRD endpoints and their primary consumers (from production API usage data, A
 | `GET /refdata/location/court-venues/venue-search` | `xui_webapp` (5k/week) |
 | `GET /refdata/location/regions` | `xui_webapp`, `sptribs_case_api` |
 
-#### LRD V2 — Court Venue normalisation (in development)
+#### Court venue service-level granularity (shipped July 2026)
 
-A V2 API is being designed (May 2026) that normalises the flat `court_venue` table into separate entities: Court Venue Name (multilingual, typed), Address, and Contact Details. New fields include district registry / appeal centre flags, external short names with Welsh variants, MRD identifiers, and breathing-space emails. V2 endpoints will run side-by-side with V1 under feature toggles until consumers migrate. The V2 implementation has not yet landed in source code.
-<!-- CONFLUENCE-ONLY: LRD V2 design from "Location Reference Data - Court Venue Changes V2" (id 1973487027), dated May 2026, not yet in source -->
+`court_venue` now carries a `service_code` column (FK to `locrefdata.service`), and its unique key is `(epimms_id, service_code)` rather than `(epimms_id, court_type_id)`. `service_code` is a filter on `/court-venues` and `/court-venues/venue-search`, and `court_type_id` is deprecated. The table was **not** normalised — see [Locations](locations.md#service-level-venue-granularity-shipped-july-2026).
+
+#### LRD V2 — Court Venue normalisation (still in design)
+
+Separately, a V2 API is designed that would normalise the flat `court_venue` table into separate entities: Court Venue Name (multilingual, typed), Address, and Contact Details. New fields would include district registry / appeal centre flags, contact and breathing-space emails. V2 endpoints would run side-by-side with V1 until consumers migrate. This has not landed in source — there is no `/v2/` path and no normalised entity.
+<!-- CONFLUENCE-ONLY: LRD V2 normalisation design from "Location Reference Data - Court Venue Changes V2" (id 1973487027); verified absent from source at d2cbd131. -->
 
 ### Common Data API
 

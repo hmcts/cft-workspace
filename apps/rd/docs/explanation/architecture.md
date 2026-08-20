@@ -9,6 +9,8 @@ sources:
   - rd-caseworker-ref-api:src/main/resources/application.yaml
   - rd-judicial-api:src/main/resources/application.yaml
   - rd-location-ref-api:src/main/resources/application.yaml
+  - rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql
+  - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtVenue.java
   - rd-commondata-api:src/main/resources/application.yaml
   - rd-user-profile-api:src/main/resources/application.yaml
   - rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/servicebus/TopicPublisher.java
@@ -43,18 +45,20 @@ confluence:
     space: "RTRD"
   - id: "1973487027"
     title: "Location Reference Data - Court Venue Changes V2"
-    last_modified: "2026-05-11"
+    last_modified: "2026-05-13"
     space: "RTRD"
   - id: "1804172259"
     title: "Deleting users from professional reference data"
     last_modified: "unknown"
     space: "RTRD"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "rd-professional-api:src/main/resources/application.yaml": "8501e4e7406318653bae352c04d5e03c1944a2cf"
   "rd-caseworker-ref-api:src/main/resources/application.yaml": "7f0f71f1b67983565653410fb473aefea4d925f9"
   "rd-judicial-api:src/main/resources/application.yaml": "91db0edf4a57e5899d31861797cf690cc11b61af"
   "rd-location-ref-api:src/main/resources/application.yaml": "0348cf42d7f36f5959fa7b671eebd32282f7fcfa"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtVenue.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-commondata-api:src/main/resources/application.yaml": "94c35993b5eda2a490b168dcd5414eaa5f4e748b"
   "rd-user-profile-api:src/main/resources/application.yaml": "8f4b5d2ee8f0d608f1fdaba60e7fd36ab585923c"
   "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/servicebus/TopicPublisher.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
@@ -286,16 +290,20 @@ Organisation administrator protection: any update is rejected if it would leave 
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
-## In-development: LRD Court Venue API V2
+## LRD Court Venue changes: service-level granularity, and V2
 
-A design document describes breaking changes to the LRD Court Venue data model (extending V1.3):
+Two separate pieces of work, both filed on Confluence under "V2".
+
+**Shipped (July 2026)** — service-level venue granularity. `court_venue.service_code` was added with an FK to `locrefdata.service`, and the table's unique key moved from `(epimms_id, court_type_id)` to `(epimms_id, service_code)`. `service_code` became a filter on `/court-venues` and `/court-venues/venue-search`; `court_type_id` is retained but flagged `deprecated` in the OpenAPI metadata. Deliberately **not** a normalisation — the flat table stayed flat. See [Locations → Service-level venue granularity](locations.md#service-level-venue-granularity-shipped-july-2026).
+
+**Still a design target** — the fuller normalisation of the LRD Court Venue data model (extending V1.3):
 
 - **Normalisation**: separate entities for venue names (by type and language), addresses, and contact details replace the flat `court_venue` table
-- **New fields**: `MRD_Venue_ID` (strategic PK), `District_Registry_Venue_ID`, `Appeal_Centre_Venue_ID` (self-referencing FKs), `External_Short_Name` with Welsh variants, `Contact_Email`, `Breathing_Space_Email`
+- **New fields**: `District_Registry_Venue_ID`, `Appeal_Centre_Venue_ID` (self-referencing FKs), `Contact_Email`, `Breathing_Space_Email` (`MRD_Venue_ID` and `External_Short_Name` with its Welsh variant already exist as flat columns)
 - **V2 endpoints**: `GET /refdata/location/v2/court-venues` and `/v2/court-venues/venue-search` returning nested JSON structure; V1 retained with deprecation headers until consumer migration
 - **Security**: unchanged from V1 (IDAM role + S2S whitelist)
 
-As of the current source code, no V2 endpoints or normalised entities exist — this remains a design target.
+No `/v2/` path or normalised entity exists in source.
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 

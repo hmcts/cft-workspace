@@ -34,7 +34,7 @@ confluence:
     space: "RTRD"
   - id: "1568506678"
     title: "Common Reference Data - Master Reference Data Source File Repository"
-    last_modified: "2026-05-03T00:00:00Z"
+    last_modified: "2026-08-01"
     space: "RTRD"
   - id: "1552151384"
     title: "Common Reference Data - Master Reference Data requirements"
@@ -44,7 +44,7 @@ confluence:
     title: "GET: refdata/commondata/caseflags/service-id=<service-id>?flag-type=<flag-type>&welsh-required=<welsh-required>"
     last_modified: "2023-01-01T00:00:00Z"
     space: "RTRD"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "rd-commondata-dataload:src/main/resources/application-camel-routes-common.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
   "rd-commondata-dataload:src/main/resources/application-crd-other-categories-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
@@ -313,7 +313,7 @@ The Common Data platform currently manages these CSV data sets:
 | `CaseLinkingReasons.csv` | `list_of_values` | Upsert | Deprecated (use OtherCategories) | N/A |
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
-File versions and upload history are tracked on the Confluence page "Common Reference Data - Master Reference Data Source File Repository" (RTRD space), with a corresponding MRD Change Log spreadsheet on SharePoint. Each file version has an associated JIRA ticket (pattern: `DTSRD-XXXX`).
+File versions and upload history are tracked on the Confluence page "Common Reference Data - Master Reference Data Source File Repository" (RTRD space), with a corresponding MRD Change Log spreadsheet on SharePoint. That page carries one table per data set — List of Values, Flag Details, Flag Service, Case Linking Reasons, Other Categories — and each row records the file source (MRD, A&P, or CFT Reference Data), the file version, the change-log entry, who uploaded it, and a colour-coded cell per environment (AAT, DEMO, PerfTest, ITHC, Production) showing whether that version has been loaded there. Exactly one row per data set is flagged as the latest version. Each file version has an associated JIRA ticket (pattern: `DTSRD-XXXX`) — typically a pair, one for the non-prod load and one for Production. The CSVs themselves are attached to that page, so it is the place to fetch the currently-deployed file when you need a baseline for the validation workflow below.
 
 ### Important: Case Flags upload constraint
 

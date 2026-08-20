@@ -19,6 +19,12 @@ sources:
   - rd-location-ref-api:src/main/resources/db/migration/V1_1__init_tables.sql
   - rd-location-ref-api:src/main/resources/db/migration/V1_9__create_tables.sql
   - rd-location-ref-api:src/main/resources/db/migration/V1_31__alter_tables_add_column_court_venue.sql
+  - rd-location-ref-api:src/main/resources/db/migration/V1_27__alter_table_court_venue_constraints.sql
+  - rd-location-ref-api:src/main/resources/db/migration/V1_32__backup_court_venue.sql
+  - rd-location-ref-api:src/main/resources/db/migration/V1_33__clear_court_venue.sql
+  - rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql
+  - rd-location-ref-api:src/main/resources/db/migration/V1_35__recreate_reporting_views.sql
+  - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/response/LrdCourtVenueResponse.java
   - rd-location-ref-api:src/main/resources/application.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
@@ -30,11 +36,11 @@ examples_extracted_from:
 confluence:
   - id: "1973487027"
     title: "Location Reference Data - Court Venue Changes V2"
-    last_modified: "2026-05-07"
+    last_modified: "2026-05-13"
     space: "RTRD"
   - id: "1915163667"
     title: "Location Reference Data - Changes to Venue data model"
-    last_modified: "2025-11-17"
+    last_modified: "2026-08-01"
     space: "RTRD"
   - id: "1460537506"
     title: "LRD Endpoints - Roles and Pre-Requisites for Access"
@@ -42,13 +48,13 @@ confluence:
     space: "RTRD"
   - id: "1904127333"
     title: "Location Reference Data API Usage Report"
-    last_modified: "2026-05-01"
+    last_modified: "2026-05-13"
     space: "DTSRD"
   - id: "1552132135"
     title: "Location Reference Data - Master Reference Data requirements"
     last_modified: "2025-01-01"
     space: "RTRD"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtVenue.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/BuildingLocation.java": "8eed18d867b09840f46012d92a88ead89ff29648"
@@ -64,6 +70,12 @@ sources_sha:
   "rd-location-ref-api:src/main/resources/db/migration/V1_1__init_tables.sql": "9ff268023b206987b8c5c37a5d3dd3fe106d5fd0"
   "rd-location-ref-api:src/main/resources/db/migration/V1_9__create_tables.sql": "5ccbdb249da25b2583248997954fcaed14fd813b"
   "rd-location-ref-api:src/main/resources/db/migration/V1_31__alter_tables_add_column_court_venue.sql": "8dc814ca3f358e1fef39173396c24a428bd4aaec"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_27__alter_table_court_venue_constraints.sql": "52af7057fd563d789a95963842e3ede13e2c74cb"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_32__backup_court_venue.sql": "16efd8d770cf916890957a0034343991176ac38b"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_33__clear_court_venue.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_35__recreate_reporting_views.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/response/LrdCourtVenueResponse.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/resources/application.yaml": "0348cf42d7f36f5959fa7b671eebd32282f7fcfa"
 ---
 
@@ -74,7 +86,7 @@ sources_sha:
 - `epimms_id` is the cross-service location identifier linking building locations to court venues and used by `rd-caseworker-ref-api` for caseworker location assignments.
 - Service codes bridge LRD to CCD case types via `ServiceToCcdCaseTypeAssoc` (and court types via `CourtTypeServiceAssoc`), enabling payment services and HMC to resolve locations from a case type.
 - Runs on port 8099, schema `locrefdata`, accessible to S2S-whitelisted services (18 in production) with no per-endpoint role restrictions.
-- A V2 court venue API with normalised data model is in design (May 2026) but not yet implemented in source.
+- The service-level venue change ("V2 Phase 1") **has shipped** — `court_venue` now carries `service_code`, its unique key is `(epimms_id, service_code)`, and `court_type_id` is deprecated. The normalised V2 data model (Phase 2) is still design-only.
 
 ## Data model
 
@@ -112,9 +124,7 @@ A building can host multiple court venues. The one-to-many relationship is joine
 
 ### Court venues
 
-`CourtVenue` is a logical venue within a building. One building (identified by `epimms_id`) may contain multiple venues distinguished by `site_name` and `court_type_id`. The three-column unique constraint `(epimms_id, site_name, court_type_id)` enforces this (`CourtVenue.java:32`).
-
-<!-- DIVERGENCE: Confluence (page 1552132135, query log item 5) says "The unique key is now changed, Court Type ID is now removed and service_code is added instead", but rd-location-ref-api:CourtVenue.java:32 still shows @UniqueConstraint(columnNames = {"epimms_id","site_name","court_type_id"}). Source wins. -->
+`CourtVenue` is a logical venue within a building. One building (identified by `epimms_id`) may contain multiple venues, one per service operating there. Since July 2026 the unique constraint is the two-column `(epimms_id, service_code)` (`CourtVenue.java:32`), with `service_code` a FK to `locrefdata.service`. It was previously `(epimms_id, court_type_id)` — see [Service-level venue granularity](#service-level-venue-granularity-shipped-july-2026). `court_type_id` remains a column on the table but no longer participates in the key.
 
 Important boolean-like flags are stored as `varchar` with values `"Y"` or `"N"`:
 
@@ -182,9 +192,9 @@ All endpoints live under `/refdata/location` and require S2S + IDAM authenticati
 
 | Endpoint | Params | Notes |
 |----------|--------|-------|
-| `GET /refdata/location/court-venues` | `epimms_id`, `court_type_id`, `region_id`, `cluster_id`, `court_venue_name`, `is_hearing_location`, `is_case_management_location`, `location_type`, `is_temporary_location` | `epimms_id` + `court_type_id` can coexist; all other params are mutually exclusive (`LrdCourtVenueController.java:120-162`) |
+| `GET /refdata/location/court-venues` | `epimms_id`, `service_code`, `court_type_id` (deprecated), `region_id`, `cluster_id`, `court_venue_name`, `is_hearing_location`, `is_case_management_location`, `location_type`, `is_temporary_location` | `epimms_id` can coexist with either `service_code` or `court_type_id`; all other params are mutually exclusive (`LrdCourtVenueController.java:125-153`) |
 | `GET /refdata/location/court-venues/services?service_code=<code>` | `service_code` | Returns venues filtered by service code with court type metadata (`LrdCourtVenueController.java:206-218`) |
-| `GET /refdata/location/court-venues/venue-search?search-string=<str>` | `search-string` (min 3 chars), optional: `court-type-id`, `is_hearing_location`, `is_case_management_location`, `location_type`, `is_temporary_location` | Partial match on `siteName`, `courtName`, `postcode`, `courtAddress` (`LrdCourtVenueController.java:253-304`) |
+| `GET /refdata/location/court-venues/venue-search?search-string=<str>` | `search-string` (min 3 chars), optional: `service_code`, `court-type-id` (deprecated), `is_hearing_location`, `is_case_management_location`, `location_type`, `is_temporary_location` | Partial match on `siteName`, `courtName`, `postcode`, `courtAddress` (`LrdCourtVenueController.java:263-307`) |
 
 ### Org services
 
@@ -288,14 +298,16 @@ Confluence documents several BuildingLocation fields that MRD provides but which
 
 ## Schema and migrations
 
-Flyway manages the `locrefdata` schema with migrations V1_1 through V1_31 (no V1_24 exists). Key migration milestones:
+Flyway manages the `locrefdata` schema with migrations V1_1 through V1_35 (no V1_8 or V1_24 exists). Key migration milestones:
 
 - `V1_1__init_tables.sql` — org hierarchy: `ORG_UNIT`, `ORG_BUSINESS_AREA`, `ORG_SUB_BUSINESS_AREA`, `JURISDICTION`, `SERVICE`, `SERVICE_TO_CCD_CASE_TYPE_ASSOC`
 - `V1_9__create_tables.sql` — physical model: `region`, `building_location`, `cluster`, `court_venue`
 - `V1_13` — surrogate key refactoring (replaced natural keys with generated PKs)
 - `V1_16/17/18` — multiple rounds of column additions to `court_venue`
 - `V1_20` — added `api_enabled` to `region`
+- `V1_27` — added the `court_location_unique` constraint on `(epimms_id, court_type_id)`
 - `V1_29/30` — Spring Batch schema for the data-load job (shares the same DB)
+- `V1_32/33/34/35` — the service-level venue change: backup, clear, add `service_code` and re-key to `(epimms_id, service_code)`, rebuild the reporting view
 
 The schema name `locrefdata` is configured at three levels: Hibernate `default_schema`, Flyway `schemas`, and the JDBC URL `?currentSchema=locrefdata`.
 
@@ -303,25 +315,31 @@ The schema name `locrefdata` is configured at three levels: Hibernate `default_s
 
 LRD integrates LaunchDarkly via a `FeatureConditionEvaluation` aspect. Feature flags can gate endpoint availability at runtime without redeployment.
 
-## In development: V2 Court Venue API
+## Service-level venue granularity (shipped July 2026)
 
-As of May 2026, a V2 court venue API is in active design (Confluence pages 1973487027, 1915163667). The V2 work has two phases:
+Confluence tracks two separate pieces of work under the "V2" label (pages 1915163667, 1973487027). The first has shipped; the second has not.
 
-### Phase 1: Service-level granularity (HLD approved Nov 2025)
+### Phase 1: Service-level granularity — shipped
 
-Driven by Civil Possessions Service, this phase changes the venue model from court-type-level to service-level:
-- The unique key is planned to change from `(epimms_id, site_name, court_type_id)` to `(epimms_id, service_code)`
-- `court_type_id` will be retained but deprecated
-- The `GET /refdata/location/court-venues?court_type=<id>` parameter will be deprecated in favour of `service_code` / `service_id`
-- Impact assessment completed: IAC, ET, FPL, Probate, NFD report no impact; SSCS and PrL report minor migration needed
+Driven by the Civil Possessions Service (which uses only a subset of Civil venues), this phase moved the venue model from court-type-level to service-level. It was released to CFT on 2026-07-22 (`DTSRD-5695`, merged as `d2cbd131`), and deliberately **did not** normalise the table — `service_code` was added as a column on the existing flat `court_venue`.
 
-**Current source state**: The unique constraint is still `(epimms_id, site_name, court_type_id)` and no `service_code` column exists on `court_venue`. This change is not yet implemented.
+What landed:
+- `court_venue.service_code varchar(16)` with a FK to `locrefdata.service(service_code)`, added by `V1_34__alter_court_venue_add_service_code_composite_pk.sql`
+- The unique constraint `court_location_unique` changed from `(epimms_id, court_type_id)` (set by `V1_27`) to `(epimms_id, service_code)`
+- Because the key change re-shapes the rows, `V1_32__backup_court_venue.sql` snapshots the table to `court_venue_backup_2026` (with a `court_venue_backup_meta` audit row) and `V1_33__clear_court_venue.sql` truncates it so the batch loader can repopulate at service granularity. `V1_35__recreate_reporting_views.sql` rebuilds `rdlocationreport.vw_court_venue` with `service_code` included.
+- `GET /refdata/location/court-venues` accepts `service_code`, and `epimms_id` may be combined with **either** `service_code` or `court_type_id` (`LrdCourtVenueController.java:125-128`)
+- `GET /refdata/location/court-venues/venue-search` accepts `service_code` alongside `search-string`
+- `court_type_id` / `court-type-id` are retained but annotated `deprecated = true` on both endpoints, with the OpenAPI description "Deprecated parameter, please use `service_code` instead." (`LrdCourtVenueController.java:71`)
+- `serviceCode` is returned on `LrdCourtVenueResponse`
 
-<!-- DIVERGENCE: Confluence (page 1915163667) says unique key will change to (epimms_id, service_id) and court_type_id is deprecated, but rd-location-ref-api:CourtVenue.java:32 still shows @UniqueConstraint(columnNames = {"epimms_id","site_name","court_type_id"}) with no service_code column. Source wins. -->
+Consumer impact (from the Confluence impact assessment): IAC, ET, FPL, Probate, Financial Remedy and NFD reported no impact; SSCS, PrL, Civil and ST-CIC (`DTSSTCI-1774`) needed to swap a hardcoded court type for a service code. ST-CIC and Possessions ran both parameters in parallel over the transition.
 
-### Phase 2: Normalised data model (design May 2026)
+<!-- CONFLUENCE-ONLY: the missing-Service-ID workaround below is tracked on Confluence 1915163667 (delivery log items 3 and 9); it is an operational/data matter with no representation in source. -->
+One caveat carried into the release: 17 court type IDs still have no Service ID assigned (notably Crown and Magistrates), so the interim load deletes rows with a blank service code rather than failing them. Full coverage depends on MRD sign-off, which was still outstanding in August 2026.
 
-The V2 data model proposes:
+### Phase 2: Normalised data model — design only
+
+Separately from Phase 1, a fuller normalisation is still on the drawing board (Confluence 1973487027). It proposes:
 - `Court Venue Name` entity (name variants by type: Site, Court, Venue, External Short; by language: EN, CY)
 - `Address` entity (multiple addresses per venue, with UPRN and Welsh variants)
 - `Contact Details` entity (phone, email, breathing-space email with method/type classification)
@@ -331,7 +349,7 @@ The V2 data model proposes:
 
 V1 endpoints will remain unchanged during the transition period. V2 responses return a richer nested JSON structure with `names[]`, `addresses[]`, `contacts[]` arrays.
 
-**Current source state**: None of these V2 entities or endpoints exist in source code. No `/v2/` path is present in the controllers.
+**Current source state**: none of these entities or endpoints exist. `CourtVenue` is still a flat entity with `external_short_name`, `welsh_external_short_name`, `mrd_venue_id` and `mrd_building_location_id` as plain columns; there is no `/v2/` path in any controller, no `district_registry`/`appeal_centre`/`breathing_space` column, and no migration after `V1_35`.
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
@@ -381,18 +399,22 @@ create table cluster (
 @RestController
 public class LrdCourtVenueController {
 
+    private static final String DEPRECATED_COURT_TYPE_ID =
+        "Deprecated parameter, please use `service_code` instead.";
+
     @GetMapping(produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<List<LrdCourtVenueResponse>> retrieveCourtVenues(
-        @RequestParam(value = "epimms_id",                  required = false) String epimmsIds,
-        @RequestParam(value = "court_type_id",              required = false) Integer courtTypeId,
-        @RequestParam(value = "region_id",                  required = false) Integer regionId,
-        @RequestParam(value = "cluster_id",                 required = false) Integer clusterId,
-        @RequestParam(value = "court_venue_name",           required = false) String courtVenueName,
-        @RequestParam(value = "is_hearing_location",        required = false) String isHearingLocation,
-        @RequestParam(value = "is_case_management_location",required = false) String isCaseManagementLocation,
-        @RequestParam(value = "location_type",              required = false) String locationType,
-        @RequestParam(value = "is_temporary_location",      required = false) String isTemporaryLocation) {
-        // epimms_id and court_type_id can coexist; all other primary params are mutually exclusive
+        @RequestParam(value = "epimms_id", required = false) String epimmsIds,
+        @RequestParam(value = "service_code", required = false) String serviceCode,
+        @Parameter(name = "court_type_id", description = DEPRECATED_COURT_TYPE_ID, deprecated = true)
+        @RequestParam(value = "court_type_id", required = false) Integer courtTypeId,
+        @RequestParam(value = "region_id", required = false) Integer regionId,
+        @RequestParam(value = "cluster_id", required = false) Integer clusterId,
+        @RequestParam(value = "court_venue_name", required = false) String courtVenueName,
+        // ... is_hearing_location, is_case_management_location, location_type, is_temporary_location
+        ) {
+        // epimms_id may coexist with either service_code or court_type_id;
+        // all other primary params are mutually exclusive
         // ...
         return ResponseEntity.status(HttpStatus.OK).body(lrdCourtVenueResponses);
     }
@@ -457,6 +479,6 @@ idam:
 | NBC | National Business Centre — a `locationType` value for centralised back-office processing |
 | CCBC | County Court Business Centre — a `locationType` value |
 | CCMCC | County Court Money Claims Centre — a processing centre for money claims |
-| Court type ID | A classification code grouping venues by jurisdiction (e.g., type 10 = seven services, type 18 = five services); planned for deprecation in favour of service codes |
+| Court type ID | A classification code grouping venues by jurisdiction (e.g., type 10 = seven services, type 18 = five services); deprecated since July 2026 in favour of service codes |
 | FaCT | Find a Court or Tribunal — the public-facing court finder service; LRD stores `fact_url` links to it |
 | UPRN | Unique Property Reference Number — a standard UK property identifier stored on court venues |

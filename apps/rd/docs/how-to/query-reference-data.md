@@ -12,6 +12,9 @@ sources:
   - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdApiController.java
   - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdCourtVenueController.java
   - rd-location-ref-api:src/main/resources/application.yaml
+  - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtVenue.java
+  - rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql
+  - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/CourtVenueRepository.java
   - rd-caseworker-ref-api:src/main/resources/application.yaml
   - rd-commondata-api:src/main/resources/application.yaml
   - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CaseFlagApiController.java
@@ -34,13 +37,13 @@ confluence:
     space: "RTRD"
   - id: "1904127333"
     title: "Location Reference Data API Usage Report"
-    last_modified: "unknown"
+    last_modified: "2026-05-13"
     space: "DTSRD"
   - id: "1915163667"
     title: "Location Reference Data - Changes to Venue data model"
-    last_modified: "unknown"
+    last_modified: "2026-08-01"
     space: "RTRD"
-confluence_checked_at: "2026-05-13T12:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/OrganisationInternalController.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
   "rd-professional-api:src/main/resources/application.yaml": "8501e4e7406318653bae352c04d5e03c1944a2cf"
@@ -49,6 +52,9 @@ sources_sha:
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdApiController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdCourtVenueController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/resources/application.yaml": "0348cf42d7f36f5959fa7b671eebd32282f7fcfa"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtVenue.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/CourtVenueRepository.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-caseworker-ref-api:src/main/resources/application.yaml": "7f0f71f1b67983565653410fb473aefea4d925f9"
   "rd-commondata-api:src/main/resources/application.yaml": "94c35993b5eda2a490b168dcd5414eaa5f4e748b"
   "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CaseFlagApiController.java": "713a8d70241032382965f812dcb7bb71e6b3a816"
@@ -203,22 +209,23 @@ Authorization: Bearer <token>
 ServiceAuthorization: Bearer <s2s-token>
 ```
 
-Multiple EPIMMS IDs can be comma-separated.
+Multiple EPIMMS IDs can be comma-separated. Since venues are now keyed per service, one building can return several rows — narrow with `&service_code=<code>` if you want a single service's venue.
 
 ### Court venues by service code
 
+Two endpoints take a service code, and they differ in status filtering:
+
 ```http
-GET /refdata/location/court-venues/services?service_code=BBA3
-Authorization: Bearer <token>
-ServiceAuthorization: Bearer <s2s-token>
+GET /refdata/location/court-venues?service_code=ABA5          # only court_status='Open'
+GET /refdata/location/court-venues/services?service_code=BBA3  # all statuses
 ```
 
-Returns venues grouped by court type with the service metadata.
+`/court-venues/services` returns venues grouped by court type with the service metadata; `/court-venues?service_code=` returns the flat venue list.
 
 ### Venue search (partial string, min 3 chars)
 
 ```http
-GET /refdata/location/court-venues/venue-search?search-string=Birm&court-type-id=10&is_hearing_location=Y
+GET /refdata/location/court-venues/venue-search?search-string=Birm&service_code=ABA5&is_hearing_location=Y
 Authorization: Bearer <token>
 ServiceAuthorization: Bearer <s2s-token>
 ```
@@ -230,7 +237,8 @@ Searches across `site_name`, `court_name`, `postcode`, and `court_address` from 
 | Parameter | Required | Description |
 |---|---|---|
 | `search-string` | Yes | Min 3 chars. Validated against regex: `^[A-Za-z0-9_@.,'&() -]{3,}$`. Leading/trailing spaces trimmed. |
-| `court-type-id` | No | Comma-separated list of court type IDs (e.g. `10,17`). Widely used by ExUI. |
+| `service_code` | No | Comma-separated list of service codes (e.g. `ABA5,AAA6`). Preferred over `court-type-id`. |
+| `court-type-id` | No | Comma-separated list of court type IDs (e.g. `10,17`). **Deprecated** in favour of `service_code`; still widely used by ExUI. |
 | `is_hearing_location` | No | `"Y"` or `"N"` |
 | `is_case_management_location` | No | `"Y"` or `"N"` |
 | `location_type` | No | `CTSC`, `NBC`, `Court`, `CCBC`, etc. |
@@ -238,7 +246,6 @@ Searches across `site_name`, `court_name`, `postcode`, and `court_address` from 
 
 Only active courts (`court_status = 'Open'`) are returned.
 
-<!-- CONFLUENCE-ONLY: court-type-id deprecation planned in favour of service_id — see "Location Reference Data - Changes to Venue data model" (RTRD page 1915163667). Not yet reflected in source. -->
 
 **Note:** Expert UI calls this endpoint on every keystroke after the first 3 characters. In production (April 2026), this endpoint receives approximately 5,000+ calls per week from `xui_webapp` alone.
 
@@ -379,14 +386,23 @@ The following are the **production** S2S allowlists from Flux config (these exte
    ```
    A 200 response with JSON region data confirms both tokens are valid and your service is on the allowlist. A 403 indicates your microservice is not in `s2s-authorised.services`.
 
-## Upcoming changes
+## Migrate off `court_type_id`
 
-**LRD venue data model migration (in development, target mid-2026):** The `court_venue` table's unique key is changing from `epimms_id + court_type_id` to `epimms_id + service_id`. The `court-type-id` parameter on venue-search and the `court_type` filter on court-venues will be deprecated in favour of `service_id`/`service_code`. Service teams should audit their codebase for usage of `court_type` and `court-type-id` parameters and prepare to migrate to service-level filtering.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+**Shipped July 2026.** The `court_venue` table's unique key moved from `epimms_id + court_type_id` to `epimms_id + service_code`, and `court_type_id` / `court-type-id` are now marked deprecated in the OpenAPI metadata on both `/court-venues` and `/court-venues/venue-search`. They still work, but new integrations should filter by `service_code`:
+
+```http
+GET /refdata/location/court-venues?service_code=ABA5
+GET /refdata/location/court-venues?epimms_id=123456&service_code=ABA5
+GET /refdata/location/court-venues/venue-search?search-string=Birm&service_code=ABA5
+```
+
+Audit your codebase for `court_type` / `court-type-id` usage. Note that a venue may now appear once per service at the same `epimms_id`, so an `epimms_id`-only query can return more rows than it used to.
+
+The wider V2 normalisation (separate name/address/contact entities, `/v2/` endpoints) is still design-only — see [API Location → V2](../reference/api-location.md#still-in-design--normalised-v2-model).
 
 ## See also
 
 - [Register as S2S Caller](register-as-s2s-caller.md) — prerequisite: how to get your service added to the target API's S2S allowlist before you can make calls
 - [API Professional](../reference/api-professional.md) — full PRD endpoint reference with request/response shapes, pagination conventions, and PBA status lifecycle
 - [API Judicial](../reference/api-judicial.md) — full JRD endpoint reference including search query behaviour, refresh validation rules, and deduplication
-- [API Location](../reference/api-location.md) — full LRD endpoint reference including parameter mutually-exclusivity rules, response shapes, and V2 design
+- [API Location](../reference/api-location.md) — full LRD endpoint reference including parameter mutually-exclusivity rules, response shapes, the service-level venue change, and the V2 design

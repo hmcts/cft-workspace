@@ -20,6 +20,10 @@ sources:
   - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/constants/LocationRefConstants.java
   - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/CourtVenueServiceImpl.java
   - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/CourtVenueRepository.java
+  - rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql
+  - rd-location-ref-api:src/main/resources/db/migration/V1_32__backup_court_venue.sql
+  - rd-location-ref-api:src/main/resources/db/migration/V1_33__clear_court_venue.sql
+  - rd-location-ref-api:src/main/resources/db/migration/V1_35__recreate_reporting_views.sql
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -37,21 +41,21 @@ confluence:
     space: "RTRD"
   - id: "1904127333"
     title: "Location Reference Data API Usage Report"
-    last_modified: "unknown"
+    last_modified: "2026-05-13"
     space: "DTSRD"
   - id: "1973487027"
     title: "Location Reference Data - Court Venue Changes V2"
-    last_modified: "2026-05-11"
+    last_modified: "2026-05-13"
     space: "RTRD"
   - id: "1915163667"
     title: "Location Reference Data - Changes to Venue data model"
-    last_modified: "2025-11-17"
+    last_modified: "2026-08-01"
     space: "RTRD"
   - id: "1660295953"
     title: "LRD - Service Boundary"
     last_modified: "unknown"
     space: "DTSRD"
-confluence_checked_at: "2026-05-13T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdApiController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdCourtVenueController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
@@ -68,6 +72,10 @@ sources_sha:
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/constants/LocationRefConstants.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/CourtVenueServiceImpl.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/CourtVenueRepository.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_34__alter_court_venue_add_service_code_composite_pk.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_32__backup_court_venue.sql": "16efd8d770cf916890957a0034343991176ac38b"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_33__clear_court_venue.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_35__recreate_reporting_views.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
 ---
 
 ## TL;DR
@@ -77,7 +85,7 @@ sources_sha:
 - `epimms_id` is the cross-service business key linking building locations and court venues; one building can have multiple venues. The special value `ALL` (case-insensitive) returns all records regardless of status.
 - Query parameters within an endpoint are generally mutually exclusive — passing more than one returns HTTP 400. However, filter params (`is_hearing_location`, `is_case_management_location`, `location_type`, `is_temporary_location`) can be combined with the primary query param.
 - Data is batch-loaded by `rd-location-ref-data-load`; the API itself has no write endpoints. All endpoints are gated behind the LaunchDarkly flag `lrd_location_api`.
-- A V2 court venue API is in active design (May 2026) to normalise the data model and add service-level venue mapping, but is not yet implemented in source.
+- Service-level venue mapping shipped in July 2026: `service_code` is now a filter on `/court-venues` and `/court-venues/venue-search`, and `court_type_id` / `court-type-id` are marked deprecated. The wider V2 normalisation of the data model is still design-only.
 
 ## Endpoints
 
@@ -126,12 +134,13 @@ Source: `LrdApiController.java:272-286`
 
 #### `GET /refdata/location/court-venues`
 
-Source: `LrdCourtVenueController.java:120-162`
+Source: `LrdCourtVenueController.java:121-174`
 
 | Parameter | Type | Required | Notes |
 |-----------|------|----------|-------|
 | `epimms_id` | string | No | Building location EPIMMS ID |
-| `court_type_id` | integer | No | Court type identifier |
+| `service_code` | string | No | LRD service code (e.g. `ABA5`). Matched case-insensitively. |
+| `court_type_id` | integer | No | **Deprecated** — "Deprecated parameter, please use `service_code` instead." (`LrdCourtVenueController.java:71`, `deprecated = true`) |
 | `region_id` | integer | No | Region identifier |
 | `cluster_id` | integer | No | Cluster identifier |
 | `court_venue_name` | string | No | Exact court venue name |
@@ -140,7 +149,7 @@ Source: `LrdCourtVenueController.java:120-162`
 | `location_type` | string | No | e.g. `CTSC`, `NBC`, `Court`, `CCBC` |
 | `is_temporary_location` | string | No | `"Y"` or `"N"` |
 
-**Primary parameter rules**: `epimms_id` and `court_type_id` may coexist. All other primary parameters (`region_id`, `cluster_id`, `court_venue_name`) are mutually exclusive with each other and with the epimms/court-type pair.
+**Primary parameter rules**: `epimms_id` may coexist with **either** `service_code` or `court_type_id` (`LrdCourtVenueController.java:139-153`). All other primary parameters (`region_id`, `cluster_id`, `court_venue_name`) are mutually exclusive with each other and with that pair.
 
 **Filter parameters** (`is_hearing_location`, `is_case_management_location`, `location_type`, `is_temporary_location`) can be combined with any primary parameter and with each other. They act as additional narrowing filters on the result set.
 
@@ -150,33 +159,34 @@ Source: `LrdCourtVenueController.java:120-162`
 |-------------------|---------------|
 | `epimms_id` (specific value) | All statuses returned |
 | `epimms_id=ALL` | All statuses returned |
-| `court_type_id` | Only `courtStatus='Open'` (`CourtVenueRepository.java:18-20`) |
+| `service_code` | Only `courtStatus='Open'` (`findByServiceCodeWithOpenCourtStatus`) |
+| `epimms_id` + `service_code` / `court_type_id` | Only `courtStatus='Open'` (`findByCourtTypeIdServiceCodeAndEpimmsIdWithOpenCourtStatus`) |
+| `court_type_id` | Only `courtStatus='Open'` (`CourtVenueRepository.java:18-19`) |
 | `region_id` | Only `courtStatus='Open'` |
 | `cluster_id` | Only `courtStatus='Open'` |
 | No primary param | Only `courtStatus='Open'` |
 
 **`court_venue_name`** performs a case-insensitive exact match against `court_name` OR `site_name` (`CourtVenueRepository.java:42-44`).
 
-<!-- DIVERGENCE: Confluence (page 1482334973) says epimms_id+service_code can be combined on /court-venues, but LrdCourtVenueController.java:120-129 shows no service_code parameter on that endpoint. service_code is only on /court-venues/services. Source wins. -->
-
 #### `GET /refdata/location/court-venues/services`
 
-Source: `LrdCourtVenueController.java:206-218`
+Source: `LrdCourtVenueController.java:211-216`
 
 | Parameter | Type | Required | Notes |
 |-----------|------|----------|-------|
 | `service_code` | string | Yes | LRD service code (e.g. `ABA5`) |
 
-Returns `LrdCourtVenuesByServiceCodeResponse` containing court type, service details, and a filtered list of venues for that service.
+Returns `LrdCourtVenuesByServiceCodeResponse` containing court type, service details, and a filtered list of venues for that service. Unlike `/court-venues?service_code=`, this endpoint uses `findByServiceCode` and so returns venues of **all** statuses.
 
 #### `GET /refdata/location/court-venues/venue-search`
 
-Source: `LrdCourtVenueController.java:253-304`
+Source: `LrdCourtVenueController.java:259-307`
 
 | Parameter | Type | Required | Notes |
 |-----------|------|----------|-------|
 | `search-string` | string | Yes | Minimum 3 characters; matches against `siteName`, `courtName`, `postcode`, `courtAddress` |
-| `court-type-id` | integer | No | Filter results by court type |
+| `service_code` | string (CSV) | No | Filter results by service code; comma-separated values allowed |
+| `court-type-id` | string (CSV) | No | **Deprecated** in favour of `service_code` (`deprecated = true`); comma-separated values allowed |
 | `is_hearing_location` | string | No | `"Y"` or `"N"` |
 | `is_case_management_location` | string | No | `"Y"` or `"N"` |
 | `location_type` | string | No | e.g. `CTSC`, `NBC`, `Court`, `CCBC` |
@@ -251,6 +261,7 @@ All fields in `LrdCourtVenueResponse` (source: `LrdCourtVenueResponse.java`):
 |-------|------|-------|
 | `court_venue_id` | integer | Surrogate PK |
 | `epimms_id` | string | Links to building location |
+| `service_code` | string | LRD service code the venue serves; part of the venue's unique key since July 2026 |
 | `site_name` | string | |
 | `court_name` | string | |
 | `venue_name` | string | |
@@ -263,7 +274,7 @@ All fields in `LrdCourtVenueResponse` (source: `LrdCourtVenueResponse.java`):
 | `region_id` | string | |
 | `region` | string | |
 | `court_type` | string | Court type description |
-| `court_type_id` | integer | |
+| `court_type_id` | integer | Retained, but deprecated as a filter in favour of `service_code` |
 | `cluster_id` | string | |
 | `cluster_name` | string | |
 | `open_for_public` | string | e.g. `"YES"` |
@@ -329,7 +340,8 @@ erDiagram
 ```
 
 - `epimms_id` is the natural join key between `building_location` and `court_venue` — one building location can contain multiple court venues.
-- Unique constraint on `court_venue`: `(epimms_id, site_name, court_type_id)` (`CourtVenue.java:32`).
+- Unique constraint on `court_venue`: `(epimms_id, service_code)` since July 2026 (`CourtVenue.java:32`; DB constraint `court_location_unique`, `V1_34__alter_court_venue_add_service_code_composite_pk.sql`). It was `(epimms_id, court_type_id)` before that.
+- `court_venue.service_code` is a FK to `locrefdata.service(service_code)`.
 - `Region.api_enabled` controls visibility: regions with `api_enabled=false` are excluded from the `/regions` endpoint but can still be referenced as FKs on venues and buildings.
 
 ## S2S authorised services
@@ -378,7 +390,8 @@ Based on production App Insights data (April 2026):
 
 - Boolean-like fields (`is_hearing_location`, `is_case_management_location`, `is_temporary_location`, `is_nightingale_court`) are `varchar` not boolean — pass `"Y"` or `"N"` as strings.
 - `location_type` is a free-text string with no backing enum — known values are `CTSC`, `NBC`, `Court`, `CCBC`.
-- The `court_type_id` filter implicitly adds `courtStatus='Open'`, but querying by `epimms_id` returns venues of all statuses.
+- The `court_type_id` and `service_code` filters implicitly add `courtStatus='Open'`, but querying by `epimms_id` alone returns venues of all statuses. `/court-venues/services?service_code=` also returns all statuses — the two service-code paths differ.
+- `court_type_id` / `court-type-id` are deprecated but still functional; new integrations should filter by `service_code`.
 - `cluster_id` and `region_id` on `CourtVenue` are stored as `varchar` in the database, but the API endpoint accepts them as `Integer` — type coercion happens in the service layer.
 - The `area` field on `BuildingLocation` is a max-16-char free-text zone indicator, not a foreign key to any hierarchy table.
 - Schema name is `locrefdata` — relevant for direct DB queries and Flyway migration context.
@@ -388,33 +401,47 @@ Based on production App Insights data (April 2026):
 <!-- CONFLUENCE-ONLY: not verified in source -->
 - The `ALL` special value works on `epimms_id` (building-locations and court-venues) and `regionId` (regions) — it bypasses status filtering and returns the full dataset.
 
-## V2 API (in development)
+## Service-level venue mapping (shipped) and V2 (design)
 
-A V2 court venue API is in active design as of May 2026. Key planned changes:
+Confluence tracks two distinct pieces of work under the "V2" heading. Only the first has been released.
+
+### Shipped — service-level granularity (July 2026)
+
+Released 2026-07-22 (`DTSRD-5695`). `service_code` was added as a column on the existing flat `court_venue` table — no normalisation:
+
+- Unique key moved from `(epimms_id, court_type_id)` to `(epimms_id, service_code)` (`V1_34`), with `service_code` an FK to `locrefdata.service`
+- `service_code` accepted on `/court-venues` and `/court-venues/venue-search`; returned on `LrdCourtVenueResponse`
+- `court_type_id` / `court-type-id` retained but marked `deprecated = true` in the OpenAPI metadata
+- Deployment sequence: `V1_32` backs up `court_venue` to `court_venue_backup_2026`, `V1_33` clears the table for reload at service granularity, `V1_35` rebuilds `rdlocationreport.vw_court_venue`
+
+### Still in design — normalised V2 model
+
+Not implemented in source: no `/v2/` path exists in any controller, and none of the entities or columns below are present.
 
 - **Normalised data model**: Court Venue remains core, but names, addresses, and contact details become separate entities (`court_venue_name`, `address`, `contact_details`).
-- **New fields**: `is_district_registry`, `is_appeal_centre`, `district_registry_venue_id`, `appeal_centre_venue_id`, `external_short_name` (Welsh variants), `contact_email`, `breathing_space_email`.
-- **Service-level mapping**: Unique key shifts from `(epimms_id, court_type_id)` to `(epimms_id, service_id)`. `court_type_id` retained but deprecated.
+- **New fields**: `is_district_registry`, `is_appeal_centre`, `district_registry_venue_id`, `appeal_centre_venue_id`, `contact_email`, `breathing_space_email`. (`external_short_name` and its Welsh variant already exist as flat columns, added by `V1_26`/`V1_31`.)
 - **Proposed V2 endpoints**:
-  - `GET /refdata/location/v2/court-venues` — same filter params as V1 plus `is_district_registry`, `is_appeal_centre`, `service_code`; response uses nested arrays for names/addresses/contacts.
+  - `GET /refdata/location/v2/court-venues` — same filter params as V1 plus `is_district_registry`, `is_appeal_centre`; response uses nested arrays for names/addresses/contacts.
   - `GET /refdata/location/v2/court-venues/venue-search` — same search params; richer response.
-- **Backward compatibility**: V1 endpoints remain unchanged during transition. V1 responses sourced from same table. Deprecation headers will be emitted. Formal sunset date TBD pending consumer migration sign-off.
+- **Backward compatibility**: V1 endpoints remain unchanged during transition, sourced from the same table. Deprecation headers to be emitted; sunset date TBD pending consumer migration sign-off.
 - **Security**: Same S2S + IDAM model as V1.
 
-**Status**: Design complete (Confluence page 1973487027, updated 2026-05-11). No V2 code exists in `rd-location-ref-api` source as of this writing.
+**Status**: design only (Confluence page 1973487027).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- CONFLUENCE-ONLY: the normalised V2 model above exists only on Confluence 1973487027; verified absent from source at d2cbd131. -->
 
 ### Service-level migration impact
 
-The move from `court_type_id` to `service_code` is driven by the Civil Possessions Service. Impact assessment (from Confluence):
+The move from `court_type_id` to `service_code` was driven by the Civil Possessions Service. Impact assessment (from Confluence):
 
 | Service | Impact |
 |---------|--------|
 | IAC, ET, FPL, Probate, Divorce/NFD, FR | No impact |
 | SSCS | Impacted — uses court type lookup; straight swap expected |
 | Private Law | Minimal — already uses `service_code` (ABA5) |
-| CCD/ExUI | Separate analysis required |
+| Civil | Impacted — tracked under `DTSCCI-3202` / `DTSCCI-5423` |
+| ST-CIC | Impacted — swapped a hardcoded court type id for service code (`DTSSTCI-1774`), supporting both during transition |
+| CCD/ExUI | Separate analysis; an ExUI change to pass `serviceId` to `/court-venues` (`POFCC-137`) was reverted before SRT after triggering 404s on missing jurisdiction data |
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
@@ -433,6 +460,8 @@ public class LrdCourtVenueController {
     @GetMapping(produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<List<LrdCourtVenueResponse>> retrieveCourtVenues(
         @RequestParam(value = "epimms_id",                   required = false) String epimmsIds,
+        @RequestParam(value = "service_code",                required = false) String serviceCode,
+        @Parameter(name = "court_type_id", description = DEPRECATED_COURT_TYPE_ID, deprecated = true)
         @RequestParam(value = "court_type_id",               required = false) Integer courtTypeId,
         @RequestParam(value = "region_id",                   required = false) Integer regionId,
         @RequestParam(value = "cluster_id",                  required = false) Integer clusterId,
@@ -442,7 +471,8 @@ public class LrdCourtVenueController {
         @RequestParam(value = "is_case_management_location", required = false) String isCaseManagementLocation,
         @RequestParam(value = "location_type",               required = false) String locationType,
         @RequestParam(value = "is_temporary_location",       required = false) String isTemporaryLocation) {
-        // epimms_id and court_type_id may coexist; all other primary params are mutually exclusive
+        // epimms_id may coexist with either service_code or court_type_id;
+        // all other primary params are mutually exclusive
         // ...
         return ResponseEntity.status(HttpStatus.OK).body(lrdCourtVenueResponses);
     }
