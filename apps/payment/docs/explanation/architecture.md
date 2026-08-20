@@ -55,18 +55,18 @@ confluence:
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
   "ccpay-payment-app:settings.gradle": "7bafc8bc5e167ac022ea09d0d178dda6df95e09b"
-  "ccpay-payment-app:api/src/main/resources/application.properties": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-master.xml": "d186319bdd2f53eeea8c6696dcaa973b62fef4e4"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "9347d7418c0407d72eaf4dc231a1abde2718f472"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "fc22d946d5ba13d3170b12fd2c4f2112a7efa6b0"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/FeePayApportionServiceImpl.java": "445f3ac2c605bdd3fd2ff39aa1a6b7936e7b6634"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/util/ServiceRequestUtil.java": "f190c168e2485e79521c0b05f64c0551abd2b6d6"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentStatusDto.java": "0cf6e7d5ce9bdb8418b6627d44867a1e83dc1981"
-  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsController.java": "28db15967ec44a65d32c09ce24c48f55314833ac"
+  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsController.java": "98e5f4161db82b39d5e472d3ca4bbb212bfe6cd6"
   "ccpay-refunds-app:src/main/resources/db/changelog/db.changelog-master.yaml": "251f8931b4bd5a3e4e47d3cb0f509b1e7940abd3"
   "ccpay-notifications-service:src/main/java/uk/gov/hmcts/reform/notifications/controllers/NotificationController.java": "19e4851c3312e4345b89d72332cebf68a35a1616"
   "ccpay-notifications-service:src/main/resources/db/changelog/db.changelog-master.yaml": "14942540fbf1fd5782b38487ae7b5fbd39e66808"
@@ -183,7 +183,7 @@ The hub publishes to two ASB topics:
 1. **`ccpay-service-callback-topic`** -- card/PBA payment status callbacks to consuming services (civil, ia, pcs, etc.). Published by `CallbackServiceImpl` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:46-89`), gated by FF4j flag `service-callback`. The `TopicClientProxy` handles message sending with up to 3 retries with exponential backoff (1s, 2s, 3s) before failing (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java:36-51`).
 2. **`ccpay-service-request-cpo-update-topic`** -- service-request payment updates forwarded to the Case Payment Orders API. Published by `ServiceRequestDomainServiceImpl` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java:534-572`).
 
-The ASB subscription for the callback topic is `serviceCallbackPremiumSubscription` (`application.properties:201`). Messages are consumed by `ccpay-functions-node`, an Azure Function (separate from the payment repos) that delivers the payment status payload to each service's registered callback URL.
+The ASB subscription for the callback topic is `serviceCallbackPremiumSubscription` (`azure.servicebus.subscription-name`). Messages are consumed by `ccpay-functions-node`, an Azure Function (separate from the payment repos) that delivers the payment status payload to each service's registered callback URL.
 
 ## Payment lifecycle
 
@@ -392,14 +392,14 @@ All inbound API requests require:
 1. **IDAM JWT** (`Authorization` header) -- validated via `auth-checker-lib`
 2. **S2S JWT** (`ServiceAuthorization` header) -- validated against a per-service trusted-callers list
 
-The hub's S2S trusted callers list spans approximately 20 CFT services (`ccpay-payment-app:api/src/main/resources/application.properties:110`):
+The hub's S2S trusted callers list spans 24 CFT services (`trusted.s2s.service.names` in `ccpay-payment-app:api/src/main/resources/application.properties`):
 
 ```
 cmc, cmc_claim_store, probate_frontend, divorce_frontend, ccd_gw, api_gw,
 finrem_payment_service, ccpay_bubble, jui_webapp, xui_webapp, fpl_case_service,
 iac, probate_backend, civil_service, paymentoutcome_web, adoption_web,
 prl_cos_api, refunds_api, civil_general_applications, notifications_service,
-nfdiv_case_api, ccpay_gw, pcs_api
+nfdiv_case_api, ccpay_gw, pcs_api, pcs_frontend
 ```
 
 External-facing paths (S2S only, no user token) include `/payments`, `/payments/**`, `/card-payments/*/status`, `/telephony/callback`, and `/jobs/**`.

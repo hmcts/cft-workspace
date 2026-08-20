@@ -57,11 +57,11 @@ confluence:
     space: "DTSFP"
 confluence_checked_at: "2026-05-13T12:00:00Z"
 sources_sha:
-  "ccpay-payment-app:api/src/main/resources/application.properties": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "fc22d946d5ba13d3170b12fd2c4f2112a7efa6b0"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/GovPayDelegatingPaymentService.java": "4ad418c9d46f4d82cf3cc50a83620cfe86a17d42"
   "ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/GovPayClient.java": "5c28ea10564258d9c193bead87675b85afa50c21"
@@ -70,7 +70,7 @@ sources_sha:
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/ReferenceUtil.java": "f200d99c269e2871d1dfdce27187cad4b02c2c73"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "9347d7418c0407d72eaf4dc231a1abde2718f472"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:settings.gradle": "7bafc8bc5e167ac022ea09d0d178dda6df95e09b"
 ---
 
@@ -118,7 +118,7 @@ GOV.UK Pay provides the card-payment rails for government services, but each HMC
 `ccpay-payment-app` solves this by:
 
 1. **Abstracting provider integration** — a single `POST /card-payments` or `POST /credit-account-payments` endpoint regardless of underlying provider.
-2. **Enforcing authentication** — all inbound requests require both an IDAM user JWT and an S2S service JWT (`application.properties:110` defines ~20 trusted S2S callers including `xui_webapp`, `civil_service`, `pcs_api`, `nfdiv_case_api`).
+2. **Enforcing authentication** — all inbound requests require both an IDAM user JWT and an S2S service JWT (`trusted.s2s.service.names` defines 24 trusted S2S callers including `xui_webapp`, `civil_service`, `pcs_api`, `nfdiv_case_api`).
 3. **Generating structured payment references** — the `payment_fee_link.payment_reference` ties a payment group (fees + remissions + payments) together for downstream reconciliation.
 4. **Aggregating for reconciliation** — Liberata pulls payment data via `/payments` and `/reconciliation-payments` with filters on `payment_method`, `service_name`, `ccd_case_number`, `start_date`, `end_date`.
 
@@ -150,7 +150,7 @@ Key implementation details:
 - Amounts are converted from pounds to pence with `movePointRight(2).intValue()` before forwarding to GOV.UK Pay (`GovPayDelegatingPaymentService:46-52`).
 - `return-url` and `service-callback-url` are passed as request headers, not in the body (`CardPaymentController:119-121`).
 - Resilience4j circuit breakers protect both create and retrieve calls (`GovPayClient:55-77`).
-- GOV.UK Pay URL: `gov.pay.url=${GOV_PAY_URL:https://publicapi.payments.service.gov.uk/v1/payments}` (`application.properties:101`).
+- GOV.UK Pay URL: `gov.pay.url=${GOV_PAY_URL:https://publicapi.payments.service.gov.uk/v1/payments}` (in `application.properties`).
 
 ### Telephony payments (PCI-PAL)
 
@@ -175,7 +175,7 @@ Professional users (solicitors) pay using their PBA account. The flow:
 3. If the account is `ON_HOLD` or `DELETED`, the payment is rejected with HTTP 412 or 410 respectively.
 4. If active and sufficient funds, the payment is created with status `success`.
 
-Liberata integration uses OAuth2 password grant for token acquisition (`LiberataService:36-58`) and Resilience4j time-limiters (15s timeout, `application.properties:247-248`).
+Liberata integration uses OAuth2 password grant for token acquisition (`LiberataService:36-58`) and Resilience4j time-limiters (15s timeout, `application.properties:244-245`).
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 The PBA API has evolved through multiple versions (v1, v2, v3). New services are expected to integrate with **PBA v3** (via the service-request endpoint `POST /service-request/{ref}/pba-payments`). PBA payments are ultimately settled through **direct debit** by Liberata.
@@ -393,7 +393,7 @@ The schema is managed with Liquibase (32 changelog files, `db.changelog-master.x
 
 ## Authentication and authorisation
 
-All endpoints require S2S authentication. The trusted caller list (`application.properties:110`) includes: `cmc`, `cmc_claim_store`, `probate_frontend`, `divorce_frontend`, `ccd_gw`, `xui_webapp`, `fpl_case_service`, `iac`, `civil_service`, `prl_cos_api`, `nfdiv_case_api`, `pcs_api`, and others.
+All endpoints require S2S authentication. The trusted caller list (`trusted.s2s.service.names`) includes: `cmc`, `cmc_claim_store`, `probate_frontend`, `divorce_frontend`, `ccd_gw`, `xui_webapp`, `fpl_case_service`, `iac`, `civil_service`, `prl_cos_api`, `nfdiv_case_api`, `pcs_api`, and others.
 
 Endpoints are split into two security profiles:
 

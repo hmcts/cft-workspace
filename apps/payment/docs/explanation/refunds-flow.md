@@ -46,7 +46,7 @@ confluence:
     space: "DTSFP"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsController.java": "28db15967ec44a65d32c09ce24c48f55314833ac"
+  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsController.java": "98e5f4161db82b39d5e472d3ca4bbb212bfe6cd6"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundsServiceImpl.java": "28db15967ec44a65d32c09ce24c48f55314833ac"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundReviewServiceImpl.java": "8b0ba10ac9549aa89e87426f557dd00703eb0e77"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundStatusServiceImpl.java": "32d397a4e5e2e1c6ca2ec2e66101a69845c9c0d7"
@@ -55,7 +55,7 @@ sources_sha:
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/utils/RefundsUtil.java": "1c8b7b924ea8aa9367a3c89bd489154ca5f62026"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/model/RefundStatus.java": "8b0ba10ac9549aa89e87426f557dd00703eb0e77"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/model/ContactDetails.java": "526afeda77ce66434e8a9dfd9556a4845dbb0b16"
-  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/config/security/SpringSecurityConfiguration.java": "28db15967ec44a65d32c09ce24c48f55314833ac"
+  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/config/security/SpringSecurityConfiguration.java": "9c1f60db6598dba461b9583daf0f3687df63ece9"
   "ccpay-notifications-service:src/main/java/uk/gov/hmcts/reform/notifications/controllers/NotificationController.java": "19e4851c3312e4345b89d72332cebf68a35a1616"
   "ccpay-notifications-service:src/main/java/uk/gov/hmcts/reform/notifications/service/NotificationServiceImpl.java": "b2f080167860aa6af9baf74452cd68261d21b010"
 ---
@@ -357,7 +357,29 @@ The `ccpay-notifications-service` maintains a `service_contact` table that maps 
 | `payments-refund-<service>` | Service-scoped refund role (e.g. `payments-refund-probate`) |
 | `payments-refund-approver-<service>` | Service-scoped approver role |
 
-The `PATCH /refund/*` endpoint (Liberata callback) and `/jobs/**` endpoints are configured as `permitAll()` in Spring Security — they rely on S2S token validation rather than IDAM role checks (`SpringSecurityConfiguration.java:128–129`).
+`/jobs/**` is configured as `permitAll()` in Spring Security and relies on S2S token
+validation rather than IDAM role checks.
+
+`PATCH /refund/*` — the Liberata callback — **was** `permitAll()` too, and stopped being
+so in CME-896 (August 2026). It is now gated by a custom `AuthorizationManager`,
+`RefundStatusUpdateAuthorizationManager`, which admits a request on either of two
+grounds and rejects everything else:
+
+1. **A user token carrying a refund role.** The authentication is a
+   `JwtAuthenticationToken` and one of its authorities is `payments-refund` or
+   `payments-refund-approver`.
+2. **An anonymous call from the payments gateway.** There is no authenticated user at
+   all, *and* the `ServiceAuthorization` header resolves — via `AuthTokenValidator` —
+   to the microservice `ccpay_gw`, which must also appear in
+   `idam.s2s-authorised.services`.
+
+The two are exclusive by construction: branch 2 requires the request to be anonymous,
+so a caller that presents a user token without a refund role is rejected even when it
+arrives through APIM with a valid `ccpay_gw` S2S token. Adding the S2S token does not
+rescue a wrong-role user token — drop the user token instead.
+
+Note also that only `ccpay_gw` qualifies, hardcoded as a constant. Listing another
+service in `idam.s2s-authorised.services` does not grant it this endpoint.
 
 ## Feature flags
 

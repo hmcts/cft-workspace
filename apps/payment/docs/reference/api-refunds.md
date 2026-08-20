@@ -54,15 +54,15 @@ confluence:
     space: "DTSFP"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsController.java": "28db15967ec44a65d32c09ce24c48f55314833ac"
-  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsActionController.java": "f644191de62a57b7046e3612704cee505b82d7ab"
+  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsController.java": "98e5f4161db82b39d5e472d3ca4bbb212bfe6cd6"
+  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/controllers/RefundsActionController.java": "98e5f4161db82b39d5e472d3ca4bbb212bfe6cd6"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundsServiceImpl.java": "28db15967ec44a65d32c09ce24c48f55314833ac"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundReviewServiceImpl.java": "8b0ba10ac9549aa89e87426f557dd00703eb0e77"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundStatusServiceImpl.java": "32d397a4e5e2e1c6ca2ec2e66101a69845c9c0d7"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/dtos/requests/RefundRequest.java": "8b0ba10ac9549aa89e87426f557dd00703eb0e77"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/dtos/requests/RefundStatusUpdateRequest.java": "d0970d044fc5fdc0c510e8095f159c2c1fe19858"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/state/RefundState.java": "5255433fa96cb8303a667ee0660219befd1cdc10"
-  "ccpay-refunds-app:src/main/resources/application.yaml": "bb44178230d939ce048b90a69474142f54d040de"
+  "ccpay-refunds-app:src/main/resources/application.yaml": "fcda3a69f83a92e6cd7b8292a99a9bfa349090a3"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/utils/RefundsUtil.java": "1c8b7b924ea8aa9367a3c89bd489154ca5f62026"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundNotificationServiceImpl.java": "3749385a4df78f606ecf839387fd0f26328d8709"
   "ccpay-payment-api-gateway:cft-api-mgmt.tf": "851a3bd62e0d7ff6a42288faecaef9b80f259be0"
@@ -270,6 +270,34 @@ Key columns on `refunds`:
 All endpoints require:
 - `Authorization` header: IDAM user JWT
 - `ServiceAuthorization` header: S2S token from a trusted service
+
+`PATCH /refund/*` is the exception. It used to be `permitAll()`; since CME-896 it is
+gated by `RefundStatusUpdateAuthorizationManager`, which admits either a user token
+holding `payments-refund`/`payments-refund-approver`, **or** a fully anonymous request
+whose S2S token resolves to the `ccpay_gw` microservice. A user token without a refund
+role is rejected even alongside a valid `ccpay_gw` S2S token, because the gateway
+branch only applies when there is no authenticated user at all. See
+[Refunds flow](../explanation/refunds-flow.md#idam-roles-and-security).
+
+### Rate limiting
+
+Every endpoint on `RefundsController` and `RefundsActionController` is rate-limited —
+both classes carry a class-level `@RateLimiter(name = "refundsApi")`, so the budget is
+shared across the whole API rather than per endpoint. Over the limit, `ExceptionHandlers`
+returns **429 Too Many Requests** with the body `Too many requests`.
+
+| Setting | Env var | Default |
+|---|---|---|
+| Requests per period | `REFUNDS_API_RATE_LIMIT_FOR_PERIOD` | 10 |
+| Refresh period | `REFUNDS_API_RATE_LIMIT_REFRESH_PERIOD` | `1s` |
+| Wait for a permit | `REFUNDS_API_RATE_LIMIT_TIMEOUT_DURATION` | `0` |
+
+A timeout of `0` means a caller over the limit fails immediately rather than blocking
+for a permit. Ten requests per second is a low ceiling for a batch reconciliation
+sweep — raise it per environment rather than assuming the default accommodates you.
+
+`ccpay-payment-app` is rate-limited separately and behaves differently under load;
+see [Payments API](api-payments.md#rate-limiting).
 
 Feature flags:
 

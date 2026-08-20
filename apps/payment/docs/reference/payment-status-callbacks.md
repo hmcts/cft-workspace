@@ -52,8 +52,8 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientService.java": "80f0421010c7b573dc2437346c6f4ba49a8cae49"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "fc22d946d5ba13d3170b12fd2c4f2112a7efa6b0"
-  "ccpay-payment-app:api/src/main/resources/application.properties": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentStatusDto.java": "0cf6e7d5ce9bdb8418b6627d44867a1e83dc1981"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentReference.java": "d7a9437816824a5d44c10c5738180cba36b40501"
   "ccpay-service-request-cpo-update-service:src/main/java/uk/gov/hmcts/reform/config/servicebus/ServiceBusConfiguration.java": "a21fecc631d099d3e44146d87d5b7481ab2a8b24"
@@ -273,14 +273,14 @@ Two beans manage the two topics:
 
 ## Registered consumers (S2S callers)
 
-Services that receive callbacks via `ccpay-service-callback-topic` register their `serviceCallbackUrl` at payment/service-request creation time. The trusted S2S caller list for `ccpay-payment-app` includes (`application.properties:110`):
+Services that receive callbacks via `ccpay-service-callback-topic` register their `serviceCallbackUrl` at payment/service-request creation time. The trusted S2S caller list for `ccpay-payment-app` includes (`trusted.s2s.service.names`):
 
 ```
 cmc, cmc_claim_store, probate_frontend, divorce_frontend, ccd_gw, api_gw,
 finrem_payment_service, ccpay_bubble, jui_webapp, xui_webapp, fpl_case_service,
 iac, probate_backend, civil_service, paymentoutcome_web, adoption_web,
 prl_cos_api, refunds_api, civil_general_applications, notifications_service,
-nfdiv_case_api, ccpay_gw, pcs_api
+nfdiv_case_api, ccpay_gw, pcs_api, pcs_frontend
 ```
 
 Any service in this list can register a callback URL when creating a payment or service request.

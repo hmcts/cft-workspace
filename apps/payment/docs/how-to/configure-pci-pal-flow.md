@@ -47,9 +47,9 @@ sources_sha:
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/TelephonySystem.java": "e73670ad6d187564188d1f828e551dc1554074a9"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AntennaTelephonySystem.java": "c144ef6b6c298b35f14cf2400b4d8fad4d57b3e7"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/KervTelephonySystem.java": "c144ef6b6c298b35f14cf2400b4d8fad4d57b3e7"
-  "ccpay-payment-app:api/src/main/resources/application.properties": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java": "e73670ad6d187564188d1f828e551dc1554074a9"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "5c28ea10564258d9c193bead87675b85afa50c21"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api-contract/src/main/java/uk/gov/hmcts/payment/api/contract/TelephonyCardPaymentsRequest.java": "cd90241f94938ecec08b8768ce5e2bb4fc4fa5ab"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/TelephonyCallbackDto.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:charts/payment-api/values.yaml": "f4fb59095aad65f13e8673472f64f4cdb246af7a"
@@ -99,7 +99,7 @@ The PCI-PAL staging environment uses tenant ID **1288** for Kerv (303 for Antenn
 
 ### 3. Add the flow ID property
 
-Add an environment variable for the new flow ID, following the naming convention of existing flows in `application.properties:56-69`. The pattern is:
+Add an environment variable for the new flow ID, following the naming convention of existing flows in the `pci-pal.*` block (`application.properties:30-70`). The pattern is:
 
 ```properties
 # Kerv (active provider)
@@ -164,7 +164,7 @@ Secrets are stored in Azure Key Vault under the `ccpay` namespace and mounted in
 
 The corresponding environment variables follow the pattern `PCI_PAL_KERV_<PROPERTY>` (e.g. `PCI_PAL_KERV_PROBATE_FLOW_ID`).
 
-The `grant_type` defaults to `client_credentials` in `application.properties:57` and is not typically stored as a secret.
+The `grant_type` defaults to `client_credentials` (`pci-pal.antenna.grant.type` and `pci-pal.kerv.grant.type`) and is not typically stored as a secret.
 
 **Username handling:** For Kerv, the `username` parameter in the OAuth token exchange is the **obfuscated IDAM user ID** of the logged-in CTSC staff member (hashed via `Objects.hash(idamUserId)` in `PaymentGroupController.java:668`), not a static secret. This differs from Antenna, which used a static `pci-pal-antenna-user-name` secret.
 

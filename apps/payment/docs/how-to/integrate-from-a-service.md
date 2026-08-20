@@ -55,12 +55,12 @@ confluence:
     space: "DTSFP"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "ccpay-payment-app:api/src/main/resources/application.properties": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/PaymentAuthCheckerConfiguration.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "fc22d946d5ba13d3170b12fd2c4f2112a7efa6b0"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "5c28ea10564258d9c193bead87675b85afa50c21"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/v1/model/govpay/GovPayConfig.java": "bf63d4597038e8e184cc52ab230549c3a372ec3c"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/ServiceToTokenMap.java": "109655a0103cf081d4da2680872c7f77351f6e16"
@@ -85,7 +85,7 @@ sources_sha:
 Before integrating, ensure you have:
 
 - An S2S microservice name registered with `service-auth-provider-api`.
-- Your S2S name added to the `trusted.s2s.service.names` list in `ccpay-payment-app` configuration (`application.properties:110`).
+- Your S2S name added to the `trusted.s2s.service.names` list in `ccpay-payment-app` configuration (`api/src/main/resources/application.properties`).
 - A GOV.UK Pay account and API key (for card payments) -- the key is configured as `gov.pay.auth.key.<your_service>` in the payment service's Helm chart.
 - Access to the Azure Service Bus namespace (for receiving callbacks).
 - Your service's Org/Service ID configured in Reference Data (the `hmcts_org_id` used in Service Request creation).
@@ -107,9 +107,9 @@ These dependencies come from the F&P onboarding process and are not modelled in 
 
 ## Step 1: Register your service as a trusted S2S caller
 
-1. Raise a PR against `ccpay-payment-app` to add your S2S microservice name to the `trusted.s2s.service.names` property in `api/src/main/resources/application.properties:110`.
+1. Raise a PR against `ccpay-payment-app` to add your S2S microservice name to the `trusted.s2s.service.names` property in `api/src/main/resources/application.properties`.
 2. Also add the same service name to the `TRUSTED_S2S_SERVICE_NAMES` variable in `charts/payment-api/values.yaml` and update the chart version in `Chart.yaml`.
-3. The current trusted list includes: `cmc`, `cmc_claim_store`, `probate_frontend`, `divorce_frontend`, `ccd_gw`, `api_gw`, `finrem_payment_service`, `ccpay_bubble`, `jui_webapp`, `xui_webapp`, `fpl_case_service`, `iac`, `probate_backend`, `civil_service`, `paymentoutcome_web`, `adoption_web`, `prl_cos_api`, `refunds_api`, `civil_general_applications`, `notifications_service`, `nfdiv_case_api`, `ccpay_gw`, `pcs_api`.
+3. The current trusted list includes: `cmc`, `cmc_claim_store`, `probate_frontend`, `divorce_frontend`, `ccd_gw`, `api_gw`, `finrem_payment_service`, `ccpay_bubble`, `jui_webapp`, `xui_webapp`, `fpl_case_service`, `iac`, `probate_backend`, `civil_service`, `paymentoutcome_web`, `adoption_web`, `prl_cos_api`, `refunds_api`, `civil_general_applications`, `notifications_service`, `nfdiv_case_api`, `ccpay_gw`, `pcs_api`, `pcs_frontend`.
 4. Optionally, add the service name in `cnp-flux-config` for specific environments (this overrides the application-level list): `https://github.com/hmcts/cnp-flux-config/blob/master/apps/fees-pay/ccpay-payment-api/prod.yaml`.
 
 ## Step 2: Configure a GOV.UK Pay API key (card payments only)

@@ -47,10 +47,10 @@ sources_sha:
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/TelephonySystem.java": "e73670ad6d187564188d1f828e551dc1554074a9"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AntennaTelephonySystem.java": "c144ef6b6c298b35f14cf2400b4d8fad4d57b3e7"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/KervTelephonySystem.java": "c144ef6b6c298b35f14cf2400b4d8fad4d57b3e7"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java": "e73670ad6d187564188d1f828e551dc1554074a9"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/TelephonyCallbackDto.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/resources/application.properties": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:charts/payment-api/values.yaml": "f4fb59095aad65f13e8673472f64f4cdb246af7a"
 ---
 
@@ -273,7 +273,7 @@ Telephony payments must cover all outstanding fees for a case. Partial telephony
 
 ## Configuration Properties
 
-All telephony configuration lives in `application.properties:30-69` (overridden by environment variables in deployed environments). The property structure for each provider follows the same pattern:
+All telephony configuration lives in `application.properties:30-70` (overridden by environment variables in deployed environments). The property structure for each provider follows the same pattern:
 
 ```
 pci-pal.{provider}.grant.type

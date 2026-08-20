@@ -55,15 +55,15 @@ confluence:
     space: "DTSFP"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "fc22d946d5ba13d3170b12fd2c4f2112a7efa6b0"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/AccountController.java": "db1fcc54a4fb30ca256c1fa1b465d65369ae653b"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "9347d7418c0407d72eaf4dc231a1abde2718f472"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentReportController.java": "0c22461a0c596b004dc672887ba6ebf4fc4ebaea"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java": "b032dfa3d5f3831d9dbc5ef08f6e29ebff8815b4"
-  "ccpay-payment-app:api/src/main/resources/application.properties": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/AccountController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentReportController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/SpringSecurityConfiguration.java": "e8033dfe3c25862046cd940eadb7522175cb4aba"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/TelephonyCallbackDto.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentStatusDto.java": "0cf6e7d5ce9bdb8418b6627d44867a1e83dc1981"
@@ -93,7 +93,42 @@ All inbound requests require a `ServiceAuthorization` header (S2S JWT). Internal
 | `/payment-failures/**` (POST/PATCH) | `permitAll()` | Liberata failure callbacks — no auth |
 | All other paths | S2S + IDAM user | Standard internal auth |
 
-Trusted S2S callers (`application.properties:110`): `cmc`, `cmc_claim_store`, `probate_frontend`, `divorce_frontend`, `ccd_gw`, `api_gw`, `finrem_payment_service`, `ccpay_bubble`, `jui_webapp`, `xui_webapp`, `fpl_case_service`, `iac`, `probate_backend`, `civil_service`, `paymentoutcome_web`, `adoption_web`, `prl_cos_api`, `refunds_api`, `civil_general_applications`, `notifications_service`, `nfdiv_case_api`, `ccpay_gw`, `pcs_api`.
+Trusted S2S callers (`trusted.s2s.service.names` in `application.properties`) -- 24 in all: `cmc`, `cmc_claim_store`, `probate_frontend`, `divorce_frontend`, `ccd_gw`, `api_gw`, `finrem_payment_service`, `ccpay_bubble`, `jui_webapp`, `xui_webapp`, `fpl_case_service`, `iac`, `probate_backend`, `civil_service`, `paymentoutcome_web`, `adoption_web`, `prl_cos_api`, `refunds_api`, `civil_general_applications`, `notifications_service`, `nfdiv_case_api`, `ccpay_gw`, `pcs_api`, `pcs_frontend`.
+
+## Rate limiting
+
+Since PAY-8011 (August 2026) every endpoint carries a method-level
+`@RateLimiter(name = "default-rate-limiter")` — the annotation used to sit at class
+level, and was moved down onto each mapping. All endpoints across all controllers draw
+on that one shared instance, so the limit is service-wide, not per endpoint or per
+caller.
+
+| Setting | Env var | Default |
+|---|---|---|
+| Requests per period | `API_RATE_LIMIT_FOR_PERIOD` | 20 |
+| Refresh period | `API_RATE_LIMIT_REFRESH_PERIOD` | `1s` |
+| Wait for a permit | `API_RATE_LIMIT_TIMEOUT_DURATION` | `0` |
+
+Three things to know before you rely on this:
+
+- **The default dropped from 100/s to 20/s** when the limit became env-configurable.
+  Anything that used to burst up to 100 requests a second now needs
+  `API_RATE_LIMIT_FOR_PERIOD` raised for its environment.
+- **The Resilience4j instance was renamed** from `defaultRateLimiter` to
+  `default-rate-limiter`, and `retrievePbaAccountTimeLimiter.timeoutDuration` to
+  `.timeout-duration`. Any Helm or environment override still written in the old
+  camelCase form is now inert — Spring binds it to nothing and fails silently, leaving
+  the limiter on its default.
+- **A throttled request does not return 429 here.** Unlike `ccpay-refunds-app`, this
+  service has no `@ExceptionHandler` for Resilience4j's `RequestNotPermitted`, so the
+  exception escapes as a generic **500**. Do not treat a 500 under load as a server
+  fault before checking the rate limiter; and do not write client retry logic that keys
+  off 429.
+
+The README documents these as `REFUNDS_API_RATE_LIMIT_*`. That is wrong — it is copied
+from `ccpay-refunds-app`, which has its own separate limiter (see
+[Refunds API](api-refunds.md#rate-limiting)). The names this service reads are the ones
+in the table above.
 
 ## Card Payments (GOV.UK Pay)
 
@@ -227,7 +262,7 @@ Services still on Config 1 are listed in `pba.config1.service.names` (applicatio
 **Liberata integration details**:
 - Account API: `GET https://bpacustomerportal.liberata.com/pba/public/api/v2/account/{pbaCode}` (configurable via `LIBERATA_API_ACCOUNT_URL`).
 - OAuth2 token URL: password grant to `https://bpacustomerportal.liberata.com/pba/public/oauth/token` (configurable via `LIBERATA_OAUTH2_TOKEN_URL`).
-- Timeouts: 15s connect, 15s read (`application.properties:88-89`).
+- Timeouts: 15s connect, 15s read (`liberata.connect.timeout`, `liberata.read.timeout`).
 - Resilience: `@CircuitBreaker` + `@TimeLimiter(name = "retrievePbaAccountTimeLimiter")` with 15s timeout.
 
 ## PBA Account Lookup

@@ -61,13 +61,13 @@ sources_sha:
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/v1/model/govpay/GovPayConfig.java": "bf63d4597038e8e184cc52ab230549c3a372ec3c"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/v1/model/govpay/GovPayKeyRepository.java": "4ad418c9d46f4d82cf3cc50a83620cfe86a17d42"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/ServiceToTokenMap.java": "109655a0103cf081d4da2680872c7f77351f6e16"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "9347d7418c0407d72eaf4dc231a1abde2718f472"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "fc22d946d5ba13d3170b12fd2c4f2112a7efa6b0"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "fc22d946d5ba13d3170b12fd2c4f2112a7efa6b0"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/OnlineCardPaymentRequest.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/PayStatusToPayHubStatus.java": "1aec5909aac1e66f1cd19cbdd2aac2009c42aa68"
-  "ccpay-payment-app:api/src/main/resources/application.properties": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
+  "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-scheduled-jobs:charts/payment-jobs/values.yaml": "d075278a9f9f8eb49b3aaaff2ca9e5a0694fcd7e"
 ---
 
@@ -134,7 +134,7 @@ Any 4xx/5xx triggers `checkNotAnError()` (`GovPayClient.java:132-140`) which del
 
 ### Resilience4j circuit breakers
 
-Circuit breaker configuration lives in `application.properties:237-244`. The `retrieveCardPayment` breaker is configured to ignore `GovPayPaymentNotFoundException` so that a missing payment does not count as a failure towards the breaker threshold.
+Circuit breaker configuration lives in `application.properties:232-242`. The `retrieveCardPayment` breaker is configured to ignore `GovPayPaymentNotFoundException` so that a missing payment does not count as a failure towards the breaker threshold.
 
 ## Payment creation flow
 
@@ -273,7 +273,7 @@ The `service-callback-url` is not sent to GOV.UK Pay. It is persisted and used i
 
 ### Callback message routing
 
-<!-- REVIEW: The topic names in this table are wrong. There is only ONE topic: "ccpay-service-callback-topic" (confirmed in application.properties:200 and CallbackServiceImpl.java which uses a single TopicClientProxy for both paths). Both legacy and Ways2Pay callbacks go to the same topic. The names "servicecallbacktopic" and "service-request-update" do not exist in source. -->
+<!-- REVIEW: The topic names in this table are wrong. There is only ONE topic: "ccpay-service-callback-topic" (confirmed in the azure.servicebus.topic-name property and CallbackServiceImpl.java which uses a single TopicClientProxy for both paths). Both legacy and Ways2Pay callbacks go to the same topic. The names "servicecallbacktopic" and "service-request-update" do not exist in source. -->
 Two Azure Service Bus topics are used:
 
 | Topic | Used when | Legacy/new |
@@ -389,7 +389,7 @@ gov.pay.auth.key.pcs_api=${GOV_PAY_AUTH_KEY_PCS_API:}
 
 ### Operational services
 
-The property `gov.pay.operational_services=ccd_gw,api_gw,ccpay_gw` (`application.properties:102`) lists S2S service names considered internal/operational. These are gateway services that proxy requests on behalf of other services -- the actual GOV.UK Pay account is resolved from the payment's `serviceType`, not the calling gateway's identity.
+The property `gov.pay.operational_services=ccd_gw,api_gw,ccpay_gw` (in `application.properties`) lists S2S service names considered internal/operational. These are gateway services that proxy requests on behalf of other services -- the actual GOV.UK Pay account is resolved from the payment's `serviceType`, not the calling gateway's identity.
 
 ## Service onboarding
 
@@ -472,7 +472,7 @@ The per-service GOV.UK Pay account structure exists specifically to support this
 | `gov.pay.url` | `https://publicapi.payments.service.gov.uk/v1/payments` | GOV.UK Pay base URL |
 | `gov.pay.auth.key.<service>` | (per env var) | API key per HMCTS service |
 | `gov.pay.operational_services` | `ccd_gw,api_gw,ccpay_gw` | Gateway S2S names (not account holders) |
-| Resilience4j `createCardPayment` | (see `application.properties:237-244`) | Circuit breaker for payment creation |
+| Resilience4j `createCardPayment` | (see `application.properties:232-242`) | Circuit breaker for payment creation |
 | Resilience4j `retrieveCardPayment` | ignores `GovPayPaymentNotFoundException` | Circuit breaker for retrieval |
 | CronJob schedule | `*/1 * * * *` | Status update job frequency |
 
