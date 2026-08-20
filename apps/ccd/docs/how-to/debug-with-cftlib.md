@@ -13,10 +13,16 @@ sources:
   - rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ESIndexer.java
   - rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java
   - rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/ControlPlane.java
+  - rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java
   - rse-cft-lib:cftlib/lib/runtime/compose/docker-compose.yml
+  - ccd-definition-store-api:application/src/main/resources/application.properties
+  - ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/TransactionConfiguration.java
+  - ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/ApplicationParams.java
+  - ccd-data-store-api:src/main/resources/db/migration/V0001__Base_version.sql
+  - ccd-data-store-api:src/main/resources/db/migration/V20250306_0000__CCD-6936_case_pointer_marked_by_logstash.sql
 status: confluence-augmented
-last_reviewed: "2026-04-29T00:00:00Z"
-confluence_checked_at: "2026-04-29T00:00:00Z"
+last_reviewed: "2026-08-20T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 confluence:
   - id: "1706197099"
     title: "Debugging CFTLib internals"
@@ -29,7 +35,7 @@ confluence:
   - id: "1933968909"
     title: "Local development environment"
     space: "DATS"
-    last_modified: "unknown"
+    last_modified: "2026-06-10 (v25)"
   - id: "1602552914"
     title: "CFTLib Feeback"
     space: "RSE"
@@ -53,7 +59,16 @@ sources_sha:
   "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ESIndexer.java": "cc031d19e1b4ff87cdc66c0f6609ee54241ec04b"
   "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java": "9098a05a1f349631f606f4831c0c024deb6a4b5a"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/ControlPlane.java": "71544992866ebc3f02139e17b9782c9437213a22"
+  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
   "rse-cft-lib:cftlib/lib/runtime/compose/docker-compose.yml": "3803e3cd277d57d3882136a8399c68acae2ca000"
+  "ccd-definition-store-api:application/src/main/resources/application.properties": "6d523fcfb408654266b488e56834fa3fc5f8d711"
+  ? ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/TransactionConfiguration.java
+  : "bda0438d09f29d99f546185907272748a1224c49"
+  ? ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/ApplicationParams.java
+  : "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-data-store-api:src/main/resources/db/migration/V0001__Base_version.sql": "2dc4bd32091d4f764d6ac7150265d04ed016bd1b"
+  ? ccd-data-store-api:src/main/resources/db/migration/V20250306_0000__CCD-6936_case_pointer_marked_by_logstash.sql
+  : "0b3fa976dfabfb1fd06c6f37c9832b0a5cdacaf3"
 ---
 
 # Debug with cftlib
@@ -62,7 +77,7 @@ sources_sha:
 
 - cftlib runs CCD data-store, definition-store, user-profile, AM role assignment, CDAM, and more in-process via a Gradle `bootWithCCD` task — Docker is still needed for Postgres, Elasticsearch, and the XUI containers.
 - Attach a remote debugger to the JVM started by `bootWithCCD` to step into callback handlers or CCD internals.
-- Re-import a definition at any time by calling `CFTLib.importDefinition()` or `importJsonDefinition()` from your `CFTLibConfigurer` — import is idempotent (MD5-tracked) so it skips unchanged definitions.
+- Re-import a definition at any time by calling `CFTLib.importDefinition()` or `importJsonDefinition()` from your `CFTLibConfigurer`. `importDefinition` is MD5-idempotent and skips unchanged bytes; `importJsonDefinition` is not, so it always re-imports.
 - IDAM is stubbed in two layers: in-process AspectJ intercepts plus an `rse-idam-simulator` on port 5062; all IDAM users have password `"password"`.
 - `CFTLib.getConnection(Database)` gives you a raw JDBC connection to the embedded Postgres for direct inspection.
 - When a service fails inside the JVM, the per-service logs in `build/cftlib/logs/` are the first place to look — runtime errors that don't show in the Gradle console land there.
@@ -133,9 +148,9 @@ A `201 Created` response with the updated case JSON confirms the event was appli
 
 ## Recipe 3 — Inspect Elasticsearch indexes
 
-CCD data-store syncs case data to an Elasticsearch container that cftlib starts via Docker Compose (`docker.elastic.co/elasticsearch/elasticsearch:7.11.1`, host port `9200` — see `docker-compose.yml` and `ESIndexer.java:41`). Query it directly while `bootWithCCD` is running.
+CCD data-store syncs case data to an Elasticsearch container that cftlib starts via Docker Compose (`docker.elastic.co/elasticsearch/elasticsearch`, single-node, `xpack.security.enabled=false`, host port `9200` — see `docker-compose.yml` for the pinned image tag). The sync is not logstash: cftlib runs its own in-process `ESIndexer` thread that "replicat[es] logstash functionality but sav[es] up to ~1GB of RAM" (`ESIndexer.java:18-19`). Query ES directly while `bootWithCCD` is running.
 
-1. Identify the index name. The cftlib indexer writes one document per case to `<case-type>_cases` (lowercased; see `ESIndexer.java:70`). For a case type `NFD` the index is `nfd_cases`.
+1. Identify the index name. The cftlib indexer writes one document per case to `<case-type>_cases` (lowercased; see `ESIndexer.java:69`). For a case type `NFD` the index is `nfd_cases`. Indexes are created on demand by `ensureCaseIndex` with `number_of_shards: 1`, `number_of_replicas: 0` and `index.mapping.total_fields.limit: 10000` (`ESIndexer.java:130-152`).
 2. List all indexes:
 
 ```bash
@@ -150,11 +165,37 @@ curl -X GET "http://localhost:9200/<index-name>/_search?pretty" \
   -d '{"query": {"match_all": {}}}'
 ```
 
-4. To force a re-index after a definition change, restart `bootWithCCD` — the Postgres `marked_by_logstash` flag is reset on a clean boot — or trigger a save-and-submit on any case so the indexer picks the row up again.
+### Forcing a re-index
+
+The indexer polls once a second and claims rows with a single `update … returning *` CTE that flips `marked_by_logstash` to `true` (`ESIndexer.java:44,48-53`). Nothing in the application clears it again — that is a database trigger's job. `trg_case_data_updated` fires `BEFORE INSERT OR UPDATE OF data, data_classification, last_modified, last_state_modified_date, security_classification, state, supplementary_data` (`V0001__Base_version.sql:1170`) and calls `set_case_data_marked_by_logstash()`, whose current definition resets the flag to `false` for a real case row but forces it to `true` for a pointer row — empty `data` and empty `state` (`V20250306_0000__CCD-6936_case_pointer_marked_by_logstash.sql:4-15`, superseding the unconditional version in `V0001`).
+
+Two consequences follow. Any event on a case re-indexes it, because the write touches `data`/`last_modified` and so trips the trigger. But **restarting `bootWithCCD` re-indexes nothing** — the already-indexed rows survive in the Postgres volume with the flag still set, and a restart writes nothing. To force a re-index:
+
+| Want | Do |
+|---|---|
+| Re-index one case | Trigger any event on it. |
+| Re-index every case, keep the data | Clear the flag by hand (see below). |
+| Start from nothing | `RSE_LIB_CLEAN_BOOT=true ./gradlew bootWithCCD` — recreates the Postgres and ES volumes, so both the rows and the indexes go. |
+
+Clearing the flag is easiest from a test, via the JDBC connection cftlib hands you. Exclude pointer rows: the trigger does **not** fire on an update of `marked_by_logstash` alone, so nothing protects you from the `case_pointer_always_marked_by_logstash` CHECK constraint, which forbids `false` on any row with empty `data` and `state` (`V20250306_0000__CCD-6936_case_pointer_marked_by_logstash.sql:20-26`):
+
+```java
+try (var c = cftLib.getConnection(Database.Datastore);
+     var s = c.prepareStatement("""
+         update case_data set marked_by_logstash = false
+         where not (data = '{}'::jsonb and state = '')
+         """)) {
+    s.execute();
+}
+```
+
+> On a real environment this is done in batches per jurisdiction rather than in one statement — data-store ships the procedure at `db/useful-queries/logstash_re_indexing_query.sql`. Locally the one-shot update is fine.
+
+> The indexer thread is registered with `ControlPlane.failFast` (`ESIndexer.java:29`) and throws on any non-2xx bulk response or any `errors: true` in the bulk body. An ES mapping conflict therefore takes down the whole `bootWithCCD` JVM rather than degrading quietly — if the stack dies seconds after a case is saved, read the bulk-error message before suspecting your callback.
 
 ### Global Search index
 
-If your case type defines a `SearchCriteria` field, the indexer also writes a stripped-down document to a separate `global_search` index (`ESIndexer.java:100-104`). The projection keeps `caseManagementLocation`, `CaseAccessCategory`, `caseNameHmctsInternal`, `caseManagementCategory`, plus `HMCTSServiceId` from `supplementary_data`. Query `global_search` to debug cross-jurisdiction search behaviour:
+If your case type defines a `SearchCriteria` field, the indexer also writes a stripped-down document to a separate `global_search` index (`ESIndexer.java:93-105`). The projection keeps `caseManagementLocation`, `CaseAccessCategory`, `caseNameHmctsInternal`, `caseManagementCategory`, plus `HMCTSServiceId` from `supplementary_data`. Query `global_search` to debug cross-jurisdiction search behaviour:
 
 ```bash
 curl http://localhost:9200/global_search/_search?pretty
@@ -162,7 +203,7 @@ curl http://localhost:9200/global_search/_search?pretty
 
 ### Decentralised mode
 
-When the SDK runs in decentralised mode (`ccd { decentralised = true }` in your `build.gradle`), the cftlib indexer is a no-op (`ESIndexer.java:23` `@ConditionalOnProperty`). In that case ES indexing is the responsibility of your service's own logstash/indexer runtime — see [decentralised CCD](../explanation/decentralised-ccd.md).
+When the SDK runs in decentralised mode, the cftlib indexer is a no-op — it is annotated `@ConditionalOnProperty(value = "ccd.sdk.decentralised", havingValue = "false", matchIfMissing = true)` (`ESIndexer.java:21`), so setting `ccd.sdk.decentralised=true` removes the bean entirely. In that case ES indexing is the responsibility of your service's own logstash/indexer runtime — see [decentralised CCD](../explanation/decentralised-ccd.md).
 
 ### Verify
 
@@ -172,17 +213,12 @@ When the SDK runs in decentralised mode (`ccd { decentralised = true }` in your 
 
 ## Recipe 4 — Reset a definition without restarting
 
-Definition import in cftlib is idempotent: `CFTLibApiImpl.java:188-239` tracks an MD5 hash and skips unchanged definitions. To force a re-import during a live session:
+`importDefinition` is idempotent: it MD5s the bytes, compares against a `lastImportHash` field, and prints `Definition up to date, no import necessary!` on a match (`CFTLibApiImpl.java:188-199`). Two consequences worth knowing before you try to force a re-import:
 
-**Option A — touch the definition file.**
+- The hash is over the **file contents**, not its mtime — so `touch`ing the xlsx changes nothing and the import is still skipped. Change the definition (or a single cell) or take a different route.
+- `lastImportHash` is a plain in-memory field, so it is empty again after any JVM restart. The first `importDefinition` of a fresh `bootWithCCD` always goes through.
 
-```bash
-touch src/cftlib/resources/my-definition.xlsx
-```
-
-Then call `importDefinition` again from a test or a custom Gradle task.
-
-**Option B — call the API directly from a test.**
+**Option A — re-import from a test.** Works for xlsx as long as the bytes differ from the last import in this JVM:
 
 ```java
 @Test
@@ -191,25 +227,25 @@ void reimportDefinition() throws Exception {
 }
 ```
 
-**Option C — JSON definition folder with env-var substitution.**
-
-If your definition is in JSON format (definition-processor layout), `importJsonDefinition` supports `${CCD_DEF_*}` variable substitution (`JsonDefinitionReader.java`). Update the env var and call:
+**Option B — JSON definition folder.** `importJsonDefinition` POSTs the folder's canonical *path* and calls `postDefinition` directly, bypassing the MD5 check entirely (`CFTLibApiImpl.java:209-213`) — so it **always** re-imports. That makes it the reliable way to reload a definition mid-session. The definition-processor layout also supports `${CCD_DEF_*}` variable substitution (`JsonDefinitionReader.java`), so you can change an env var and reload without touching the JSON:
 
 ```java
 cftLib.importJsonDefinition(new File("src/cftlib/definitions"));
 ```
 
-Import timeout is 240 s to allow Elasticsearch index creation (`CFTLibApiImpl.java`).
+### When import times out
 
-### When import times out anyway
+Under cftlib the definition-store transaction timeout is **already raised to 240 s** — `LibRunner` sets both `CCD_TX-TIMEOUT_DEFAULT` and `DEFINITION_STORE_TX_TIMEOUT_DEFAULT` to `240` as system properties at boot, with the comment that imports can start before Elasticsearch is ready and will block on ES while the transaction is pending (`LibRunner.java:92-96`). The 30 s figure you may have seen quoted is the standalone service default: `application.properties:157` reads `ccd.tx-timeout.default=${DEFINITION_STORE_TX_TIMEOUT_DEFAULT:30}`, consumed by `TransactionConfiguration` as the `JpaTransactionManager` default timeout.
 
-Service teams have hit a definition-store transaction-timeout on large case types. The default `ccd.tx-timeout.default` is 30 s in `ccd-definition-store-api`; raise it by adding to your `.aat-env` (or whichever env file you load):
+So a `TransactionTimedOutException` under cftlib means you have exceeded 240 s, not 30. Raise it further via the env var rather than the property — that is the placeholder the property already resolves:
 
 ```
-ccd.tx-timeout.default=600
+DEFINITION_STORE_TX_TIMEOUT_DEFAULT=600
 ```
 
-<!-- CONFLUENCE-ONLY: documented by PRL team troubleshooting (1933968909); the property name is verifiable in ccd-definition-store-api's application.properties but has not been verified inside this workspace. -->
+Note the knock-on effect: definition-store treats an import as stale after `ccd.tx-timeout.default` plus a 30 s buffer (`ApplicationParams.java:35-38,99`), so raising the timeout also lengthens how long a wedged import blocks the next one.
+
+<!-- CONFLUENCE-ONLY: the PRL team's Local development environment page (1933968909) prescribes `ccd.tx-timeout.default=600` in `.aat-env`. That still works, but the page's premise — that you are lifting a 30 s default — does not hold under cftlib, which already sets 240. -->
 
 ### Verify
 
