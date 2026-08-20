@@ -76,13 +76,13 @@ entries:
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
   - target: how-to/automated-dependency-updates.md
     source: cloud-native-platform/guides/automated-dependency-updates.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/connect-via-vpn.md
     source: cloud-native-platform/guides/connect-via-vpn.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
   - target: how-to/creating-a-new-subscription.md
     source: cloud-native-platform/guides/creating-a-new-subscription.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/federated-credentials.md
     source: cloud-native-platform/guides/federated-credentials.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
@@ -106,12 +106,12 @@ entries:
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
   - target: how-to/update-redis-with-zone-redundant.md
     source: cloud-native-platform/guides/update-redis-with-zone-redundant.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
 
   # --- how-to/new-component ---
   - target: how-to/new-component/elasticsearch.md
     source: cloud-native-platform/new-component/elasticsearch.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: how-to/new-component/feature-flags.md
     source: cloud-native-platform/new-component/feature-flags.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -156,7 +156,7 @@ entries:
   # --- reference (CNP) ---
   - target: reference/cnp-glossary.md
     source: cloud-native-platform/glossary/index.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/health-endpoints.md
     source: cloud-native-platform/health-end-points/index.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -166,7 +166,7 @@ entries:
     notes: replaced auto-nav children loop with hand-written links
   - target: reference/cnp-standards/apis.md
     source: cloud-native-platform/standards/apis.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/cnp-standards/db-schema-change.md
     source: cloud-native-platform/standards/db-schema-change.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -183,13 +183,13 @@ entries:
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/standards/typescript.md
     source: standards/standards/typescript.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/standards/java.md
     source: standards/standards/java.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/standards/cookies.md
     source: standards/standards/cookies.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/standards/frontend-web-performance.md
     source: standards/standards/frontend-web-performance.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
@@ -197,16 +197,16 @@ entries:
   # --- reference (engineering practices) ---
   - target: reference/practices/apis.md
     source: standards/practices/apis.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/practices/backends.md
     source: standards/practices/backends.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/practices/certificates.md
     source: standards/practices/certificates.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/practices/frontend.md
     source: standards/practices/frontend.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: reference/practices/public-repositories.md
     source: standards/practices/Public-Repositories.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
@@ -214,27 +214,27 @@ entries:
   # --- reference (technology) ---
   - target: reference/technology-stack.md
     source: standards/technology-stack/index.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
 
   # --- explanation ---
   - target: explanation/cloud-native-platform.md
     source: cloud-native-platform/index.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: explanation/principles/coding-in-the-open.md
     source: standards/principles/coding-in-the-open.html.md.erb
     synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
   - target: explanation/principles/continuous-delivery.md
     source: standards/principles/continuous-delivery.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: explanation/principles/devops.md
     source: standards/principles/devops.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: explanation/principles/programming.md
     source: standards/principles/programming.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
   - target: explanation/principles/test.md
     source: standards/principles/test.html.md.erb
-    synced_sha: 9b4f98e09301f26e04b0856af17d3ed46efe0555
+    synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
 
 # Upstream paths we've decided NOT to port. /check-doc-drift skips these
 # when scanning for "new upstream pages" so they don't get re-flagged each run.
