@@ -61,7 +61,7 @@ sources_sha:
   "rpx-xui-common-lib:projects/exui-common-lib/src/public-api.ts": "f980531694894f3fbef1a5e2f8a2b452f12e1974"
   "rpx-xui-node-lib:src/index.ts": "0015bb7837ab8261bed0df08bbf678f7ec88dbc6"
   "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
-  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "e30a86772d25ac208bf938e78ef2c7308c9cdd3a"
   "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/auth/models/authOptions.interface.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
@@ -71,10 +71,10 @@ sources_sha:
   "rpx-xui-node-lib:.github/workflows/npmpublish.yml": "3b9268f7fbb179a70d969ce1ab8d3738cee4a5e7"
   "rpx-xui-common-lib:.github/workflows/npmpublish.yml": "b99016f34fb87f24afcba26d74e84834989463d1"
   "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.module.ts": "61f4dc00adcd02585719517d1006e4c466e7c0ad"
-  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.service.ts": "405aa00e7d6e1b908bc451e8929e26e1664ab7bb"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.service.ts": "f4c2f5216765fa1b1fcd753d0a71278f172b7690"
   "rpx-xui-translation:projects/rpx-xui-translation/src/public-api.ts": "91c0b307dd4a8ac874f88112e3555aa3e6f97e17"
-  "rpx-xui-webapp:api/auth/index.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
-  "rpx-xui-webapp:api/health/index.ts": "2c967714acdec2fbfc99a07f38ad38fe44acb4a2"
+  "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/health/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
 ---
 
 # Shared Libraries
@@ -249,7 +249,7 @@ All middleware objects extend `EventEmitter`. Events propagate upward to the `Xu
 
 | Constant | Event string | Callback parameters | Purpose |
 |----------|-------------|---------------------|---------|
-| `SESSION.EVENT.REDIS_CLIENT_READY` | `redisStore.ClientReady` | `redisClient` | Redis connection established; used for health checks |
+| `SESSION.EVENT.REDIS_CLIENT_READY` | `redisStore.ClientReady` | `redisClient` | Redis connection established; the client is stashed via `setRedisClient()` and the `/health` check then reports on `isRedisReady()` (i.e. `client.isReady`). Note the old v3-style `redisClient.connected` property does not exist on the v6 client and always reads as `undefined` |
 | `SESSION.EVENT.REDIS_CLIENT_ERROR` | `redisStore.ClientError` | `error` | Redis connection error |
 | `AUTH.EVENT.AUTHENTICATE_SUCCESS` | `auth.authenticate.success` | `request, response` | User authenticated successfully |
 | `AUTH.EVENT.SERIALIZE_USER` | `auth.serializeUser` | user | User object stored into session |

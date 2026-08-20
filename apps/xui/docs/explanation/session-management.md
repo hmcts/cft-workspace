@@ -53,7 +53,7 @@ confluence:
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "e30a86772d25ac208bf938e78ef2c7308c9cdd3a"
   "rpx-xui-node-lib:src/auth/models/strategy.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/session/models/sessionStore.class.ts": "f69b9a67e108a4ac0f9173c7bc93bc61d1732d9a"
@@ -63,10 +63,10 @@ sources_sha:
   "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/timeout-notifications/timeout-notifications.service.ts": "e9487c78c450369bcdc2039fcae52eb6eb115351"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/components/hmcts-session-dialog/hmcts-session-dialog.component.ts": "4b63706d8c0e056720db07da0a650825d287fae0"
-  "rpx-xui-webapp:api/auth/index.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
-  "rpx-xui-webapp:api/user/index.ts": "25ac341f998fcb2d6dddbf1931b515f6ae0e523a"
-  "rpx-xui-webapp:src/app/containers/app/app.component.ts": "f48caa5dd7496ddd38035c9eaf6478c43f7271d0"
-  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
+  "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/user/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:src/app/containers/app/app.component.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
 ---
 
 ## TL;DR

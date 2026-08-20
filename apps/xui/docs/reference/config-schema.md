@@ -46,12 +46,12 @@ confluence:
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
-  "rpx-xui-webapp:api/configuration/references.ts": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:api/configuration/index.ts": "e6b48e7df696e4f542dcd45e9840f7645babd613"
-  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
-  "rpx-xui-webapp:api/auth/index.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
+  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
 ---
@@ -72,6 +72,8 @@ sources_sha:
 | `environment` | string | _(varies)_ | Logical environment name; overridden by `NODE_CONFIG_ENV` |
 | `microservice` | string | `xui_webapp` | S2S microservice name used for token lease (`config/default.json:116`) |
 | `protocol` | string | `https` | Protocol for constructing callback URLs |
+| `dynatraceCdn` | string | `""` (empty) | URL of the Dynatrace RUM agent script; empty disables injection (see [Dynatrace](#dynatrace)) |
+| `decentralisedCaseTypeConfig` | object | `{}` (empty) | Per-case-type decentralisation settings, served to the browser (see [Decentralised case types](#decentralised-case-types)) |
 
 ## Cookies
 
@@ -138,8 +140,8 @@ These string-valued settings control which jurisdictions/services are enabled fo
 |-------------|---------|---------|-------------|
 | `globalSearchServices` | `GLOBAL_SEARCH_SERVICES` | `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC` | Services enabled for global search |
 | `waSupportedJurisdictions` | `WA_SUPPORTED_JURISDICTIONS` | `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC` | Jurisdictions enabled for Work Allocation |
-| `staffSupportedJurisdictions` | `STAFF_SUPPORTED_JURISDICTIONS` | `ST_CIC,CIVIL,EMPLOYMENT,PRIVATELAW,PUBLICLAW,IA,SSCS,DIVORCE,FR,PROBATE` | Jurisdictions shown in Staff UI |
-| `jurisdictions` | `JURISDICTIONS` | `DIVORCE,PROBATE,FR,PUBLICLAW,IA,SSCS,EMPLOYMENT,HRS,CIVIL,CMC,PRIVATELAW` | Full list of supported jurisdictions |
+| `staffSupportedJurisdictions` | `STAFF_SUPPORTED_JURISDICTIONS` | `ST_CIC,CIVIL,EMPLOYMENT,PRIVATELAW,PUBLICLAW,IA,SSCS,DIVORCE,FR,PROBATE,HRS` | Jurisdictions shown in Staff UI |
+| `jurisdictions` | `JURISDICTIONS` | `DIVORCE,PROBATE,FR,PUBLICLAW,IA,SSCS,EMPLOYMENT,HRS,CIVIL,CMC,PRIVATELAW,PCS` | Full list of supported jurisdictions |
 
 ## Service-to-Reference-Data mapping
 
@@ -157,6 +159,8 @@ These string-valued settings control which jurisdictions/services are enabled fo
 | `DIVORCE` | `ABA1` |
 | `FR` | `ABA2` |
 | `PROBATE` | `ABA6` |
+| `HRS` | `HRS` |
+| `PCS` | `AAA3` |
 
 When onboarding a new service for Work Allocation, the entry must be added here and the corresponding LaunchDarkly flags (`workallocation-service-user-roles`, `wa-service-config`, `wa-landing-page-roles`) must be updated to include the new jurisdiction's roles.
 <!-- CONFLUENCE-ONLY: not verified in source -->
@@ -178,10 +182,17 @@ All feature flags live under the `feature` namespace. Env vars use `__format: "j
 | `jrdELinksV2Enabled` | `true` | `FEATURE_JRD_E_LINKS_V2_ENABLED` | Use JRD eLinks v2 API |
 | `lauSpecificChallengedEnabled` | `false` | `FEATURE_LAU_SPECIFIC_CHALLENGED_ENABLED` | Enable LAU specific challenged access logging |
 | `docsEnabled` | `false` | `FEATURE_DOCS_ENABLED` | Enable Swagger docs UI at `/api/docs` |
+| `dynatraceEnabled` | `false` | `FEATURE_DYNATRACE_ENABLED` | Inject the Dynatrace RUM tag (see [Dynatrace](#dynatrace)) |
 | `substantiveRoleEnabled` | `true` | `FEATURE_SUBSTANTIVE_ROLE_ENABLED` | Include substantive roles in role assignment |
 | `accessManagementEnabled` | `true` | `FEATURE_ACCESS_MANAGEMENT_ENABLED` | Enable access-management routes |
 | `compressionEnabled` | `false` | `FEATURE_COMPRESSION_ENABLED` | Enable gzip response compression |
-| `queryIdamServiceOverride` | `true` | `FEATURE_QUERY_IDAM_SERVICE_OVERRIDE` | Fetch IDAM issuer override at startup |
+| `roleEnabled` | `false` | _(none)_ | Role endpoints; `default.json` only, no env var mapping |
+| `caseworkerRefEnabled` | `false` | _(none)_ | Caseworker Reference Data endpoints; `default.json` only |
+
+`queryIdamServiceOverride` / `FEATURE_QUERY_IDAM_SERVICE_OVERRIDE` is deliberately absent from this
+table. It is exported from `references.ts` and mapped in `custom-environment-variables.json`, but
+has no `default.json` entry and no live call site, so it is dead configuration rather than a usable
+flag — see [Feature flags](../explanation/feature-flags.md#server-side-bff-flags).
 
 ## Session and Redis settings
 
@@ -242,6 +253,7 @@ The Angular SPA fetches configuration at bootstrap from `GET /external/config/ui
 | `protocol` | `protocol` | HTTP protocol (`https`) |
 | `substantiveEnabled` | `feature.substantiveRoleEnabled` | Substantive role flag |
 | `paymentReturnUrl` | `services.payment_return_url` | Payment outcome return URL |
+| `decentralisedCaseTypeConfig` | `decentralisedCaseTypeConfig` | Per-case-type decentralisation settings (see [Decentralised case types](#decentralised-case-types)) |
 | `waWorkflowApi` | `services.waWorkflowApi` | WA Workflow API URL |
 | `judicialBookingApi` | `services.judicialBookingApi` | AM Judicial Booking URL |
 | `headerConfig` | (computed) | Menu/navigation config (varies by environment) |
@@ -251,11 +263,54 @@ The environment is detected by inspecting the IDAM login URL for `.aat.`, `.demo
 
 <!-- DIVERGENCE: Confluence "Config Refactoring" says endpoint is /api/environment/config, but rpx-xui-webapp:api/configuration/uiConfigRouter.ts shows the actual route is mounted at /external/config/ui. Source wins. -->
 
+## Decentralised case types
+
+`decentralisedCaseTypeConfig` (`DECENTRALISED_CASE_TYPE_CONFIG`, `__format: "json"`) carries
+per-case-type settings for the decentralised-ExUI work, and defaults to `{}`. `uiConfigRouter`
+passes it straight through into the `/external/config/ui` payload without filtering, so whatever
+is put in this key reaches the browser verbatim. Keep it to routing/behaviour settings — it is not
+a place for anything sensitive.
+
+Because it is a JSON-format env var, `DECENTRALISED_CASE_TYPE_CONFIG` must be a JSON-encoded
+string in Helm values, with the same escaping constraint as `SERVICE_REF_DATA_MAPPING` (see
+[Gotchas](#gotchas)).
+
+## Dynatrace
+
+Dynatrace RUM is delivered as an agentless tag rather than a bundled SDK. Two settings gate it and
+**both** are required — the feature flag alone does nothing if the CDN URL is empty, and vice
+versa:
+
+| Key | Env var | Default | Purpose |
+|-----|---------|---------|---------|
+| `feature.dynatraceEnabled` | `FEATURE_DYNATRACE_ENABLED` | `false` | Master switch |
+| `dynatraceCdn` | `DYNATRACE_CDN` | `""` | URL of the RUM agent script |
+
+`api/application.ts` substitutes the URL into the `{{dynatraceCdn}}` placeholder in
+`src/index.html` on every HTML response (the same injector that fills `{{cspNonce}}`), escaping it
+as an HTML attribute. An inline script then reads the `<meta name="dynatrace-cdn">` content and
+appends a `<script>` tag only if it is non-empty and does not still look like an unsubstituted
+`{{...}}` placeholder.
+
+Two consequences worth knowing:
+
+- **The CSP allowances are derived from the URL, not configured separately.**
+  `api/interfaces/csp-config.ts` parses `dynatraceCdn` to add its origin to `script-src`, and
+  builds the beacon origin by taking the *fourth path segment* as the tenant ID — it assumes the
+  path shape `/jstag/<version>/<tenantId>/<appId>_complete.js` — and allowing
+  `https://<tenantId>.bf.dynatrace.com` in `connect-src`. If the URL's path shape ever differs,
+  `resolveDynatraceBeaconOrigin()` returns `null`, no `connect-src` entry is added, and RUM data
+  is silently blocked by CSP while the agent itself still loads.
+- **Monitoring is off until cookies are accepted.** `AppComponent` calls `dtrum.disable()` and
+  `dtrum.disableSessionReplay()` when no acceptance cookie is present, and again on explicit
+  rejection. The cookie banner calls `dtrum.enable()` on acceptance. So a user who never answers
+  the banner is loaded-but-not-reporting, which looks like a broken agent in Dynatrace.
+
 ## LaunchDarkly settings
 
 | Key | Source | Description |
 |-----|--------|-------------|
-| `secrets.rpx.launch-darkly-client-id` | AKS Key Vault | LD client-side SDK key; passed to Angular via `/external/config/ui` response (`api/configuration/uiConfigRouter.ts:64`) |
+| `secrets.rpx.launch-darkly-client-id` | AKS Key Vault | LD client-side SDK key; passed to Angular via `/external/config/ui` response (`api/configuration/uiConfigRouter.ts`) |
 
 The Angular SPA never embeds the LD key in its bundle. At bootstrap, `src/main.ts` fetches `/external/config/ui/` and stores the response (including `launchDarklyClientId`) in the `ENVIRONMENT_CONFIG` injection token. After user details load, `AppComponent` calls `featureService.initialize(featureUser, ldClientId)`.
 

@@ -50,9 +50,9 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/public-api.ts": "d8781265f59485c3c9545882f6019114fadf3bd0"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/ng-package.json": "28beefe025ff4a81ca74779ef804b668ab9e0907"
   "ccd-case-ui-toolkit:angular.json": "d1ab32c3066c97424724ff6690e4cc2ec1ed2c54"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.module.ts": "543bacc3071f7ed6bf163a74bd5314ccbc9741d1"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "6a082439702a917c186720a837526f8c968c29d0"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "9b885551a65a6c03184556275bd356abc2f4ebe2"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.module.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write.component.ts": "7f1b0d12f0af5a80788e266558817af09930cd4f"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-read.component.ts": "5dbc31c8259c5f503b00b65476552b726b6dfd1c"
@@ -177,7 +177,7 @@ export type FieldTypeEnum =
   | 'MyNewFieldType';
 ```
 
-The current supported types in the switch statement are: `Text`, `Postcode`, `TextArea`, `Number`, `YesOrNo`, `Email`, `PhoneUK`, `Date`, `DateTime`, `MoneyGBP`, `DynamicList`, `FixedList`, `DynamicRadioList`, `DynamicMultiSelectList`, `FixedRadioList`, `Complex` (with sub-dispatch for `AddressGlobalUK`, `AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser`), `Collection`, `MultiSelectList`, `Document`, `Label`, `CasePaymentHistoryViewer`, `CaseHistoryViewer`, `WaysToPay`, `ComponentLauncher`, and `FlagLauncher`.
+The current supported types in the switch statement are: `Text`, `Postcode`, `TextArea`, `RichTextArea`, `Number`, `YesOrNo`, `Email`, `PhoneUK`, `Date`, `DateTime`, `MoneyGBP`, `DynamicList`, `FixedList`, `DynamicRadioList`, `DynamicMultiSelectList`, `FixedRadioList`, `Complex` (with sub-dispatch for `AddressGlobalUK`, `AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser`), `Collection`, `MultiSelectList`, `Document`, `Label`, `CasePaymentHistoryViewer`, `CaseHistoryViewer`, `WaysToPay`, `ComponentLauncher`, and `FlagLauncher`.
 
 If the field type is not registered, `PaletteService` returns `UnsupportedFieldComponent` and the field renders as blank with no error.
 

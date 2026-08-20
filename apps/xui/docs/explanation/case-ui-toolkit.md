@@ -59,12 +59,12 @@ confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit/case-edit.component.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-page/case-edit-page.component.ts"
-  : "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
+  : "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-create/case-create.component.ts": "db39163cb7de92af326a333fe7430558a051c135"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "6a082439702a917c186720a837526f8c968c29d0"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.ts": "b239d2859f3c5ec11025a5597f8e639806521c36"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read.component.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "9b885551a65a6c03184556275bd356abc2f4ebe2"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/services/cases.service.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/services/wizard-page-field-to-case-field.mapper.ts"
   : "a0696744cf3ccae9aacbb31b40f99e2e69fc2655"
@@ -137,7 +137,7 @@ The `FieldTypeEnum` union defines all supported types (`field-type-enum.model.ts
 
 | Category | Types |
 |----------|-------|
-| Simple text/number | `Text`, `TextArea`, `Postcode`, `Number`, `Email`, `PhoneUK` |
+| Simple text/number | `Text`, `TextArea`, `RichTextArea`, `Postcode`, `Number`, `Email`, `PhoneUK` |
 | Date/time | `Date`, `DateTime` |
 | Yes/No | `YesOrNo` |
 | Money | `MoneyGBP` |
@@ -148,6 +148,14 @@ The `FieldTypeEnum` union defines all supported types (`field-type-enum.model.ts
 | Display-only | `Label`, `CasePaymentHistoryViewer`, `CaseHistoryViewer` |
 | Extensible | `ComponentLauncher`, `WaysToPay`, `Organisation`, `JudicialUser` |
 | Case flags | `Flags`, `FlagDetail`, `FlagLauncher`, `CaseFlag` |
+
+`RichTextArea` is the newest of these and is the only type that can reject its own content on
+security grounds. It dispatches to `WriteRichTextAreaFieldComponent` /
+`ReadRichTextAreaFieldComponent`, and its validator raises an `unsafeRichText` error which
+`CaseEditPageComponent` surfaces as "Potentially unsafe HTML content is not allowed in this
+field." Treat that message as a sanitisation rejection rather than a formatting complaint — the
+markup the user pasted contained something the sanitiser would not allow through, and rewording
+the text will not clear it.
 
 ### ComponentLauncher extensibility
 

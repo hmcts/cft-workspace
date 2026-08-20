@@ -40,13 +40,13 @@ confluence:
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
-  "rpx-xui-webapp:api/configuration/references.ts": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
-  "rpx-xui-webapp:api/application.ts": "74acb47e0cdb1f7d11939e2fcfdbbc2dd4696a75"
-  "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "e2e91483e01f90f60019bbf00a719c8f8b11b1b7"
+  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "bd8ca70c5a5bc5d087d05798e351d9c013d4ecf8"
   "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
   "rpx-xui-manage-organisations:src/app/app.constants.ts": "9b0d475e911a30043da89e928c6e64b2474a970d"
 ---
@@ -206,10 +206,10 @@ Current values (from `config/default.json`):
 
 ```json
 {
-  "jurisdictions": "DIVORCE,PROBATE,FR,PUBLICLAW,IA,SSCS,EMPLOYMENT,HRS,CIVIL,CMC,PRIVATELAW",
+  "jurisdictions": "DIVORCE,PROBATE,FR,PUBLICLAW,IA,SSCS,EMPLOYMENT,HRS,CIVIL,CMC,PRIVATELAW,PCS",
   "waSupportedJurisdictions": "IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC",
   "globalSearchServices": "IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC",
-  "staffSupportedJurisdictions": "ST_CIC,CIVIL,EMPLOYMENT,PRIVATELAW,PUBLICLAW,IA,SSCS,DIVORCE,FR,PROBATE"
+  "staffSupportedJurisdictions": "ST_CIC,CIVIL,EMPLOYMENT,PRIVATELAW,PUBLICLAW,IA,SSCS,DIVORCE,FR,PROBATE,HRS"
 }
 ```
 
@@ -226,6 +226,13 @@ To enable a service for Work Allocation in Expert UI, additional configuration i
    }
    ```
    Hardcoded defaults for this flag exist in `src/app/services/ccd-config/launch-darkly-defaults.constants.ts`.
+
+   `caseTypes` entries are CCD case type IDs, so they must be updated whenever a case type is
+   renamed — not only when a service is first onboarded. PCS is the worked example: its case type
+   was renamed from `Possession` to `PCS` (with `PCS-staging` alongside it in the non-production
+   defaults), which required editing both the LD flag and these hardcoded defaults. Miss the
+   defaults and the service works while LD is reachable but silently loses its WA config on the
+   fallback path.
 
 2. **LaunchDarkly flag `wa-landing-page-roles`** -- add the top-level caseworker role for the service (e.g. `caseworker-sscs`). This controls which users see the Work Allocation page as their home page. Referenced in `src/app/app.constants.ts:6`.
 

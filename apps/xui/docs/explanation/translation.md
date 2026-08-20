@@ -45,7 +45,7 @@ confluence:
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
   "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translate.pipe.ts": "6f57537ed9a9b4f36330c1e371f5e7e462dc89e7"
-  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.service.ts": "405aa00e7d6e1b908bc451e8929e26e1664ab7bb"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.service.ts": "f4c2f5216765fa1b1fcd753d0a71278f172b7690"
   "rpx-xui-translation:projects/rpx-xui-translation/src/lib/db.ts": "cac4bb0e31b5697313577794dbce259aaae50bc0"
   "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.config.ts": "cac4bb0e31b5697313577794dbce259aaae50bc0"
   "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.module.ts": "61f4dc00adcd02585719517d1006e4c466e7c0ad"

@@ -56,25 +56,25 @@ confluence:
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:api/application.ts": "74acb47e0cdb1f7d11939e2fcfdbbc2dd4696a75"
+  "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:api/routes.ts": "8577c8c217f3e58ec34ce4efde89c468268befb7"
   "rpx-xui-webapp:api/openRoutes.ts": "6c90fbc6b38434ad2f933356651b41f6ec813c64"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:api/lib/middleware/auth.ts": "3b6d926b78e0815e477c8938d564099e392a8c94"
-  "rpx-xui-webapp:api/auth/index.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
-  "rpx-xui-webapp:api/configuration/references.ts": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:api/configuration/index.ts": "e6b48e7df696e4f542dcd45e9840f7645babd613"
   "rpx-xui-webapp:api/lib/proxy.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
   "rpx-xui-webapp:api/lib/http/index.ts": "55079aab2a3d290fb54432007a9ee7c73183e447"
-  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
-  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "e30a86772d25ac208bf938e78ef2c7308c9cdd3a"
   "rpx-xui-node-lib:src/auth/models/strategy.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/common/util/csp.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
-  "rpx-xui-webapp:api/workAllocation/routes.ts": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:api/workAllocation/routes.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-webapp:api/lib/log4jui.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
 ---
 
@@ -368,7 +368,7 @@ export async function createApp() {
     app.use(helmet(getConfigValue(HELMET)));
     app.use(helmet.noSniff());
     app.use(helmet.frameguard({ action: 'deny' }));
-    // CSP nonce injected per-request; placeholder {{cspNonce}} replaced in index.html
+    // CSP nonce injected per-request; {{cspNonce}} and {{dynatraceCdn}} replaced in index.html
     const cspMiddleware = csp({ defaultCsp: SECURITY_POLICY, ...MC_CSP });
     app.use(cspMiddleware);
   }
@@ -392,8 +392,8 @@ export async function createApp() {
 
   app.use(csrf({ cookie: { key: 'XSRF-TOKEN', httpOnly: false, secure: true, path: '/' }, ignoreMethods: ['GET'] }));
   app.use(express.static(staticRoot, { index: false }));
-  app.use('/*', (req, res) => {
-    const html = injectNonce(indexHtmlRaw, res.locals.cspNonce);
+  app.use('/{*splat}', (req, res) => {
+    const html = injectTemplateValues(indexHtmlRaw, res.locals.cspNonce);
     res.type('html').set('Cache-Control', 'no-store, max-age=0').send(html);
   });
 

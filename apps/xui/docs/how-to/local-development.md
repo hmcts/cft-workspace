@@ -41,9 +41,9 @@ confluence:
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
-  "rpx-xui-webapp:api/application.ts": "74acb47e0cdb1f7d11939e2fcfdbbc2dd4696a75"
+  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:api/server.ts": "00d655af4e17c9d5ccc167d27a018eb744da7d11"
   "rpx-xui-webapp:api/local.ts": "00d655af4e17c9d5ccc167d27a018eb744da7d11"
   "rpx-xui-webapp:api/.env.defaults": "33e9a2351f8841c128ba4a1599681c0e13ea16fb"

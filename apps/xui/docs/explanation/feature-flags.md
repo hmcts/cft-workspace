@@ -66,18 +66,18 @@ confluence:
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
-  "rpx-xui-webapp:api/configuration/references.ts": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
-  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
   "rpx-xui-webapp:src/main.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
   "rpx-xui-webapp:src/app/app.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
-  "rpx-xui-webapp:src/app/containers/app/app.component.ts": "f48caa5dd7496ddd38035c9eaf6478c43f7271d0"
+  "rpx-xui-webapp:src/app/containers/app/app.component.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:src/app/services/ccd-config/initialisation-sync-service.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
-  "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
-  "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "e2e91483e01f90f60019bbf00a719c8f8b11b1b7"
+  "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "eed279a4dd5502643063241d86c2911799acac38"
+  "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "bd8ca70c5a5bc5d087d05798e351d9c013d4ecf8"
   "rpx-xui-webapp:src/app/shared/services/mc-launch-darkly-service.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/app/app.routes.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
   "rpx-xui-webapp:src/app/shared/services/environment.service.ts": "6c90fbc6b38434ad2f933356651b41f6ec813c64"
   "rpx-xui-webapp:src/app/directives/feature-toggle/feature-toggle.directive.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
@@ -115,7 +115,7 @@ Feature flags support trunk-based development by allowing incomplete features to
 
 ## Server-side BFF flags
 
-All BFF flags live under `feature.*` in `config/default.json:155-173` and are accessed via `showFeature(ref)` from `api/configuration/index.ts`. They are set as JSON-encoded boolean strings (`"true"` / `"false"`) because `custom-environment-variables.json` declares `__format: "json"` for each.
+All BFF flags live under `feature.*` in `config/default.json:158-176` and are accessed via `showFeature(ref)` from `api/configuration/index.ts`. Those with an env var are set as JSON-encoded boolean strings (`"true"` / `"false"`) because `custom-environment-variables.json` declares `__format: "json"` for each; two (`roleEnabled`, `caseworkerRefEnabled`) are not mapped to env vars at all and can only be changed in `default.json`.
 
 | Flag key (config path) | Env var | Default | Purpose |
 |---|---|---|---|
@@ -133,9 +133,20 @@ All BFF flags live under `feature.*` in `config/default.json:155-173` and are ac
 | `feature.docsEnabled` | `FEATURE_DOCS_ENABLED` | `false` | Swagger UI at `/api/docs` |
 | `feature.proxyEnabled` | `FEATURE_PROXY_ENABLED` | `false` | Legacy proxy mode |
 | `feature.lauSpecificChallengedEnabled` | `FEATURE_LAU_SPECIFIC_CHALLENGED_ENABLED` | `false` | LAU challenged-access audit |
-| `feature.queryIdamServiceOverride` | `FEATURE_QUERY_IDAM_SERVICE_OVERRIDE` | `true` | IDAM issuer override at startup |
+| `feature.dynatraceEnabled` | `FEATURE_DYNATRACE_ENABLED` | `false` | Dynatrace RUM tag injection |
+| `feature.roleEnabled` | _(none)_ | `false` | Role endpoints |
+| `feature.caseworkerRefEnabled` | _(none)_ | `false` | Caseworker Reference Data endpoints |
 
-These flags default to safe production values in `default.json`. Deployed environments override them via Helm `values.*.template.yaml` — there are no per-environment JSON config files (`api/configuration/references.ts:119-136`).
+These flags default to safe production values in `default.json`. Deployed environments override them via Helm `values.*.template.yaml` — there are no per-environment JSON config files (`api/configuration/references.ts:121-139`).
+
+One entry that looks like a flag is not one. `FEATURE_QUERY_IDAM_SERVICE_OVERRIDE` /
+`queryIdamServiceOverride` is exported from `references.ts` and mapped in
+`custom-environment-variables.json`, but it has **no** entry in `default.json` and no live
+reference in the codebase — every `showFeature('queryIdamServiceOverride')` call site is commented
+out in `api/auth/index.spec.ts`. Since `showFeature` is a bare `config.get()`, a key with no
+`default.json` entry would throw rather than return `false`, so this cannot be switched on by
+setting the env var alone. Treat it as dead configuration; the IDAM issuer-override work it was
+staged for was added and then reverted in both `rpx-xui-webapp` and `rpx-xui-node-lib`.
 
 ## LaunchDarkly client-side integration
 
@@ -186,7 +197,7 @@ The LD SDK is initialised with `{ kind: 'user', ...user }` as the `LDContext` an
 
 - `app.module.ts:114` — `{ provide: FeatureToggleService, useClass: LaunchDarklyService }` makes LD the concrete feature service for the entire app.
 - `McLaunchDarklyService` (`src/app/shared/services/mc-launch-darkly-service.ts`) extends `LaunchDarklyService` with a singleton guard — it uses Angular's `inject()` with `{ skipSelf: true }` to throw on second injection, preventing duplicate LD client instances.
-- CSP explicitly allows `*.launchdarkly.com` in `connect-src` (`api/interfaces/csp-config.ts:29`) for the streaming EventSource connection.
+- CSP explicitly allows `*.launchdarkly.com` in `connect-src` (`api/interfaces/csp-config.ts`) for the streaming EventSource connection.
 
 ### Consuming flags in Angular
 
@@ -319,6 +330,12 @@ This pattern allows jurisdiction-scoped features to be toggled per-environment o
 | Default (unrecognised) | `PROD` |
 
 The WA default configs define case-type-to-service mappings (e.g. `Asylum`/`Bail` -> `IA`, `CIVIL`/`GENERALAPPLICATION` -> `CIVIL`). PROD defaults are more conservative than TEST/DEMO defaults. The DEMO environment includes a special QM-aware config with additional case types like `CaseViewCallbackMessages2`.
+
+PCS shows how far apart those sets can drift. `WASERVICECONFIGTEST` lists both `PCS` and
+`PCS-staging`, `WASERVICECONFIGTESTQM` lists `PCS`, and `WASERVICECONFIGPROD` has no PCS entry at
+all. The practical effect is that PCS has no WA fallback in production: if LD is slow or
+unreachable there, PCS gets no WA service config, while the same failure in AAT or DEMO is masked
+by the defaults. When adding a service, check which of the three blocks you actually edited.
 
 ## Race conditions and initialisation ordering
 

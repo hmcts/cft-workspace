@@ -48,18 +48,18 @@ confluence:
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:api/application.ts": "74acb47e0cdb1f7d11939e2fcfdbbc2dd4696a75"
+  "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
-  "rpx-xui-webapp:api/auth/index.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
+  "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:api/lib/middleware/auth.ts": "3b6d926b78e0815e477c8938d564099e392a8c94"
-  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
-  "rpx-xui-webapp:charts/xui-webapp/values.yaml": "f48caa5dd7496ddd38035c9eaf6478c43f7271d0"
-  "rpx-xui-webapp:charts/xui-webapp/Chart.yaml": "f48caa5dd7496ddd38035c9eaf6478c43f7271d0"
+  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:charts/xui-webapp/values.yaml": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:charts/xui-webapp/Chart.yaml": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:Dockerfile": "f5bb097efe787ff7db6d9889ae7f62ee3d48ba16"
   "rpx-xui-webapp:infrastructure/main.tf": "5376993d7f1f693f22ab014158974ad412abc4cc"
   "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
-  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "e30a86772d25ac208bf938e78ef2c7308c9cdd3a"
   "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
 ---
@@ -384,10 +384,10 @@ export async function createApp() {
   // 7. CSRF — cookie name XSRF-TOKEN, httpOnly:false so Angular can read it
   app.use(csrf({ cookie: { key: 'XSRF-TOKEN', httpOnly: false, secure: true, path: '/' }, ignoreMethods: ['GET'] }));
 
-  // 8. Static assets + SPA catch-all with CSP nonce injection
+  // 8. Static assets + SPA catch-all; injects {{cspNonce}} and {{dynatraceCdn}}
   app.use(express.static(staticRoot, { index: false }));
-  app.use('/*', (req, res) => {
-    const html = injectNonce(indexHtmlRaw, res.locals.cspNonce);
+  app.use('/{*splat}', (req, res) => {
+    const html = injectTemplateValues(indexHtmlRaw, res.locals.cspNonce);
     res.type('html').set('Cache-Control', 'no-store, max-age=0').send(html);
   });
 
