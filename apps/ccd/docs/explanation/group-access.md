@@ -20,6 +20,10 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/RoleAssignmentAttributes.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/AccessProfileServiceImpl.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java
+  - rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/ProfileOrgTypeUtility.java
+  - rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/OrganisationProfileIdConstants.java
+  - rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/OrganisationTypeConstants.java
+  - rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/RefDataUtil.java
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessType.json
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessTypeRole.json
 examples_extracted_from:
@@ -38,21 +42,21 @@ confluence:
     space: "AM"
   - id: "1923744278"
     title: "Professional (Group) Access Onboarding"
-    last_modified: "2025-12-04"
+    last_modified: "2026-06-18"
     space: "RCCD"
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
-    last_modified: "2026-02-16"
+    last_modified: "2026-06-23"
     space: "RCCD"
   - id: "1285226654"
     title: "Access Control"
-    last_modified: "unknown"
+    last_modified: "2026-05-16"
     space: "RCCD"
   - id: "1624180466"
     title: "Case Group Access Scope of Delivery"
     last_modified: "unknown"
     space: "RCCD"
-confluence_checked_at: "2026-05-29T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/AccessTypeEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/AccessTypeRoleEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
@@ -71,6 +75,13 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/RoleAssignmentAttributes.java": "6e54c6ae57480c1a72d28e6d2f94ff0f9d8bb44f"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/AccessProfileServiceImpl.java": "59ff93fdf61ce8bac912443bf6335d5d432f7b36"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
+  ? "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/ProfileOrgTypeUtility.java"
+  : "53085300965ee773e0fa62fe633b374e8658f2d0"
+  ? "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/OrganisationProfileIdConstants.java"
+  : "53085300965ee773e0fa62fe633b374e8658f2d0"
+  ? "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/OrganisationTypeConstants.java"
+  : "53085300965ee773e0fa62fe633b374e8658f2d0"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/RefDataUtil.java": "53085300965ee773e0fa62fe633b374e8658f2d0"
   ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessType.json"
   : "0b035fa17258e24bc51803ded7ecb26fea032068"
   ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessTypeRole.json"
@@ -104,7 +115,20 @@ Group access is the only one of the three keyed on *org membership at org grain*
 
 Group access is the CCD-side slice of a larger access-management capability that spans PRD (Professional Reference Data), the AM **PRM** (Professional Role Mapping) service, and CCD. CCD owns only two of the steps below (4 and 6); the rest are context, drawn from HMCTS's onboarding guide and reconciled with the source where they touch CCD. <!-- CONFLUENCE-ONLY: the PRD/PRM/org-type model and onboarding flow are process facts from "Professional (Group) Access Onboarding" (1923744278); only steps 4 and 6 are verified in these clones -->
 
-1. **Org type → org profiles (PRD).** Every organisation registered in PRD has a single *organisation type* (an "is-a", e.g. `SOLICITOR_ORG`, `LOCAL_AUTHORITY_ORG`, `DWP_ORG`). Each type maps to one-or-more *organisation profiles* (a "behaves-as-a", e.g. `SOLICITOR_PROFILE`, `LOCAL_AUTHORITY_PROFILE`, `DWP_PROFILE`). Access is cumulative across a type's profiles. This mapping is global, held in PRD. <!-- CONFLUENCE-ONLY: org type/profile model (1923744278; HLD 1764230653 §3.1.2.2, §3.3) -->
+1. **Org type → org profiles (PRD).** Every organisation registered in PRD carries a single *organisation type* (an "is-a"). Each type maps to a **list** of *organisation profiles* (a "behaves-as-a"), and access is cumulative across them. The mapping is a hard-coded table in `rd-professional-api` — `ProfileOrgTypeUtility.ORG_TYPE_TO_ORG_PROFILE_IDS` (`ProfileOrgTypeUtility.java:15-172`), read via `RefDataUtil.getOrganisationProfileIds()` (`RefDataUtil.java:89-100`) — so a new type or profile is a PRD code change, not reference data. Each non-government type maps to its own specific profile *plus* the generic `ORGANISATION_PROFILE`; each government type maps to its specific profile plus `GOVERNMENT_ORGANISATION_PROFILE`:
+
+    | Org type | Organisation profiles |
+    |---|---|
+    | `SOLICITOR` | `SOLICITOR_PROFILE`, `ORGANISATION_PROFILE` |
+    | `LOCALAUTH` | `LOCALAUTH_PROFILE`, `ORGANISATION_PROFILE` |
+    | `BARR` | `BARR_PROFILE`, `ORGANISATION_PROFILE` |
+    | `PROBPRAC` | `PROBPRAC_PROFILE`, `ORGANISATION_PROFILE` |
+    | `GOVT` | `GOVERNMENT_ORGANISATION_PROFILE` |
+    | `GOVT-DWP`, `GOVT-HO`, `GOVT-HMRC`, `GOVT-CICA`, `GOVT-CAFCASS-CYMRU`, `GOVT-IBCA` | `GOVT_<dept>_PROFILE`, `GOVERNMENT_ORGANISATION_PROFILE` |
+    | `OTHER` | `ORGANISATION_PROFILE` |
+    | ~30 `OTHER-*` sector types (`OTHER-PUBDEF`, `OTHER-LAW`, `OTHER-CHARITY`, …) | `OTHER_<sector>_PROFILE`, `ORGANISATION_PROFILE` |
+
+    An organisation with **no** `orgType` set is treated as `SOLICITOR`, so it silently acquires `SOLICITOR_PROFILE` (`RefDataUtil.java:86,93-95`). <!-- CONFLUENCE-ONLY: the "is-a"/"behaves-as-a" framing and cumulative-access wording come from 1923744278 and HLD 1764230653 §3.1.2.2, §3.3; the concrete mapping is verified in rd-professional-api. -->
 2. **Access types per profile (case definition).** A service defines *access types* in its `AccessType` sheet, one set per organisation profile relevant to the service. Each access type is mandatory or optional, and may or may not be shown in the ManageOrg UI (see [the column semantics below](#accesstype-sheet--access_type-table)).
 3. **Org admin assigns access types to users (ManageOrg).** For optional, displayed access types, an organisation's administrator enables/disables them per user in ManageOrg. Each user receives the access types selected for them plus all mandatory ones. These selections are captured in PRD. <!-- CONFLUENCE-ONLY: ManageOrg admin flow (1923744278) -->
 4. **CCD seeds `CaseAccessGroups` into case data.** On case create and on each event (flag on), `ccd-data-store-api` reads the org IDs from the case's `OrganisationPolicy` fields and writes `caseAccessGroupId` values into the case's `CaseAccessGroups` collection (verified — see [Runtime resolution](#runtime-resolution)).
@@ -143,7 +167,7 @@ The tuple `(caseTypeReference, jurisdictionReference, accessTypeId, organisation
 - **`AccessMandatory=N`, `AccessDefault=N`** — optional and off by default; the admin must turn it on explicitly per user.
 - **`Display=Y`** — visible/selectable in ManageOrg. The glossary notes `Display` "only really makes sense with `AccessMandatory=true` and `AccessDefault=true`" when the intent is to *show* users a role they cannot change; a common pattern is a mandatory, **non-displayed** (`Display=N`) "create-cases" access type applied silently to all members.
 
-**`OrganisationProfileID` values.** This is a free-form technical identifier (max length 200) that must match the profile a user's org carries in PRD. In practice services use the PRD-defined profile keys — e.g. `SOLICITOR_PROFILE`, `LOCAL_AUTHORITY_PROFILE`, `DWP_PROFILE`. Creating a new org type/profile is currently a PRD code change, so the value must exist in PRD before the access type can take effect. <!-- CONFLUENCE-ONLY: concrete profile values and PRD-code-change caveat (1923744278) — definition-store stores the string verbatim and does not validate it against PRD -->
+**`OrganisationProfileID` values.** This is a free-form technical identifier (max length 200) that must match one of the profiles the user's org carries in PRD. Definition-store stores the string verbatim and never checks it against PRD, so a value that no organisation carries imports cleanly and then grants nothing. The legal values are the constants in `OrganisationProfileIdConstants.java` — `SOLICITOR_PROFILE`, `LOCALAUTH_PROFILE`, `ORGANISATION_PROFILE`, `GOVERNMENT_ORGANISATION_PROFILE`, `GOVT_DWP_PROFILE` and the rest; [the table above](#end-to-end-how-an-org-member-ends-up-with-access) shows which org type yields which. Mind the abbreviations: PRD spells them `LOCALAUTH_PROFILE`, not `LOCAL_AUTHORITY_PROFILE`, and `GOVT_DWP_PROFILE`, not `DWP_PROFILE`. Adding a profile is a PRD code change, so the value must exist there before the access type can take effect.
 
 ### Worked example (BEFTA_CIVIL, from the onboarding guide)
 
@@ -369,7 +393,7 @@ Note the `CaseAccessGroupIDTemplate` value: `BEFTA_MASTER:FT_CaseProfessionalGro
 
 ## Failure modes
 
-- **Misspelled / unmatched `groupRoleName`** — imports cleanly (not validated) then silently no-ops: the matched role assignment resolves to no AccessProfile. Teams generating definitions from the SDK's `CCDAccessGroup` enum are insulated from this — the group role is a typed `HasRole` and its `RoleToAccessProfiles` row is derived automatically (see [SDK note](#sdk-note)) — but the in-flight PR is not yet on master.
+- **Misspelled / unmatched `groupRoleName`** — imports cleanly (not validated) then silently no-ops: the matched role assignment resolves to no AccessProfile. Teams generating definitions from the SDK's `CCDAccessGroup` enum are insulated from this — the group role is a typed `HasRole` and its `RoleToAccessProfiles` row is derived automatically (see [SDK support](#sdk-support)) — provided the role is declared in the case's role class, since that is the only class scanned.
 - **Feature flag off in an environment** — `CaseAccessGroups` are never written and `CaseAccessGroupsMatcher` is never registered, so group access never filters; the sheets are skipped at import even if present.
 - **Expecting to stage a group row with `groupAccessEnabled=false`** — the import is rejected (`AccessTypeRolesValidator.java:102-108`); a group row must be imported enabled. The HLD/glossary safe-rollout-via-disabled-flag story does not match shipped behaviour (see [GroupAccessEnabled](#groupaccessenabled)). Stage instead via the data-store `enable-case-group-access-filtering` flag and PRM enablement.
 - **`accessMandatory` misuse** — `AccessMandatory=true` makes the access type essential for the organisation profile: it cannot be disabled by the org admin except by disabling the whole jurisdiction for the user (per the glossary, 207804327, and HLD 1764230653 §3.4.2.2). Marking optional access as mandatory silently forces every member of the profile into it; review against the org-onboarding intent before import. (`Display=true` is only meaningful alongside `AccessMandatory`/`AccessDefault` — it surfaces the type in the Invite/Edit User UI.)

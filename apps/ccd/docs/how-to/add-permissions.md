@@ -20,46 +20,61 @@ sources:
   - apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/common/AccessControlService.java
   - apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/common/CaseAccessService.java
   - apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/AuthorisedCreateCaseOperation.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AuthorisationMapper.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AttributeBasedAccessControlService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/AccessProfileServiceImpl.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java
 examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseEvent.json
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "1343292362"
     title: "CRUD Basics"
     space: "RCCD"
+    last_modified: "unknown"
   - id: "1254261627"
     title: "CRUD on Collections"
     space: "RCCD"
+    last_modified: "unknown"
   - id: "1134527861"
     title: "CRUD on Complex Types"
     space: "RCCD"
+    last_modified: "unknown"
   - id: "1285226654"
     title: "Access Control"
     space: "RCCD"
+    last_modified: "2026-05-16"
   - id: "954990861"
     title: "RDM-4083- Authorisation for Complex Types"
     space: "RCCD"
+    last_modified: "unknown"
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
     space: "RCCD"
+    last_modified: "2026-06-23"
   - id: "1343293015"
     title: "Using CRUD to hide Events triggering from UI"
     space: "RCCD"
+    last_modified: "unknown"
   - id: "1042843985"
     title: "Shuttering a CaseType on CCD using CRUD"
     space: "RCCD"
+    last_modified: "unknown"
   - id: "378930064"
     title: "CRUD implementation in CCD"
     space: "RCCD"
+    last_modified: "unknown"
   - id: "1440501832"
     title: "CCD Access Control LLD"
     space: "RCCD"
+    last_modified: "unknown"
   - id: "1496582661"
     title: "Access Control Worked Examples"
     space: "RCCD"
+    last_modified: "unknown"
 title: Add Permissions
 diataxis: how-to
 product: ccd
@@ -70,6 +85,13 @@ sources_sha:
   : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/SheetName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AuthorisationMapper.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AttributeBasedAccessControlService.java"
+  : "489236c1af684a67a9157f71e86ff52de7a026c0"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/AccessProfileServiceImpl.java"
+  : "59ff93fdf61ce8bac912443bf6335d5d432f7b36"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java"
+  : "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
   "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseEvent.json": "980ad379b2aa2e5713cdc8745e9d65542fb06280"
   "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseField.json": "980ad379b2aa2e5713cdc8745e9d65542fb06280"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/Permissions.java": "d88fa4143fcfa4f91da567faa684020b339a8b9b"
@@ -388,12 +410,12 @@ Key observations:
 - Predefined complex types (e.g. `Address`, `OrderSummary`) cannot carry `AuthorisationComplexType` rows — the validator will reject them (`CaseFieldEntityComplexFieldACLValidatorImpl.java:38–49`).
 - **Omitted Complex-Type elements are hidden.** If a Complex Type has *any* element listed in `AuthorisationComplexType` for a given access profile, every other element of that Complex Type that you don't list will have **no effective permissions** and will be hidden from that access profile. Either list all elements you want exposed, or list none and rely on the parent CaseField's CRUD propagating to all children. <!-- CONFLUENCE-ONLY: RCCD/1134527861 "If you omit any of the elements of the ComplexType, it has no effective permissions so will be hidden." Behaviour confirmed by validator path traversal but the "all-or-nothing per profile" rule is not explicit in source. -->
 - **Parent-level CRUD propagates down to undefined depths.** If a Complex Type has multiple nested levels and you stop defining ACLs at level *n*, all children below *n* inherit the level-*n* CRUD for that access profile. <!-- CONFLUENCE-ONLY: RCCD/1134527861. -->
-- **`Authorisation` column on `RoleToAccessProfiles` is a gating filter.** If a `RoleToAccessProfiles` row has a non-empty `Authorisation` column, the user's Role Assignment must include at least one of the listed authorisations (returned by `am-role-assignment-service`) before the AccessProfile is granted. Empty means "no extra gating." <!-- CONFLUENCE-ONLY: RCCD/1285226654 "Access Control" section "Identify the AccessProfiles that apply." -->
-- **READONLY characteristic forces R-only.** If the AccessProfile or the matched `RoleToAccessProfiles` row has the READONLY flag set, every CRUD permission resolved through that profile is reduced to `R` regardless of what the `Authorisation*` tab says (RDM-11457). <!-- CONFLUENCE-ONLY: RCCD/1285226654. -->
+- **`Authorisation` column on `RoleToAccessProfiles` is a gating filter.** If a `RoleToAccessProfiles` row has a non-empty `Authorisation` column, the user's Role Assignment must carry at least one of the listed authorisations (returned by `am-role-assignment-service`) before the AccessProfile is granted (`AuthorisationMapper.java:54-64`, applied at `AccessProfileServiceImpl.java:46-47`). Empty means "no extra gating." Note the null case: if the row lists authorisations and the Role Assignment carries *none at all*, the mapping is **rejected**, not waved through.
+- **READONLY forces R, it does not just mask CUD.** If either the matched `RoleToAccessProfiles` row or the user's Role Assignment sets `ReadOnly`, the resolved AccessProfile is READONLY, and `AttributeBasedAccessControlService.updateAccessControlCRUD()` rewrites its ACL to `create=false, update=false, delete=false, read=true` (`AttributeBasedAccessControlService.java:45-62`). The `read=true` is a *grant*: a READONLY profile can read a field whose ACL row gave it no `R` at all. Anything relying on "READONLY can only ever narrow permissions" is wrong (RDM-11457).
 - **`AuthorisationCaseState` was historically marked "In development" on the CRUD Basics Confluence page.** That marker is stale — the `state_acl` table has been part of the base migration since `V0001__Base_version.sql:1053` and is enforced today. <!-- DIVERGENCE: Confluence (RCCD/1343292362, "CRUD Basics") lists "AuthorisationState (In development)". Source shows `state_acl` was created in V0001 (`apps/ccd/ccd-definition-store-api/repository/src/main/resources/db/migration/V0001__Base_version.sql:1050-1064`) and is fully wired through `AuthorisationCaseStateValidatorImpl` — the in-development marker is out of date. Source wins. -->
-- **ReadOnly mismatch blocks access entirely.** The `ReadOnly` value in a `RoleToAccessProfiles` row must match the `ReadOnly` value on the user's Role Assignment. If the RA says `ReadOnly=Y` but the `RoleToAccessProfiles` row says `ReadOnly=N` (or vice versa), no AccessProfile is derived and the user has **zero** access through that path. <!-- CONFLUENCE-ONLY: RCCD/1496582661 "Access Control Worked Examples" - demonstrated via Solicitor-02 on J1-CT6-01 and J1-CT7-03. Not explicitly visible in a single source file but consistent with the RoleToAccessProfiles matching logic. -->
+- **`ReadOnly` is not matched, and a mismatch blocks nothing.** `AuthorisationMapper.readOnly()` returns `roleAssignment.getReadOnly() || roleToAccessProfileDefinition.getReadOnly()` (`AuthorisationMapper.java:79-83`) — an OR, evaluated only *after* the mapping has already been selected. A `ReadOnly=Y` Role Assignment against a `ReadOnly=N` row still resolves the AccessProfile; it just comes out READONLY. A grep of the whole data-store finds only two consumers of the flag — this OR and the CRUD rewrite above — so there is no filtering or comparison on `readOnly` anywhere in the pipeline. <!-- DIVERGENCE: "CCD Definition Glossary for Setting up a Service in CCD" (RCCD/207804327, v157) states that the Role Assignment's readonly value "must match this in order to map to the access profile", and "Access Control Worked Examples" (RCCD/1496582661) presents Solicitor-02 on J1-CT6-01 / J1-CT7-03 as showing that a ReadOnly mismatch between the Role Assignment and the RoleToAccessProfiles row yields no AccessProfile at all. Source AuthorisationMapper.java:79-83 ORs the two flags rather than matching them, and nothing else reads readOnly. Source wins; the worked example's outcome must have another cause (most likely the Authorisation or CaseAccessCategories gate). -->
 - **Case roles require explicit case_users entries.** Access profiles prefixed with `[` (e.g. `[APPELLANT]`, `[RESPONDENT]`) are case roles. The user must have an explicit Role Assignment with that `RoleName` on the specific case to gain the associated AccessProfile. Without it, none of the CRUD defined for that access profile applies. <!-- CONFLUENCE-ONLY: RCCD/1496582661 and RCCD/1440501832 (CaseAccessService). Confirmed: CaseAccessService.java uses RESTRICT_GRANTED_ROLES_PATTERN to gate solicitor/citizen access. -->
-- **IdAM roles only work as pseudo-AccessProfiles when a case role exists.** If there is no `RoleToAccessProfiles` mapping for the user's IDAM role, CCD can still use it as a pseudo-AccessProfile — but only if the user already has *some* case role on that case. Without a case role, the IDAM role alone is insufficient. <!-- CONFLUENCE-ONLY: RCCD/1496582661 "Access Control Worked Examples" Solicitor-01 on J1-CT7-01 vs J1-CT7-02. -->
+- **IdAM roles work as pseudo-AccessProfiles, but for "granted-only" users they need a case role on the case.** Without an explicit `RoleToAccessProfiles` row, CCD synthesises an `idam:<role>` pseudo-role-assignment for every IDAM role on the JWT. For a user whose roles match `RESTRICT_GRANTED_ROLES_PATTERN` — solicitor, panel member, citizen, letter-holder, local-authority caseworker (`CaseAccessService.java:52-54,171`) — those pseudo-assignments are built from the user's non-excluded case-role assignments and inherit each one's case ID, so with no case role on the case there is nothing to attach them to and the IDAM role grants nothing. Every other user gets unscoped `STANDARD` pseudo-assignments and needs no case role (`PseudoRoleAssignmentsGenerator.java:49,62-97`). The restriction also does **not** apply when resolving *creation* profiles, so a solicitor can still create a case they hold no role on.
 
 ---
 

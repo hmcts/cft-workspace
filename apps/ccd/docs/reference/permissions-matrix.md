@@ -19,10 +19,21 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AccessControlService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/CaseAccessService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/AuthorisedCreateCaseOperation.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AuthorisationMapper.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AccessControl.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AttributeBasedAccessControlService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleToAccessProfileGenerator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/RoleAssignmentCategoryService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/CaseAccessMetadata.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/RoleToAccessProfilesParser.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/model/DefinitionDataItem.java
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20220209_13110__RDM-13110_CaseAccessCategories.sql
 examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseField.json
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
 confluence:
   - id: "378930064"
     title: "CRUD implementation in CCD"
@@ -46,13 +57,17 @@ confluence:
     space: "RCCD"
   - id: "1285226654"
     title: "Access Control"
-    last_modified: "unknown"
+    last_modified: "2026-05-16"
     space: "RCCD"
   - id: "1042843985"
     title: "Shuttering a CaseType on CCD using CRUD"
     last_modified: "unknown"
     space: "RCCD"
-confluence_checked_at: "2026-04-29T00:00:00Z"
+  - id: "207804327"
+    title: "CCD Definition Glossary for Setting up a Service in CCD"
+    last_modified: "2026-06-23"
+    space: "RCCD"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 title: Permissions Matrix
 diataxis: reference
 product: ccd
@@ -78,6 +93,25 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AccessControlService.java": "20b95a21e98b143b1c833f84f28ee6ef8664ed66"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/CaseAccessService.java": "b509326d3eefbb50e825485237675ec4117beebe"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/AuthorisedCreateCaseOperation.java": "593ffa40e6cc3beac85f5afb320d0a48b8fc2ccf"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AuthorisationMapper.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AccessControl.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AttributeBasedAccessControlService.java"
+  : "489236c1af684a67a9157f71e86ff52de7a026c0"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleToAccessProfileGenerator.java"
+  : "2bb394ef1fd4bd83ecfc40ff246a854ac33b4849"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/RoleAssignmentCategoryService.java"
+  : "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java"
+  : "da6f87b5a52f0e3c7afe6a76777ddf098bd5fe90"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/CaseAccessMetadata.java"
+  : "c33eaf088b6c7947a041d91aee4f70070099cceb"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/RoleToAccessProfilesParser.java"
+  : "5d6de5ab72360938dd42a888469bfdaef23c4612"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/model/DefinitionDataItem.java"
+  : "8afc4a0f8bb4856b4044542fcb140ed668c11990"
+  ? "ccd-definition-store-api:repository/src/main/resources/db/migration/V20220209_13110__RDM-13110_CaseAccessCategories.sql"
+  : "4258cd8b230205318b56fe8018880751d9c030c9"
 ---
 
 # Permissions Matrix
@@ -235,27 +269,33 @@ IDAM JWT tokens carry IDAM role strings (e.g. `caseworker-divorce-solicitor`). T
 |----------------------|---------|
 | `RoleName`           | IDAM role string from the JWT |
 | `AccessProfiles`     | Comma-separated list of access profile names to grant |
-| `Authorisation`      | Optional condition expression evaluated at runtime |
-| `ReadOnly`           | When true, restricts the granted profiles to read-only |
+| `Authorisation`      | Comma-separated identifiers; the Role Assignment must carry at least one for the mapping to apply |
+| `ReadOnly`           | Marks the granted profiles READONLY (not a filter -- see below) |
 | `Disabled`           | Excludes this mapping from resolution |
-| `CaseAccessCategories` | Filters mapping to specific case access categories |
+| `CaseAccessCategories` | Applies the mapping only when the case's `CaseAccessCategory` starts with one of the listed values |
 
-`RoleToAccessProfilesEntity` fields: `roleName`, `accessProfiles`, `authorisation`, `readOnly`, `disabled`, `caseAccessCategories` (`RoleToAccessProfilesEntity.java:35-51`).
+`RoleToAccessProfilesEntity` fields: `roleName`, `accessProfiles`, `authorisation`, `readOnly`, `disabled`, `caseAccessCategories` (`RoleToAccessProfilesEntity.java:35-51`). The unique constraint is `(role_name, case_type_id, case_access_categories)` (`V20220209_13110__RDM-13110_CaseAccessCategories.sql:4`), so one role may hold several rows for a case type provided the category column differs.
+
+`ReadOnly` and `Disabled` are parsed via `getBooleanOrDefault(…, false)` (`RoleToAccessProfilesParser.java:57-67`). Accepted values are `y`/`yes`/`t`/`true` and `n`/`no`/`f`/`false`, case-insensitive; any other value raises `MapperException(INVALID_VALUE_COLUMN)` and fails the import (`DefinitionDataItem.java:126-147`).
 
 ### ReadOnly behaviour
 
-When a `RoleToAccessProfiles` mapping has `ReadOnly=Y`, or when the Role Assignment from AM carries a `readOnly` characteristic, the resulting access profile is restricted to `R` only -- regardless of what CRUD the Authorisation sheets declare for that profile (`AccessProfile.readOnly`, enforced in data-store at mapping time).
+`ReadOnly` is a **modifier, not a filter**. `AuthorisationMapper.readOnly()` returns `roleAssignment.getReadOnly() || roleToAccessProfileDefinition.getReadOnly()` (`AuthorisationMapper.java:79-83`), evaluated after the mapping has already been selected — so it never affects *whether* a mapping applies, only the characteristic of the profiles it yields. A mismatch between the two flags blocks nothing.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- DIVERGENCE: "CCD Definition Glossary for Setting up a Service in CCD" (RCCD/207804327, v157) documents ReadOnly as a value the Role Assignment's own readonly flag "must match ... in order to map to the access profile". Source AuthorisationMapper.java:79-83 ORs the two flags rather than matching them. Source wins. -->
+
+Once a profile is READONLY, `AttributeBasedAccessControlService.updateAccessControlCRUD()` rewrites its ACL to `create=false, update=false, delete=false, read=true` (`AttributeBasedAccessControlService.java:45-62`). Note `read=true` is set unconditionally: READONLY *grants* read as well as removing CUD, so such a profile can read a field its ACL row denied.
 
 This means shuttering a case type by setting CRUD to `"D"` will not fully work for `readOnly=true` roles -- they will still have `R` access.
 
 ### Fake role-name-to-access-profile mappings
 
-For services that have not adopted organisational Role Assignment based access control, data-store auto-generates "fake" mappings at the start of every access-control evaluation (`CaseAccessService`, `Access Control` spec):
+For services that have not adopted organisational Role Assignment based access control, data-store auto-generates "fake" mappings in `PseudoRoleToAccessProfileGenerator`, cached per case-type version (`@Cacheable("caseTypePseudoRoleToAccessProfileCache")`, keyed on version number + case-type id, `PseudoRoleToAccessProfileGenerator.java:23-24`). Both sets are derived from the access-profile references found in the case type's own ACL rows — case type, events, states, fields and complex fields (`:40-57`):
 
-1. For each `<case_role>` in the CaseRoles definition (plus `[CREATOR]` if not already present): `RoleName=<case_role>`, `AccessProfiles=<case_role>`
-2. For each `<user_role>` referenced in any configuration tab that is not a CaseRole: `RoleName=idam:<user_role>`, `AccessProfiles=<user_role>`
+1. Each reference matching `^\[[a-zA-Z]([a-zA-Z0-9-_]*)\]$` is a case role: `RoleName=<case_role>`, `AccessProfiles=<case_role>`. `[CREATOR]` is added whether or not any ACL names it (`:21`, `:52`).
+2. Every other reference is treated as an IDAM role: `RoleName=idam:<user_role>`, `AccessProfiles=<user_role>` (`:108-114`; `IDAM_PREFIX` at `AccessControl.java:5`).
+
+<!-- DIVERGENCE: Access Control (1285226654) derives set 1 from "each <case_role> in the CaseRoles definition" and set 2 from user roles. Source PseudoRoleToAccessProfileGenerator.java:40-57 walks the case type's ACL rows for both, so a case role declared in CaseRoles but unused in any ACL yields no pseudo-mapping. Source wins. -->
 
 ---
 
@@ -324,20 +364,23 @@ Before CRUD is evaluated, the data-store determines whether the user has case-le
 
 ```
 RESTRICT_GRANTED_ROLES_PATTERN =
-  .+-solicitor$|.+-panelmember$|^citizen(-.\\*)?$|^letter-holder$|^caseworker-.+-localAuthority$
+  .+-solicitor$|.+-panelmember$|^citizen(-.*)?$|^letter-holder$|^caseworker-.+-localAuthority$
 ```
 
-- Roles matching this pattern get `AccessLevel.GRANTED` -- they need an explicit entry in the `case_users` table (or a SPECIFIC/CASE role assignment from AM) to access any case.
+- Matched with `Matcher.matches()`, so the whole role name must match one alternative (`DefaultUserRepository.java:206-208`). The pattern carries **no** `CASE_INSENSITIVE` flag.
+- Roles matching this pattern get `AccessLevel.GRANTED` (`CaseAccessService.java:82`) -- they need an explicit entry in the `case_users` table (or a SPECIFIC/CASE role assignment from AM) to access any case.
 - All other roles get `AccessLevel.ALL` -- they can access any case (subject to CRUD and classification).
 
-On case creation, if the creating user matches `RESTRICT_GRANTED_ROLES_PATTERN`, they are assigned a `[CREATOR]` case role with a role category derived from their IDAM role:
+On case creation, if the creating user matches `RESTRICT_GRANTED_ROLES_PATTERN`, they are assigned a `[CREATOR]` case role (`DefaultCaseDataAccessControl.java:222`). Its role category is resolved **independently** of which alternative matched: `RoleAssignmentCategoryService` re-reads the user's IDAM roles and tests three separate `CASE_INSENSITIVE` patterns in priority order, returning the first hit (`RoleAssignmentCategoryService.java:18-42`):
 
-| IDAM role pattern | Role category |
-|-------------------|---------------|
-| `.+-solicitor$` or `^caseworker-.+-localAuthority$` | `PROFESSIONAL` |
-| `^citizen(-.\\*)?$` or `^letter-holder$` | `CITIZEN` |
-| `.+-panelmember$` | `JUDICIAL` |
-| No match | `LEGAL_OPERATIONS` |
+| Order | IDAM role pattern | Role category |
+|-------|-------------------|---------------|
+| 1 | `.+-solicitor$` or `^caseworker-.+-localAuthority$` | `PROFESSIONAL` |
+| 2 | `^citizen(-.*)?$` or `^letter-holder$` | `CITIZEN` |
+| 3 | `.+-panelmember$` | `JUDICIAL` |
+| -- | No match | `LEGAL_OPERATIONS` |
+
+Because the order is fixed, a user holding both a solicitor and a panel-member role is categorised `PROFESSIONAL`. And because these three patterns are case-insensitive while `RESTRICT_GRANTED_ROLES_PATTERN` is not, role names differing only in case can be categorised without being restricted.
 
 ---
 
@@ -359,7 +402,7 @@ After filtering, if any remaining role assignment has an `EXCLUDED` grant type, 
 
 ### CaseAccessCategories matching
 
-If the `RoleToAccessProfiles` mapping includes `CaseAccessCategories`, the case's `CaseAccessCategory` field must **start with** one of the listed category values for the mapping to apply. This enables hierarchical category-based access (e.g. category `Civil/Standard` matches a mapping for `Civil`).
+If the `RoleToAccessProfiles` mapping includes `CaseAccessCategories`, the case's `CaseAccessCategory` field must **start with** one of the listed category values for the mapping to apply. This enables hierarchical category-based access (e.g. category `Civil/Standard` matches a mapping for `Civil`). The listed values are split on `,` and trimmed, then tested with `caseAccessCategory::startsWith`; a mapping with a null `caseAccessCategories` always applies, and one with categories set never applies to a case whose `CaseAccessCategory` is empty (`DefaultCaseDataAccessControl.java:170-179`).
 
 ---
 
@@ -375,15 +418,15 @@ Data-store returns two transient metadata fields in internal V2 API responses fo
 
 | Field | Values | Purpose |
 |-------|--------|---------|
-| `[ACCESS_GRANTED]` | CSV of grant types (e.g. `"STANDARD,SPECIFIC"`) | Shows which grants passed filtering |
+| `[ACCESS_GRANTED]` | CSV of grant types, de-duplicated and sorted alphabetically (e.g. `"SPECIFIC,STANDARD"`) | Shows which grants passed filtering |
 | `[ACCESS_PROCESS]` | `"NONE"`, `"CHALLENGED"`, or `"SPECIFIC"` | Indicates what process the user should follow to gain access |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Field IDs and labels are `CaseAccessMetadata.java:13-16`; the sorted-CSV rendering is `getAccessGrantsString()` at `:29-38`. The two fields draw on different grant-type sets: `[ACCESS_GRANTED]` counts `BASIC`, `STANDARD`, `SPECIFIC`, `CHALLENGED` (`DefaultCaseDataAccessControl.java:468`), while `[ACCESS_PROCESS]` ignores `BASIC` (`:462`) -- which is why a BASIC-only user sees a grant recorded and still gets a process to follow.
 
-`access_process` logic:
-- `NONE`: A STANDARD, SPECIFIC, or CHALLENGED role assignment fully passed filtering -- user has access.
-- `CHALLENGED`: A STANDARD role passed all checks except region/location -- user can request challenged access.
-- `SPECIFIC`: No sufficient role passed -- user must request specific access through the AM workflow.
+`access_process` logic (`DefaultCaseDataAccessControl.java:402-424`):
+- `NONE`: a STANDARD, SPECIFIC or CHALLENGED role assignment passed filtering **and** resolved to at least one access profile holding `R` on the case type **and** `R` on the case's current state (`:446`) -- user has access.
+- `CHALLENGED`: re-running that check against only the assignments that failed on the region or base-location matcher would have granted access -- user can request challenged access.
+- `SPECIFIC`: neither held -- user must request specific access through the AM workflow.
 
 ---
 

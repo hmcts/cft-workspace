@@ -19,37 +19,51 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/AccessProcess.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/enums/GrantType.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/enums/RoleCategory.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/CaseAccessMetadata.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/RoleAssignmentCategoryService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "1875852094"
     title: "IDAM roles and Role Assignment roles"
     space: "EXUI"
+    last_modified: "unknown"
   - id: "1824151245"
     title: "IdAM vs role assignment access control"
     space: "AM"
+    last_modified: "unknown"
   - id: "1373537532"
     title: "LLD - Manage Case Assignment Microservice"
     space: "ACA"
+    last_modified: "unknown"
   - id: "1452902365"
     title: "API Operation: Request Notice of Change"
     space: "ACA"
+    last_modified: "unknown"
   - id: "1958296606"
     title: "Specific Access and Challenged Access"
     space: "DATS"
+    last_modified: "unknown"
   - id: "1787468015"
     title: "Challenged And Specific Access LLD"
     space: "LAU"
+    last_modified: "unknown"
   - id: "1380221923"
     title: "A Guide to Assign Access to cases for professional users: configuration"
     space: "RCCD"
+    last_modified: "unknown"
   - id: "1285226654"
     title: "Access Control"
     space: "RCCD"
+    last_modified: "2026-05-16"
   - id: "1622348398"
     title: "Specific Access Approval"
     space: "WA"
+    last_modified: "unknown"
 title: Role Assignment
 diataxis: explanation
 product: ccd
@@ -71,6 +85,15 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/AccessProcess.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/enums/GrantType.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/enums/RoleCategory.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/CaseAccessMetadata.java"
+  : "c33eaf088b6c7947a041d91aee4f70070099cceb"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/RoleAssignmentCategoryService.java"
+  : "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java"
+  : "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java"
+  : "da6f87b5a52f0e3c7afe6a76777ddf098bd5fe90"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
 ---
 
 # Role Assignment
@@ -181,16 +204,20 @@ Despite the move to AMRAS, CCD still uses a regex to decide whether a user "need
 .+-solicitor$|.+-panelmember$|^citizen(-.*)?$|^letter-holder$|^caseworker-.+-localAuthority$
 ```
 
-For users matching this regex who create a case, CCD assigns a SPECIFIC `[CREATOR]` Case Role role assignment with a Role Category derived from which sub-pattern matched:
+Each role name is tested with `Matcher.matches()`, not `find()` (`DefaultUserRepository.java:206-208`), so the whole name must match one alternative — the `$` anchors are belt-and-braces. The pattern is compiled **without** `CASE_INSENSITIVE`, so a role IDAM issues as `caseworker-X-LocalAuthority` would not match `localAuthority`.
 
-| Sub-pattern | roleCategory |
-|---|---|
-| `.+-solicitor$` or `^caseworker-.+-localAuthority$` | `PROFESSIONAL` |
-| `^citizen(-.*)?$` or `^letter-holder$` | `CITIZEN` |
-| `.+-panelmember$` | `JUDICIAL` |
-| no match | `LEGAL_OPERATIONS` |
+For users matching this regex who create a case, CCD assigns a SPECIFIC `[CREATOR]` Case Role role assignment. Its Role Category is **not** derived from which sub-pattern matched. `RoleAssignmentCategoryService.getRoleCategory()` re-reads the user's IDAM roles and tests three *separate* patterns, each `CASE_INSENSITIVE`, in a fixed priority order (`RoleAssignmentCategoryService.java:18-42`):
 
-The same regex is used during read/search to determine whether — when no SPECIFIC role assignment with a `caseId` attribute is present — to fall back to `idam:<role>` "fake" access profiles or to return access denied.
+| Order | Pattern | roleCategory |
+|---|---|---|
+| 1 | `.+-solicitor$\|^caseworker-.+-localAuthority$` | `PROFESSIONAL` |
+| 2 | `^citizen(-.*)?$\|^letter-holder$` | `CITIZEN` |
+| 3 | `.+-panelmember$` | `JUDICIAL` |
+| — | none matched | `LEGAL_OPERATIONS` |
+
+Two consequences of the pattern sets being independent. A user holding several kinds of role gets the **first** category that matches, not the one belonging to whichever role satisfied the restrict regex — so a solicitor who is also a panel member is `PROFESSIONAL`. And because these three are case-insensitive while the restrict regex is not, a mixed-case role name can drive the category while failing to trigger the case-role restriction at all.
+
+The restrict regex is also consulted during read/search to decide whether the user's `idam:<role>` pseudo-assignments are scoped to the cases they already hold a case role on, or issued unscoped — see [Legacy IDAM bridge](permissions.md#legacy-idam-as-accessprofile-bridge).
 
 ## ChangeOrganisationRequest field
 
@@ -281,10 +308,10 @@ POST audit/accessRequest
 
 CCD computes two transient metadata fields on every read/search/start-event response (V2 internal APIs only) so that ExUI can decide whether to prompt the user for access:
 
-* **`access_granted`** — CSV of grant types (`STANDARD`, `SPECIFIC`, etc.) from the role assignments that survived filtering. For case creation it is always `STANDARD`.
-* **`access_process`** — one of `CHALLENGED`, `SPECIFIC`, `NONE` (`AccessProcess.java`):
-  * `NONE` if a STANDARD/SPECIFIC/CHALLENGED role assignment passed all filtering.
-  * `CHALLENGED` if a STANDARD role assignment passed all filtering except region and/or base location checks (i.e. the user "would have had access if they were in the right region").
+* **`access_granted`** — CSV of grant types from the role assignments that survived filtering, de-duplicated and sorted alphabetically (`CaseAccessMetadata.java:29-38`). `BASIC` counts here, unlike in `access_process` (`DefaultCaseDataAccessControl.java:468` vs `:462`). For case creation it is always `STANDARD`.
+* **`access_process`** — one of `CHALLENGED`, `SPECIFIC`, `NONE` (`AccessProcess.java`), computed post-filtering at `DefaultCaseDataAccessControl.java:402-424`:
+  * `NONE` if a STANDARD/SPECIFIC/CHALLENGED role assignment passed all filtering **and** resolved to at least one access profile with `R` on the case type **and** `R` on the case's current state (`:446`). Read on the case type alone is not enough.
+  * `CHALLENGED` if re-running that check against only the role assignments that failed on the region or base-location matcher would have granted access (i.e. "would have had access in the right region").
   * `SPECIFIC` otherwise — the user must request specific access.
 
 These fields surface in:
@@ -335,7 +362,7 @@ For every read/update/delete request, the data-store:
    * `attributes.caseAccessGroupId` set but not in the case's `CaseAccessGroups` field.
    * `attributes.region` set but not matching `caseManagementLocation.region`.
    * `attributes.location` set but not matching `caseManagementLocation.baseLocation`.
-3. If the user matches the legacy regex AND any non-EXCLUDED RA with a `caseId` attribute survived, adds SPECIFIC `idam:<role>` pseudo-assignments with classification `RESTRICTED` for backward compatibility.
+3. Adds `idam:<role>` pseudo-assignments, one per IDAM role on the JWT, for backward compatibility. Which flavour depends on the legacy regex (`PseudoRoleAssignmentsGenerator.java:49,62-97`): if the user matches it *and* this is not a creation profile, they get one SPECIFIC / `RESTRICTED` assignment per (IDAM role × surviving non-EXCLUDED RA carrying a `caseId`), each inheriting that RA's jurisdiction, case type and case ID — so with no such RA they get none at all. Otherwise they get one unscoped STANDARD assignment per IDAM role, classified from the definition's user-role table.
 4. If any surviving RA is `EXCLUDED`, removes all RAs other than `BASIC` and `SPECIFIC`.
 5. Maps survivors to Access Profiles via the `RoleToAccessProfiles` configuration.
 
