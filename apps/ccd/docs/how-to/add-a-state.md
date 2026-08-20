@@ -13,14 +13,17 @@ sources:
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java
   - ccd-config-generator:test-projects/e2e/src/cftlib/java/uk/gov/hmcts/divorce/cftlib/CftLibConfig.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationCaseStateParser.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationParser.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
     space: "RCCD"
-    version: 154
+    version: 157
+    last_modified: "2026-06-23"
   - id: "1552125154"
     title: "How to change a State"
     space: "CRef"
@@ -51,6 +54,10 @@ sources_sha:
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java": "c831f1fcc6e033c87eccd503aa4076c59ea85476"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java": "cde80e20584d39f3f3a890f473db818f79449fae"
   "ccd-config-generator:test-projects/e2e/src/cftlib/java/uk/gov/hmcts/divorce/cftlib/CftLibConfig.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  ? ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationCaseStateParser.java
+  : "cc62a2b037c8ecbcb103d52cd7067908fee4a8a3"
+  ? ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationParser.java
+  : "8afc4a0f8bb4856b4044542fcb140ed668c11990"
 ---
 
 # Add a State
@@ -170,11 +177,9 @@ The CRUD letters carry state-specific meaning at import time:
 | `C` | User can create cases that **end up in this state as a final state** (typically only meaningful on the initial state of case-creation events). |
 | `R` | Read/view cases that are in this state. |
 | `U` | Modify cases that are in this state. |
-| `D` | Delete — not implemented. <!-- CONFLUENCE-ONLY: per CCD Definition Glossary; not verified in current source --> |
+| `D` | Delete — parsed and persisted (`AuthorisationParser.java:45` sets the entity's `delete` flag from the letter) but never enforced. The glossary still records "'D' , delete is not yet implemented" at v157. |
 
-If you add a new state but forget to grant any role read access, cases that transition into that state will become invisible to those users. The CCD Service Operations Guide notes that the import surfaces a warning when a state in the `State` tab has no matching `AuthorisationCaseState` row, but the import does not fail.
-
-<!-- CONFLUENCE-ONLY: import warning text "{} in AuthorisationCaseState tab — During the import operation, case state is not defined in the AuthorisationCaseState tab" — not verified in source -->
+If you add a new state but forget to grant any role read access, cases that transition into that state will become invisible to those users. The import only logs this — it does not fail. `AuthorisationCaseStateParser` warns `"No row were defined for case state '{}' in AuthorisationCaseState tab"` when the tab has no rows at all for the case type, and `"No row is defined for case type '{}', state '{}'"` when it has rows but none for this state (`AuthorisationCaseStateParser.java:57`, `:64`). The only hard failure is the reverse mistake: an `AuthorisationCaseState` row naming a state that the `State` tab does not define aborts the import with `Unknown State '<state>' for CaseType '<type>' in worksheet '<sheet>'` (`:86-107`).
 
 #### Don't forget global / cross-cutting AccessProfiles
 

@@ -9,6 +9,8 @@ sources:
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/SheetName.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventParser.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventPostStateParser.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationParser.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/SpreadsheetValidator.java
   - ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/validation/authorization/CrudValidator.java
@@ -16,8 +18,8 @@ sources:
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/EventEntity.java
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "688685210"
     title: "CCD Case Admin Web User Guide"
@@ -28,6 +30,7 @@ confluence:
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
     space: "RCCD"
+    last_modified: "2026-06-23"
   - id: "1063059491"
     title: "Definition import fails with a \"422 Unprocessible Entity\" error"
     space: "RCCD"
@@ -53,6 +56,10 @@ sources_sha:
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/CaseFieldEntity.java": "6ad5468e76b9ce8c56d74d619b2b5c79cdee63e9"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/EventEntity.java": "6ad5468e76b9ce8c56d74d619b2b5c79cdee63e9"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
+  ? ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventPostStateParser.java
+  : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  ? ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
+  : "e3fca30b92506584a590ae203811d60202129d2d"
 ---
 
 # First Case Type (JSON)
@@ -78,7 +85,7 @@ sources_sha:
 
 ## Step 1 — Create the folder structure
 
-The definition store expects one folder per case type, inside a jurisdiction folder. Every JSON shard filename **must** match exactly one of the 31 sheet names in `SheetName.java:7–37` — case-sensitive, no `.json` suffix on the sheet name itself.
+The definition store expects one folder per case type, inside a jurisdiction folder. Every JSON shard filename **must** match exactly one of the 32 sheet names in `SheetName.java:7–38` — case-sensitive, no `.json` suffix on the sheet name itself.
 
 ```
 my-jurisdiction/
@@ -185,13 +192,13 @@ Required columns: `ID`, `Name`, `CaseTypeID` (`ColumnName.java:156–158`).
 ]
 ```
 
-`PostConditionState` must reference a state ID defined in `State.json`. `PreConditionState(s)` semantics (`EventParser.java:113–126`):
+`PostConditionState` must reference a state ID defined in `State.json`, or the wildcard `*`. `*` is the one value the importer does not resolve against the `State` tab — it stores it verbatim (`EventPostStateParser.java:73-81`) and the data store reads it back as "leave the state alone" (`CreateCaseEventService.java:518-522`, `:573-575`). `PreConditionState(s)` semantics (`EventParser.java:112–126`):
 
 - **Blank** — the event is a *create* event (no preceding state). The case is created when the event is triggered.
 - **`*`** — the event applies in any state but is **not** a create event (`canCreate=false`).
 - **`State1;State2`** — semicolon-separated list of state IDs. The event is allowed only when the case is currently in one of those states.
 
-<!-- DIVERGENCE: Confluence "CCD Definition Glossary" describes PreConditionState as comma-separated. Source `EventParser.java:31` defines `PRE_STATE_SEPARATOR = ";"` — semicolon. Source wins. -->
+The separator is source-only knowledge: the glossary's `PreConditionState(s)` row (207804327, v157) says only "One or more states that can trigger an event" and never names the delimiter, while `EventParser.java:31` defines `PRE_STATE_SEPARATOR = ";"` and splits on it at `:123`. Do not use commas.
 
 `ShowSummary` is an optional boolean (`Y`, `N`, blank). When `Y` (or blank), the Event Summary & Comment block plus the "Check Your Answers" page render before submission. The "Check Your Answers" page only displays the fields whose `CaseEventToFields` row has `ShowSummaryChangeOption=Y`.
 <!-- CONFLUENCE-ONLY: ShowSummary tri-value semantics documented in glossary; not asserted in source -->

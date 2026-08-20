@@ -19,8 +19,8 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/SearchFieldAndResultGenerator.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SortOrder.java
 status: confluence-augmented
-last_reviewed: "2026-04-29T00:00:00Z"
-confluence_checked_at: "2026-04-29T00:00:00Z"
+last_reviewed: "2026-08-20T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 confluence:
   - id: "843514186"
     title: "CCD ElasticSearch and new search API Design LLD"
@@ -37,7 +37,7 @@ confluence:
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
     space: "RCCD"
-    last_modified: "unknown (version 154)"
+    last_modified: "2026-06-23 (version 157)"
   - id: "930743291"
     title: "ElasticSearch import error on change of CCD definition field type"
     space: "RCCD"

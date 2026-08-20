@@ -10,8 +10,8 @@ sources:
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/DefaultAccess.java
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/model/CaseTypeTab.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "1201997079"
     title: "How-to: Add a field to a tab in CCD"
@@ -23,7 +23,7 @@ confluence:
     space: "DIV"
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
-    last_modified: "unknown"
+    last_modified: "2026-06-23"
     space: "RCCD"
   - id: "1056801404"
     title: "Show Conditions and how they work"

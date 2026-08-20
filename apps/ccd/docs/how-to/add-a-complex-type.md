@@ -18,8 +18,8 @@ examples_extracted_from:
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/model/SimpleCaseData.java
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CaseworkerRoundTripData.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "1134527861"
     title: "CRUD on Complex Types"
@@ -39,6 +39,7 @@ confluence:
   - id: "205906788"
     title: "CCD Supported Field Types"
     space: "RCCD"
+    last_modified: "2026-07-29"
 title: Add a Complex Type
 diataxis: how-to
 product: ccd

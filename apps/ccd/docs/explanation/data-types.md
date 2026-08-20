@@ -20,29 +20,29 @@ sources:
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/FieldTypeEntity.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/SheetName.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "205906788"
     title: "CCD Supported Field Types"
     space: "RCCD"
-    last_modified: "2026-04-29"
+    last_modified: "2026-07-29"
   - id: "1278641313"
     title: "A Guide to DynamicRadioList and DynamicMultiSelectList Field Types - DRAFT"
     space: "RCCD"
-    last_modified: "2026-04-29"
+    last_modified: "unknown"
   - id: "1460552629"
     title: "Using DynamicList in CCD callbacks"
     space: "RIA"
-    last_modified: "2026-04-29"
+    last_modified: "unknown"
   - id: "526025284"
     title: "Address global complex type"
     space: "RCCD"
-    last_modified: "2026-04-29"
+    last_modified: "unknown"
   - id: "554959334"
     title: "RDM ?? - New Type CaseLink"
     space: "RCCD"
-    last_modified: "2026-04-29"
+    last_modified: "unknown"
 title: CCD Field Data Types
 diataxis: explanation
 product: ccd
@@ -544,6 +544,9 @@ A handful more pre-defined types — exhaustive detail in
   `CaseHistoryViewer`, `CasePaymentHistoryViewer`: empty base types whose only
   purpose is to tell ExUI to render a particular component. Only the `C` of
   CRUD applies. `CasePaymentHistoryViewer` requires the IDAM `payments` role.
+  That is the complete set — `ComponentLauncher` is the generic one, configured
+  per instance via `DisplayContextParameter`.
+  <!-- DIVERGENCE: Confluence "CCD Supported Field Types" (205906788, v228) also lists SummaryLauncher, HearingsLauncher, RolesLauncher and TaskLauncher as base types. None is registered — see reference/field-types.md#componentlauncher. Source wins. -->
 - **`Flags`** / **`FlagDetail`** — case / party flags; see
   [`apps/ccd/docs/explanation/case-flags.md`](case-flags.md).
 

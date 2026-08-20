@@ -38,11 +38,11 @@ sources:
   - ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/search/MetaData.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
 confluence:
   - id: "205906788"
     title: "CCD Supported Field Types"
-    last_modified: "2026-02-17T00:00:00Z"
+    last_modified: "2026-07-29"
     space: "RCCD"
   - id: "1275332156"
     title: "Customised Date(Time) Display and Entry"
@@ -56,7 +56,7 @@ confluence:
     title: "RDM - Display/Referencing metadata, SubComplex, Collection item fields"
     last_modified: "2018-01-01T00:00:00Z"
     space: "RCCD"
-confluence_checked_at: "2026-04-29T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 title: Field Types
 diataxis: reference
 product: ccd
@@ -102,7 +102,7 @@ sources_sha:
 
 # Field Types
 
-CCD field types are declared in the `FieldType` column of the `CaseField` spreadsheet sheet (or the `fieldType` attribute in JSON definitions). The definition-store stores them in the `field_type` table (`FieldTypeEntity`), seeded with the platform's built-ins by `V0001__Base_version.sql` and per-feature migrations (`FieldTypeUtils.java:1–64`). Each base type also gets an Elasticsearch mapping at import time, configured in `elastic-search-support/src/main/resources/application.yml`. The ccd-config-generator SDK mirrors most built-in types as Java classes under `uk.gov.hmcts.ccd.sdk.type`.
+CCD field types are declared in the `FieldType` column of the `CaseField` spreadsheet sheet (or the `fieldType` attribute in JSON definitions). The definition-store stores them in the `field_type` table (`FieldTypeEntity`), seeded with the platform's built-ins by `V0001__Base_version.sql` and per-feature migrations (`FieldTypeUtils.java:5–53`). Each base type also gets an Elasticsearch mapping at import time, configured in `elastic-search-support/src/main/resources/application.yml`. The ccd-config-generator SDK mirrors most built-in types as Java classes under `uk.gov.hmcts.ccd.sdk.type`.
 
 ## TL;DR
 
@@ -263,7 +263,7 @@ Sub-fields: `Region`, `BaseLocation` (both Text). Used by hearing/listing integr
 
 ### `Region` / `BaseLocation`
 
-Registered as base types (`FieldTypeUtils.java:43–44`) and ES-mapped as `defaultText` (`application.yml:87–88`). Confluence marks both as **in development** — temporarily backed by `String` rather than a fixed list, as an interim solution because the standard `FixedList` baseType cannot have service-customised values. <!-- CONFLUENCE-ONLY: "in development" framing not verified in source — types are seeded and indexed today. -->
+Registered as base types (`FieldTypeUtils.java:44–45`) and ES-mapped as `defaultText` (`application.yml:87–88`). Confluence marks both as **in development** — temporarily backed by `String` rather than a fixed list, as an interim solution because the standard `FixedList` baseType cannot have service-customised values. <!-- CONFLUENCE-ONLY: "in development" framing not verified in source — types are seeded and indexed today. -->
 
 ### `Organisation`
 
@@ -290,7 +290,7 @@ Payload for a Notice of Change request. Sub-fields (per `ChangeOrganisationReque
 
 ### `PreviousOrganisation`
 
-Used inside `OrganisationPolicy.PreviousOrganisations`. Sub-fields: `FromTimestamp` (DateTime), `ToTimestamp` (DateTime), `OrganisationName` (Text), `OrganisationAddress` (`AddressUK`). Confluence marks this as **in development**. <!-- CONFLUENCE-ONLY: type is registered (`FieldTypeUtils.java:33`) and modelled in the SDK; "in development" framing is dated. -->
+Used inside `OrganisationPolicy.PreviousOrganisations`. Sub-fields: `FromTimestamp` (DateTime), `ToTimestamp` (DateTime), `OrganisationName` (Text), `OrganisationAddress` (`AddressUK`). Confluence marks this as **in development**. <!-- CONFLUENCE-ONLY: type is registered (`FieldTypeUtils.java:34`) and modelled in the SDK; "in development" framing is dated. -->
 
 ### `Flags`
 
@@ -331,6 +331,8 @@ Empty marker type (`FlagLauncher.java`: no fields). Tells ExUI to launch the Fla
 ### `ComponentLauncher`
 
 Empty marker type (`ComponentLauncher.java`: no fields). Tells ExUI a web component needs to be launched; the specific component is configured per-instance via `DisplayContextParameter` in `CaseEventToFields`, `ComplexTypes`, or `CaseTypeTab`. Not indexed in ES.
+
+`ComponentLauncher` is the only generic launcher. **`SummaryLauncher`, `HearingsLauncher`, `RolesLauncher` and `TaskLauncher` are not registered base types** — they appear in no migration and in no constant on `FieldTypeUtils.java`, whose full registered set is the 48 names at `FieldTypeUtils.java:5-53`. Naming one of them in a `FieldType` cell fails the import. Use `ComponentLauncher` with the appropriate `DisplayContextParameter` instead. <!-- DIVERGENCE: "CCD Supported Field Types" (RCCD/205906788, v228) lists SummaryLauncher, HearingsLauncher, RolesLauncher and TaskLauncher as base types alongside FlagLauncher, each "an empty base type with the sole purpose of indicating to ExUI that the <X> component needs to be launched". Only FlagLauncher and ComponentLauncher exist in source (FieldTypeUtils.java:49-50, V20220113_12977__RDM-12977_FlagLauncher_base_type.sql, V20220131_13077__RDM-13077_ComponentLauncher_base_type.sql). The four specific launchers appear to be a superseded design that ComponentLauncher generalised. Source wins. -->
 
 ### `WaysToPay`
 

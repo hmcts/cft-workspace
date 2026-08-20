@@ -18,8 +18,8 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Search.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SearchField.java
 status: confluence-augmented
-last_reviewed: "2026-04-29T00:00:00Z"
-confluence_checked_at: "2026-04-29T00:00:00Z"
+last_reviewed: "2026-08-20T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 confluence:
   - id: "1126761193"
     title: "Configuring Workbasket & Search Default Ordering"
@@ -27,7 +27,7 @@ confluence:
     space: "RCCD"
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
-    last_modified: "unknown"
+    last_modified: "2026-06-23"
     space: "RCCD"
   - id: "1057948326"
     title: "Per-role CaseTabs, Workbasket and Search"
@@ -98,7 +98,7 @@ sources_sha:
    | `ListElementCode` | No | Dot-notation path into a complex field, e.g. `applicant.firstName` (max length 70) — the column is exposed in some templates as `CaseFieldElementPath` but stored as `list_element_code` |
    | `DisplayContextParameter` | No | `#TABLE(...)` or `#DATETIMEDISPLAY(...)` format hints |
 
-   <!-- DIVERGENCE: Confluence page 207804327 (CCD Definition Glossary) does not list FieldShowCondition on the WorkBasketInputFields table, but apps/ccd/ccd-definition-store-api/excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/WorkbasketInputLayoutParser.java:58-61 explicitly populates it. Source wins. -->
+   <!-- DIVERGENCE: Confluence page 207804327 (CCD Definition Glossary, checked at v157) still does not list FieldShowCondition on the WorkBasketInputFields table, but apps/ccd/ccd-definition-store-api/excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/WorkbasketInputLayoutParser.java:58-61 explicitly populates it. Source wins. -->
 
    Example rows (two filter inputs — case reference and applicant name):
 
@@ -127,7 +127,7 @@ sources_sha:
 
    <!-- DIVERGENCE: The previous draft documented separate `SortOrderDirection` and `SortOrderPriority` columns. apps/ccd/ccd-definition-store-api/excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java:81 defines the column as `ResultsOrdering`, parsed by GenericLayoutParser.java:240 with regex `^(1|2):(ASC|DESC)$`. The split fields only exist on the database side as embedded SortOrder columns sort_order_direction / sort_order_priority. Source wins. -->
 
-   <!-- DIVERGENCE: Confluence page 207804327 (CCD Definition Glossary) does not list ResultsOrdering on the WorkBasketResultFields table; only the dedicated Confluence page 1126761193 ("Configuring Workbasket & Search Default Ordering") documents it. Source confirms ResultsOrdering is supported here. Source wins. -->
+   <!-- DIVERGENCE: Confluence page 207804327 (CCD Definition Glossary, checked at v157) still does not list ResultsOrdering on the WorkBasketResultFields table — of the layout tabs only SearchCaseResultFields carries it there, and otherwise it is documented only on the dedicated Confluence page 1126761193 ("Configuring Workbasket & Search Default Ordering"). Source confirms ResultsOrdering is supported here. Source wins. -->
 
    `ResultsOrdering` is decomposed at parse time into a `SortOrder` embeddable and stored as `sort_order_direction` / `sort_order_priority` in the `workbasket_case_field` table (`SortOrder.java:7-13`).
 

@@ -12,14 +12,19 @@ sources:
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CaseworkerAddNote.java
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/Permissions.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventPostStateParser.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventParser.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseStateDefinition.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/EventTriggerService.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
     space: "RCCD"
-    last_modified: "canonical reference (v154)"
+    last_modified: "2026-06-23 (v157)"
   - id: "1775332773"
     title: "CCD-5344 - Validation endpoint data exposure with MidEvent callbacks"
     space: "CCD"
@@ -50,6 +55,14 @@ sources_sha:
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CaseworkerAddNote.java": "f2937b890660ee43a4bf8242ea3def26cfcdf0f0"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java": "c831f1fcc6e033c87eccd503aa4076c59ea85476"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/Permissions.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
+  ? ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventPostStateParser.java
+  : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  ? ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventParser.java
+  : "be7be6a7f5cf2f4688e2c4a80337022ef32ca318"
+  ? ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
+  : "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseStateDefinition.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/EventTriggerService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
 ---
 
 # Add an Event
@@ -204,7 +217,7 @@ To allow a role to see the event in history without triggering it, use `.grantHi
 
 `preState` / `postState` may be set to the same state if no transition is needed. In raw CCD definition JSON the convention `PostConditionState = "*"` means "keep the current state" — useful when state is determined dynamically by an about-to-submit callback. The SDK equivalent is to omit `.postState(...)` entirely (defaults to current state) or to override `state` in the `AboutToStartOrSubmitResponse` returned by your callback.
 
-<!-- CONFLUENCE-ONLY: the "*" wildcard convention is documented in CCD Definition Glossary (id 207804327, RCCD); not directly visible in SDK source. -->
+Both halves of that wildcard are in source. On import the definition store special-cases `*` and stores it verbatim as the post-state reference instead of resolving it against the `State` tab (`EventPostStateParser.java:73-81`); at runtime the data store evaluates the post-state, then skips the assignment when it equals `CaseStateDefinition.ANY` — the constant whose value is `"*"` (`CreateCaseEventService.java:518-522`, `:573-575`, `CaseStateDefinition.java:15`). `PreConditionState(s) = "*"` is a different rule: it means "triggerable from any state", and it also switches event creation off (`EventParser.java:112-127`, `EventTriggerService.java:30`).
 
 ## Step 5b — Tweak event UI behaviour (optional)
 

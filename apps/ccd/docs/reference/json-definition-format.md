@@ -12,11 +12,17 @@ sources:
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/ComplexFieldEntity.java
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/StateEntity.java
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/ShellMappingParser.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/SpreadSheetValidationMappingEnum.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java
+  - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/ShellMappingEntity.java
+  - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/ShellMappingController.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/MoneyGBPValidator.java
 status: confluence-augmented
 confluence:
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
-    last_modified: "2026-02-16T14:20:00Z"
+    last_modified: "2026-06-23"
     space: "RCCD"
   - id: "205750327"
     title: "CCD - Import Domain - Validation Rules"
@@ -30,8 +36,8 @@ confluence:
     title: "Resources for CCD Definition Files"
     last_modified: "2024-02-07T00:00:00Z"
     space: "EUI"
-confluence_checked_at: "2026-04-29T00:00:00Z"
-last_reviewed: 2026-04-29T00:00:00Z
+confluence_checked_at: "2026-08-20T00:00:00Z"
+last_reviewed: 2026-08-20T00:00:00Z
 title: JSON Definition Format
 diataxis: reference
 product: ccd
@@ -46,6 +52,17 @@ sources_sha:
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/ComplexFieldEntity.java": "6ad5468e76b9ce8c56d74d619b2b5c79cdee63e9"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/StateEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/ShellMappingParser.java"
+  : "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/SpreadSheetValidationMappingEnum.java"
+  : "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java"
+  : "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/ShellMappingEntity.java"
+  : "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/ShellMappingController.java"
+  : "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/MoneyGBPValidator.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
 ---
 
 # JSON Definition Format
@@ -529,20 +546,18 @@ Source: `SheetName.java:32`, `ColumnName.java:99–103`.
 
 ## Field type regex defaults
 
-Certain base field types have built-in regex validation:
+Exactly **two** base types carry a built-in regex. They are seeded into the `regular_expression` column of `field_type` by the base migration — every other base type inserts with that column left null (`V0001__Base_version.sql:2522–2722`):
 
-| Field type | Default regex |
-|---|---|
-| `PostCode` | `^([A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}\|GIR 0AA)$` |
-| `PhoneUK` | `^(((\\+44\\s?\\d{4}\|\\(?0\\d{4}\\)?)\\s?\\d{3}\\s?\\d{3})\|((\\+44\\s?\\d{3}\|\\(?0\\d{3}\\)?)\\s?\\d{3}\\s?\\d{4})\|((\\+44\\s?\\d{2}\|\\(?0\\d{2}\\)?)\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}\|\\d{3}))?$` |
-| `MoneyGBP` | Primitive type `Long`; value stored in pennies |
-| `Email` | Validated as email format |
-| `Date` | ISO 8601 date format validated |
+| Field type | Default regex | Source |
+|---|---|---|
+| `Postcode` | `^([A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}\|GIR 0AA)$` | `V0001__Base_version.sql:2540–2542` |
+| `PhoneUK` | `^(((\+44\s?\d{4}\|\(?0\d{4}\)?)\s?\d{3}\s?\d{3})\|((\+44\s?\d{3}\|\(?0\d{3}\)?)\s?\d{3}\s?\d{4})\|((\+44\s?\d{2}\|\(?0\d{2}\)?)\s?\d{4}\s?\d{4}))(\s?\#(\d{4}\|\d{3}))?$` | `V0001__Base_version.sql:2547–2549` |
+
+The type is spelled `Postcode`, lowercase `c` — `PostCode` is not a registered base type. See [Field types](field-types.md) for the full base-type list.
+
+`Email`, `Date`, `DateTime` and `MoneyGBP` insert with **no** `regular_expression` (`:2529`, `:2535`, `:2545`). Their validation is not regex-based — it lives in the data-store's per-type `BaseTypeValidator` implementations (`uk.gov.hmcts.ccd.domain.types.*Validator`). `MoneyGBP` in particular is a **JSON string of whole pence** parsed with `Long.valueOf`; a non-integer value fails with "Money GBP needs to be expressed in pence", and `Min`/`Max` are compared in pence but reported back to the user formatted as sterling (`MoneyGBPValidator.java:33-72`). Do not expect a pattern on these rows in `field_type`.
 
 A `RegularExpression` value on `CaseField` or `ComplexTypes` overrides the built-in regex for that instance.
-
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- The exact regex strings above come from the Confluence glossary page (207804327). The definition-store source stores regex patterns in the field_type DB table rather than hardcoding them in Java, so the specific patterns cannot be verified from Java source alone. -->
 
 ## All sheet names (canonical)
 
@@ -581,10 +596,30 @@ The `SheetName` enum defines 32 valid sheets:
 | `SEARCH_PARTY` | `SearchParty` |
 | `SEARCH_CRITERIA` | `SearchCriteria` |
 | `CATEGORY` | `Categories` |
+| `SHELL_MAPPING` | `ShellMapping` |
 
-<!-- DIVERGENCE: Confluence glossary (207804327) documents a "ShellMapping" sheet, but this does not exist in the SheetName enum in source code. It may be in-development or deployed via a separate mechanism. Source wins. -->
+Source: `SheetName.java:7–38`.
 
-Source: `SheetName.java:6–37`.
+### `ShellMapping`
+
+Added 2026-07-29 (`SheetName.java:38`, commit `77b362ce` "CCD-6807: Create a new table shell_mapping"). The sheet declares, per case type, which fields survive onto a *shell* case when the originating case is disposed — the retain-and-dispose counterpart to `ccd-case-disposer`.
+
+The sheet is **optional**: `ImportServiceImpl.parseShellMapping()` no-ops when the sheet is absent (`ImportServiceImpl.java:470-480`).
+
+| Column | Meaning | Validation |
+| --- | --- | --- |
+| `LiveFrom` / `LiveTo` | Validity window | Parsed but not validated |
+| `ShellCaseTypeID` | Case type of the shell case | Required; must be a `CaseType` ID in the same import; max 70 (`SpreadSheetValidationMappingEnum.java:65`) |
+| `ShellCaseFieldName` | Target field on the shell case type | Required; must be a `CaseField` of `ShellCaseTypeID`; max 70 (`:66`) |
+| `OriginatingCaseTypeID` | Case type the shell case is defined for | Required; must be a `CaseType` ID; max 70 (`:67`) |
+| `OriginatingCaseFieldName` | Source field on the originating case type | Required; must be a `CaseField` of `OriginatingCaseTypeID`; max 70 (`:68`) |
+
+Two import-time rules beyond the reference checks (`ShellMappingParser.java`):
+
+- **Shell and originating case type must differ** — compared case-insensitively; a match fails with "Originating Case Type: '…' and Shell Case Type: '…' are same in the sheet 'ShellMapping'".
+- **`(ShellCaseTypeID, ShellCaseFieldName)` must be unique** across the sheet — a repeat fails with "Duplicate combination of ShellCaseTypeID '…' and ShellCaseFieldName '…' found in the sheet 'ShellMapping'". Note the pair does *not* include the originating side, so two originating case types cannot both map into the same shell field.
+
+Rows land in the `shell_mapping` table (`ShellMappingEntity.java:19`) and are readable through `GET /api/retrieve-shell-mappings/{originalCaseTypeId}` — keyed on the **originating** case type, not the shell one (`ShellMappingController.java:27,33-45`).
 
 ## See also
 

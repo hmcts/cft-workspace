@@ -18,13 +18,18 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Search.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SearchField.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java
+  - ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/service/workbasket/WorkBasketUserDefaultService.java
+  - ccd-user-profile-api:src/main/java/uk/gov/hmcts/ccd/domain/service/UserProfileOperation.java
+  - ccd-user-profile-api:src/main/java/uk/gov/hmcts/ccd/endpoint/userprofile/UserProfileController.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "207804327"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
     space: "RCCD"
+    last_modified: "2026-06-23"
   - id: "1057948326"
     title: "Per-role CaseTabs, Workbasket and Search"
     space: "RCCD"
@@ -64,6 +69,12 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Search.java": "13b5729ed4cda7019a9487095888171eb91ccf6a"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SearchField.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java"
+  : "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/service/workbasket/WorkBasketUserDefaultService.java"
+  : "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-user-profile-api:src/main/java/uk/gov/hmcts/ccd/domain/service/UserProfileOperation.java": "7ef6418eb125c6ba47f5d5fc08fb3512e19ad894"
+  "ccd-user-profile-api:src/main/java/uk/gov/hmcts/ccd/endpoint/userprofile/UserProfileController.java": "7ef6418eb125c6ba47f5d5fc08fb3512e19ad894"
 ---
 
 # Work Basket
@@ -193,7 +204,7 @@ When a user logs in to ExUI for the first time, the jurisdiction, case type and 
 - `WorkBasketDefaultCaseType` — initial case type shown
 - `WorkBasketDefaultState` — initial state filter applied
 
-For multi-jurisdictional users the defaults are taken from the most recently imported definition that includes a row for them. <!-- CONFLUENCE-ONLY: "most recently imported wins" rule documented in Confluence page 207804327 (`UserProfile` row); behaviour not directly verified in source. -->
+For multi-jurisdictional users the defaults are taken from the most recently imported definition that includes a row for them, and that is a consequence of how the import writes them. Definition-store PUTs the parsed `UserProfile` rows to user-profile-api's `PUT /users` at the end of every import (`ImportServiceImpl.java:285-294`, `WorkBasketUserDefaultService.java:42-64`, `UserProfileController.java:72-82`). On the receiving side the lookup key is the lower-cased user ID alone — not the jurisdiction — so an existing profile is found whichever definition is being imported, and if any of the three defaults differs from what is stored, all three are overwritten (`UserProfileOperation.java:37-66`). A user listed in two jurisdictions' `UserProfile` tabs therefore ends up with whichever jurisdiction imported last, and re-importing the other definition silently flips them back.
 
 ## Common patterns
 
