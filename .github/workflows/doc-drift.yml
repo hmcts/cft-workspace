@@ -52,6 +52,15 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
+          # Deliberately leave no credential behind. An app token dies exactly
+          # one hour after it is minted, and Claude can run for most of that —
+          # so a persisted credential is one the later steps may find expired,
+          # with a misleading "Invalid username or token" as the only clue. The
+          # push and verify steps below mint a fresh token and pass it
+          # explicitly instead. Nothing in between needs this one: the cited
+          # clones carry their own public remotes (scripts/ci-clone-cited
+          # strips the token from them), and Claude only commits locally.
+          persist-credentials: false
 
       - name: Install mikefarah/yq
         run: |
@@ -148,8 +157,8 @@ jobs:
           show_full_output: ${{ inputs.verbose == true }}
           prompt: |
             The weekly doc-drift check found ${{ steps.check.outputs.affected }}
-            documentation page(s) whose cited sources have moved. Fix them, then
-            commit and push to master.
+            documentation page(s) whose cited sources have moved. Fix them and
+            commit. A later workflow step does the push — do not push yourself.
 
             Read @CLAUDE.md first. Then run:
 
@@ -192,13 +201,16 @@ jobs:
                 ./scripts/doc-drift --mode=source     # expect 0 stale, 0 broken
                 ./scripts/docs-index
 
-            Then commit and push to master:
+            Then commit:
 
                 git add -A docs apps/*/docs DOCS.md
                 git commit -m "<summary of what actually changed>"
-                git push origin HEAD:master
 
             Rules:
+            - Do NOT run `git push`. The workflow pushes your commit for you,
+              with a freshly minted token and a visible error if it fails. A
+              push from here would use a credential that may have expired
+              mid-run and would fail silently in a log nobody can read.
             - ONLY ever `git add` paths under docs/, apps/*/docs/, or DOCS.md.
               Everything under apps/<product>/<repo>/, libs/<x>/, platops/<x>/ is
               a separate cloned repo — this workspace must never track its
@@ -219,17 +231,100 @@ jobs:
             - If nothing genuinely needed changing, make no commit and say so.
           claude_args: |
             --dangerously-skip-permissions
-            --append-system-prompt "You are running unattended in a GitHub Action on hmcts/cft-workspace and pushing straight to master with no human review. Be conservative: correct only what the source proves wrong, and leave anything ambiguous untouched. The repos under apps/, libs/ and platops/ are blobless, no-checkout CI clones — use `git show <ref>:<path>` to read their files, never the Read tool, and never edit inside them."
+            --append-system-prompt "You are running unattended in a GitHub Action on hmcts/cft-workspace. Your commit is pushed straight to master with no human review. Be conservative: correct only what the source proves wrong, and leave anything ambiguous untouched. The repos under apps/, libs/ and platops/ are blobless, no-checkout CI clones — use `git show <ref>:<path>` to read their files, never the Read tool, and never edit inside them. Do not run `git push`; a later workflow step does that."
             --allowedTools "Read,Glob,Grep,Write,Edit,Bash(git:*),Bash(./scripts/doc-drift:*),Bash(./scripts/docs-index:*),Bash(yq:*)"
+
+      # The token from the top of the job is up to an hour old by now and may
+      # already be dead — that is exactly how the 2026-08-10 run lost its work,
+      # failing at the 60-minute mark with "Invalid username or token". Mint a
+      # fresh one for the two steps that still need to reach GitHub.
+      - name: Generate a fresh GitHub App token
+        id: push-token
+        if: always() && steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.CLAUDE_CODE_APP_ID }}
+          private-key: ${{ secrets.CLAUDE_CODE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Push to master
+        if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        env:
+          TOKEN: ${{ steps.push-token.outputs.token }}
+        run: |
+          set -uo pipefail
+          # Pushing here rather than from the prompt, for two reasons: a failure
+          # lands in this log verbatim instead of inside Claude's suppressed
+          # output, and it cannot be skipped by a model that decided it was
+          # done. If the app lacks contents:write, the 403 shows up right here.
+          # Same header mechanism actions/checkout uses — keeps the token out of
+          # the remote URL so a git error can't echo it.
+          header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          remote="https://github.com/$GITHUB_REPOSITORY.git"
+          gitc() { git -c "http.extraheader=$header" "$@"; }
+
+          # "Nothing genuinely needed changing" is a legitimate outcome, and the
+          # checked-out SHA is the honest baseline for telling it apart from a
+          # lost commit.
+          if [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]; then
+            echo "::notice::Claude made no commit — nothing to push"
+            exit 0
+          fi
+
+          # Two attempts. A human pushing to master mid-run gets the commit
+          # rejected as non-fast-forward; Claude only ever touches docs, so the
+          # rebase is almost always clean. Fail loudly when it isn't.
+          for attempt in 1 2; do
+            echo "--- push attempt $attempt"
+            if gitc push "$remote" HEAD:refs/heads/master 2>&1 | tee /tmp/push.log; then
+              echo "::notice::pushed $(git rev-parse --short HEAD) to master"
+              exit 0
+            fi
+            (( attempt == 2 )) && break
+
+            echo "::warning::push rejected — rebasing onto the current master and retrying"
+            gitc fetch -q "$remote" master || break
+            if ! git rebase FETCH_HEAD; then
+              git rebase --abort || true
+              echo "::error::master moved and the rebase conflicts — cannot push automatically"
+              break
+            fi
+          done
+
+          echo "::error::could not push to master"
+          {
+            echo '## Push failed'
+            echo '```'
+            cat /tmp/push.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
 
       - name: Verify the work actually landed
         if: always() && steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        env:
+          TOKEN: ${{ steps.push-token.outputs.token }}
         run: |
           set -uo pipefail
           # Fail the job on work that didn't reach master. Comparing against
           # HEAD is not enough: a commit that failed to push leaves a CLEAN
           # tree, so the only honest check is against the remote.
-          git fetch -q origin master
+          #
+          # Fresh token, passed explicitly: nothing was persisted at checkout,
+          # and an expired credential here would fail the fetch and mask
+          # whatever the real verdict was.
+          #
+          # If minting it failed, fetch anonymously rather than sending an empty
+          # credential — this repo is public, so a read still works, whereas a
+          # malformed Authorization header would 401 and report an auth problem
+          # in place of the answer this step exists to give.
+          if [[ -n "$TOKEN" ]]; then
+            header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+            git -c "http.extraheader=$header" fetch -q origin master
+          else
+            echo "::warning::no fresh token — fetching anonymously"
+            git fetch -q origin master
+          fi
 
           failed=0
 

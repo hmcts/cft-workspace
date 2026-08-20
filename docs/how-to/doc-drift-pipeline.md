@@ -47,11 +47,13 @@ CI is the authority here: it clones fresh every week.
 - `verbose` — log Claude's full output, including its reasoning. Off by default
   because tool results land in this public repo's logs; turn it on when a run
   needs explaining, since otherwise the action logs only its init and result
-  JSON and a no-op run is indistinguishable from a broken one.
+  JSON and a no-op run is indistinguishable from a broken one. You no longer
+  need it to diagnose a failed push — that happens in its own step now.
 
 It clones the cited repos, runs the source-mode check, and if anything is
 stale or broken, hands the report to Claude to reconcile the prose against the
-current source, re-record the SHAs, and push to master.
+current source, re-record the SHAs, and **commit**. The workflow pushes, not
+Claude — see [Why the push is a workflow step](#why-the-push-is-a-workflow-step).
 
 ### Why it clones the way it does
 
@@ -98,6 +100,52 @@ run goes green, but Claude can't read a single line of any changed source and
 correctly declines to invent prose — a silent, expensive no-op. Lazy fetching
 only the files Claude actually diffs costs well under a second each.
 
+### Why the push is a workflow step
+
+Claude reconciles the pages and commits. The **`Push to master` step** does the
+push. That split is deliberate, and it was bought with two lost runs.
+
+A push from inside the prompt fails in the worst possible way. The action's
+output is suppressed by default (see `verbose` above), so the error goes
+nowhere — the 2026-08-17 run reconciled 68 pages, committed, and the only trace
+of what went wrong was `Verify the work actually landed` reporting one commit
+that never reached master. A model can also simply decide it is finished and
+skip the push; a workflow step can't. Now the push happens in plain sight, its
+error lands in the log verbatim, and a `403` names itself.
+
+The step retries once through a rebase, because a human landing something on
+master mid-run gets the commit rejected as non-fast-forward. Claude only ever
+touches `docs/`, `apps/*/docs/` and `DOCS.md`, so that rebase is nearly always
+clean; when it conflicts, the step aborts it and fails loudly rather than
+guessing.
+
+### App tokens expire after exactly one hour
+
+This one is worth internalising, because it is invisible until it bites. A
+GitHub App installation token dies **one hour** after it is minted, and
+`timeout-minutes` on this job is 60. Mint one token at the top and use it at the
+end, and you are racing the clock with no warning that you lost:
+
+```
+remote: Invalid username or token. Password authentication is not supported for Git operations.
+fatal: Authentication failed for 'https://github.com/hmcts/cft-workspace.git/'
+```
+
+That is the 2026-08-10 run, failing at 07:30:32 on a token minted 06:30:30 — to
+the second. Nothing was wrong with the app's permissions; the credential had
+simply aged out mid-job.
+
+So the workflow mints **two** tokens: one for the checkout and the clones, and a
+fresh one immediately before pushing, reused by the verify step. The checkout
+also sets `persist-credentials: false`, so no stale credential is left in
+`.git/config` for a later step to pick up and fail on. Nothing in between needs
+it — `scripts/ci-clone-cited` strips the token from each clone's remote
+(leaving public URLs that fetch blobs anonymously), and Claude only commits
+locally.
+
+If you add a step that talks to GitHub, give it the fresh token, not
+`steps.app-token.outputs.token`.
+
 ### Required setup
 
 `CLAUDE_CODE_APP_ID` and `CLAUDE_CODE_PRIVATE_KEY` are **hmcts org secrets**
@@ -124,8 +172,27 @@ The job's `permissions: contents: write` block does **not** grant this. That
 governs the default `GITHUB_TOKEN`; the push uses the app token, whose scope
 comes from the app installation. Only an org admin can widen it.
 
-The "Verify the work actually landed" step fails the job when this happens.
-It compares `HEAD` against `origin/master` rather than just checking for a
+**To check, don't guess: run the probe.** `.github/workflows/app-token-probe.yml`
+(**Actions → App token probe → Run workflow**) mints a token exactly as
+doc-drift does, reports what the installation says it can do, then pushes a
+scratch branch and deletes it. It answers the write question in ~20 seconds with
+no Bedrock spend, instead of waiting 45 minutes and £20 for a full run to tell
+you the same thing. It never touches master.
+
+Don't try to answer this from the API instead. The obvious probe misleads:
+
+```
+$ gh api repos/hmcts/cft-workspace/collaborators/hmctsclaudecode%5Bbot%5D/permission --jq .permission
+none
+```
+
+Apps aren't collaborators, so that endpoint reports `none` even for repos where
+the app demonstrably works. `GET /repos/{owner}/{repo}` **authenticated as the
+installation** does reflect real access, which is what the probe reads — but the
+push is the only ground truth, so the probe does both.
+
+The "Verify the work actually landed" step fails the job when a push doesn't
+land. It compares `HEAD` against `origin/master` rather than just checking for a
 dirty tree, because a commit that failed to push leaves the tree clean — the
 symptom is a green run that changed nothing, which is indistinguishable from
 "no drift to fix" unless you look at the remote.
@@ -144,9 +211,10 @@ file and the "fix" would be to delete correct prose.
 So the failure mode of the app not being installed is one page unchecked, not a
 broken pipeline or a bad edit.
 
-`cft-workspace` has no branch protection on `master`, so the workflow pushes
-directly. Nothing gates the commit but the instructions in the workflow
-prompt; if you want review instead, change the final `git push` to open a PR.
+`cft-workspace` has no branch protection on `master` and no repo rulesets, so
+the workflow pushes directly. Nothing gates the commit but the instructions in
+the workflow prompt; if you want review instead, change the `Push to master`
+step to open a PR.
 
 ## Citations that can't be tracked
 
@@ -179,6 +247,7 @@ to a runner.
 
 ## See also
 
+- `.github/workflows/app-token-probe.yml` — is the app allowed to push? (~20s)
 - [`docs/reference/taxonomy.md`](../reference/taxonomy.md) — frontmatter schema
 - `/docs-drift` — the interactive skill wrapping these checks
 - `/docs-generate <product>` — regenerates a product's doc set
