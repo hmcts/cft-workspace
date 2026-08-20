@@ -75,7 +75,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # Nothing persisted: the push below supplies the token explicitly, so
           # there is exactly one Authorization header in play and no ambiguity

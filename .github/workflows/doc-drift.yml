@@ -48,7 +48,7 @@ jobs:
           owner: ${{ github.repository_owner }}
 
       - name: Checkout workspace
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
