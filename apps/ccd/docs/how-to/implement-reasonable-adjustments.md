@@ -11,9 +11,17 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Flags.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagDetail.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagLauncher.java
+  - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CaseFlagApiController.java
+  - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/service/impl/CaseFlagServiceImpl.java
+  - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/repository/CaseFlagRepository.java
+  - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/repository/ListOfVenueRepository.java
+  - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/domain/FlagDetail.java
+  - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/constant/Constant.java
+  - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/util/ValidationUtil.java
+  - rd-commondata-api:src/main/resources/application.yaml
 status: confluence-augmented
-last_reviewed: "2026-04-29T00:00:00Z"
-confluence_checked_at: "2026-04-29T17:00:00Z"
+last_reviewed: "2026-08-20T00:00:00Z"
+confluence_checked_at: "2026-08-20T00:00:00Z"
 confluence:
   - id: "1700663346"
     title: "Case Flags HLD Version 2.1"
@@ -22,7 +30,8 @@ confluence:
   - id: "1682839538"
     title: "Ref Data Flag Overview"
     space: "CUIRA"
-    last_modified: "2025-10-30 (image attachment)"
+    version: 27
+    last_modified: "2026-07-21"
   - id: "1700661767"
     title: "Interpreter languages and Reasonable Adjustments"
     space: "RIA"
@@ -72,6 +81,14 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Flags.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagDetail.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagLauncher.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CaseFlagApiController.java": "713a8d70241032382965f812dcb7bb71e6b3a816"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/service/impl/CaseFlagServiceImpl.java": "1d584dd7974213750a1a1d5b5acf1eff5f429fbe"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/repository/CaseFlagRepository.java": "1d584dd7974213750a1a1d5b5acf1eff5f429fbe"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/repository/ListOfVenueRepository.java": "eea7611956c517da82340edcfc88bc8c6aac4c5a"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/domain/FlagDetail.java": "0e7c98cc68c8b56a7814c04552449e23061c3395"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/constant/Constant.java": "fa819c43224b014f72930e609615bb8056f110c1"
+  "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/util/ValidationUtil.java": "eea7611956c517da82340edcfc88bc8c6aac4c5a"
+  "rd-commondata-api:src/main/resources/application.yaml": "94c35993b5eda2a490b168dcd5414eaa5f4e748b"
 ---
 
 # Implement Reasonable Adjustments
@@ -79,6 +96,7 @@ sources_sha:
 ## TL;DR
 
 - Reasonable Adjustments (RA) is **not** a separate data structure — it rides on top of the standard CCD Case Flags v2.1 mechanism. There is a constrained vocabulary of RA flag codes (`RA0001`..`RA0047`) mastered in CFT Reference Data; you don't invent them.
+- The vocabulary reaches your service through one `rd-commondata-api` call, and that API **rewrites the data on the way out**: every parent node comes back with `flagCode: "CATGRY"` (its real code moves to `nativeFlagCode`), an `OT0001` "Other" leaf is injected under every category, and parents whose children were all filtered out disappear. Don't assume the response mirrors the CSVs.
 - Each party slot on `AllPartyFlags` holds a `Flags` complex type; RA flags are `FlagDetail` entries on those collections, identified by `flagCode`. Citizens / external users only ever see flags whose ref-data `availableExternally = true`.
 - When an RA request is submitted, `FlagDetail.status` is set to the **magic string** `"Requested"`. CCD does not enforce this value — the entire WA task lifecycle depends on the exact string.
 - Two CCD events drive WA tasks: a `setUpWaTaskForCaseFlagsEventHandler` event publication sets `isCaseFlagsTaskCreated = Yes` (via async `CaseFlagsEventHandler` triggering `CREATE_WA_TASK_FOR_CTSC_CASE_FLAGS`); the caseworker review event resolves flags out of `"Requested"` and the `submitted` callback closes the WA task via `CLOSE_REVIEW_RA_REQUEST_TASK` when all are actioned.
@@ -89,51 +107,218 @@ sources_sha:
 
 - Your service has **already onboarded to Case Flags v1**. RA is an extension to v2.1; you cannot "do RA only".
 - Your case type declares the `Flags` complex type on `CaseData` (case-level via `caseFlags`, and per-party via `AllPartyFlags` — or your service's equivalent).
-- Reference Data has been updated on your behalf to (a) make the RA flags you want available to your service, (b) set `availableExternally = true` for any flag external users should see, and (c) set `DefaultStatus` (`Active` or `Requested`). This is **not** a service deployment — it goes through the Ref Data governance process (weekly forum, Mark Naylor / Alison Revitt panel approval).
+- Reference Data has been updated on your behalf to (a) make the RA flags you want available to your service, (b) set `AvailableExternally = TRUE` for any flag external users should see, and (c) set `DefaultStatus` (`Active` or `Requested`). This is **not** a service deployment — see [Changing reference data](#changing-reference-data) for the governance cycle it goes through, and budget for it in your plan.
 - WA task management is configured — the `sdk/task-management` module is on the classpath, or your service has an equivalent WA integration.
 - The CCD events that host the caseworker RA review (`CREATE_WA_TASK_FOR_CTSC_CASE_FLAGS`, `CLOSE_REVIEW_RA_REQUEST_TASK`, plus your review event) are defined in your case definition.
 
 ## RA flag vocabulary (reference data)
 
-The full vocabulary of RA flag codes is mastered in `FlagDetails[…].csv` and behaviour overrides per service in `FlagService[…].csv`. Top-level structure:
+The vocabulary of RA flag codes is mastered in `FlagDetails[…].csv` at the **MRD** (Master
+Reference Data) level, and per-CFT-service behaviour overrides live in `FlagService[…].csv`.
+Neither file is in this workspace, but the API that serves them is: `rd-commondata-api`
+assembles both into the response of
+`GET /refdata/commondata/caseflags/service-id={service-id}`
+(`CaseFlagApiController.java:68-93`, `CaseFlagRepository.java:15-95`). Everything below that is
+cited to that repo is verifiable behaviour; everything cited to Confluence is CSV content or
+governance that source cannot show.
 
-| Range | Category | Example children |
+### Hierarchy
+
+Flags form a tree by **integer id**, not by flag code: a row's `category_id` holds the `id` of
+its parent, and `category_id = 0` marks a root (`CaseFlagServiceImpl.java:91`). The two roots are
+`Case` and `Party`, matching the `flag-type` values. `RA0001` "Reasonable adjustment" is *not* a
+root — its `category_id` is 2, so it hangs off an intermediate category, and it is reached via
+`flag-type=PARTY`. The tree is walked by a recursive CTE that also builds each flag's `Path` as a
+`/`-joined chain of English display names
+(`CaseFlagRepository.java:15-27`, `CaseFlagServiceImpl.java:99`).
+
+Two levels of ownership sit behind those CSVs. **MRD** (Master Reference Data) spans more than
+CFT — its flag data feeds reporting, Scheduling & Listing and the video-hearings platform — and
+defines what a flag *is* and where it sits in the tree. **CFT** ref data sits below it and
+defines how a flag *behaves* for CFT services. That split is why adding a flag code and changing
+a flag's behaviour are two different requests with two different blast radii.
+
+| `id` | Flag code | Name (`value_en`) | Parent `category_id` |
+|---|---|---|---|
+| 4 | `RA0001` | Reasonable adjustment | 2 |
+| 5 | `RA0002` | I need documents in an alternative format | 4 |
+| 6 | `RA0003` | I need help with forms | 4 |
+| 7 | `RA0004` | I need adjustments to get to, into and around our buildings | 4 |
+| 8 | `RA0005` | I need to bring support with me to a hearing | 4 |
+| 9 | `RA0006` | I need something to feel comfortable during my hearing | 4 |
+| 10 | `RA0007` | I need to request a certain type of hearing | 4 |
+| 11 | `RA0008` | I need help communicating and understanding | 4 |
+| 12 | `RA0009` | I need an Hearing Enhancement System | 11 |
+| 45 | `RA0042` | Sign Language Interpreter | 11 |
+
+Leaf codes by branch (names abbreviated for readability — the authoritative `value_en` is in
+`FlagDetails[…].csv`, and you should not be matching on it anyway):
+
+| Parent | Children |
+|---|---|
+| `RA0002` (id 5) | `RA0010` Documents in a specified colour · `RA0011` Easy read · `RA0012` Braille · `RA0013` Large print · `RA0014` Audio translation · `RA0015` Read out to me · `RA0016` Emailed to me |
+| `RA0003` (id 6) | `RA0017` Guidance on how to complete forms · `RA0018` Support filling in forms |
+| `RA0004` (id 7) | `RA0019` Step free / wheelchair access · `RA0020` Venue wheelchair · `RA0021` Parking space close to the venue · `RA0022` Accessible toilet · `RA0023` Help using a lift · `RA0024` A different type of chair · `RA0025` Guiding in the building |
+| `RA0005` (id 8) | `RA0026` Support worker or carer · `RA0027` Friend or family · `RA0028` Assistance / guide dog · `RA0029` Therapy animal |
+| `RA0006` (id 9) | `RA0030` Appropriate lighting · `RA0031` Regular breaks · `RA0032` Space to get up and move around · `RA0033` Private waiting area |
+| `RA0007` (id 10) | `RA0034` In person hearing · `RA0035` Video hearing · `RA0036` Phone hearing |
+| `RA0008` (id 11) | `RA0037` Extra time to think and explain myself · `RA0009` Hearing Enhancement System · `RA0038` Intermediary · `RA0039` Speech to text reporter · `RA0040` Need to be close to who is speaking · `RA0041` Lip speaker · `RA0042` Sign Language Interpreter · `RA0046` Visit to court before the hearing · `RA0047` Explanation of the court and who's in the room |
+| `RA0009` (id 12) | `RA0043` Hearing loop · `RA0044` Infrared receiver · `RA0045` Induction loop |
+
+<!-- CONFLUENCE-ONLY: the id / flag_code / category_id table is CSV content transcribed from Ref Data Flag Overview (page 1682839538, v27). Source can show how the tree is assembled but not what is in it. -->
+
+### Sub-list (type-ahead) flags
+
+Two flag codes are not leaves and not category parents — selecting them makes ref data go and
+fetch a **list of values** for the user to type-ahead against. Which codes behave this way is
+driven by the `flaglist` property (`application.yaml:3` — `PF0015,RA0042`), and the mapping from
+code to list category is a hard `switch` (`CaseFlagServiceImpl.java:206-226`):
+
+| Flag code | Name | `CategoryKey` queried |
 |---|---|---|
-| `RA0001` | Reasonable adjustment (root) | — |
-| `RA0002` | I need documents in an alternative format | `RA0010` Coloured paper, `RA0012` Braille, `RA0013` Large print |
-| `RA0003` | I need help with forms | `RA0017`, `RA0018` |
-| `RA0004` | I need adjustments to get to / into / around buildings | `RA0019` Step-free access, `RA0021` Parking, `RA0022` Accessible toilet |
-| `RA0005` | I need to bring support with me to a hearing | `RA0026` Carer, `RA0028` Assistance dog |
-| `RA0006` | I need something to feel comfortable during my hearing | `RA0030` Lighting, `RA0031` Regular breaks, `RA0033` Private waiting area |
-| `RA0007` | I need a certain hearing type | `RA0034` In-person, `RA0035` Video, `RA0036` Phone |
-| `RA0008` | I need help communicating and understanding | `RA0009` Hearing Enhancement System, `RA0042` Sign Language Interpreter, `RA0046` Pre-hearing visit |
+| `PF0015` | Language Interpreter | `InterpreterLanguage` (`Constant.java:11`) |
+| `RA0042` | Sign Language Interpreter | `SignLanguage` (`Constant.java:12`) |
 
-Two RA codes have a **sub-list** behaviour:
+For such a flag the response replaces `childFlags` with `listOfValues` (plus a
+`listOfValuesLength` count) — each entry a `{key, value}` pair, with `value_cy` when Welsh is
+requested (`CaseFlagServiceImpl.java:218-224`, `ListOfValue.java:14-26`). The user's pick is
+what ends up in `FlagDetail.subTypeKey` / `subTypeValue` on the case.
 
-- **`RA0042`** (Sign Language Interpreter) — the UI does a type-ahead lookup against the `SignLanguage` category in `ListofValues[…].csv` (BSL `bfi`, ASL `ase`, Makaton `sign-mkn`, etc.). The picked entry sets `FlagDetail.subTypeKey` and `subTypeValue`.
-- **`RA0009`** (Hearing Enhancement System) — parent of `RA0043` Hearing loop, `RA0044` Infrared receiver, `RA0045` Induction loop.
+`SignLanguage` keys: `ase` ASL · `bfi` BSL · `sign-hos` Hands on signing · `ils` International
+Sign · `sign-lps` Lipspeaker · `sign-mkn` Makaton · `sign-dma` Deafblind manual alphabet ·
+`sign-ntr` Notetaker · `sign-dfr` Deaf Relay · `sign-sse` Speech Supported English ·
+`sign-vfs` Visual frame signing · `sign-pst` Palantypist / Speech to text.
 
-`RA0039` (Speech-to-text) and `RA0041` (Lip speaker) are **deprecated as top-level RA codes** — they duplicate `SignLanguage` sub-list values. Don't rely on them. <!-- CONFLUENCE-ONLY: deprecation guidance comes from Ref Data Flag Overview (page 1682839538); not encoded in source. -->
+`RA0039` (Speech to text reporter) and `RA0041` (Lip speaker) are **deprecated as RA codes** —
+they duplicate the `sign-pst` and `sign-lps` sub-list values under `RA0042`, and ref data's
+intent is to remove them. Don't build against them. <!-- CONFLUENCE-ONLY: deprecation intent from Ref Data Flag Overview (page 1682839538, v27). Both codes were still present in the CSV excerpt on that page. -->
+
+> **Adding a third sub-list flag needs a code change, not just config.** `flaglist` is
+> externalised, but the `switch` that turns a code into a `CategoryKey` is not: any code in
+> `flaglist` that isn't `PF0015` or `RA0042` falls to `default` and throws
+> `InvalidRequestException("invalid lov flag")` — a `400` on the whole flag-retrieval call, not
+> a skipped flag (`CaseFlagServiceImpl.java:215-216`).
+
+> **Sub-lists are not service-scoped.** `findListOfValues` selects on `categoryKey` alone
+> (`ListOfVenueRepository.java:14-16`), so every service sees the same interpreter and sign
+> language lists. The blank-`serviceID`-means-default convention that applies to
+> `ListofValues[…].csv` generally has no effect on the flag sub-lists.
 
 ### Reference-data per-flag attributes that affect RA behaviour
 
-These columns in `FlagService[…].csv` are not in source code — they're configured in CFT Ref Data and accessed by the ExUI Flags web component at runtime:
+These columns live in `FlagService[…].csv`, are configured in CFT Ref Data, and reach your
+service as fields on the ref-data API's `FlagDetail` (`FlagDetail.java:21-47`):
 
-| Column | Effect on RA |
-|---|---|
-| `ServiceID` | `XXXX` = default (all RA flags available to all services under this ID); your service ID overrides specific defaults. Services only need to specify non-RA flags they require plus any RA flags they wish to override. |
-| `HearingRelevant` | All RA flags should be `true` — they all matter for hearings. |
-| `RequestReason` | If `true`, the citizen must enter a reason in `flagComment`. If `false`, the comment box is optional. |
-| `DefaultStatus` | `Active` = auto-approved (e.g. hearing loop is non-controversial). `Requested` = needs caseworker / judicial review. |
-| `AvailableExternally` | If `false`, the flag is hidden from external users (citizens, LRs). All citizen-facing RA flags must be `true`. |
+| Column | API field | Effect on RA |
+|---|---|---|
+| `ServiceID` | — (query parameter) | `XXXX` = the CFT-wide default row for that flag code; a row under your own service ID replaces it. |
+| `HearingRelevant` | `hearingRelevant` | Marks the flag as something Scheduling & Listing needs to see, so services can filter before sending support needs into the hearing request. Most RA flags are `true`, but not all — the shipped defaults have `RA0003`, `RA0017` and `RA0018` (help with forms) as `false`, since form-filling help doesn't affect listing. |
+| `RequestReason` | `flagComment` (boolean) | Whether to ask "why?". In Case Flags (ExUI) `true` makes the free-text box **mandatory** and `false` makes it optional; in CUIYS `true` shows the box and `false` omits it entirely. Note the API renames this to `flagComment`, which is also the name of the *value* field on the CCD-side `FlagDetail` — they are different things. |
+| `DefaultStatus` | `defaultStatus` | `Active` = granted on request, no approval needed (a hearing loop is not controversial). `Requested` = a human must approve or reject. |
+| `AvailableExternally` | `externallyAvailable` | Whether citizens (CUIYS) and external professionals (solicitors in ExUI Manage Cases) may see the flag. Filtered server-side when the caller passes `available-external-flag=Y`. Every flag surfaced in CUIYS must be `true`, because every CUIYS user is external. |
 
-If a service overrides a child flag to `availableExternally = true`, the parent flag's visibility is **also** auto-overridden externally — even if the parent is `false` by default. <!-- CONFLUENCE-ONLY: parent inheritance behaviour from Ref Data Flag Overview (page 1682839538). -->
+All RA-category flags are expected to be externally available; special measures varies by
+service; language-interpreter and Welsh flags are external too. Being externally available is
+necessary but not sufficient — the flag also has to be *consumed* on the CUIYS / Manage Cases
+side to appear. <!-- CONFLUENCE-ONLY: category-level expectations from Ref Data Flag Overview (page 1682839538, v27). -->
 
-> **The "Other" flag** is special: it is generated in the API response (not uploaded via CSV) and always has `DefaultStatus = "Requested"` and `AvailableExternally = true`. <!-- CONFLUENCE-ONLY: "Other" flag behaviour from RTRD Case Flags page (page 1531419500). -->
+> **Overrides are whole-row, per flag code — not per column.** The consolidated view is
+> "every `XXXX` row whose `flag_code` does *not* appear under this service" `UNION` "every row
+> under this service" (`CaseFlagRepository.java:28-42`). So an override row must restate every
+> column, not just the one you're changing; and not every default is *permitted* to be
+> overridden for business reasons — new overrides go past the Case Flags / CUIYS service
+> manager. <!-- CONFLUENCE-ONLY: the governance restriction on which defaults may be overridden comes from page 1682839538; source enforces no such rule. -->
+
+#### Parent flags are pruned, not inherited
+
+Confluence describes this as the parent's visibility being "also overridden". The mechanism is
+the other way round: parents are **exempt** from the external filter and then discarded if
+nothing survives beneath them.
+
+1. When `available-external-flag=Y`, a row is skipped only if `externallyAvailable` is false
+   **and** it is not a parent (`CaseFlagServiceImpl.java:132-135`) — so category nodes always
+   get built regardless of their own flag.
+2. After the tree is assembled, `removeFlags` walks it bottom-up and deletes every parent left
+   with an empty `childFlags` (`:69-78`).
+
+The observable result matches Confluence — flip one child to `AvailableExternally = TRUE` and
+its parent appears even though the parent's own row says `FALSE` — but the reason matters when
+debugging: a parent you expected to see is missing because *all* of its children were filtered
+out, not because of anything on the parent's own row.
+
+#### Parent nodes carry the flag code `CATGRY`
+
+Category rows are synthesised by the query with a literal `flag_code` of `'CATGRY'`,
+`default_status = 'Active'`, and `hearing_relevant` / `request_reason` /
+`available_externally` all forced to `'FALSE'` (`CaseFlagRepository.java:78-82`, `:86-89`). The
+real code (`RA0002`, `RA0008`, …) is preserved in **`nativeFlagCode`**
+(`FlagDetail.java:32-33`).
+
+So the CSV tables above describe the *database*, not the API response. If you consume the
+ref-data API and key on `flagCode`, every non-leaf node collides on `"CATGRY"` — use
+`nativeFlagCode` for parents, or don't select parents at all. The same rewrite means a parent's
+`defaultStatus` and `externallyAvailable` in the response are placeholders and tell you nothing
+about its CSV configuration.
+
+#### The "Other" flag is generated, not configured
+
+`OT0001` "Other" (`Arall` in Welsh) is appended in code to **every** parent that has at least
+one surviving child, with `defaultStatus = "Requested"`, `externallyAvailable = true`,
+`hearingRelevant = true`, `flagComment = true` and the first sibling's `Path`
+(`CaseFlagServiceImpl.java:256-293`). It is never uploaded via CSV, and because it is added
+*after* `removeFlags`, an "Other" option appears under every category a user can see. Its
+`isParent` is `false`, so it is a selectable leaf.
 
 ### Service-specific flag exclusions
 
-A service can exclude specific RA flags from being shown to external users by **not** listing them in its `FlagService[…].csv` override. For example, PRL excludes `RA0021` (Parking space close to the venue) and `RA0024` (A different type of chair) because they are not relevant to remote hearings. Court admins still see all flags regardless of service exclusions. <!-- CONFLUENCE-ONLY: PRL exclusion pattern from PRL requirements page (page 1712767862). -->
+To keep an RA flag away from external users, a service supplies its **own** `FlagService[…].csv`
+row for that flag code with `AvailableExternally = FALSE`. PRL does this for `RA0021` (parking
+space close to the venue) and `RA0024` (a different type of chair) — not relevant to remote
+hearings — having first had its 38 RA flag codes added at the MRD level. Court admins are
+internal users, so they call without `available-external-flag=Y` and still see everything.
+<!-- CONFLUENCE-ONLY: PRL's specific exclusions and the "38 flagcodes" count come from pages 1712767862 and 1682839538 (v27). -->
+
+<!-- DIVERGENCE: An earlier draft of this page said a service excludes a flag by "not listing it in its FlagService override". That is backwards. Omitting a flag code from the service's rows is exactly what makes the XXXX default apply to it (CaseFlagRepository.java:33-36) — the flag stays visible. Exclusion requires an explicit service row with available_externally = FALSE. Source wins. -->
+
+### Changing reference data
+
+Nothing in this section is a deployment you control. Plan RA work around the ref-data governance
+cycle, not your own release train:
+
+1. Raise a JIRA ticket against reference data with the amended CSV attached — you make the edit,
+   in a fresh copy of the current file.
+2. Take the proposed change to the weekly ref-data forum, where a panel spanning CFT reference
+   data, List Assist, the DAI (reporting) team and the Case Flags / CUIYS service managers
+   (Mark Naylor, Alison Revitt) weighs the business and technical impact. Not every default is
+   open to override.
+3. The Ref Data BA manually reviews the file for accidental or unauthorised edits, backed by a
+   software diff against the previous version.
+4. The file is ingested into the CFT ref-data database and promoted through the test
+   environments to production. Per-version, per-environment release status is visible in the
+   `FlagService` table.
+5. **Two downstream systems are updated separately**: someone types the change into List Assist
+   by hand, and the DAI team runs its own reporting ingest. A flag that works in your service
+   can still be unknown to Scheduling & Listing until that happens.
+
+<!-- CONFLUENCE-ONLY: the whole governance workflow is process documented on Ref Data Flag Overview (page 1682839538, v27). No part of it is visible in source. -->
+
+### Retrieving the vocabulary at runtime
+
+Whichever front end you build, the flag list comes from one ref-data call — described in full in
+[Implement Case Flags](implement-case-flags.md), summarised here for the three parameters that
+change RA behaviour (`CaseFlagApiController.java:68-102`):
+
+| Parameter | Values | Effect |
+|---|---|---|
+| `flag-type` | `PARTY` or `CASE` | Keeps only the matching root. Validated against the `FlagType` enum up front — anything else is a `400 "Allowed values are PARTY or CASE"` (`ValidationUtil.java:16-28`) — and then applied by comparing the value **case-insensitively against each root's display name**, not a code (`CaseFlagServiceImpl.java:295-302`). It is the one place in the flag model where string-matching a name is the sanctioned mechanism, and it means the roots must stay literally named `Case` and `Party` in ref data. |
+| `welsh-required` | `Y` or `N` | With `N` (or absent), every `name_cy` / `value_cy` is set to the sentinel `IGNORE_JSON` and dropped from the JSON by a value filter rather than being returned null (`CaseFlagServiceImpl.java:43`, `:191-193`, `FlagDetail.java:29-31`). |
+| `available-external-flag` | `Y` or `N` | `Y` applies the external filter and parent pruning described above. Citizen and legal-rep journeys must pass `Y`; staff journeys must not. |
+
+An empty result after filtering is a `404`, not an empty list — `retrieveCaseFlagByServiceId`
+throws `ResourceNotFoundException("Data not found")` (`CaseFlagServiceImpl.java:59-61`). So an
+unrecognised service ID and a valid-but-unmatched `flag-type` (asking for `CASE` on a service
+that only configures party flags) produce the same response. Don't treat that `404` as "this
+service has no flags configured".
 
 ## Steps
 
@@ -277,6 +462,12 @@ A party counts as represented when `doTheyHaveLegalRepresentation == yes` or `us
 
 The Case Flags HLD is unambiguous on this: when consuming flags downstream (HMC hearing requests, work allocation rules, business logic), **use `flagCode`. Do not pattern-match against `name` or other display strings.** Names are localised (Welsh variants) and may change without altering the code; codes are stable across ref-data versions.
 
+Two carve-outs, both from ref data rather than CCD. When you are reading the *ref-data API*
+response rather than flags already stored on a case, parent nodes carry the literal `flagCode`
+`"CATGRY"` and you need `nativeFlagCode` instead (`CaseFlagRepository.java:78-82`). And
+`flag-type` filtering is itself implemented as a display-name comparison
+(`CaseFlagServiceImpl.java:295-302`) — it is the exception, not a precedent.
+
 ## Downstream consumption: HMC hearing request mapping
 
 If your service participates in Hearings Management, RA flags map into the manual hearing
@@ -343,6 +534,7 @@ sequenceDiagram
 ## See also
 
 - [`apps/ccd/docs/explanation/case-flags.md`](../explanation/case-flags.md) — overview of the CCD Flags complex type and flag lifecycle (the v2.1 mechanism this how-to builds on)
+- [`apps/ccd/docs/how-to/implement-case-flags.md`](implement-case-flags.md) — the base Case Flags configuration this page extends: `FlagLauncher` fields, `#ARGUMENT` vocabulary, internal/external routing, and the full ref-data retrieval endpoint
 - [`apps/ccd/docs/reference/glossary.md`](../reference/glossary.md) — definitions for `Flags`, `FlagDetail`, `AllPartyFlags`, WA
 - Confluence: *Case Flags HLD Version 2.1* (page 1700663346) — canonical architecture
 - Confluence: *Ref Data Flag Overview* (page 1682839538) — how the FlagDetails / FlagService / ListofValues CSVs feed CFT Ref Data

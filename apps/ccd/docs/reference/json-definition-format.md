@@ -619,7 +619,7 @@ Two import-time rules beyond the reference checks (`ShellMappingParser.java`):
 - **Shell and originating case type must differ** — compared case-insensitively; a match fails with "Originating Case Type: '…' and Shell Case Type: '…' are same in the sheet 'ShellMapping'".
 - **`(ShellCaseTypeID, ShellCaseFieldName)` must be unique** across the sheet — a repeat fails with "Duplicate combination of ShellCaseTypeID '…' and ShellCaseFieldName '…' found in the sheet 'ShellMapping'". Note the pair does *not* include the originating side, so two originating case types cannot both map into the same shell field.
 
-Rows land in the `shell_mapping` table (`ShellMappingEntity.java:19`) and are readable through `GET /api/retrieve-shell-mappings/{originalCaseTypeId}` — keyed on the **originating** case type, not the shell one (`ShellMappingController.java:27,33-45`).
+Rows land in the `shell_mapping` table (`ShellMappingEntity.java:19`) and are readable through `GET /api/retrieve-shell-mappings/{originalCaseTypeId}` — keyed on the **originating** case type, not the shell one (`ShellMappingController.java:27`, `:34-46`).
 
 ## See also
 

@@ -15,9 +15,12 @@ sources:
   - rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/document/CaseDocumentAccessManagement.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/document/CaseDataDocumentService.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/dto/UploadResponse.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/Document.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/DmUploadResponse.java
 status: confluence-augmented
-last_reviewed: 2026-04-29T00:00:00Z
-confluence_checked_at: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
+confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
   - id: "1945644195"
     title: "CDAM Architecture"
@@ -38,7 +41,8 @@ confluence:
   - id: "1958303773"
     title: "Case Document Uploads Technical Documentation"
     space: "DRDM"
-    last_modified: "2026-01-01"
+    version: 21
+    last_modified: "2026-05-16"
   - id: "1456373814"
     title: "GET /cases/documents/{documentId}/token"
     space: "RCCD"
@@ -60,6 +64,9 @@ sources_sha:
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/document/CaseDocumentAccessManagement.java": "82f7a6f31de2d52d80a9e60cfbb317c13015d52e"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/document/CaseDataDocumentService.java": "054c6d1ee848296406b34e61225182d11c452d73"
+  "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/dto/UploadResponse.java": "a262b3b2ba9eca3e0a51d2f1381cc1f14010ccc4"
+  "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/Document.java": "b4e4ec6110b8632d6923379968fb4446b3b50caa"
+  "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/DmUploadResponse.java": "a262b3b2ba9eca3e0a51d2f1381cc1f14010ccc4"
 ---
 
 # Documents and CDAM
@@ -135,11 +142,15 @@ jurisdictionId: IA
 files: <binary>
 ```
 
-CDAM stores the file and returns a per-document response containing `_links.self.href` (the
-document URL), `_links.binary.href` (the binary URL), `originalDocumentName`, `mimeType`, `size`,
-`createdOn`, `classification`, `metadata.{caseTypeId,jurisdictionId}`, and `hashToken`. A `ttl` is
-also returned: documents that are not subsequently attached to a case via an event are evicted after
-this TTL.
+CDAM stores the file and returns a `documents` array — one entry per uploaded file
+(`UploadResponse.java:9`) — each carrying `_links.self.href` (the document URL),
+`_links.binary.href` (the binary URL), `originalDocumentName`, `mimeType`, `size`,
+`classification`, `createdOn`, `createdBy`, `modifiedOn`, `lastModifiedBy`,
+`metadata.{caseTypeId,jurisdictionId}`, `ttl`, and `hashToken` (`Document.java:26-38`).
+Documents that are not subsequently attached to a case via an event are evicted after that `ttl`.
+
+<!-- DIVERGENCE: Confluence 1958303773 (v21) labels this contract "DM Store API /cases/documents" and lists a dm-store host for prod alongside a ccd-case-document-am-api host for AAT. The multipart request/response it documents is CDAM's, not DM Store's: hashToken exists only in ccd-case-document-am-api (no occurrence anywhere in document-management-store-app's main sources), and CDAM returns a flat {"documents": [...]} envelope (UploadResponse.java:9) whereas DM Store's own upload response nests them under _embedded.documents (DmUploadResponse.java:17-26). Uploads must go to CDAM. Source wins. -->
+
 
 The service team then places those values (and the `document_hash`) into the case data payload
 before submitting the CCD event.

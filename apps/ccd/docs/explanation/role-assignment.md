@@ -24,6 +24,7 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java
+  - am-role-assignment-service:src/main/resources/validationrules/core/specific-access-global.drl
 status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
@@ -94,6 +95,8 @@ sources_sha:
   ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java"
   : "da6f87b5a52f0e3c7afe6a76777ddf098bd5fe90"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  ? "am-role-assignment-service:src/main/resources/validationrules/core/specific-access-global.drl"
+  : "bad95f7ce33c1274c781283dd657fb1575bee6bd"
 ---
 
 # Role Assignment
@@ -292,6 +295,12 @@ For Specific access, four approver roles are defined:
 
 A global validation rule in AMRAS allows users with these approver roles to create the matching `specific-access-<category>` role assignments. Services configure their `reviewSpecificAccessRequest<Category>` work-allocation tasks to be available to the right approver role.
 
+All four names and the approval rule are in AMRAS source, in the drools rule `specific_access_approver_create_specific_access_case_role` (`specific-access-global.drl:176`). Three constraints there are easy to trip over:
+
+- **Approver and requested role must be an exact pair** — `specific-access-approver-admin` can only create `specific-access-admin`, and so on for judiciary, legal-ops and ctsc (`:208-211`). An approver cannot approve a request in a different category.
+- **The approver's role must be organisational, not case-level** — `roleType == ORGANISATION` with `grantType == STANDARD`, in-window (`beginTime`/`endTime`), a classification at least as high as the case's, and in the same jurisdiction as both the case and the requested assignment (`:205-219`).
+- **The rule is jurisdiction-scoped.** It only fires for requests whose jurisdiction is in a hard-coded allow-list — `IA`, `SSCS`, `CIVIL`, `PRIVATELAW`, `PUBLICLAW`, `EMPLOYMENT`, `ST_CIC`, `PROBATE`, `PCS`, `DIVORCE` (`:200`). A new jurisdiction does not get specific access by configuring its own case types; it needs a change to this rule file in `am-role-assignment-service`.
+
 LAU records both flows via a single endpoint:
 
 ```
@@ -302,7 +311,7 @@ POST audit/accessRequest
 }
 ```
 
-<!-- CONFLUENCE-ONLY: specific-access-approver-* role names and CTSC sub-category come from the WA / AM space planning pages — not modelled in the AAC or data-store source. Verify in the actual AMRAS configuration when implementing. -->
+<!-- DIVERGENCE: this section previously carried a CONFLUENCE-ONLY marker saying the specific-access-approver-* role names and the CTSC sub-category were "not modelled in the AAC or data-store source — verify in the actual AMRAS configuration when implementing". AMRAS is cloned in this workspace (apps/am/am-role-assignment-service) and all four names, the approver/requested pairing, and the jurisdiction allow-list are in specific-access-global.drl at origin/master. They are not AAC or data-store concerns because approval is enforced by AMRAS's drools rules, not by either of those services. Source wins. -->
 
 ## Access metadata (`access_granted`, `access_process`)
 

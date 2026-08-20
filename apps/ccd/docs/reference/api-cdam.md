@@ -12,6 +12,10 @@ sources:
   - rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java
   - rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java
   - platops/cnp-flux-config:apps/ccd/ccd-case-document-am-api/prod.yaml
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/endpoints/CaseDocumentAmController.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/advice/ErrorResponse.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/advice/CaseDocumentControllerAdvice.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/GeneratedHashCodeResponse.java
 status: confluence-augmented
 confluence:
   - id: "1456373814"
@@ -39,7 +43,7 @@ confluence:
     last_modified: "unknown"
     space: "DATS"
 confluence_checked_at: "2026-04-29T00:00:00Z"
-last_reviewed: 2026-04-29T00:00:00Z
+last_reviewed: 2026-08-20T00:00:00Z
 title: 'API: CDAM (Case Document Access Management)'
 diataxis: reference
 product: ccd
@@ -54,6 +58,13 @@ sources_sha:
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
   "platops/cnp-flux-config:apps/ccd/ccd-case-document-am-api/prod.yaml": "51608cee72db3e528bf2ac2da20e3ef6e6b80f5f"
+  ? "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/endpoints/CaseDocumentAmController.java"
+  : "cf06c5f0618c9dc1bcdc5c636d899ae2500ef2af"
+  "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/advice/ErrorResponse.java": "a3a5d5b6428a627427b24e16900c32e0981c2488"
+  ? "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/advice/CaseDocumentControllerAdvice.java"
+  : "ffcde0d9598de941886406b0933faab07523d58f"
+  ? "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/GeneratedHashCodeResponse.java"
+  : "d54aae25a8de4bcfc1c8c49c2542522f0b14180c"
 ---
 
 # API: CDAM (Case Document Access Management)
@@ -81,7 +92,12 @@ The following endpoints are exposed by `ccd-case-document-am-api` itself (port 4
 | `PATCH` | `/cases/documents/{documentId}` | Update document metadata | S2S (by microservice ID) |
 | `DELETE` | `/cases/documents/{documentId}` | Delete document | S2S (by microservice ID) |
 
-<!-- CONFLUENCE-ONLY: CDAM endpoint table from LLD page 1456373800 — full API source not in this workspace -->
+All seven rows are confirmed against `CaseDocumentAmController` at `origin/master` — the mappings
+are declared at `CaseDocumentAmController.java:85-86` (metadata), `:143-144` (binary),
+`:214-215` (upload), `:261-262` (patch document), `:308-309` (attachToCase), `:353-354` (delete)
+and `:385-386` (token). `DELETE` additionally takes a `permanent` query parameter, default
+`false` (`:367`) — the hard-delete switch behind the FinRem incident described in
+[Documents and CDAM](../explanation/documents-and-cdam.md#onboarding-gotchas).
 
 ### Hash-token generation endpoint
 
@@ -105,20 +121,26 @@ Returns the SHA-256 hash token for a given document. Currently scoped to the bul
 }
 ```
 
+The 200 body is a single `hashToken` string (`GeneratedHashCodeResponse.java:11`).
+
 **Error response (404):**
 
 ```json
 {
-  "errorCode": 404,
-  "errorMessage": "Not Found",
-  "errorDescription": "Resource not found 00000000-0000-0000-0000-000000000000",
-  "timeStamp": "14-07-2021 18:34:23.911"
+  "status": 404,
+  "error": "Resource not found 00000000-0000-0000-0000-000000000000",
+  "exception": "uk.gov.hmcts.reform.ccd.documentam.exception.ResourceNotFoundException",
+  "timestamp": "14-07-2021 18:34:23.911",
+  "path": "/cases/documents/00000000-0000-0000-0000-000000000000/token"
 }
 ```
 
-Source: Confluence page "GET /cases/documents/{documentId}/token" (RCCD space).
+Every CDAM error — from any endpoint — comes back in this one envelope: `status`, `error`
+(the exception's localised message), `exception` (the Java class name), `timestamp` formatted
+`dd-MM-yyyy HH:mm:ss.SSS`, and the request `path`
+(`ErrorResponse.java:10-18`, `CaseDocumentControllerAdvice.java:166-179`).
 
-<!-- CONFLUENCE-ONLY: hash-token endpoint detail from page 1456373814 — CDAM source not in workspace -->
+<!-- DIVERGENCE: Confluence 1456373814 documents the error body as {errorCode, errorMessage, errorDescription, timeStamp}, and 1958303773 (v21) repeats that shape. No such fields exist in CDAM today: ErrorResponse.java:10-18 defines status/error/exception/timestamp/path and every handler in CaseDocumentControllerAdvice funnels through errorDetailsResponseEntity (:166-179). The timestamp format in the Confluence example does still match getTimeStamp() (:162-164), so the pages look like an accurate record of an older CDAM release. Source wins. -->
 
 ### Upload endpoint
 
