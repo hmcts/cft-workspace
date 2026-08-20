@@ -1,0 +1,48 @@
+name: Lint workflows
+
+# GitHub reports an invalid workflow file only *after* a push, as a run that
+# fails instantly with "This run likely failed because of a workflow file
+# issue" and no log to read. Nothing checks the file on the PR, so a broken
+# workflow merges cleanly and then breaks every subsequent push.
+#
+# That is exactly how PR #5 took the devcontainer publish pipeline down: a
+# three-week-old branch was merged with master, the conflict resolution kept
+# both sides, and the resulting duplicate `image-tags:` / `platforms:` keys in
+# one `with:` block made the file unparseable. Every push to master failed
+# until it was reverted (PR #9). actionlint flags all of it — duplicate keys,
+# the dangling `steps.tags.outputs.tags` the same merge left behind, unknown
+# runner labels, bad `needs:` graphs — plus shellcheck over every `run:` block.
+#
+# Runs on every PR, not only ones touching .github/workflows/**. A
+# path-filtered job can't be a required status check: on a PR that doesn't
+# match the filter it never reports, and the merge blocks forever waiting for
+# it.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-workflows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The published image bundles a matching shellcheck, so `run:` scripts
+      # are linted too. With no arguments actionlint discovers every file under
+      # .github/workflows itself.
+      - name: actionlint
+        uses: docker://rhysd/actionlint:1.7.7

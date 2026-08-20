@@ -67,6 +67,8 @@ jobs:
           echo "reported permissions (unreliable): $perms"
           {
             echo '## Reported permissions'
+            # The backticks below are markdown, not command substitution.
+            # shellcheck disable=SC2016
             echo 'Context only — GitHub has reported `"push": false` here on a run'
             echo 'whose push succeeded. The push result below is authoritative.'
             echo '```json'
