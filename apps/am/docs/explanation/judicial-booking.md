@@ -53,6 +53,19 @@ confluence:
     last_modified: "unknown"
     space: "WA"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/data/BookingEntity.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
+  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/domain/service/common/ParseRequestService.java": "a0524b1559c3649d1968355a4e74923661921fa2"
+  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/CreateBookingController.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
+  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/QueryBookingController.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
+  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/DeleteBookingController.java": "1e0e29994093123b06bd2b86b19fd6b8b1e85110"
+  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/util/ValidationUtil.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/JudicialBookingService.java": "df884872022dce37def76a71025b1b22e19e2635"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/JudicialRefreshOrchestrator.java": "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RequestMappingService.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
+  "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-org-role-mapping.drl": "c15c7771f4f24dbfecdc81514fe9f16c2546ed6c"
+  "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteJudicialExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "am-judicial-booking-service:src/main/resources/db/migration/V1_1__init_tables.sql": "910817b922d76c16f7c7a1cdf63105516b36b705"
 ---
 
 ## TL;DR

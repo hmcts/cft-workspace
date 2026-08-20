@@ -47,6 +47,22 @@ confluence:
     last_modified: "2023-01-01T00:00:00Z"
     space: "AM"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/Assignment.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/RoleType.java": "b4b14c0e2a06ae18ac01f51eacf26fed55130fc0"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/GrantType.java": "5fde8587eb8b34a4002a4c046ebce1ea4b470ab1"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/Classification.java": "3ae3f88f96468c3ea6ef8786454679e3cc564cef"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/Status.java": "4890e2888d726feb338cb055f96b373a6da9916b"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ValidationModelService.java": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
+  "am-role-assignment-service:src/main/resources/validationrules/core/role-assignment-config-validation.drl": "c4a2b8662304ef450cdedf1c98ae0c59266029e9"
+  "am-role-assignment-service:src/main/resources/validationrules/core/reject-unapproved-role-assignments.drl": "dbf2d2d3e7e5d0737010ace755a89f1db1f73d3e"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/controller/endpoints/CreateAssignmentController.java": "5a420960cb363b1ca81ad9919d2eba59f564ff17"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/controller/endpoints/QueryAssignmentController.java": "9baaef158b35973e37e42cf3358043d137d6e3f1"
+  "am-role-assignment-service:src/main/resources/db/migration/V1_1__init_tables.sql": "74e0642af3ffce0e1e0108b65287ae23b5c4e287"
+  "am-role-assignment-service:src/main/resources/db/migration/V1_6__adding_new_indexes.sql": "b87bc2930c91ddf57d03e1918aa5edf055a5c70f"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/RoleConfigRole.java": "e0d36cc40e590356e570f9d3fe78d983f6d192f8"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ParseRequestService.java": "b570497f596fc184b488c5419d0dd4d3f8ec6e91"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/CacheControlConfig.java": "8cf863afdc12718dcea4011c2aca808facad734a"
 ---
 
 ## TL;DR

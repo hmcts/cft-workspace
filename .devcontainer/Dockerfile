@@ -139,7 +139,7 @@ EOF
 RUN bash -c 'export NVM_DIR="$HOME/.nvm"; \
     . "$NVM_DIR/nvm.sh"; \
     nvm use default; \
-    npm install -g @anthropic-ai/claude-code'
+    npm install -g @anthropic-ai/claude-code @openai/codex'
 
 RUN bash -c 'export NVM_DIR="$HOME/.nvm"; \
     . "$NVM_DIR/nvm.sh"; \

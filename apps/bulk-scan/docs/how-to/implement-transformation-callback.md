@@ -42,6 +42,21 @@ confluence:
     last_modified: "unknown"
     space: "RBS"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/model/request/TransformationRequest.java"
+  : "d3a809222612c0bf26d215b484ab75b5fdf5e914"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/model/response/SuccessfulTransformationResponse.java"
+  : "6d8494debc6cedcc3edb339b126ae3d43c5bd32d"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/model/response/CaseCreationDetails.java"
+  : "6d8494debc6cedcc3edb339b126ae3d43c5bd32d"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationClient.java": "6d8494debc6cedcc3edb339b126ae3d43c5bd32d"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationRequestCreator.java"
+  : "2a3662a2e5440b8c1f1b427f00f3257373590421"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CcdNewCaseCreator.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CreateCaseCallbackService.java": "c7bcda72fb826e91f171f33989af1d1db0656562"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java": "191d098f8515659ce5fe6dfc59a5f553efa019ca"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/model/request/DocumentType.java": "2cd992abb2d61d223f862018e3a3e2229087b6c8"
 ---
 
 ## TL;DR

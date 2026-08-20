@@ -49,6 +49,22 @@ confluence:
     last_modified: "2025-01-01"
     space: "RTRD"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtVenue.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/BuildingLocation.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/Service.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/Region.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/Cluster.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/ServiceToCcdCaseTypeAssoc.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtType.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/CourtTypeServiceAssoc.java": "8eed18d867b09840f46012d92a88ead89ff29648"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdApiController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/LrdCourtVenueController.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/CourtVenueRepository.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_1__init_tables.sql": "9ff268023b206987b8c5c37a5d3dd3fe106d5fd0"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_9__create_tables.sql": "5ccbdb249da25b2583248997954fcaed14fd813b"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_31__alter_tables_add_column_court_venue.sql": "8dc814ca3f358e1fef39173396c24a428bd4aaec"
+  "rd-location-ref-api:src/main/resources/application.yaml": "0348cf42d7f36f5959fa7b671eebd32282f7fcfa"
 ---
 
 ## TL;DR

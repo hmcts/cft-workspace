@@ -77,12 +77,42 @@ status: drafted
 - Tables where possible. Each row should be self-contained.
 - No prose chapters — this is a reference, not an explainer.
 
+## Do not record exact dependency versions
+
+Never write an exact `x.y.z` version of a library, chart, or published artifact into a page —
+no "currently v7.3.78", no `| Version | 3.2.14 |` table rows, no `version: '5.1.1'` in a
+copy-pasteable dependency snippet. These change on every patch release, so they generate
+constant drift that no reader benefits from, and a stale number is worse than no number.
+
+Instead:
+
+- State the **major** version when it carries meaning (`major 7.x`, `Angular 20`, `helmet ^7`)
+  — majors signal breaking-change boundaries, which is the part worth documenting.
+- For a specific current version, tell the reader **where to look** (`see package.json on
+  master`, or the repo's releases page) rather than quoting it.
+- In dependency snippets, prefer a range or `<major>.+` over an exact pin, and say that the
+  exact version should come from the source of truth.
+- Document the **pinning practice** if it's interesting ("pinned exactly, not a range, because
+  SRT validates a specific version") without quoting the pinned number.
+
+Version-like strings that are *stable identifiers*, not dependency versions, are fine to keep:
+Flyway migration IDs (`V1.0.42`), API path versions (`/v2/`), Confluence page titles, and
+placeholder examples in tag/release instructions.
+
 ## Frontmatter
 
 When writing the page, set:
 
 - `status: drafted`
 - `sources: [<repo>:<path-relative-file>]` listing every file you cited in the body. Format: `<repo-slug>:<path-from-repo-root>` (e.g. `ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/api/CaseDetails.java`). The drift skill consumes this list.
+  - If a cited file exists **only on an unmerged branch**, pin it: `<repo-slug>@<branch>:<path>`. Unbranched citations are resolved against the repo's default branch, so an unpinned branch-only file is reported as `broken`.
+  - **Never cite a dependency manifest or lockfile**: `package.json`, `build.gradle(.kts)`, `yarn.lock`, `package-lock.json`, `gradle.lockfile`, `go.sum`, `poetry.lock`, and friends. They change on almost every commit, so citing them makes the page report `stale` constantly without anything the page claims having changed. If you need to describe a dependency or a Gradle/npm setting, cite the code that consumes it, or describe it without a citation. Low-churn build *config* — `ng-package.json`, `settings.gradle`, `angular.json`, `Dockerfile`, chart `values.yaml` — is fine to cite.
+  - Avoid `file:line` references in prose for any file that churns heavily; the line number rots faster than the claim. Name the file and the symbol instead.
+
+Do **not** hand-write `sources_sha:`. After the page is written, the pipeline records it by
+running `./scripts/doc-drift --record --product=<product>`, which pins every citation to the
+SHA observed at write time. Without that map, drift is undetectable for the page — so if you
+add `sources:` to a page outside the normal pipeline, mention that `--record` still needs running.
 
 Leave `title`, `topic`, `diataxis`, `product`, `audience` as they were in the stub.
 

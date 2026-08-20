@@ -48,6 +48,25 @@ confluence:
     last_modified: "unknown"
     space: "FR"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/external/OrganisationExternalController.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/OrganisationInternalController.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
+  ? "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/external/ProfessionalExternalUserController.java"
+  : "609fcbbce9a893e23e9d49c0782b63150484fd92"
+  ? "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/ProfessionalUserInternalController.java"
+  : "2021f547d82578c6748fd13cdbb8d815576ba3a3"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/service/impl/OrganisationServiceImpl.java": "e65aaa68e346e6abd3f6f8a87e739568202239cb"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/service/impl/PaymentAccountServiceImpl.java": "99cf6d046d6e69880b0403496569468727c3ad22"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/SuperController.java": "99cf6d046d6e69880b0403496569468727c3ad22"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/configuration/SecurityConfiguration.java": "5e51e70306a76751761299fbd0bfbc2f59126307"
+  "rd-professional-api:src/main/resources/application.yaml": "8501e4e7406318653bae352c04d5e03c1944a2cf"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/external/OrganisationExternalControllerV2.java": "71ec4a1b963d9a4a64286ee7e069239896cb953f"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/OrganisationInternalControllerV2.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/external/OrganisationMfaStatusController.java": "021c0b6e37d7623369b9ea7f7cf88a75a978ce28"
+  ? "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/BulkCustomerDetailsInternalController.java"
+  : "2021f547d82578c6748fd13cdbb8d815576ba3a3"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/domain/MFAStatus.java": "ebd17a7b3fdd44ea7b72f2707f30e5de82338df2"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/domain/UserConfiguredAccess.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
 ---
 
 ## TL;DR

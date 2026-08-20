@@ -5,7 +5,6 @@ diataxis: reference
 product: xui
 audience: both
 sources:
-  - rpx-xui-common-lib:projects/exui-common-lib/package.json
   - rpx-xui-common-lib:projects/exui-common-lib/src/lib/exui-common-lib.module.ts
   - rpx-xui-common-lib:projects/exui-common-lib/src/public-api.ts
   - rpx-xui-node-lib:src/index.ts
@@ -57,6 +56,25 @@ confluence:
     last_modified: "unknown"
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/exui-common-lib.module.ts": "189415163133256e8e494105c62e9d2259e98294"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/public-api.ts": "f980531694894f3fbef1a5e2f8a2b452f12e1974"
+  "rpx-xui-node-lib:src/index.ts": "0015bb7837ab8261bed0df08bbf678f7ec88dbc6"
+  "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
+  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
+  "rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
+  "rpx-xui-node-lib:src/auth/models/authOptions.interface.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
+  "rpx-xui-node-lib:src/auth/auth.constants.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/session/session.constants.ts": "d97c29086eaa37ae5db5e9b14e3267cadbc8bd3e"
+  "rpx-xui-node-lib:src/auth/s2s/s2s.constants.ts": "0993296a3baa5b90ed461bde7d412b90cba08dd4"
+  "rpx-xui-node-lib:.github/workflows/npmpublish.yml": "3b9268f7fbb179a70d969ce1ab8d3738cee4a5e7"
+  "rpx-xui-common-lib:.github/workflows/npmpublish.yml": "b99016f34fb87f24afcba26d74e84834989463d1"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.module.ts": "61f4dc00adcd02585719517d1006e4c466e7c0ad"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.service.ts": "405aa00e7d6e1b908bc451e8929e26e1664ab7bb"
+  "rpx-xui-translation:projects/rpx-xui-translation/src/public-api.ts": "91c0b307dd4a8ac874f88112e3555aa3e6f97e17"
+  "rpx-xui-webapp:api/auth/index.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
+  "rpx-xui-webapp:api/health/index.ts": "2c967714acdec2fbfc99a07f38ad38fe44acb4a2"
 ---
 
 # Shared Libraries
@@ -72,11 +90,13 @@ confluence_checked_at: "2026-05-13T00:00:00Z"
 
 ## Library summary
 
-| Library | npm package | Current version | Runtime | Primary purpose |
-|---------|-------------|-----------------|---------|-----------------|
-| rpx-xui-common-lib | `@hmcts/rpx-xui-common-lib` | 3.2.9 | Angular (browser) | Shared UI components, services, directives |
-| rpx-xui-node-lib | `@hmcts/rpx-xui-node-lib` | 2.30.13 | Node/Express (BFF) | Auth, session, security middleware |
-| rpx-xui-translation | `rpx-xui-translation` | 1.2.3 | Angular (browser) | Welsh-language translation pipe and service |
+| Library | npm package | Major | Runtime | Primary purpose |
+|---------|-------------|-------|---------|-----------------|
+| rpx-xui-common-lib | `@hmcts/rpx-xui-common-lib` | 3.x | Angular (browser) | Shared UI components, services, directives |
+| rpx-xui-node-lib | `@hmcts/rpx-xui-node-lib` | 2.x | Node/Express (BFF) | Auth, session, security middleware |
+| rpx-xui-translation | `rpx-xui-translation` | 1.x | Angular (browser) | Welsh-language translation pipe and service |
+
+Exact published versions are not recorded here — check each library's `package.json` on master, or npm. Only major versions are documented, since those are the ones that carry breaking-change meaning.
 
 ## Consuming applications
 
@@ -120,10 +140,10 @@ When upgrading Angular (e.g. the v20 upgrade), the bottom-up order is:
 | Attribute | Value |
 |-----------|-------|
 | npm package | `@hmcts/rpx-xui-common-lib` |
-| Version | 3.2.9 |
+| Major version | 3.x |
 | Repo path | `apps/xui/rpx-xui-common-lib` |
 | Library source | `projects/exui-common-lib/` |
-| Build tool | `ng-packagr` v20.3.0 |
+| Build tool | `ng-packagr` |
 | Angular module | `ExuiCommonLibModule` |
 | Component prefix | `xuilib-` |
 | Publish scope | `@hmcts` (public) |
@@ -144,7 +164,7 @@ When upgrading Angular (e.g. the v20 upgrade), the bottom-up order is:
 |------------|-------|
 | `launchdarkly-js-client-sdk` | Required for `LaunchDarklyService` |
 | `ngx-pagination` | Pagination component support |
-| `rpx-xui-translation` | Pinned to pre-release `1.1.2-CME-780-9` in peer deps |
+| `rpx-xui-translation` | Pinned to an exact version in peer deps (not a range) — bumping it needs a coordinated release |
 | `@ng-idle/core`, `@ng-idle/keepalive` | Session idle detection |
 
 ### Versioning notes
@@ -159,7 +179,7 @@ When upgrading Angular (e.g. the v20 upgrade), the bottom-up order is:
 | Attribute | Value |
 |-----------|-------|
 | npm package | `@hmcts/rpx-xui-node-lib` |
-| Version | 2.30.13 |
+| Major version | 2.x |
 | Repo path | `apps/xui/rpx-xui-node-lib` |
 | Entry point | `src/index.ts` |
 | Sub-modules | `src/auth/`, `src/session/`, `src/common/` |
@@ -171,7 +191,7 @@ The `XuiNode` class (`rpx-xui-node-lib:src/common/models/xuiNode.class.ts:7`) or
 
 | Layer | Key | Class | Purpose |
 |-------|-----|-------|---------|
-| Session | `redisStore` | `RedisSessionStore` | Redis-backed Express sessions (`connect-redis` v4 + `redis` v3) |
+| Session | `redisStore` | `RedisSessionStore` | Redis-backed Express sessions (`connect-redis` v9 + `redis` v6) |
 | Session | `fileStore` | `FileSessionStore` | File-backed sessions (local dev only) |
 | Auth | `oidc` | `OpenID` | OIDC authentication via `openid-client` + Passport |
 | Auth | `oauth2` | `OAuth2` | OAuth2 authentication via `passport-oauth2` |
@@ -273,7 +293,7 @@ Beyond the five standard auth routes, the library registers an error-handling re
 ### Versioning notes
 
 - All middleware objects are `EventEmitter` subclasses; events propagate up to `XuiNode` via `proxyEvents`.
-- `redis` v3 and `connect-redis` v4 are locked (older major versions).
+- `redis` v6 and `connect-redis` v9 (upgraded from v3/v4 in #331); the session store normalises legacy connection-string forms for Redis v6's HELLO auth.
 - `configure()` is async internally but returns the router synchronously -- dynamic imports resolve in background Promises (`rpx-xui-node-lib:src/common/models/xuiNode.class.ts:53-56`).
 
 ## rpx-xui-translation
@@ -281,7 +301,7 @@ Beyond the five standard auth routes, the library registers an error-handling re
 | Attribute | Value |
 |-----------|-------|
 | npm package | `rpx-xui-translation` |
-| Version | 1.2.3 |
+| Major version | 1.x |
 | Repo path | `apps/xui/rpx-xui-translation` |
 | Library source | `projects/rpx-xui-translation/` |
 | Build tool | `ng-packagr` |

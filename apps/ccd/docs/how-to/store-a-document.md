@@ -10,6 +10,8 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/search/CaseDocumentsMetadata.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/ApplicationParams.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/DocumentValidator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casefileview/CategoriesAndDocumentsService.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/document/CaseDocumentAccessManagement.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/document/CaseDataDocumentService.java
@@ -44,6 +46,21 @@ confluence:
 title: Store a Document
 diataxis: how-to
 product: ccd
+sources_sha:
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentService.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentUtils.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentAmApiClient.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java": "b58f7f447730bf5ec8f9bca0bd831c1abe2b6db0"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/DocumentValidator.java": "ac8b88cf8cff30d213c21d5e23226091d982e259"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casefileview/CategoriesAndDocumentsService.java"
+  : "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/external/controller/CaseDocumentController.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/search/CaseDocumentsMetadata.java": "40ec50b801024f957da5ad60dc97b4134006a34f"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/ApplicationParams.java": "6bd724e7501334211b25c150e57a1180f2df758d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java": "013ed140d477b8ef8ea079619d0b6e0a96d89fa2"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/document/CaseDocumentAccessManagement.java": "82f7a6f31de2d52d80a9e60cfbb317c13015d52e"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/document/CaseDataDocumentService.java": "054c6d1ee848296406b34e61225182d11c452d73"
 ---
 
 # Store a Document
@@ -198,6 +215,11 @@ When `POST /cases/{caseId}/events` is processed:
    `upload_timestamp` in its callback, the value is preserved (the service
    takes precedence). This feature is **opt-in per case type** via
    `ccd.upload-timestamp-featured-case-types` (`ApplicationParams.java:191`).
+   The flag gates only this stamping step — `DocumentValidator` accepts and
+   validates the attribute regardless (`DocumentValidator.java:106-112`), so a
+   service that sets the value itself does not need the whitelist. Decentralised
+   services **must** set it themselves; see
+   [Decentralised services: setting `category_id` dynamically](#decentralised-services-setting-category_id-dynamically).
 8. **HTML upload blocking.** Within the same timestamp-population pass, if a new
    document has a filename ending in `.html`/`.htm` and the field's
    `regularExpression` does not explicitly permit HTML, a
@@ -252,7 +274,7 @@ and add a `caseFileView` tab with `#ARGUMENT(CaseFileView)` as the
 
 ### Decentralised services: setting `category_id` dynamically
 
-In a decentralised service you can set the category, filename, and
+In a decentralised service you set the category, filename, and
 `upload_timestamp` on the way out — when CCD requests case data — rather than
 storing them on the document field itself: <!-- CONFLUENCE-ONLY: pattern from PCS spike (1933860267) -->
 
@@ -264,12 +286,34 @@ return Document.builder()
     .categoryId(entity.getType().getCategory()
                                  .map(Enum::name)
                                  .orElse(null))   // null → Uncategorised
-    .uploadTimestamp(entity.getLastModified())
+    // convert from your stored Instant through UTC explicitly, so the value
+    // does not depend on the pod's default timezone
+    .uploadTimestamp(entity.getUploadedAt()
+                           .atZone(ZoneOffset.UTC)
+                           .toLocalDateTime())
     .build();
 ```
 
 The displayed filename in CFV reflects whatever `filename` you return; the
 underlying download filename is unaffected.
+
+For `upload_timestamp` this read-path population is not merely an alternative —
+it is **required**. CCD's `addUploadTimestamps` runs before the decentralised
+branch, so its stamp lands on the JSON payload rather than in your tables, and
+any field you rebuild from domain rows on the next read loses it. Two
+consequences worth planning for:
+
+- **Every `Document`-typed field needs the attribute, not just your main
+  documents collection.** CCD extracts all `Document`-typed paths from the case
+  when building the tree (`CategoriesAndDocumentsService.java:129-147`), so a
+  document projected by some other part of your `CaseView` also appears in CFV.
+  A field left without a timestamp sorts as "older".
+- **Use `ZoneOffset.UTC`, not the system default.** CCD's own stamp comes from a
+  `Clock.systemUTC()` bean, so UTC is the convention the attribute follows
+  across services.
+
+See [Case File View](../explanation/case-file-view.md#decentralised-services-must-own-upload_timestamp)
+for the full reasoning.
 
 ### nfdiv pattern (centralised service)
 

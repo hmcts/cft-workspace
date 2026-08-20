@@ -65,6 +65,29 @@ confluence:
     last_modified: "unknown"
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
+  "rpx-xui-webapp:api/configuration/references.ts": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/main.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
+  "rpx-xui-webapp:src/app/app.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/app/containers/app/app.component.ts": "f48caa5dd7496ddd38035c9eaf6478c43f7271d0"
+  "rpx-xui-webapp:src/app/services/ccd-config/initialisation-sync-service.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "e2e91483e01f90f60019bbf00a719c8f8b11b1b7"
+  "rpx-xui-webapp:src/app/shared/services/mc-launch-darkly-service.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/app/app.routes.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "c91842bfaf02cabf31c5844d154b2d3f16f8ceda"
+  "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
+  "rpx-xui-webapp:src/app/shared/services/environment.service.ts": "6c90fbc6b38434ad2f933356651b41f6ec813c64"
+  "rpx-xui-webapp:src/app/directives/feature-toggle/feature-toggle.directive.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/launch-darkly.service.ts": "25f44bb18010b28961e6ac3d51ba9142178a558f"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.service.ts": "6532e170c4c925fca8df630bc87efc2becfdbab0"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts": "46113db85da141a989d239a95168a3588512ca88"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/directives/feature-toggle/feature-toggle.directive.ts": "4b63706d8c0e056720db07da0a650825d287fae0"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/models/feature-user.ts": "ecdc90817564a8f98865362185a29a2cccf222e0"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/models/service-message.model.ts": "0136a45b9fc776422c00510a5f6f0337517eb186"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/components/service-messages/service-messages.component.ts": "f368565824d9f7e6d78f88a9451d562046f581d3"
 ---
 
 ## TL;DR
@@ -84,7 +107,7 @@ XUI operates a dual-layer feature-flag system:
 
 2. **Client-side LaunchDarkly flags** — dynamically evaluated per-user in the browser. These control UI feature visibility, route guards, and CCD toolkit configuration. They stream updates in real-time via the LD SDK's EventSource connection.
 
-The BFF does **not** run a server-side LD SDK (`launchdarkly-node-server-sdk`). All LD evaluation happens client-side in Angular using `launchdarkly-js-client-sdk: 3.8.1` (webapp pins this version; common-lib declares `^3.3.0` as a peer dependency).
+The BFF does **not** run a server-side LD SDK (`launchdarkly-node-server-sdk`). All LD evaluation happens client-side in Angular using `launchdarkly-js-client-sdk` (major 3.x — the webapp pins an exact patch version; common-lib declares a `^3` peer dependency).
 
 ### Purpose and CI/CD philosophy
 

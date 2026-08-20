@@ -46,6 +46,17 @@ confluence:
     last_modified: "unknown"
     space: "AM"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "am-role-assignment-service:src/main/resources/validationrules/core/role-assignment-config-validation.drl": "c4a2b8662304ef450cdedf1c98ae0c59266029e9"
+  "am-role-assignment-service:src/main/resources/validationrules/core/reject-unapproved-role-assignments.drl": "dbf2d2d3e7e5d0737010ace755a89f1db1f73d3e"
+  "am-role-assignment-service:src/main/resources/validationrules/core/organisational-role-mapping-common.drl": "683f8db55a52ff5a3f4cfa6dc64c582a3f6e83d8"
+  "am-role-assignment-service:src/main/resources/validationrules/core/case-allocator-global.drl": "7a38104afd09ab562ebeb23eebeccde36b2e017a"
+  "am-role-assignment-service:src/main/resources/validationrules/core/load-case-data.drl": "dbc160bf651038d4cd1b2f15865e381158348e61"
+  "am-role-assignment-service:src/main/resources/META-INF/kmodule.xml": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ValidationModelService.java": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/DroolConfig.java": "d2e8dba140653845b1d8ac5664ed045d04a926cb"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/RoleConfig.java": "da2b7d064237e310df0653a490804fc8d9d028d3"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/FeatureFlagEnum.java": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
 ---
 
 ## TL;DR

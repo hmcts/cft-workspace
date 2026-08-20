@@ -44,6 +44,19 @@ confluence:
     last_modified: "unknown"
     space: "AM"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/config/BatchConfig.java": "1dab3801131feb14a32b7ccedd3ad96b0982ab70"
+  "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteJudicialExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "am-role-assignment-batch-service:src/main/resources/application.yaml": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "am-role-assignment-batch-service:charts/am-role-assignment-batch-service/values.yaml": "e5df307cfb505df6b55546f200adb7b7f5606a7c"
+  ? "am-role-assignment-refresh-batch:src/main/java/uk/gov/hmcts/reform/roleassignmentrefresh/domain/service/process/RefreshJobsOrchestrator.java"
+  : "7c1fd658b6c1687cdabce688b6d28759f39a7ccc"
+  "am-role-assignment-refresh-batch:src/main/java/uk/gov/hmcts/reform/roleassignmentrefresh/task/RefreshORMRules.java": "f05bdae53b45575a5fe5b341fa7725cf76d07769"
+  "am-role-assignment-refresh-batch:src/main/resources/application.yaml": "10e5e18b33c34cf740e99b9b02ee2a027e1ab5a3"
+  "am-role-assignment-refresh-batch:charts/am-role-assignment-refresh-batch/values.yaml": "f69f12cdfd2c865a3bb0501d84c105aad0948a51"
+  "am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql": "4634ca2f2028547d964f2f1deb111816ffa5da75"
+  "am-org-role-mapping-service:src/main/resources/application.yaml": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
 ---
 
 ## TL;DR

@@ -22,7 +22,6 @@ sources:
   - em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts
   - em-media-viewer:projects/media-viewer/src/lib/viewers/unsupported-viewer/unsupported-viewer.component.ts
   - em-media-viewer:projects/media-viewer/ng-package.json
-  - em-media-viewer:package.json
   - em-media-viewer:README.md
   - em-icp-api:api/routes/sessions.ts
   - em-icp-api:api/model/interfaces.ts
@@ -56,6 +55,27 @@ confluence:
     last_modified: "unknown"
     space: "RDM"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.ts": "d0021abc1a687f247765d65ff348e43a7684b441"
+  "em-media-viewer:projects/media-viewer/src/lib/media-viewer.module.ts": "9b4edc2c7f19264628215e37ddc7f89de2e4dd72"
+  "em-media-viewer:projects/media-viewer/src/public_api.ts": "e7f09d756b2fde6fec08da292390d51c70112d58"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/pdf-viewer/pdf-js/pdf-js-wrapper.ts": "86b9adfa5ffc1bed792b123e99a3d95517690915"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/image-viewer/image-viewer.component.ts": "353aadba4f2c7f0d85b9815b931a82d0de8662c0"
+  "em-media-viewer:projects/media-viewer/src/lib/toolbar/toolbar-button-visibility.service.ts": "fbb1f9f029644e8c81fec863ed570a508d1764ba"
+  "em-media-viewer:projects/media-viewer/src/lib/toolbar/main-toolbar/main-toolbar.component.ts": "d0021abc1a687f247765d65ff348e43a7684b441"
+  "em-media-viewer:projects/media-viewer/src/lib/icp/icp.service.ts": "7fbca0248d76d5f270d03fa63e168c08c28f7f15"
+  "em-media-viewer:projects/media-viewer/src/lib/icp/socket.service.ts": "56015f9054ab1694e8a979ae6f600fb18b41a19e"
+  "em-media-viewer:projects/media-viewer/src/lib/icp/icp.events.ts": "72feb035c101f163a091d5596cfbbec9a0b13cb4"
+  "em-media-viewer:projects/media-viewer/src/lib/icp/icp.interfaces.ts": "4bccce4cb815a7a631a5f32c63b38b3af554957d"
+  "em-media-viewer:projects/media-viewer/src/lib/store/reducers/document.reducer.ts": "86b5722206924c0c5cc27851d0f1396e92ef1b39"
+  "em-media-viewer:projects/media-viewer/src/lib/store/actions/bookmark.actions.ts": "b4b821cf5b1e3c4ff0c783276185b2184e40cf9c"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/rotation-persist/rotation-api.service.ts": "5dc69692a133835ba839c5d14b4af967168b75b6"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts": "fa3728864c83874e15ea556857123115bc616eb6"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/unsupported-viewer/unsupported-viewer.component.ts": "353aadba4f2c7f0d85b9815b931a82d0de8662c0"
+  "em-media-viewer:projects/media-viewer/ng-package.json": "a2c84c421d8b92aaf03c3a85772b26ee6becdbbc"
+  "em-media-viewer:README.md": "cb1055c515b2ef4270bce54cdbe991247f3583d6"
+  "em-icp-api:api/routes/sessions.ts": "738fef6ffb0390b60945df12a14f17bfd28ffdea"
+  "em-icp-api:api/model/interfaces.ts": "0f1f0e91169d8c69a356c250ba05ff2ac13c185d"
 ---
 
 ## TL;DR

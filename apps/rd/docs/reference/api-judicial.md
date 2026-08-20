@@ -45,6 +45,20 @@ confluence:
     last_modified: "unknown"
     space: "RTRD"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/controller/JrdElinkController.java": "c3ba638268aac0e7dc990f941f1a958cdfaf09fb"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/controller/request/RefreshRoleRequest.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/controller/request/UserSearchRequest.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/response/UserProfileRefreshResponse.java": "06acb4d7f04332d636f34dfa9f016e118a128617"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/response/AppointmentRefreshResponse.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/response/AuthorisationRefreshResponse.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/response/JudicialRoleTypeRefresh.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/service/impl/ElinkUserServiceImpl.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/repository/ProfileRepository.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/validator/ElinksRefreshUserValidator.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/util/RequestUtils.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
+  "rd-judicial-api:src/main/resources/application.yaml": "91db0edf4a57e5899d31861797cf690cc11b61af"
 ---
 
 ## TL;DR

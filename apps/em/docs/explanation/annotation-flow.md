@@ -53,6 +53,25 @@ confluence:
     last_modified: "unknown"
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/AnnotationSet.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Annotation.java": "ec97bb95c09e500d78f7a95517ed16bb3a6f4d94"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Comment.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Rectangle.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Metadata.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/enumeration/AnnotationType.java": "c1e103cfbca25a5fdf8d8da4afc53d5ca5e064d9"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/AnnotationSetResource.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/FilterAnnotationSet.java": "4ebe8109540f8936b8787904bfa15610fb0a4a0f"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/AnnotationResource.java": "71a2d23a05991308fcc9587c64b16b48702b7ebb"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/MetaDataResource.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/DocumentDataResource.java": "907765858535794d0fa8c55b5500c2e0be034679"
+  "em-native-pdf-annotator-app:src/main/java/uk/gov/hmcts/reform/em/npa/rest/MarkUpResource.java": "5bd6a581d0c64478a5fbcf6deae81849bbf9f63c"
+  "em-native-pdf-annotator-app:src/main/java/uk/gov/hmcts/reform/em/npa/rest/RedactionResource.java": "8df2bc5d563c90388031f4a2c2ab88e836a0ed03"
+  "em-native-pdf-annotator-app:src/main/java/uk/gov/hmcts/reform/em/npa/redaction/PdfRedaction.java": "a8d56f2d750d5b069cec31d5e34c26792824199e"
+  "em-native-pdf-annotator-app:src/main/java/uk/gov/hmcts/reform/em/npa/redaction/ImageRedaction.java": "e1c4c31c7eff0a989578f6fc4465d20ea44e024e"
+  "em-native-pdf-annotator-app:src/main/java/uk/gov/hmcts/reform/em/npa/service/impl/RedactionServiceImpl.java": "d23d1955eaf575cca10c0a99c77f54948aa2b9b9"
+  "em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.ts": "d0021abc1a687f247765d65ff348e43a7684b441"
+  "em-media-viewer:projects/media-viewer/src/lib/toolbar/redaction-toolbar/redaction-toolbar.component.ts": "d0021abc1a687f247765d65ff348e43a7684b441"
 ---
 
 ## TL;DR

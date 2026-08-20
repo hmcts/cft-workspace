@@ -12,7 +12,6 @@ sources:
   - ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/service/CcdCaseEventService.java
   - ccd-next-hearing-date-updater:src/main/resources/application.yaml
   - ccd-next-hearing-date-updater:charts/ccd-next-hearing-date-updater/values.yaml
-  - ccd-next-hearing-date-updater:build.gradle
   - ccd-next-hearing-date-updater:src/cftlib/java/uk/gov/hmcts/reform/next/hearing/date/updater/CftLibConfig.java
   - ccd-data-store-api:src/main/resources/application.properties
   - ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/common/ComplexTypes.json
@@ -51,6 +50,31 @@ confluence:
     last_modified: "unknown"
     space: "EUI"
 confluence_checked_at: "2026-05-29T00:00:00Z"
+sources_sha:
+  "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/config/CaseEventConfig.java": "e9fc4806b2d3817e628ebd77049c7301aaa69dc6"
+  "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/data/NextHearingDetails.java": "5385bfb6bd99c671a07081937a96768084592aaf"
+  "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/repository/ElasticSearchQuery.java": "c61dcf95afe1e736f3193d70e4635222c19412a4"
+  "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/repository/CcdCaseEventRepository.java": "e4369be44c0011e768c23326d4fa6a04a440e05c"
+  "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/service/CcdCaseEventService.java": "25aa086e1d30d4888803874770c7ae14fbb3b47c"
+  "ccd-next-hearing-date-updater:src/main/resources/application.yaml": "de5b7b6a8c6c685027fbc25f1cdd57dad3961412"
+  "ccd-next-hearing-date-updater:charts/ccd-next-hearing-date-updater/values.yaml": "dc0cd2718504fe2715cbe20a15357b21044897c3"
+  "ccd-next-hearing-date-updater:src/cftlib/java/uk/gov/hmcts/reform/next/hearing/date/updater/CftLibConfig.java": "a76ed99b52280efd2b9f2f21899e19d63cf56d64"
+  "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
+  "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/common/ComplexTypes.json": "f4df578af86d235cf8a1b2fe23ecf0423e476afa"
+  "ccd-data-store-api:src/test/resources/tests/BEFTA_MASTER-jurisdiction-payload.json": "66aab5d80a29e472cfb88b79c7efa1bfa25fcd80"
+  ? "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/service/NextHearingDateUpdaterService.java"
+  : "bf4b777a82a1873548006c5cb781fb3feb9d3285"
+  "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/service/CsvService.java": "e4d5f4deb2e499cc5033c8b74c81e89f2aa633be"
+  "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/service/CcdCaseEventService.java": "25aa086e1d30d4888803874770c7ae14fbb3b47c"
+  "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/exceptions/ErrorMessages.java": "e4369be44c0011e768c23326d4fa6a04a440e05c"
+  "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/ApplicationBootstrap.java": "7ef98f284ea83ed599ea1d6d72e0b2442de60eac"
+  "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/common/ComplexTypes.json": "f4df578af86d235cf8a1b2fe23ecf0423e476afa"
+  ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_NextHearingDate/CaseField.json"
+  : "bb0e0729b0088dac1275f7b9992cdea06a62629e"
+  ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_NextHearingDate/CaseEvent.json"
+  : "bb0e0729b0088dac1275f7b9992cdea06a62629e"
+  ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_NextHearingDate/AuthorisationCaseEvent.json"
+  : "bb0e0729b0088dac1275f7b9992cdea06a62629e"
 ---
 
 # Next Hearing Date

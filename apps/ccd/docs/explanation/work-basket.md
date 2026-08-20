@@ -45,6 +45,25 @@ examples_extracted_from:
 title: Work Basket
 diataxis: explanation
 product: ccd
+sources_sha:
+  ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/WorkBasketInputCaseFieldEntity.java"
+  : "bda0438d09f29d99f546185907272748a1224c49"
+  ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/WorkBasketCaseFieldEntity.java"
+  : "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/GenericLayoutEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/DisplayApiController.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/model/SearchInputField.java": "3698d0e4e6f3c22e4de7becba49c64e1ccec4a0e"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/model/SearchResultsField.java": "7120392681102ac8883fb40a61aa2b02c816440c"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/model/WorkBasketUserDefault.java": "3ec3758c1c5e020c14f42c59542e5c5c5879b096"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/SheetName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/endpoint/ui/QueryEndpoint.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/internal/controller/UICaseSearchController.java": "b13d8bcef6553345ada5c3f153bd61e39421b574"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/SearchResultDefinitionService.java": "80adc76067063ba3c3600fb3e0674b41bfe5426f"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/search/MetaData.java": "bf6f9ecc0149aba4c80456c27b6d5fef74616ad7"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Search.java": "13b5729ed4cda7019a9487095888171eb91ccf6a"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SearchField.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
 ---
 
 # Work Basket

@@ -55,6 +55,20 @@ confluence:
     last_modified: "unknown"
     space: "WA"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn": "ef2e773a0dfbc538d1b0e7dab33fb6906c2b6510"
+  "wa-standalone-task-bpmn:camunda-deployment.sh": "3eb967ce19a71b9821506abfdd0166fc692e234a"
+  "wa-standalone-task-bpmn:src/test/java/uk/gov/hmcts/reform/wastandalonetaskbpmn/CamundaProcessEngineBaseUnitTest.java": "671f4e055c5ea22c35f8364e7b5922bcb846c5a5"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/controllers/startworkflow/CreateTaskController.java": "6b973ba98684616920e661cf2653e161e58fd20f"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/ExternalTaskWorker.java": "4fadbadb976f0b5fcc9cf37e588df8da887447e4"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/idempotency/IdempotencyTaskWorkerHandler.java": "98bbde3b945f6fc2ddc831668f96abeed91d1259"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/handler/WarningTaskWorkerHandler.java": "5bd734b0053592f47552289fb0169ec7c23eac28"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/model/SendMessageRequest.java": "f24304488ff069b4b5439b39564646066feccc72"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/CamundaClient.java": "120f1462b5aa74a5c3b9ea39210daa1db5960770"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/initiation/InitiationJobService.java": "9dd5aeeb7cee1e4b8999983a7c4187f6298d8631"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/domain/taskmonitor/JobName.java": "05035529b105f5cc2dcbe35bf709b80c7cbd5a76"
+  "wa-task-monitor:src/main/resources/application.yaml": "05035529b105f5cc2dcbe35bf709b80c7cbd5a76"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
 ---
 
 ## TL;DR

@@ -55,6 +55,26 @@ confluence:
     last_modified: "2022-01-01T00:00:00Z"
     space: "WA"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/CFTTaskState.java": "016267cf74a1cefbc05d5e54fc56b4843d6164f2"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/ExecutionType.java": "f921a91fb70607cfce81911ee599f2a5e786dfd3"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/TerminationProcess.java": "b83f756ff73266f9ae6181f0427ae32e1f4a09e9"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/ExclusiveTaskActionsController.java": "168f462c0af08458dfe4bcd8629946cb74b30a91"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/TaskActionsController.java": "1d99034722b1261ca9e19f97571a035b04c649d1"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskManagementService.java": "0464400520dda69b754e7ed2105eecfbbfcd100a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/ConfigureTaskService.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/RoleAssignmentVerificationService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/access/AccessControlService.java": "6b290b8fc5cd2a75d26f171ca967c9272be32b04"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/search/RequestContext.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
+  "wa-task-management-api:src/main/resources/db/migration/V1.0.2__init_enums.sql": "69212e903c7dfc1015511dbda39ef8b17ae65cbd"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/initiation/InitiationJobService.java": "9dd5aeeb7cee1e4b8999983a7c4187f6298d8631"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/termination/TerminationJobService.java": "c5874facb228b27ab40bd8c1ca4976b649b382e6"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/reconfiguration/ReconfigurationJobService.java": "b85e0e4bb35c19fbca7bb508048b2e7f3ad1269d"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/CancellationCaseEventHandler.java": "81624296cc17947ff85c9b9075fc8d583cab5aeb"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/ReconfigurationCaseEventHandler.java": "bbdda4d6b7cb5a3c0a32fd2b485c83f0f3654732"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/CancellationActions.java": "419fb8ffac888514542dccb4dc86741827c16961"
 ---
 
 ## TL;DR

@@ -32,6 +32,19 @@ confluence:
 title: Supplementary Data
 diataxis: explanation
 product: ccd
+sources_sha:
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/external/controller/CaseController.java": "908a83a97b9e15e4d93e9990c4ee6f7f4cbdfb72"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/AuthorisedSupplementaryDataUpdateOperation.java"
+  : "80adc76067063ba3c3600fb3e0674b41bfe5426f"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/supplementarydata/DefaultSupplementaryDataRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseDetailsEntity.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/supplementarydata/SupplementaryDataOperation.java": "cbdbb95e62ff2fdf9acfa695fd4710ab51bfa81d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPI.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/std/SupplementaryDataUpdateRequest.java": "cbdbb95e62ff2fdf9acfa695fd4710ab51bfa81d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/std/CaseDataContent.java": "2ea24ab2bedd8a88e7d69c23dc8038c160412e83"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/std/validator/SupplementaryDataUpdateRequestValidator.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/DefaultEndpointAuthorisationService.java": "824087dcf42519838e6b427be15ffde1c96f4ade"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/external/resource/SupplementaryDataResource.java": "cbdbb95e62ff2fdf9acfa695fd4710ab51bfa81d"
 ---
 
 # Supplementary Data

@@ -62,6 +62,28 @@ confluence:
 title: Implement Notice of Change
 diataxis: how-to
 product: ccd
+sources_sha:
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/domain/ChangeOrganisationRequest.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/datastore/CaseDetails.java": "fd47890952be0b44521441cdb43233ef61268ce2"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/NoticeOfChangeQuestions.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/VerifyNoCAnswersService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ChallengeAnswerValidator.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/ApplyNoCDecisionService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java": "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/repository/DefaultDataStoreRepository.java": "fd47890952be0b44521441cdb43233ef61268ce2"
+  ? "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/definitionstore/DefinitionStoreApiClientConfig.java"
+  : "6ed403dda6e401d2f2892f78fdecd46fd5ceef62"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/errorhandling/noc/NoCValidationError.java": "fd47890952be0b44521441cdb43233ef61268ce2"
+  "aac-manage-case-assignment:src/main/resources/application.yaml": "9910b14cfb1fcad7a811420150a69864df3bf528"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/NoticeOfChange.java": "e0518056b0b4b00f457c8049abf201ee1dedd83b"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ChangeOrganisationApprovalStatus.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemRequestNoticeOfChange.java": "db56d640f5ad39b385c99da8d543544c0d6a201c"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemApplyNoticeOfChange.java": "9b1337e16b348bdc96f18c2081556a637d86395f"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/client/AssignCaseAccessClient.java": "8c795dc52f33c8ec5c8be87e50de105ca2d94434"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "8ea172728014eb8e47eb0914bde427846940fba2"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseRoleID.java": "8c795dc52f33c8ec5c8be87e50de105ca2d94434"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java": "331e5ff869da788ba5aad52abafc2fce18aba416"
 ---
 
 # Implement Notice of Change

@@ -45,6 +45,18 @@ confluence:
     last_modified: "unknown"
     space: "WA"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/initiation/InitiationJobService.java": "9dd5aeeb7cee1e4b8999983a7c4187f6298d8631"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/config/job/InitiationJobConfig.java": "c5874facb228b27ab40bd8c1ca4976b649b382e6"
+  ? "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/failure/initiation/TaskInitiationFailuresJobService.java"
+  : "8cae4e7960a8efe298db8fd8f740f1b7680c57a6"
+  "wa-task-monitor:src/main/resources/camunda/camunda-search-cftTaskState-unconfigured.json": "8eec5d2b2fb89e412658b30cc273693963d95c5d"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/clients/DatabaseMessageConsumer.java": "98a029ce763a2f424be687a660ab099ad56ca753"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/clients/MessageReadinessConsumer.java": "98a029ce763a2f424be687a660ab099ad56ca753"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/clients/UnprocessableHttpErrors.java": "da4cd8441a778e8204e30287255a1698b8ccd8dd"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/DeadLetterQueuePeekService.java": "98a029ce763a2f424be687a660ab099ad56ca753"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/repository/CaseEventMessageRepository.java": "1dff53a57566fac43c52cbc90b898e3c0b6b7887"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
 ---
 
 ## TL;DR

@@ -52,6 +52,21 @@ confluence:
     last_modified: "unknown"
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/auth/models/strategy.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
+  "rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
+  "rpx-xui-node-lib:src/session/models/sessionStore.class.ts": "f69b9a67e108a4ac0f9173c7bc93bc61d1732d9a"
+  "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
+  "rpx-xui-node-lib:src/common/util/userTimeout.ts": "a0aa78ffa34f463c92b1181c4b7a7aaacf11f1e7"
+  "rpx-xui-node-lib:src/auth/auth.constants.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/timeout-notifications/timeout-notifications.service.ts": "e9487c78c450369bcdc2039fcae52eb6eb115351"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/components/hmcts-session-dialog/hmcts-session-dialog.component.ts": "4b63706d8c0e056720db07da0a650825d287fae0"
+  "rpx-xui-webapp:api/auth/index.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
+  "rpx-xui-webapp:api/user/index.ts": "25ac341f998fcb2d6dddbf1931b515f6ae0e523a"
+  "rpx-xui-webapp:src/app/containers/app/app.component.ts": "f48caa5dd7496ddd38035c9eaf6478c43f7271d0"
+  "rpx-xui-webapp:config/default.json": "b41ecd3846ba1992aef59b3216d7f09ad4b8fbc0"
 ---
 
 ## TL;DR
@@ -115,7 +130,14 @@ Both `Authorization` (user bearer token) and `ServiceAuthorization` (S2S token) 
 
 ## Redis session store
 
-In deployed environments, sessions are stored in Azure Redis Cache. The `RedisSessionStore` class uses `connect-redis` v4 with `redis` v3 client (`rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts`).
+In deployed environments, sessions are stored in Azure Redis Cache. The `RedisSessionStore` class uses `connect-redis` v9 with the `redis` v6 client (`rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts`).
+
+Because Redis v6 dropped support for some legacy connection-string forms, the store normalises
+its input before calling `createClient`: `redis://…?tls=true` URLs are rewritten to `rediss://`,
+Azure-style `host:port,password=…,ssl=true` strings are parsed into URL form, and username-only
+URLs (`redis://<key>@host`) are converted to password form so Redis v6's HELLO auth succeeds.
+Already-`rediss://` URLs pass through unchanged, and an invalid or missing TTL falls back to the
+default rather than throwing.
 
 Configuration (from `rpx-xui-webapp:config/default.json`):
 

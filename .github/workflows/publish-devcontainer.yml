@@ -12,33 +12,80 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: publish-devcontainer
+  cancel-in-progress: false
+
+env:
+  REGISTRY: hmctsprod
+  IMAGE_NAME: cft-workspace/devcontainer
+
 jobs:
-  publish:
-    name: Build and push to ACR
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Compute image tags
-        id: tags
-        run: |
-          short_sha=$(echo "${{ github.sha }}" | cut -c1-7)
-          {
-            echo "tags<<EOF"
-            echo "latest"
-            echo "${short_sha}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+      - name: Compute staging tag
+        id: tag
+        run: echo "tag=$(echo "${{ github.sha }}" | cut -c1-7)-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push devcontainer image
+      # One arch per job so each builds natively — no QEMU emulation. The
+      # per-arch cache scope keeps the two concurrent jobs from clobbering
+      # each other's GHA cache (the action defaults to an unscoped type=gha).
+      - name: Build and push ${{ matrix.arch }} image
         uses: hmcts/cnp-githubactions-library/container-build-push-openid@main
         with:
-          registry-name: hmctsprod
+          registry-name: ${{ env.REGISTRY }}
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          image-name: cft-workspace/devcontainer
+          image-name: ${{ env.IMAGE_NAME }}
           dockerfile: .devcontainer/Dockerfile
           context: .devcontainer
           image-tags: ${{ steps.tags.outputs.tags }}
           platforms: linux/amd64,linux/arm64
+          image-tags: ${{ steps.tag.outputs.tag }}
+          platforms: ${{ matrix.platform }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,scope=${{ matrix.arch }},mode=max
+
+  merge:
+    name: Merge into multi-arch manifest
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Az CLI login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: ACR login
+        run: az acr login --name "${{ env.REGISTRY }}"
+
+      # Combine the two arch-specific staging tags into the manifest lists
+      # users actually pull. Docker picks the right arch automatically.
+      - name: Create manifest list
+        run: |
+          set -euo pipefail
+          img="${{ env.REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}"
+          sha=$(echo "${{ github.sha }}" | cut -c1-7)
+          docker buildx imagetools create \
+            --tag "${img}:latest" \
+            --tag "${img}:${sha}" \
+            "${img}:${sha}-amd64" \
+            "${img}:${sha}-arm64"
+          docker buildx imagetools inspect "${img}:latest"

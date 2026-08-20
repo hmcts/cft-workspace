@@ -52,6 +52,30 @@ examples_extracted_from:
 title: Enable Global Search
 diataxis: how-to
 product: ccd
+sources_sha:
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/global/GlobalSearchServiceImpl.java": "051411831ba3771976e7e6b6a2eb72fcccd2045f"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/global/GlobalSearchFields.java": "333301f00b69fdf95c41bb49d76b89f87aaba333"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/processor/GlobalSearchProcessorService.java": "64ac13de0e0876cd2d3b86f2dbf862f61417d541"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/endpoint/std/GlobalSearchEndpoint.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/globalsearch/SearchCriteria.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/globalsearch/SearchParty.java": "edf1e7d68532a29d860b17ba5df3d145234f871e"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/search/global/GlobalSearchRequestPayload.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/search/global/GlobalSearchResponsePayload.java": "79801412abcae4440247fe87f8b9d54594b46da3"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/search/global/GlobalSearchSortByCategory.java": "ef5013852961eab83eaab69b1f787ec77b58d6a5"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/search/global/Party.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/search/global/SearchCriteria.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/std/validator/globalsearch/SearchCriteriaValidator.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/SearchCriteriaValidator.java"
+  : "43e27ff88c4b3dd93230cf988f05e8fe7e04f741"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/SearchCasesResultFieldEntity.java"
+  : "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/SearchPartyEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/ElasticGlobalSearchListener.java"
+  : "b38b329d63a41d080d70a11f2925dca040c63f0c"
+  "ccd-definition-store-api:elastic-search-support/src/main/resources/globalSearchCasesMapping.json": "3888fb1a78316b9ab3ee597967e4424be68d2e6c"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/DisplayApiController.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
 ---
 
 # Enable Global Search

@@ -26,7 +26,7 @@ examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessType.json
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessTypeRole.json
 status: reviewed
-last_reviewed: "2026-05-29T00:00:00Z"
+last_reviewed: "2026-08-05T00:00:00Z"
 confluence:
   - id: "1764230653"
     title: "HLD - Professional Access Management v1.2"
@@ -53,6 +53,28 @@ confluence:
     last_modified: "unknown"
     space: "RCCD"
 confluence_checked_at: "2026-05-29T00:00:00Z"
+sources_sha:
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/AccessTypeEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/AccessTypeRoleEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/SheetName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/AccessTypesValidator.java"
+  : "c726d1c4b968cfb41e8a217d3ae567a04cc64f92"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/AccessTypeRolesValidator.java"
+  : "c726d1c4b968cfb41e8a217d3ae567a04cc64f92"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/AccessTypesController.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/service/AccessTypesService.java": "c726d1c4b968cfb41e8a217d3ae567a04cc64f92"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/model/AccessTypeRoleResult.java": "fccada36abeb44647b3ffa6a7ee5d483a1b9b99e"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/CaseAccessGroupUtils.java": "908a83a97b9e15e4d93e9990c4ee6f7f4cbdfb72"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/CaseAccessGroupsMatcher.java": "484119b15a8eacd34f30af868e363047f014cd40"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/RoleAssignmentAttributes.java": "6e54c6ae57480c1a72d28e6d2f94ff0f9d8bb44f"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/AccessProfileServiceImpl.java": "59ff93fdf61ce8bac912443bf6335d5d432f7b36"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessType.json"
+  : "0b035fa17258e24bc51803ded7ecb26fea032068"
+  ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessTypeRole.json"
+  : "46629947d6c4fdeee0105ce354ff496efc27ac89"
 ---
 
 # Group Access
@@ -224,7 +246,7 @@ sequenceDiagram
 
 ## SDK note
 
-The `ccd-config-generator` SDK has **no AccessType support**. There is no `accessType(...)` method on `ConfigBuilder` (`ConfigBuilder.java:13`), no `AccessTypeGenerator`, and no example anywhere in the repo. Service teams that need group access must ship `AccessType` / `AccessTypeRole` as raw JSON fragments matching the column schema `ccd-definition-store-api` expects, and merge them via the SDK's `static/` directory pattern — the README's documented workaround for features the generator does not cover (`README.md:591`):
+**On `ccd-config-generator` master today there is no AccessType support.** There is no `accessType(...)` method on `ConfigBuilder`, no `AccessTypeGenerator`, and no example in the repo. Service teams on a released SDK version must ship `AccessType` / `AccessTypeRole` as raw JSON fragments matching the column schema `ccd-definition-store-api` expects, and merge them via the SDK's `static/` directory pattern — the README's documented workaround for features the generator does not cover (`README.md:591`):
 
 ```groovy
 task generateCCDDefinition(type: Copy) {
@@ -233,6 +255,20 @@ task generateCCDDefinition(type: Copy) {
   into layout.buildDirectory.dir('json-definitions')
 }
 ```
+
+**Support is in flight, not yet on master.** Two SDK changes add it. [PR 969](https://github.com/hmcts/dtsse-ccd-config-generator/pull/969) (merged, but into the feature branch `HDPI-6258-generate-accessType-accessTypeRole-json` — *not* master) adds imperative builders, `accessType(String)` and `accessTypeRole(String)`, plus the generators that emit both sheets. [PR 1060](https://github.com/hmcts/dtsse-ccd-config-generator/pull/1060) (**open** against master) layers a declarative alternative on top: a `CCDAccessGroup` interface implemented by an enum, attached to a role constant via `HasRole.getAccessGroup()`, from which the SDK derives the `AccessType` and `AccessTypeRole` rows. Explicit builder calls win over derived rows for a given `(AccessTypeID, OrganisationProfileID)`. Until 1060 merges and is released, the `static/` fragment approach above remains the only option. <!-- UNMERGED: PR 1060 open against ccd-config-generator master as of 2026-08-05; verify before relying on this section -->
+
+Three details of that design are worth knowing because they encode gotchas documented elsewhere on this page:
+
+- **Group roles are typed, not free text.** Both `getGroupRoleName()` and `getCaseAssignedRoleField()` return `HasRole`, so a group configuration cannot name a role that does not exist. This is a direct response to the [asymmetric validation](#validation-gotcha-asymmetric-reference-checking) above.
+- **The SDK emits the `RoleToAccessProfiles` row for the group role itself**, from a mandatory-non-empty `getGroupRoleAccessProfiles()`. Because the definition store performs no referential check on `GroupRoleName`, an unmapped group role otherwise imports cleanly and then grants nothing; deriving the row makes that failure impossible rather than silent. A row the config already declares by hand takes precedence, so non-default authorisations are still expressible.
+- **`caseAssignedRoleField` is modelled as a role, not a field.** Despite the column name it is a role name — the value the runtime matches against `OrgPolicyCaseAssignedRole`, typically a bracketed case role such as `[SOLICITOR]`. See `AccessTypeRolesValidator.java:159` and `CaseAccessGroupUtils.findOrganisationPolicyNodeForCaseRole`. Unlike `GroupRoleName` this column *is* checked referentially against `RoleToAccessProfiles.RoleName`, so the config must declare a `caseRoleToAccessProfile` for that case role or the import is rejected.
+
+All three roles — the organisational role carrying the access type, the group role it mints, and the case role naming the `OrganisationPolicy` — go in the case's role class (`R extends HasRole`). That class is the only thing scanned to derive access types, so a role declared in a separate enum is silently ignored: no `AccessType` row is emitted and there is no diagnostic. Group roles are ordinary organisational roles that happen to be minted per organisation by PRM, so they are not a distinct kind of thing needing a distinct home. Membership also gives the group role its `AuthorisationCaseType` row and brings it under `shutterService()` / `omitHistoryForRoles()`, and it can then be granted on events with the ordinary `grant(Set<Permission>, R...)`.
+
+Whether the group role *needs* `Authorisation*` rows depends on how its `RoleToAccessProfiles` mapping resolves, and this is worth understanding because ACLs are matched on **access profile**, not on role name (`AccessControlService.hasAccessControlList` intersects `AccessProfile::getAccessProfile` against `AccessControlList::getAccessProfile`). A group role mapped to an access profile that already holds ACLs — as in the `BEFTA_MASTER_GROUPACCESS` fixture, where `CaseProfessionalGroupAccess_GA_Role` maps to `caseworker-befta_jurisdiction_1` — inherits that profile's permissions and needs no rows of its own, which is why it appears in zero `Authorisation*` sheets there. A group role mapped to an access profile of its own name needs its own ACLs, and then role-class membership is what supplies them. The SDK derives a mapping to the profiles named in `getGroupRoleAccessProfiles()`, so which case applies is the config author's choice.
+
+One consequence of `CCDAccessGroup`'s role-valued members being `HasRole` (that interface is not generic in the role class): they point back into the case's role class, which itself references the group, so this is a **circular static initialisation**. The JVM will not re-enter an in-progress `<clinit>`, so a role captured as an enum constructor argument reads `null` in whichever class initialises second. Both `getGroupRoleName()` and `getCaseAssignedRoleField()` must therefore be implemented as ordinary methods on the enum — alongside `getAccessTypeId()`, not as per-constant overrides — because a method body is not evaluated until build time, when both enums are fully initialised. Constants needing different roles can `switch (this)` in that body. The SDK fails fast with a diagnostic if either resolves to `null`.
 
 ## Example
 
@@ -317,7 +353,7 @@ Note the `CaseAccessGroupIDTemplate` value: `BEFTA_MASTER:FT_CaseProfessionalGro
 
 ## Failure modes
 
-- **Misspelled / unmatched `groupRoleName`** — imports cleanly (not validated) then silently no-ops: the matched role assignment resolves to no AccessProfile.
+- **Misspelled / unmatched `groupRoleName`** — imports cleanly (not validated) then silently no-ops: the matched role assignment resolves to no AccessProfile. Teams generating definitions from the SDK's `CCDAccessGroup` enum are insulated from this — the group role is a typed `HasRole` and its `RoleToAccessProfiles` row is derived automatically (see [SDK note](#sdk-note)) — but the in-flight PR is not yet on master.
 - **Feature flag off in an environment** — `CaseAccessGroups` are never written and `CaseAccessGroupsMatcher` is never registered, so group access never filters; the sheets are skipped at import even if present.
 - **Expecting to stage a group row with `groupAccessEnabled=false`** — the import is rejected (`AccessTypeRolesValidator.java:102-108`); a group row must be imported enabled. The HLD/glossary safe-rollout-via-disabled-flag story does not match shipped behaviour (see [GroupAccessEnabled](#groupaccessenabled)). Stage instead via the data-store `enable-case-group-access-filtering` flag and PRM enablement.
 - **`accessMandatory` misuse** — `AccessMandatory=true` makes the access type essential for the organisation profile: it cannot be disabled by the org admin except by disabling the whole jurisdiction for the user (per the glossary, 207804327, and HLD 1764230653 §3.4.2.2). Marking optional access as mandatory silently forces every member of the profile into it; review against the org-onboarding intent before import. (`Display=true` is only meaningful alongside `AccessMandatory`/`AccessDefault` — it surfaces the type in the Invite/Edit User UI.)

@@ -14,7 +14,6 @@ sources:
   - wa-task-configuration-template:src/main/resources/wa-task-allowed-days-wa-wacasetype.dmn
   - wa-task-configuration-template:camunda-deployment.sh
   - wa-task-configuration-template:src/test/java/uk/gov/hmcts/reform/wataskconfigurationtemplate/DmnDecisionTable.java
-  - wa-task-configuration-template:build.gradle
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/calendar/DateTypeIntervalData.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java
@@ -55,6 +54,19 @@ confluence:
     last_modified: "unknown"
     space: "WA"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "wa-task-configuration-template:src/main/resources/wa-task-initiation-wa-wacasetype.dmn": "0f8832e3017f8a0676e7ef179e8802c797241707"
+  "wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn": "510747dd6d79a189f498d51c500718bb30adf51c"
+  "wa-task-configuration-template:src/main/resources/wa-task-permissions-wa-wacasetype.dmn": "d93044190a89ac64e5b112dacb6df5c6af2273bd"
+  "wa-task-configuration-template:src/main/resources/wa-task-cancellation-wa-wacasetype.dmn": "c3eae8d2e8f687e8a601a41496fca78df453e9e2"
+  "wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn": "f256d9afd3ae0ee4420642d1a7648e271423f4a4"
+  "wa-task-configuration-template:src/main/resources/wa-task-types-wa-wacasetype.dmn": "ad5c4d1f3f999a71df3e145d1b784637e15fe261"
+  "wa-task-configuration-template:src/main/resources/wa-task-allowed-days-wa-wacasetype.dmn": "ad5c4d1f3f999a71df3e145d1b784637e15fe261"
+  "wa-task-configuration-template:camunda-deployment.sh": "0a58de5ec9a536dc6f319f113a1ff203f6cb77dd"
+  "wa-task-configuration-template:src/test/java/uk/gov/hmcts/reform/wataskconfigurationtemplate/DmnDecisionTable.java": "ecc46851eb4f10d3028af8b72b2557cb038e5c74"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java": "1145b29f89b2e45601917fc0ec0c6b8801b783be"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/calendar/DateTypeIntervalData.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
 ---
 
 ## TL;DR

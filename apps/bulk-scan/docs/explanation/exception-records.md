@@ -52,6 +52,23 @@ confluence:
     last_modified: "unknown"
     space: "RP"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/CreateExceptionRecord.java"
+  : "191d098f8515659ce5fe6dfc59a5f553efa019ca"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/model/ccd/ExceptionRecord.java": "2d7e3260a9ee2c5f94e68a47064988dacf069794"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/definition/ExceptionRecordFields.java"
+  : "ae77472667c4b8d8e9f33d1de8b57c78ed9f511d"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/controllers/CcdCallbackController.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CreateCaseCallbackService.java": "c7bcda72fb826e91f171f33989af1d1db0656562"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/AttachToCaseCallbackService.java": "5f9a0b598dc0ddffe9de49a9ce25cd5c86d6cc5d"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/ExceptionRecordFinalizer.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationClient.java": "6d8494debc6cedcc3edb339b126ae3d43c5bd32d"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/definition/ServiceCaseFields.java": "53b8e994a68e62bc05346336c92b943d119d66c4"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseEvent.json": "ea6da3682f7d976e1084903f88e0fbbed3c1bfaa"
+  "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseField.json": "de9c28e2d2da5f41e0e322726d568c8a27f061fc"
+  "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/State.json": "ea6da3682f7d976e1084903f88e0fbbed3c1bfaa"
+  "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/FixedLists.json": "c9d2e780c0c3a13daaa3f8b7092fe48a51327a2a"
 ---
 
 ## TL;DR

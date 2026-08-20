@@ -46,6 +46,20 @@ confluence:
     last_modified: "unknown"
     space: "AM"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/RoleType.java": "b4b14c0e2a06ae18ac01f51eacf26fed55130fc0"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/GrantType.java": "5fde8587eb8b34a4002a4c046ebce1ea4b470ab1"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/RoleCategory.java": "8393259c0171c8cd063931d46b0bb8c532f0c6e0"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/Classification.java": "3ae3f88f96468c3ea6ef8786454679e3cc564cef"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/Status.java": "4890e2888d726feb338cb055f96b373a6da9916b"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/ActorIdType.java": "3fc1925bdc257f7b88079a15410dc8467ee99ae3"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/Assignment.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/controller/endpoints/CreateAssignmentController.java": "5a420960cb363b1ca81ad9919d2eba59f564ff17"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/controller/endpoints/QueryAssignmentController.java": "9baaef158b35973e37e42cf3358043d137d6e3f1"
+  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-role-assignment-service:src/main/resources/validationrules/core/organisational-role-mapping-common.drl": "683f8db55a52ff5a3f4cfa6dc64c582a3f6e83d8"
+  "am-role-assignment-service:src/main/resources/validationrules/ccd/ccd-case-role-validation.drl": "b22c2601ed4603746a832b0b16c18d33a504d283"
+  "am-role-assignment-service:src/main/resources/roleconfig/role_common.json": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
 ---
 
 ## TL;DR

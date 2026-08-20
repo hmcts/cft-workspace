@@ -43,6 +43,17 @@ last_reviewed: 2026-04-29T00:00:00Z
 title: 'API: CDAM (Case Document Access Management)'
 diataxis: reference
 product: ccd
+sources_sha:
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentAmApiClient.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentService.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentUtils.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/external/controller/CaseDocumentController.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/search/CaseDocumentsMetadata.java": "40ec50b801024f957da5ad60dc97b4134006a34f"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/external/domain/DocumentHashToken.java": "40ec50b801024f957da5ad60dc97b4134006a34f"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/Service.java": "732ec28c7a68359452f0e767b5bd605d10608e61"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
+  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
+  "platops/cnp-flux-config:apps/ccd/ccd-case-document-am-api/prod.yaml": "543ee646edac937f53f4dfb16d762b29160d9c9c"
 ---
 
 # API: CDAM (Case Document Access Management)

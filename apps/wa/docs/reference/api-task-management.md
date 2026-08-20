@@ -54,6 +54,23 @@ confluence:
     last_modified: "unknown"
     space: "WA"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/TaskActionsController.java": "1d99034722b1261ca9e19f97571a035b04c649d1"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/ExclusiveTaskActionsController.java": "168f462c0af08458dfe4bcd8629946cb74b30a91"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/TaskSearchController.java": "1d99034722b1261ca9e19f97571a035b04c649d1"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/TaskOperationController.java": "168f462c0af08458dfe4bcd8629946cb74b30a91"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/WorkTypesController.java": "168f462c0af08458dfe4bcd8629946cb74b30a91"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/TaskTypesController.java": "168f462c0af08458dfe4bcd8629946cb74b30a91"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/access/AccessControlService.java": "6b290b8fc5cd2a75d26f171ca967c9272be32b04"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/restrict/ClientAccessControlService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/CFTTaskState.java": "016267cf74a1cefbc05d5e54fc56b4843d6164f2"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/search/SearchOperator.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/search/SortField.java": "40ea6a9f7c9ee8e393ff466da060828ef1ba979e"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/request/enums/TaskOperationType.java": "949c0396950ca72197110738b564d468b8aa4846"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/request/enums/TaskFilterOperator.java": "67a61d90f9d5397b85638bd7a198cf5288d78dcb"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/idam/entities/SearchEventAndCase.java": "c8205c86dc91474f930f66e58d5897ea4931a06a"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/exceptions/v2/RoleAssignmentVerificationException.java"
+  : "c614c564bc285e44fbd036a4ae14ac90b27f8412"
 ---
 
 ## TL;DR

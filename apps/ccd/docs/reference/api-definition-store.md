@@ -43,6 +43,24 @@ last_reviewed: 2026-04-29T00:00:00Z
 title: 'API: Definition Store'
 diataxis: reference
 product: ccd
+sources_sha:
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/endpoint/ImportController.java": "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/DisplayApiController.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/GenericLayoutRepository.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/SpreadsheetValidator.java"
+  : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/CaseDefinitionController.java": "d204fb9aff95a9eeed5eda341ced81603feeb799"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/UserRoleController.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/DraftDefinitionController.java": "bda0438d09f29d99f546185907272748a1224c49"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/endpoint/ElasticsearchIndexController.java"
+  : "464e5264830e389859f213209de1d3c4f6325552"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/AccessTypesController.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/ImportAuditController.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/BaseTypeController.java": "5f8a3fedd665c17cbceb9750960be742926116c1"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ProcessUploadServiceImpl.java"
+  : "793bcd5000731abade5585f5dadc921ddb454fdd"
 ---
 
 # API: Definition Store

@@ -2,10 +2,10 @@
 
 Standing up a brand-new microservice on CNP.
 
-- [Infrastructure as code](infrastructure-as-code.md) _(planned)_
-- [GitHub repo](github-repo.md) _(planned)_
-- [Helm chart](helm-chart.md) _(planned)_
-- [GitOps / Flux](gitops-flux.md) _(planned)_
-- [Feature flags](feature-flags.md) _(planned)_
-- [Elasticsearch](elasticsearch.md) _(planned)_
-- [Secrets management](secrets-management.md) _(planned)_
+- [Infrastructure as code](infrastructure-as-code.md)
+- [GitHub repo](github-repo.md)
+- [Helm chart](helm-chart.md)
+- [GitOps / Flux](gitops-flux.md)
+- [Feature flags](feature-flags.md)
+- [Elasticsearch](elasticsearch.md)
+- [Secrets management](secrets-management.md)

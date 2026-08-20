@@ -1,0 +1,393 @@
+name: Weekly doc drift
+
+# Docs under docs/ and apps/*/docs/ cite source files in other HMCTS repos and
+# pin the SHA each claim was written against. Upstream moves; the pins don't.
+# This job runs weekly, finds the pages whose cited sources have changed, has
+# Claude re-read the source and correct the prose, then pushes to master.
+#
+# Setup notes, including which repos the token can and can't reach:
+# docs/how-to/doc-drift-pipeline.md
+
+on:
+  schedule:
+    # 06:00 UTC Monday — before the working week, so a bad push is noticed.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Report drift only — do not let Claude edit or push'
+        type: boolean
+        default: false
+      verbose:
+        description: "Log Claude's full output (this repo is public — tool results become world-readable)"
+        type: boolean
+        default: false
+      timeout_minutes:
+        description: 'Job budget. 60 fits a normal weekly delta; raise it to clear a backlog'
+        type: number
+        default: 60
+
+permissions:
+  contents: read
+
+concurrency:
+  group: doc-drift
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    # A dispatch input rather than a constant, so a one-off catch-up run can be
+    # given a bigger budget without leaving the weekly cron on a 3-hour leash.
+    # Scheduled runs get no inputs at all — `|| 60` is the schedule's value.
+    #
+    # Anything above 60 guarantees the token minted at the top of this job dies
+    # mid-run. That is survivable by design (see the token notes below and in
+    # docs/how-to/doc-drift-pipeline.md), but it is why nothing after the clone
+    # step may use `steps.app-token`.
+    # fromJSON is not decoration: `timeout-minutes` must be a number, and a
+    # dispatch input arrives as a string however it is declared, so the bare
+    # expression makes the whole workflow file invalid. GitHub reports that as a
+    # 2-second run with "This run likely failed because of a workflow file
+    # issue" and NO readable annotation — see runs 32374407154 and 32374573234.
+    # `actionlint` names it in full; reach for that rather than bisecting.
+    # On a schedule the input is absent, so this is '60'.
+    timeout-minutes: ${{ fromJSON(github.event.inputs.timeout_minutes || '60') }}
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.CLAUDE_CODE_APP_ID }}
+          private-key: ${{ secrets.CLAUDE_CODE_PRIVATE_KEY }}
+          # Widen the token beyond this repo so it can clone the cited ones.
+          owner: ${{ github.repository_owner }}
+
+      - name: Checkout workspace
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+          # Deliberately leave no credential behind. An app token dies exactly
+          # one hour after it is minted, and Claude can run for most of that —
+          # so a persisted credential is one the later steps may find expired,
+          # with a misleading "Invalid username or token" as the only clue. The
+          # push and verify steps below mint a fresh token and pass it
+          # explicitly instead. Nothing in between needs this one: the cited
+          # clones carry their own public remotes (scripts/ci-clone-cited
+          # strips the token from them), and Claude only commits locally.
+          persist-credentials: false
+
+      - name: Install mikefarah/yq
+        run: |
+          set -euo pipefail
+          # ubuntu-latest ships yq already, but confirm it's the Go one —
+          # scripts/lib/_common.sh hard-fails on the python jq wrapper.
+          if yq --version 2>&1 | grep -q mikefarah; then
+            yq --version
+          else
+            sudo wget -qO /usr/local/bin/yq \
+              https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+            sudo chmod +x /usr/local/bin/yq
+            yq --version
+          fi
+
+      - name: Clone cited repos
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: ./scripts/ci-clone-cited -j10
+
+      - name: Check for drift
+        id: check
+        run: |
+          set -uo pipefail
+          # Detection reads only commits and trees, which the blobless clones
+          # carry in full — so a blob read here means a regression (e.g. back to
+          # `cat-file -e`) that would silently fetch per file. Fail loudly.
+          # Step-local on purpose: the Claude step below MUST be able to fetch
+          # blobs, because reading the changed source is the whole job.
+          export GIT_NO_LAZY_FETCH=1
+
+          # `|| true` because doc-drift exits non-zero when it FINDS drift,
+          # which is the case this whole job exists to act on. The default
+          # step shell is `bash -e`, so an unguarded call aborts here with the
+          # report unread. Genuine failure is caught by the summary check below.
+          ./scripts/doc-drift --mode=source 2>&1 | tee /tmp/drift.txt || true
+          {
+            echo '## Source-citation drift'
+            echo '```'
+            cat /tmp/drift.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # doc-drift exits 1 both for "found drift" and, via die(), for a real
+          # failure — so the exit code can't be trusted on its own. Require the
+          # summary line instead: without it the run died early, and reporting
+          # "no drift" would be a false all-clear.
+          if ! grep -qE '^[0-9]+ fresh$' /tmp/drift.txt; then
+            echo "::error::doc-drift did not produce a summary — treating as failure"
+            exit 1
+          fi
+
+          # Counts both stale and broken pages; the indent distinguishes
+          # per-page lines from the summary totals.
+          affected=$(grep -cE '^  [^ ]+\.md:' /tmp/drift.txt)
+          echo "affected=$affected" >> "$GITHUB_OUTPUT"
+          if (( affected > 0 )); then
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$affected page(s) need attention"
+          else
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::no drift"
+          fi
+
+      - name: Configure git
+        if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        run: |
+          git config user.name "claude-code-bot[bot]"
+          git config user.email "claude-code-bot[bot]@users.noreply.github.com"
+
+      - name: Configure AWS credentials
+        if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          # Shared HMCTS role; this repo must be in its trust policy.
+          role-to-assume: arn:aws:iam::313941174580:role/HMCTSClaudeGitHubActionsRole
+          aws-region: eu-west-1
+
+      - name: Fix drift with Claude
+        if: steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        uses: anthropics/claude-code-action@v1
+        env:
+          ANTHROPIC_DEFAULT_OPUS_MODEL: 'eu.anthropic.claude-opus-5'
+          ANTHROPIC_DEFAULT_SONNET_MODEL: 'eu.anthropic.claude-sonnet-5'
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: 'eu.anthropic.claude-haiku-4-5-20251001-v1:0'
+        with:
+          use_bedrock: "true"
+          github_token: ${{ steps.app-token.outputs.token }}
+          # Off by default: full output includes tool results, and this repo's
+          # logs are public. Turn it on via the `verbose` dispatch input when a
+          # run needs explaining — without it the action logs only init and
+          # result JSON, so a no-op gives no way to tell a reasoned decision
+          # from a broken toolset.
+          show_full_output: ${{ inputs.verbose == true }}
+          prompt: |
+            The weekly doc-drift check found ${{ steps.check.outputs.affected }}
+            documentation page(s) whose cited sources have moved. Fix them and
+            commit. A later workflow step does the push — do not push yourself.
+
+            Read @CLAUDE.md first. Then run:
+
+                ./scripts/doc-drift --mode=source
+
+            to see the report. Work through the affected pages ONE AT A TIME.
+
+            For each page reported `stale` — a cited file changed since the page
+            was written:
+
+            1. Read the page.
+            2. For each changed citation, diff the cited file between the
+               recorded SHA and the current one:
+                   git -C <clone-path> diff <old-sha>..<new-sha> -- <path>
+               The clones are blobless and have no working tree, so read file
+               contents with `git show <ref>:<path>`, not the Read tool. Blobs
+               are fetched from the remote on first access, so the first read of
+               a file may pause briefly — that's normal, not an error.
+            3. Decide whether the diff invalidates anything the PAGE claims. Most
+               upstream commits change nothing a doc asserts — a refactor, a test,
+               a formatting pass. Only edit prose that is now WRONG.
+            4. Where the page is wrong, correct it against the current source.
+
+            For each page reported `broken` — a cited file no longer exists on its
+            ref: find where it went (`git log --diff-filter=D`, or search the clone
+            for the class/symbol name). If it moved, update the citation path and
+            check the prose still holds. If it was deleted outright, the feature is
+            probably gone: fix the prose and drop the citation. If it was on a
+            feature branch that has since merged, drop the `@branch` pin.
+
+            EXCEPTION: a broken citation tagged `(repo not cloned)` is NOT drift.
+            It means the token couldn't clone that repo — a permissions gap, not a
+            deleted file. Leave those pages completely alone: do not edit the prose,
+            do not touch the citation. Note them in the commit body if you commit
+            anything else.
+
+            When every page is handled, re-pin the SHAs and verify:
+
+                ./scripts/doc-drift --record
+                ./scripts/doc-drift --mode=source     # expect 0 stale, 0 broken
+                ./scripts/docs-index
+
+            Then commit:
+
+                git add -A docs apps/*/docs DOCS.md
+                git commit -m "<summary of what actually changed>"
+
+            Rules:
+            - Do NOT run `git push`. The workflow pushes your commit for you,
+              with a freshly minted token and a visible error if it fails. A
+              push from here would use a credential that may have expired
+              mid-run and would fail silently in a log nobody can read.
+            - ONLY ever `git add` paths under docs/, apps/*/docs/, or DOCS.md.
+              Everything under apps/<product>/<repo>/, libs/<x>/, platops/<x>/ is
+              a separate cloned repo — this workspace must never track its
+              contents, and the clones here are throwaway CI checkouts.
+            - Do NOT edit any file inside a clone.
+            - Never write an exact `x.y.z` dependency version into a page. Majors
+              only, where they carry meaning. See the guidance in
+              .claude/agents/topic-writer.md.
+            - Do NOT put `Co-Authored-By: Claude`, a `Claude-Session` trailer, or
+              any claude.ai link in the commit message.
+            - `--record` pins SHAs whether or not the prose is right, so it
+              asserts the page is now correct. Only run it after you have
+              actually reconciled each page.
+            - If a page's drift is beyond a confident fix — the upstream change is
+              large, or the right prose is a judgement call — leave that page
+              alone, do NOT record its SHAs, and say so in the commit body. A
+              still-stale page is better than a confidently wrong one.
+            - If nothing genuinely needed changing, make no commit and say so.
+          claude_args: |
+            --dangerously-skip-permissions
+            --append-system-prompt "You are running unattended in a GitHub Action on hmcts/cft-workspace. Your commit is pushed straight to master with no human review. Be conservative: correct only what the source proves wrong, and leave anything ambiguous untouched. The repos under apps/, libs/ and platops/ are blobless, no-checkout CI clones — use `git show <ref>:<path>` to read their files, never the Read tool, and never edit inside them. Do not run `git push`; a later workflow step does that."
+            --allowedTools "Read,Glob,Grep,Write,Edit,Bash(git:*),Bash(./scripts/doc-drift:*),Bash(./scripts/docs-index:*),Bash(yq:*)"
+
+      # The token from the top of the job is up to an hour old by now and may
+      # already be dead — that is exactly how the 2026-08-10 run lost its work,
+      # failing at the 60-minute mark with "Invalid username or token". Mint a
+      # fresh one for the two steps that still need to reach GitHub.
+      - name: Generate a fresh GitHub App token
+        id: push-token
+        if: always() && steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.CLAUDE_CODE_APP_ID }}
+          private-key: ${{ secrets.CLAUDE_CODE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Push to master
+        # always(), not the implicit success(): a commit that exists must reach
+        # master even when the step that produced it did not end cleanly. Two
+        # ways that happens, both observed:
+        #   * The job hits timeout-minutes. The 2026-08-20 run was cancelled at
+        #     the 60-minute wall and this step was SKIPPED — had Claude
+        #     committed by then, the work would have been thrown away for the
+        #     third week running.
+        #   * claude-code-action runs its own always() post-steps using the
+        #     token we handed it, which on a long run expired hours earlier. A
+        #     failure in that teardown says nothing about the commit's validity.
+        # Cancellation does not stop always() steps — proven by the fresh-token
+        # step above succeeding in that same cancelled run. The guard below
+        # makes this safe to run unconditionally: no commit, no push.
+        if: always() && steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        env:
+          TOKEN: ${{ steps.push-token.outputs.token }}
+        run: |
+          set -uo pipefail
+          # Pushing here rather than from the prompt, for two reasons: a failure
+          # lands in this log verbatim instead of inside Claude's suppressed
+          # output, and it cannot be skipped by a model that decided it was
+          # done. If the app lacks contents:write, the 403 shows up right here.
+          # Same header mechanism actions/checkout uses — keeps the token out of
+          # the remote URL so a git error can't echo it.
+          # "Nothing genuinely needed changing" is a legitimate outcome, and the
+          # checked-out SHA is the honest baseline for telling it apart from a
+          # lost commit.
+          if [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]; then
+            echo "::notice::Claude made no commit — nothing to push"
+            exit 0
+          fi
+
+          # Under always() this step can be reached with the token step failed
+          # or skipped. An empty token builds a malformed Authorization header,
+          # which GitHub answers with a 401 — reporting an auth problem in place
+          # of the real one, exactly the kind of misdirection this rewrite
+          # exists to remove. Say what actually happened instead.
+          if [[ -z "$TOKEN" ]]; then
+            echo "::error::no token — could not push $(git rev-parse --short HEAD); see the token step above"
+            exit 1
+          fi
+
+          header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          remote="https://github.com/$GITHUB_REPOSITORY.git"
+          gitc() { git -c "http.extraheader=$header" "$@"; }
+
+          # Two attempts. A human pushing to master mid-run gets the commit
+          # rejected as non-fast-forward; Claude only ever touches docs, so the
+          # rebase is almost always clean. Fail loudly when it isn't.
+          for attempt in 1 2; do
+            echo "--- push attempt $attempt"
+            if gitc push "$remote" HEAD:refs/heads/master 2>&1 | tee /tmp/push.log; then
+              echo "::notice::pushed $(git rev-parse --short HEAD) to master"
+              exit 0
+            fi
+            (( attempt == 2 )) && break
+
+            echo "::warning::push rejected — rebasing onto the current master and retrying"
+            gitc fetch -q "$remote" master || break
+            if ! git rebase FETCH_HEAD; then
+              git rebase --abort || true
+              echo "::error::master moved and the rebase conflicts — cannot push automatically"
+              break
+            fi
+          done
+
+          echo "::error::could not push to master"
+          {
+            echo '## Push failed'
+            echo '```'
+            cat /tmp/push.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: Verify the work actually landed
+        if: always() && steps.check.outputs.drift == 'true' && inputs.dry_run != true
+        env:
+          TOKEN: ${{ steps.push-token.outputs.token }}
+        run: |
+          set -uo pipefail
+          # Fail the job on work that didn't reach master. Comparing against
+          # HEAD is not enough: a commit that failed to push leaves a CLEAN
+          # tree, so the only honest check is against the remote.
+          #
+          # Fresh token, passed explicitly: nothing was persisted at checkout,
+          # and an expired credential here would fail the fetch and mask
+          # whatever the real verdict was.
+          #
+          # If minting it failed, fetch anonymously rather than sending an empty
+          # credential — this repo is public, so a read still works, whereas a
+          # malformed Authorization header would 401 and report an auth problem
+          # in place of the answer this step exists to give.
+          if [[ -n "$TOKEN" ]]; then
+            header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+            git -c "http.extraheader=$header" fetch -q origin master
+          else
+            echo "::warning::no fresh token — fetching anonymously"
+            git fetch -q origin master
+          fi
+
+          failed=0
+
+          if ! git diff --quiet HEAD -- docs apps/*/docs DOCS.md 2>/dev/null; then
+            echo "::error::Claude left uncommitted doc changes — not pushed"
+            git diff --stat HEAD -- docs apps/*/docs DOCS.md >> "$GITHUB_STEP_SUMMARY"
+            failed=1
+          fi
+
+          ahead=$(git rev-list --count origin/master..HEAD)
+          if (( ahead > 0 )); then
+            echo "::error::$ahead commit(s) were made but never reached master — push failed"
+            {
+              echo '## Unpushed commits'
+              echo '```'
+              git log --oneline origin/master..HEAD
+              git diff --stat origin/master..HEAD
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            failed=1
+          fi
+
+          (( failed )) && exit 1
+          echo "::notice::all work pushed to master"

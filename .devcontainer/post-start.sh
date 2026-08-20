@@ -68,9 +68,9 @@ fi
 # is mounted rw. Writes go to the host kernel and persist for its uptime.
 sudo sysctl -w fs.inotify.max_user_instances=512 fs.inotify.max_user_watches=524288 >/dev/null 2>&1 || true
 
-# Named-volume cache mounts come up root-owned on first start; chown to the
-# container user so Gradle/Maven/npm/Yarn can write to them.
-for d in "$HOME/.gradle" "$HOME/.m2" "$HOME/.npm" "$HOME/.cache" "$HOME/.cache/yarn"; do
+# Named-volume mounts come up root-owned on first start; chown to the container
+# user so the package caches and Codex state remain writable.
+for d in "$HOME/.gradle" "$HOME/.m2" "$HOME/.npm" "$HOME/.cache" "$HOME/.cache/yarn" "$HOME/.codex"; do
     if [[ -d "$d" && "$(stat -c '%u' "$d")" != "$(id -u)" ]]; then
         sudo chown "$(id -u):$(id -g)" "$d"
     fi

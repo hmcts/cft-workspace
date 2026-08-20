@@ -1,0 +1,126 @@
+name: App token probe
+
+# Answers one question in ~20 seconds, with no Bedrock spend: can the Claude
+# GitHub App actually WRITE to this repo?
+#
+# The weekly doc-drift job mints an app token and pushes doc fixes straight to
+# master. When that push fails, the failure is invisible — Claude's output is
+# suppressed by default because this repo's logs are public, so a run that
+# reconciled 68 pages and lost every one of them looks the same as a run that
+# found nothing to do. See docs/how-to/doc-drift-pipeline.md.
+#
+# This probe mints the token exactly as doc-drift does and exercises the write
+# path directly. Dispatch-only, and it never touches master: it creates one
+# scratch branch pointing at the current commit and deletes it again.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-token-probe
+  cancel-in-progress: false
+
+env:
+  # Not under a path either workflow's triggers watch, so creating it fires
+  # nothing. Publish-devcontainer only listens on master.
+  PROBE_BRANCH: ci/app-token-probe
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          # Same secrets and same owner-widening as doc-drift.yml, so this
+          # probes the token that job actually gets — not a lookalike.
+          app-id: ${{ secrets.CLAUDE_CODE_APP_ID }}
+          private-key: ${{ secrets.CLAUDE_CODE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Context (do not read this as the answer)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -uo pipefail
+          # Logged for context only. Every API route into this question lies:
+          #
+          #   * repos/{repo}/collaborators/{bot}/permission returns "none" even
+          #     for repos where the app demonstrably works — apps are not
+          #     collaborators.
+          #   * GET /repos/{repo} authenticated as the installation reported
+          #     {"push": false} on 2026-08-20 in the same run whose push
+          #     SUCCEEDED. So this is not a reliable read either.
+          #
+          # Hence the design of this workflow: the push in the next step is the
+          # only ground truth, and it is the only step allowed to fail the job.
+          if ! perms=$(gh api "repos/$GITHUB_REPOSITORY" --jq '.permissions' 2>&1); then
+            echo "::warning::could not read repo metadata — see the push below for the real answer"
+            printf '%s\n' "$perms"
+            exit 0
+          fi
+          echo "reported permissions (unreliable): $perms"
+          {
+            echo '## Reported permissions'
+            echo 'Context only — GitHub has reported `"push": false` here on a run'
+            echo 'whose push succeeded. The push result below is authoritative.'
+            echo '```json'
+            printf '%s\n' "$perms"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          # Nothing persisted: the push below supplies the token explicitly, so
+          # there is exactly one Authorization header in play and no ambiguity
+          # about which credential GitHub actually saw.
+          persist-credentials: false
+
+      - name: Push a scratch branch
+        id: push
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -uo pipefail
+          # Same mechanism actions/checkout uses. Keeps the token out of the
+          # remote URL, so it can't leak via a URL echoed in a git error.
+          header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          remote="https://github.com/$GITHUB_REPOSITORY.git"
+
+          echo "pushing $(git rev-parse --short HEAD) to $PROBE_BRANCH"
+          if git -c "http.extraheader=$header" push "$remote" \
+               "HEAD:refs/heads/$PROBE_BRANCH" --force 2>&1 | tee /tmp/push.log; then
+            echo "::notice::WRITE OK — the app can push to $GITHUB_REPOSITORY"
+            echo "## Result: write access confirmed" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "::error::WRITE FAILED — this is why doc-drift cannot land its fixes"
+          {
+            echo '## Result: write FAILED'
+            echo '```'
+            cat /tmp/push.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: Delete the scratch branch
+        # always(): a push that succeeded then failed something later must
+        # still clean up, and a push that failed leaves nothing to delete but
+        # costs nothing to try.
+        if: always()
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -uo pipefail
+          header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"
+          git -c "http.extraheader=$header" \
+            push "https://github.com/$GITHUB_REPOSITORY.git" \
+            --delete "refs/heads/$PROBE_BRANCH" 2>&1 || \
+            echo "::notice::nothing to delete (the push never landed)"

@@ -40,6 +40,23 @@ confluence:
     last_modified: "unknown"
     space: "WA"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/TaskActionsController.java": "1d99034722b1261ca9e19f97571a035b04c649d1"
+  "wa-task-management-api:src/main/resources/application.yaml": "308d2b86243c7d52027d413be51089facd576c82"
+  "wa-task-management-api:charts/wa-task-management-api/values.yaml": "2c1a4b4efa36ddddd2110db152330ec1aac3aa03"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/controllers/startworkflow/CreateTaskController.java": "6b973ba98684616920e661cf2653e161e58fd20f"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/CamundaClient.java": "120f1462b5aa74a5c3b9ea39210daa1db5960770"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/clients/CcdCaseEventsConsumer.java": "98a029ce763a2f424be687a660ab099ad56ca753"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/EventMessageReceiverService.java": "d630f9f54b41c5ccb098a43f38cc2228e6dd562b"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/jobs/JobName.java": "8a20585fae570add4f4d6e451c7d92ebfa68f2c5"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/controllers/MonitorTaskJobController.java": "05035529b105f5cc2dcbe35bf709b80c7cbd5a76"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/initiation/InitiationJobService.java": "9dd5aeeb7cee1e4b8999983a7c4187f6298d8631"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/domain/taskmonitor/JobName.java": "05035529b105f5cc2dcbe35bf709b80c7cbd5a76"
+  "wa-shared-infrastructure:servicebus.tf": "06c600b52119409478459b7cab9cf4712eaa15a3"
+  "wa-shared-infrastructure:alerts.tf": "ab2b9e98f3b2bffe6c7f383bc6d9f22bfad57d42"
+  "wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn": "ef2e773a0dfbc538d1b0e7dab33fb6906c2b6510"
+  "wa-task-batch-service:charts/wa-task-batch-service/values.yaml": "6c46f90549d5dd1dcde835f15e43d6124d8f1a00"
 ---
 
 ## TL;DR

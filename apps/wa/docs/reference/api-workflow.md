@@ -42,6 +42,17 @@ confluence:
     last_modified: "unknown"
     space: "WA"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/controllers/startworkflow/CreateTaskController.java": "6b973ba98684616920e661cf2653e161e58fd20f"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/CamundaClient.java": "120f1462b5aa74a5c3b9ea39210daa1db5960770"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/TaskClientService.java": "5bd734b0053592f47552289fb0169ec7c23eac28"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/model/EvaluateDmnRequest.java": "1266bf7d6b0ef225fa88b5223d8c01e19cf470cb"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/model/SendMessageRequest.java": "f24304488ff069b4b5439b39564646066feccc72"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/ExternalTaskWorker.java": "4fadbadb976f0b5fcc9cf37e588df8da887447e4"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/idempotency/IdempotencyTaskWorkerHandler.java": "98bbde3b945f6fc2ddc831668f96abeed91d1259"
+  "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/handler/WarningTaskWorkerHandler.java": "5bd734b0053592f47552289fb0169ec7c23eac28"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/DmnAndMessageNames.java": "677e0581c9fad1f6109115c5eb3d8ed9e1232091"
+  "wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn": "ef2e773a0dfbc538d1b0e7dab33fb6906c2b6510"
 ---
 
 ## TL;DR

@@ -46,6 +46,17 @@ confluence:
     last_modified: "2020-09-15"
     space: "RP"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/PaymentController.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/SearchController.java": "dc758cec8bf9cc5afd33ee4ee56ce8c8785b40bc"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/ReportController.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPaymentRequest.java": "de12ac77c3fcef5a97679e59be85fce49de21e91"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/enums/ResponsibleSiteId.java": "de12ac77c3fcef5a97679e59be85fce49de21e91"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/enums/EnvelopeSource.java": "d2d1a6b28a258116e688e967dc903966a31a211e"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/enums/ReportType.java": "3cc18ee81ff0e74a0d5488b80d5c6489ebec64e7"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/CaseReferenceRequest.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/utils/BulkScanningUtils.java": "ee41159e2bc5e93c1184c27855c905a82b53ff86"
 ---
 
 ## TL;DR

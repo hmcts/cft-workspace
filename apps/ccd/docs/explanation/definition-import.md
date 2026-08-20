@@ -52,6 +52,33 @@ confluence:
 title: Definition Import
 diataxis: explanation
 product: ccd
+sources_sha:
+  "ccd-admin-web:src/main/routes/importDefinition.ts": "317e397db9381e27049482a70ccaa5cc938dcaef"
+  "ccd-admin-web:src/main/service/import-service.ts": "c525b01236acf627fad50d63d7125ce30dfc0dab"
+  "ccd-admin-web:src/main/views/response.html": "f04af73ca5a7ce398a4c74c3c793878877e1cfb3"
+  "ccd-admin-web:config/default.yaml": "c525b01236acf627fad50d63d7125ce30dfc0dab"
+  "ccd-admin-web:src/main/app.ts": "c525b01236acf627fad50d63d7125ce30dfc0dab"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/endpoint/ImportController.java": "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ProcessUploadServiceImpl.java"
+  : "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ProcessUploadService.java": "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/SpreadsheetParser.java": "061d68540d6a44e87c4d8cf5afd949e919efbb50"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/SpreadsheetValidator.java"
+  : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/ElasticDefinitionImportListener.java"
+  : "3e97a6f49f81af7cdaa0eceee2c9a52ecd2e6fd5"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/SynchronousElasticDefinitionImportListener.java"
+  : "3e97a6f49f81af7cdaa0eceee2c9a52ecd2e6fd5"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/AsynchronousElasticDefinitionImportListener.java"
+  : "3e97a6f49f81af7cdaa0eceee2c9a52ecd2e6fd5"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java"
+  : "70a1523ad356b828a6e094f4246effdeeeadda7b"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/client/HighLevelCCDElasticClient.java"
+  : "3e97a6f49f81af7cdaa0eceee2c9a52ecd2e6fd5"
+  "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/config/CacheConfiguration.java": "17d07ce00bfceff5f7825a7a20217ded4bb0c207"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/definition/DefaultCaseDefinitionRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
 ---
 
 # Definition Import

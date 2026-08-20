@@ -40,6 +40,14 @@ confluence:
 title: Add a Tab
 diataxis: how-to
 product: ccd
+sources_sha:
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Tab.java": "0115317280dd5794d0fbd0f1bf6cc21a4e013ee3"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java": "b17041c805975051a67cdd5cb35e1c59c155fcb1"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseTypeTabGenerator.java": "e7e93f75d554917dda9b750161232701c096f1b1"
+  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/NoFaultDivorce.java": "a000eefc369f6bfa1b17291ea3c5aebbb3ebf4f7"
+  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/DefaultAccess.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/model/CaseTypeTab.java": "29f31a3f90f265880dd22227caf98d7b928fe306"
 ---
 
 # Add a Tab

@@ -44,6 +44,24 @@ confluence:
 title: Work Allocation Integration
 diataxis: explanation
 product: ccd
+sources_sha:
+  "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskManagementAutoConfiguration.java": "e96997b6818ee8b7d4690b2b14bcdacad85073f9"
+  "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskManagementFeignClient.java": "f21eba4c359e7630356daf50092dfbc47b6ab4ca"
+  "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskManagementProperties.java": "f21eba4c359e7630356daf50092dfbc47b6ab4ca"
+  "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskOutboxService.java": "f21eba4c359e7630356daf50092dfbc47b6ab4ca"
+  "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskOutboxPoller.java": "49f46689ca2fdd6eb78000b1f0e1310bd1bc30db"
+  "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/delay/DelayUntilResolver.java": "f21eba4c359e7630356daf50092dfbc47b6ab4ca"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/CaseEventMessageService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/AbstractMessageService.java": "9c7139a70732f6dca95acb412c36706fa9e79be8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/message/MessageQueueCandidateEntity.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "sscs-task-configuration:src/main/resources/wa-task-initiation-sscs-benefit.dmn": "f9c225c38b9e507d420ddf51357168da983992f6"
+  "sscs-task-configuration:src/main/resources/wa-task-configuration-sscs-benefit.dmn": "39129320989e98432616d74c6d911f0a15ddd27c"
+  "sscs-task-configuration:src/main/resources/wa-task-permissions-sscs-benefit.dmn": "39129320989e98432616d74c6d911f0a15ddd27c"
+  "sscs-task-configuration:src/main/resources/wa-task-cancellation-sscs-benefit.dmn": "c2e7ce3a1ffc5389fd29070b497fdad74f1b6f10"
+  "sscs-tribunals-case-api:definitions/benefit/sheets/CaseEvent/CaseEvent-WA-nonprod.json": "56ce269dbc5c1c943c0d0eac18c6a78af87eaafb"
+  "sscs-tribunals-case-api:definitions/benefit/sheets/CaseField/CaseField-workAllocation.json": "e7dcb4b26956f9dc7d2a63b3abb4a2aa30e73d5d"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/Service.java": "732ec28c7a68359452f0e767b5bd605d10608e61"
 ---
 
 # Work Allocation Integration

@@ -51,6 +51,30 @@ examples_extracted_from:
 title: Enable Query Search
 diataxis: how-to
 product: ccd
+sources_sha:
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/ElasticDefinitionImportListener.java"
+  : "3e97a6f49f81af7cdaa0eceee2c9a52ecd2e6fd5"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java"
+  : "70a1523ad356b828a6e094f4246effdeeeadda7b"
+  ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/config/CcdElasticSearchProperties.java"
+  : "3e97a6f49f81af7cdaa0eceee2c9a52ecd2e6fd5"
+  ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/SearchInputCaseFieldEntity.java"
+  : "bda0438d09f29d99f546185907272748a1224c49"
+  ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/SearchResultCaseFieldEntity.java"
+  : "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/GenericLayoutEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/DisplayApiController.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/SearchInputLayoutParser.java"
+  : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/SearchResultLayoutParser.java"
+  : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/GenericLayoutParser.java": "9bc6616b1c69561a49bf23a748745c2df60217bc"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/endpoint/std/CaseSearchEndpoint.java": "b13d8bcef6553345ada5c3f153bd61e39421b574"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/internal/controller/UICaseSearchController.java": "b13d8bcef6553345ada5c3f153bd61e39421b574"
+  "ccd-data-store-api:src/main/resources/application.properties": "37af3542583713f5936067f396bdddd3b6aa442a"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/SearchFieldAndResultGenerator.java": "8a5ceec6799e93975a91e430eb586a3c5160a88e"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SortOrder.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
 ---
 
 # Enable Query Search

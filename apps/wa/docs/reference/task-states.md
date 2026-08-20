@@ -47,6 +47,18 @@ confluence:
     last_modified: "2022-06-01"
     space: "WA"
 confluence_checked_at: "2026-05-13T12:00:00Z"
+sources_sha:
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/CFTTaskState.java": "016267cf74a1cefbc05d5e54fc56b4843d6164f2"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/enums/TaskAction.java": "3c741595f2f8c2aed2e4654ce7b70d05cf44bf14"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/TerminationProcess.java": "b83f756ff73266f9ae6181f0427ae32e1f4a09e9"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskManagementService.java": "0464400520dda69b754e7ed2105eecfbbfcd100a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java": "272fb0b4257fe638eeea7af521ae84738cec491a"
+  "wa-task-management-api:src/main/resources/db/migration/V1.0.2__init_enums.sql": "69212e903c7dfc1015511dbda39ef8b17ae65cbd"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/ExclusiveTaskActionsController.java": "168f462c0af08458dfe4bcd8629946cb74b30a91"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/TaskActionsController.java": "1d99034722b1261ca9e19f97571a035b04c649d1"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/entity/TaskResource.java": "393c141b62ac3e6271a8790997f40a1c253b0cbe"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/TaskReconfigurationService.java": "a6e0eb1659e9b67f5ef737edcd4340c33bac0421"
+  "wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn": "ef2e773a0dfbc538d1b0e7dab33fb6906c2b6510"
 ---
 
 ## TL;DR

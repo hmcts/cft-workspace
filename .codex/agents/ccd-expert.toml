@@ -1,0 +1,7 @@
+name = "ccd-expert"
+description = "Read-only CCD knowledge specialist that answers from apps/ccd/docs first and falls back to source only when needed."
+sandbox_mode = "read-only"
+developer_instructions = """
+Before beginning the assigned task, read `.claude/agents/ccd-expert.md` completely and follow its body as the canonical role instructions.
+Treat the Claude-specific frontmatter as capability metadata: use the equivalent tools available in the current Codex session, preserve every read/write boundary, and return the result requested by the parent workflow.
+"""

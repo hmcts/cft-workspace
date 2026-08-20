@@ -37,6 +37,20 @@ confluence:
 title: Document Extension Validation
 diataxis: explanation
 product: ccd
+sources_sha:
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/document/write-document-field.component.ts": "f5ef7f0613973c080398c2af7eca7c297287d907"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/document/write-document-field.html": "635c7375119632a530afe4f49b2e1c38cb2883e1"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type.model.ts": "b51ec109f554e2dfdd42a63fd2e12f2281fcc8a3"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java": "b58f7f447730bf5ec8f9bca0bd831c1abe2b6db0"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "4d82832e6bc76a8c6b1b0ebc4ab877001e1e47f3"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
+  "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/endpoints/CaseDocumentAmController.java": "cf06c5f0618c9dc1bcdc5c636d899ae2500ef2af"
+  "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/dto/DocumentUploadRequest.java": "70c027f2e6afcc6d72f25b15361e7084e2bdd44a"
+  "document-management-store-app:src/main/java/uk/gov/hmcts/dm/service/FileContentVerifier.java": "0f8631bf55a07d5a2b32353c5fa5586f7a239c4e"
+  "document-management-store-app:src/main/java/uk/gov/hmcts/dm/security/MultipartFileListWhiteListValidator.java": "0f8631bf55a07d5a2b32353c5fa5586f7a239c4e"
+  "document-management-store-app:src/main/java/uk/gov/hmcts/dm/controller/StoredDocumentController.java": "433708343645abeb272344638f664f15fa41dbfd"
+  "document-management-store-app:src/main/resources/application.yaml": "e37f459dc0a2bbda59e687d605b89084e1733c82"
+  "cnp-flux-config:apps/dm-store/dm-store/aat.yaml": "65fd2b10f1aecfe0b4d36c1c2af86db76acf2674"
 ---
 
 # Document Extension Validation

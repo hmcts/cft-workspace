@@ -17,6 +17,22 @@
 #   scripts/doc-drift --mode=confluence              # list confluence pages
 #   scripts/doc-drift --product=<slug>               # restrict to one product
 #                                                    # (workspace = root docs/)
+#   scripts/doc-drift --record [--product=<slug>]    # WRITES: pin each page's
+#                                                    # sources_sha: to the SHAs
+#                                                    # observed now. Implies
+#                                                    # --mode=source. Run only
+#                                                    # after verifying the pages
+#                                                    # are accurate — it asserts
+#                                                    # "correct as of now".
+#
+# Citation grammar for a `sources:` entry:
+#
+#   <repo-slug>[@<branch>]:<path>[@<sha>]
+#
+# `@<branch>` pins to a branch (for files only on an unmerged branch); a trailing
+# `@<sha>` pins the expected commit inline instead of via `sources_sha:`.
+# Unpinned citations resolve against the repo's default branch, not the working
+# tree, so a clone parked on a feature branch doesn't produce false "broken".
 #
 # Exit non-zero if any actionable drift was found (port or source modes).
 
@@ -28,12 +44,14 @@ cd "$WORKSPACE_ROOT"
 MODE=auto
 PRODUCT=
 DO_PULL=0
+DO_RECORD=0
 
 for arg in "$@"; do
     case "$arg" in
         --mode=*)     MODE="${arg#*=}"   ;;
         --product=*)  PRODUCT="${arg#*=}" ;;
         --pull)       DO_PULL=1           ;;
+        --record)     DO_RECORD=1; MODE=source ;;
         -h|--help)
             sed -n '2,/^$/p' "$0" | sed 's/^# *//'
             exit 0
@@ -62,8 +80,13 @@ discover_pages() {
     fi
     for root in "${roots[@]}"; do
         [[ -d "$root" ]] || continue
-        find "$root"/{tutorials,how-to,reference,explanation} \
-            -type f -name '*.md' ! -name 'README.md' 2>/dev/null
+        # Per-level find: a single brace-expanded find aborts on the first
+        # missing level, silently dropping every later root under `set -e`.
+        for level in tutorials how-to reference explanation; do
+            [[ -d "$root/$level" ]] || continue
+            find "$root/$level" -type f -name '*.md' ! -name 'README.md' \
+                ! -path '*/.work/*'
+        done
     done
 }
 
@@ -72,35 +95,97 @@ extract_frontmatter() {
     awk '/^---[[:space:]]*$/{c++; if(c==2)exit; if(c>0)next} c==1{print}' "$1"
 }
 
-# Resolve a `<slug>:<path>` source citation to a workspace-relative file path.
-# Falls back to treating the whole entry as a workspace-relative path when no
-# colon is present (legacy format used by some early CCD pages).
+# Parse a source citation into its parts. Grammar:
 #
-# Echoes the resolved path on success; non-zero exit + empty stdout otherwise.
-resolve_source() {
+#   <slug>[@<ref>]:<path>[@<sha>]
+#
+# `@<ref>` pins the citation to a branch (for files that live only on an
+# unmerged branch); a trailing `@<sha>` pins the expected commit inline instead
+# of via the page's `sources_sha:` map. A bare path with no slug is the legacy
+# workspace-relative form used by some early CCD pages.
+#
+# Sets CIT_SLUG, CIT_REF, CIT_PATH, CIT_PIN — empty when the part is absent.
+parse_citation() {
     local entry="$1"
+    CIT_SLUG=; CIT_REF=; CIT_PATH=; CIT_PIN=
 
-    # No colon → treat as workspace-relative path.
     if [[ "$entry" != *:* ]]; then
-        [[ -f "$entry" ]] && { printf '%s' "$entry"; return 0; }
-        return 1
+        CIT_PATH="$entry"
+    else
+        CIT_SLUG="${entry%%:*}"
+        CIT_PATH="${entry#*:}"
+        if [[ "$CIT_SLUG" == *@* ]]; then
+            CIT_REF="${CIT_SLUG#*@}"
+            CIT_SLUG="${CIT_SLUG%%@*}"
+        fi
     fi
 
-    local slug="${entry%%:*}"
-    local path="${entry#*:}"
-
-    # Slug is itself a workspace-relative directory (e.g. `platops/cnp-flux-config:...`).
-    if [[ -d "$slug" ]]; then
-        [[ -f "$slug/$path" ]] && { printf '%s/%s' "$slug" "$path"; return 0; }
+    # A trailing @<hex> is a pinned SHA, not part of the filename.
+    if [[ "$CIT_PATH" =~ ^(.+)@([0-9a-f]{7,40})$ ]]; then
+        CIT_PATH="${BASH_REMATCH[1]}"
+        CIT_PIN="${BASH_REMATCH[2]}"
     fi
+}
+
+# Echo the workspace-relative repo root for a citation slug; non-zero if unknown.
+resolve_repo_root() {
+    local slug="$1"
+    [[ -n "$slug" ]] || return 1
+
+    # Slug is itself a workspace-relative directory (e.g. `platops/cnp-flux-config`).
+    if [[ -d "$slug" ]]; then printf '%s' "$slug"; return 0; fi
 
     # Slug is a repo basename — find under apps/, libs/, platops/.
-    local repo_root
-    repo_root=$(find apps libs platops -mindepth 1 -maxdepth 3 -type d -name "$slug" 2>/dev/null | head -1)
-    if [[ -n "$repo_root" && -f "$repo_root/$path" ]]; then
-        printf '%s/%s' "$repo_root" "$path"
-        return 0
+    local found
+    found=$(find apps libs platops -mindepth 1 -maxdepth 3 -type d -name "$slug" 2>/dev/null | head -1)
+    [[ -n "$found" ]] && { printf '%s' "$found"; return 0; }
+    return 1
+}
+
+# Echo a repo's default branch (origin/HEAD, falling back to origin/master|main).
+default_ref_for() {
+    local repo_root="$1" head
+    head=$(git -C "$repo_root" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || true)
+    if [[ -n "$head" ]]; then printf '%s' "$head"; return 0; fi
+    local ref
+    for ref in origin/master origin/main; do
+        git -C "$repo_root" rev-parse --verify --quiet "$ref" >/dev/null && { printf '%s' "$ref"; return 0; }
+    done
+    return 1
+}
+
+# Echo the current SHA of the parsed citation's file. Non-zero when the file (or
+# the blob on the pinned ref) doesn't exist, which the caller reports as broken.
+#
+# Unpinned citations resolve against the repo's DEFAULT branch, not the working
+# tree: clones are routinely parked on unrelated feature branches, and a
+# checked-out branch predating the cited file would otherwise report it broken.
+citation_current_sha() {
+    local repo_root="$1"
+    local -a refs=()
+
+    if [[ -n "$CIT_REF" ]]; then
+        refs=("origin/$CIT_REF" "$CIT_REF")
+    else
+        local def
+        def=$(default_ref_for "$repo_root" || true)
+        [[ -n "$def" ]] && refs=("$def")
+        refs+=(HEAD)
     fi
+
+    local ref
+    for ref in "${refs[@]}"; do
+        # `rev-parse --verify`, not `cat-file -e`: both answer "does this path
+        # exist on this ref", but cat-file needs the BLOB, which a blobless
+        # clone (--filter=blob:none, as scripts/ci-clone-cited makes) doesn't
+        # have — it would either trigger a per-file lazy fetch or, offline,
+        # wrongly report every citation broken. rev-parse resolves from the
+        # tree alone, which blobless clones do carry in full.
+        if git -C "$repo_root" rev-parse --verify --quiet "$ref:$CIT_PATH" >/dev/null 2>&1; then
+            git -C "$repo_root" log -1 --format=%H "$ref" -- "$CIT_PATH" 2>/dev/null
+            return 0
+        fi
+    done
     return 1
 }
 
@@ -204,11 +289,46 @@ run_port_mode() {
     PORT_DRIFT=$(( ${#needs[@]} + ${#removed[@]} + ${#new[@]} ))
 }
 
+# Rewrite a page's `sources_sha:` frontmatter block from TSV `citation<TAB>sha`
+# pairs. Only the frontmatter is passed through yq; the body is copied verbatim
+# so prose, code fences, and blank lines are untouched.
+write_sources_sha() {
+    local page="$1"; shift
+    (( $# )) || return 1
+
+    local fm_end
+    fm_end=$(awk 'NR>1 && /^---[[:space:]]*$/{print NR; exit}' "$page")
+    [[ -n "$fm_end" ]] || { warn "no frontmatter in $page — skipped"; return 1; }
+
+    local tmp_fm tmp_map out
+    tmp_fm=$(mktemp); tmp_map=$(mktemp); out=$(mktemp)
+
+    sed -n "2,$((fm_end - 1))p" "$page" > "$tmp_fm"
+
+    # Build the map as YAML rather than interpolating into a yq expression, so
+    # citation strings can't be read as expression syntax.
+    local pair
+    for pair in "$@"; do
+        printf '%s: "%s"\n' "\"${pair%%$'\t'*}\"" "${pair#*$'\t'}" >> "$tmp_map"
+    done
+
+    if ! yq -i '.sources_sha = load("'"$tmp_map"'")' "$tmp_fm" 2>/dev/null; then
+        rm -f "$tmp_fm" "$tmp_map" "$out"
+        warn "failed to rewrite frontmatter for $page"
+        return 1
+    fi
+
+    { printf -- '---\n'; cat "$tmp_fm"; printf -- '---\n'; tail -n "+$((fm_end + 1))" "$page"; } > "$out"
+    mv "$out" "$page"
+    rm -f "$tmp_fm" "$tmp_map"
+    return 0
+}
+
 # ─── source mode ────────────────────────────────────────────────────────────
 run_source_mode() {
     printf '\n=== source mode ===\n\n'
 
-    local fresh=() stale=() broken=() untracked=()
+    local fresh=() stale=() broken=() untracked=() unpinned_pages=() recorded_pages=()
 
     while IFS= read -r page; do
         local fm
@@ -223,44 +343,92 @@ run_source_mode() {
         local sha_map
         sha_map=$(printf '%s' "$fm" | yq -o=json '.sources_sha // {}' - 2>/dev/null || echo '{}')
 
-        local stale_sources=() broken_sources=()
+        local stale_sources=() broken_sources=() record_pairs=() unpinned=0 total=0
         while IFS= read -r src; do
             [[ -z "$src" ]] && continue
-            local resolved
-            resolved=$(resolve_source "$src" || true)
-            if [[ -z "$resolved" ]]; then
+            total=$(( total + 1 ))
+            parse_citation "$src"
+
+            local repo_root
+            if [[ -n "$CIT_SLUG" ]]; then
+                repo_root=$(resolve_repo_root "$CIT_SLUG" || true)
+            else
+                # Legacy bare-path form: locate the owning repo, if any.
+                repo_root=$(git_repo_for "$CIT_PATH" || true)
+                if [[ -z "$repo_root" ]]; then
+                    # Workspace-tracked file (e.g. docs/reference/taxonomy.md) — exists
+                    # but isn't SHA-trackable through this mechanism.
+                    [[ -f "$CIT_PATH" ]] || broken_sources+=("$src")
+                    continue
+                fi
+                CIT_PATH="${CIT_PATH#"$repo_root/"}"
+            fi
+            if [[ -z "$repo_root" ]]; then
+                broken_sources+=("$src (repo not cloned)")
+                continue
+            fi
+
+            local current_sha
+            current_sha=$(citation_current_sha "$repo_root" || true)
+            if [[ -z "$current_sha" ]]; then
                 broken_sources+=("$src")
                 continue
             fi
-            local repo_root
-            repo_root=$(git_repo_for "$resolved" || true)
-            if [[ -z "$repo_root" ]]; then
-                # File exists but is outside any git repo (e.g. workspace-tracked file
-                # like docs/reference/taxonomy.md) — treat as fresh; we can't SHA-track
-                # workspace files via this mechanism. Skip silently.
-                continue
+
+            # An inline @<sha> pin wins over the page-level sources_sha: map.
+            local recorded_sha="$CIT_PIN"
+            if [[ -z "$recorded_sha" ]]; then
+                recorded_sha=$(printf '%s' "$sha_map" | yq -r ".\"$src\" // \"\"" - 2>/dev/null || echo '')
             fi
-            local rel="${resolved#"$repo_root/"}"
-            local current_sha recorded_sha
-            current_sha=$(git -C "$repo_root" log -1 --format=%H -- "$rel" 2>/dev/null || echo '')
-            recorded_sha=$(printf '%s' "$sha_map" | yq -r ".\"$src\" // \"\"" - 2>/dev/null || echo '')
-            if [[ -n "$recorded_sha" && "$current_sha" != "$recorded_sha" ]]; then
-                stale_sources+=("$src ($recorded_sha → $current_sha)")
+
+            if (( DO_RECORD )); then
+                # Record the observed SHA regardless of what was pinned before —
+                # `--record` means "the page is correct as of now".
+                record_pairs+=("$src	$current_sha")
+            elif [[ -z "$recorded_sha" ]]; then
+                unpinned=$(( unpinned + 1 ))
+            elif [[ "$current_sha" != "$recorded_sha"* ]]; then
+                stale_sources+=("$src ($recorded_sha → ${current_sha:0:12})")
             fi
         done <<< "$sources"
+
+        if (( DO_RECORD )); then
+            if (( ${#broken_sources[@]} )); then
+                broken+=("$page: ${broken_sources[*]}")
+            elif write_sources_sha "$page" "${record_pairs[@]}"; then
+                recorded_pages+=("$page (${#record_pairs[@]} SHAs)")
+            fi
+            continue
+        fi
 
         if (( ${#broken_sources[@]} )); then
             broken+=("$page: ${broken_sources[*]}")
         elif (( ${#stale_sources[@]} )); then
-            stale+=("$page: ${#stale_sources[@]} of $(echo "$sources" | wc -l) sources changed")
+            stale+=("$page: ${#stale_sources[@]} of $total sources changed — ${stale_sources[*]}")
+        elif (( unpinned == total )); then
+            unpinned_pages+=("$page ($total sources, no recorded SHAs)")
         else
             fresh+=("$page")
         fi
     done < <(discover_pages)
 
+    if (( DO_RECORD )); then
+        ok "${#recorded_pages[@]} pages pinned"
+        if (( ${#broken[@]} )); then
+            warn "${#broken[@]} skipped (unresolvable citations — fix these by hand):"
+            printf '  %s\n' "${broken[@]}"
+        fi
+        SOURCE_DRIFT=${#broken[@]}
+        return 0
+    fi
+
     ok "${#fresh[@]} fresh"
     if (( ${#stale[@]} )); then warn "${#stale[@]} stale:"; printf '  %s\n' "${stale[@]}"; else ok "0 stale"; fi
     if (( ${#broken[@]} )); then warn "${#broken[@]} broken:"; printf '  %s\n' "${broken[@]}"; fi
+    if (( ${#unpinned_pages[@]} )); then
+        warn "${#unpinned_pages[@]} unpinned (cited sources but no SHAs recorded — staleness undetectable):"
+        printf '  %s\n' "${unpinned_pages[@]}"
+    fi
     if (( ${#untracked[@]} )); then info "${#untracked[@]} untracked (no sources: frontmatter)"; fi
 
     SOURCE_DRIFT=$(( ${#stale[@]} + ${#broken[@]} ))

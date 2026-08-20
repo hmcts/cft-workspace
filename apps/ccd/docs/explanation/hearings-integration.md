@@ -25,6 +25,11 @@ confluence:
 title: Hearings Integration (HMC)
 diataxis: explanation
 product: ccd
+sources_sha:
+  "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/controller/ServiceHearingsController.java": "861b9728ec52f484cd67cf52ae535e294d913b47"
+  "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/service/HmcHearingApiService.java": "d50f364f4486ac9670af379ae6a4c07ca9dec465"
+  "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/jms/listener/HmcHearingsEventTopicListener.java": "d50f364f4486ac9670af379ae6a4c07ca9dec465"
+  "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/service/HearingsService.java": "6c32d1161fad34100629a45bab17ecd9a953e3bd"
 ---
 
 # Hearings Integration (HMC)

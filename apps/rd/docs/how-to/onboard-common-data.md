@@ -45,6 +45,19 @@ confluence:
     last_modified: "2023-01-01T00:00:00Z"
     space: "RTRD"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rd-commondata-dataload:src/main/resources/application-camel-routes-common.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-crd-other-categories-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-crd-flag-details-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-crd-flag-service-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/resources/application-crd-list-of-values-router.yaml": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/java/uk/gov/hmcts/reform/rd/commondata/configuration/BatchConfig.java": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/java/uk/gov/hmcts/reform/rd/commondata/camel/binder/OtherCategories.java": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/java/uk/gov/hmcts/reform/rd/commondata/camel/binder/FlagDetails.java": "e411f06a88d8a10fca96423a0a10d0a58842cc1a"
+  "rd-commondata-dataload:src/main/java/uk/gov/hmcts/reform/rd/commondata/camel/processor/FlagDetailsProcessor.java": "eb0246a7befd3cd5fb6b7c5a9d900c258283f343"
+  "rd-commondata-dataload:src/main/java/uk/gov/hmcts/reform/rd/commondata/camel/processor/OtherCategoriesProcessor.java": "eb0246a7befd3cd5fb6b7c5a9d900c258283f343"
+  "rd-commondata-dataload:src/main/java/uk/gov/hmcts/reform/rd/commondata/camel/util/CommonDataLoadConstants.java": "ca503fff8d59ed9d7d374ee5049a17ec3bc71251"
+  "rd-commondata-api:src/main/resources/db/migration/V1_11__alter_flag_service_details.sql": "2bffa6bd61c700bd5b09369a48147e73473152fc"
 ---
 
 ## TL;DR

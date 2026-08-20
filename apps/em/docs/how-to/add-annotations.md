@@ -53,6 +53,27 @@ confluence:
     last_modified: "unknown"
     space: "RSTR"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/AnnotationSetResource.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/AnnotationResource.java": "71a2d23a05991308fcc9587c64b16b48702b7ebb"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/BookmarkResource.java": "274d9b3c252af7c11e053bb8664cd43c91e2472b"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/FilterAnnotationSet.java": "4ebe8109540f8936b8787904bfa15610fb0a4a0f"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/MetaDataResource.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/TagResource.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/DocumentDataResource.java": "907765858535794d0fa8c55b5500c2e0be034679"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/AnnotationSet.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Annotation.java": "ec97bb95c09e500d78f7a95517ed16bb3a6f4d94"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Comment.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Rectangle.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Bookmark.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Metadata.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Tag.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/enumeration/AnnotationType.java": "c1e103cfbca25a5fdf8d8da4afc53d5ca5e064d9"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/dto/AnnotationDTO.java": "2913219631282a11e1c58ba245b27d337935cb9c"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/SecurityConfiguration.java": "a1728d11379a77b55678f497d2debd6cc01d3872"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/DeleteDocumentDataInterceptor.java": "907765858535794d0fa8c55b5500c2e0be034679"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/CommentHeaderConfig.java": "ec97bb95c09e500d78f7a95517ed16bb3a6f4d94"
+  "em-annotation-api:src/main/resources/application.yaml": "4d60b72a3debbf1db23b103c6e2fe590940d29f1"
 ---
 
 ## TL;DR

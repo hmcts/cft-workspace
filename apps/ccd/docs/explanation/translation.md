@@ -29,6 +29,19 @@ confluence:
 title: Translation
 diataxis: explanation
 product: ccd
+sources_sha:
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/TranslationServiceImpl.java"
+  : "664b03dbed39c7b5e5e848154e774e9097260a8d"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/translation/DefinitionSheetsToTranslate.java"
+  : "e57c441e63a91a5ce837af349130d956441c71b8"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/client/translation/TranslationServiceApiClient.java"
+  : "e57c441e63a91a5ce837af349130d956441c71b8"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/client/translation/DictionaryRequest.java"
+  : "664b03dbed39c7b5e5e848154e774e9097260a8d"
+  "ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/ApplicationParams.java": "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-admin-web:src/main/service/manage-welsh-dictionary-service.ts": "27db450b37774bd316e8425ce1edfdfcf0d13e75"
+  "ccd-admin-web:src/main/service/welsh-dictionary-service.ts": "67b9ce88f5962216d876311dd9bb1c153f41739e"
 ---
 
 # Translation

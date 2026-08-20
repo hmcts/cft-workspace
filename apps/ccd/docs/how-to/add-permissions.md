@@ -63,6 +63,27 @@ confluence:
 title: Add Permissions
 diataxis: how-to
 product: ccd
+sources_sha:
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/Authorisation.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationParser.java": "8afc4a0f8bb4856b4044542fcb140ed668c11990"
+  ? "ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/validation/authorization/CrudValidator.java"
+  : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/SheetName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseEvent.json": "980ad379b2aa2e5713cdc8745e9d65542fb06280"
+  "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseField.json": "980ad379b2aa2e5713cdc8745e9d65542fb06280"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/Permissions.java": "d88fa4143fcfa4f91da567faa684020b339a8b9b"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java": "331e5ff869da788ba5aad52abafc2fce18aba416"
+  ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseEvent.json"
+  : "980ad379b2aa2e5713cdc8745e9d65542fb06280"
+  "libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java": "cde80e20584d39f3f3a890f473db818f79449fae"
+  "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Permission.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java": "b17041c805975051a67cdd5cb35e1c59c155fcb1"
+  "apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/common/AccessControlService.java": "20b95a21e98b143b1c833f84f28ee6ef8664ed66"
+  "apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/common/CaseAccessService.java": "b509326d3eefbb50e825485237675ec4117beebe"
+  "apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/AuthorisedCreateCaseOperation.java": "593ffa40e6cc3beac85f5afb320d0a48b8fc2ccf"
 ---
 
 # Add Permissions

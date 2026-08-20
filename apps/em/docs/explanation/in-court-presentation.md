@@ -45,6 +45,19 @@ confluence:
     last_modified: "unknown"
     space: "RSTR"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "em-icp-api:api/routes/sessions.ts": "738fef6ffb0390b60945df12a14f17bfd28ffdea"
+  "em-icp-api:api/em-web-pub-event-handler-options.ts": "063e73fbe3f1b608672deb487b09cd05477ea2b7"
+  "em-icp-api:api/redis-client.ts": "0f1f0e91169d8c69a356c250ba05ff2ac13c185d"
+  "em-icp-api:api/model/actions.ts": "3cacfea79d219c546f3eea0fecb1a6bd2ee69dc1"
+  "em-icp-api:api/model/interfaces.ts": "0f1f0e91169d8c69a356c250ba05ff2ac13c185d"
+  "em-icp-api:app.ts": "e3c4291e17f7089071890ea4ef415830639a1282"
+  "em-icp-api:infrastructure/main.tf": "036d49e9f67657cc1e63c9e85ea1b85e2f265c60"
+  "em-icp-api:config/default.yaml": "0f58d80173158002ad1d58a5d5add63ad48afc4c"
+  "em-media-viewer:projects/media-viewer/src/lib/icp/icp-presenter.service.ts": "7fbca0248d76d5f270d03fa63e168c08c28f7f15"
+  "em-media-viewer:projects/media-viewer/src/lib/icp/icp.interfaces.ts": "4bccce4cb815a7a631a5f32c63b38b3af554957d"
+  "em-media-viewer:projects/media-viewer/src/lib/icp/socket.service.ts": "56015f9054ab1694e8a979ae6f600fb18b41a19e"
+  "em-media-viewer:projects/media-viewer/src/lib/store/reducers/document.reducer.ts": "86b5722206924c0c5cc27851d0f1396e92ef1b39"
 ---
 
 ## TL;DR

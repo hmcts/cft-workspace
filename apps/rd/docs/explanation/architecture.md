@@ -50,6 +50,17 @@ confluence:
     last_modified: "unknown"
     space: "RTRD"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "rd-professional-api:src/main/resources/application.yaml": "8501e4e7406318653bae352c04d5e03c1944a2cf"
+  "rd-caseworker-ref-api:src/main/resources/application.yaml": "7f0f71f1b67983565653410fb473aefea4d925f9"
+  "rd-judicial-api:src/main/resources/application.yaml": "91db0edf4a57e5899d31861797cf690cc11b61af"
+  "rd-location-ref-api:src/main/resources/application.yaml": "0348cf42d7f36f5959fa7b671eebd32282f7fcfa"
+  "rd-commondata-api:src/main/resources/application.yaml": "94c35993b5eda2a490b168dcd5414eaa5f4e748b"
+  "rd-user-profile-api:src/main/resources/application.yaml": "8f4b5d2ee8f0d608f1fdaba60e7fd36ab585923c"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/servicebus/TopicPublisher.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/servicebus/ElinkTopicPublisher.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/scheduler/ElinksApiJobScheduler.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/feign/ElinksFeignClient.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
 ---
 
 ## TL;DR

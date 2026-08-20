@@ -34,6 +34,20 @@ confluence:
 title: Case Flags
 diataxis: explanation
 product: ccd
+sources_sha:
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Flags.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagDetail.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagLauncher.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagVisibility.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "4d82832e6bc76a8c6b1b0ebc4ab877001e1e47f3"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V20220113_12977__RDM-12977_FlagLauncher_base_type.sql": "9304f0e4e41568acb18273ce8687207c3260ba63"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V20230510_4515__CCD-4515__AmendFlagDetails.sql": "0f191293fe71b7d9cc6d0ac5d6889c0bfaa87d33"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V20230920_4820__CCD-4820_Updating_Flags.sql": "e066e9400dd107f7b9ba6264d884ce101f2041b6"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/caseflags/CaseFlagsController.java": "531d5b6842f81c82b1bac65c790500acc73523f8"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/services/caseflags/CaseFlagsWaService.java": "268bdafb8c6c3a5d235ae399d84108a51a008f22"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/caseflags/AllPartyFlags.java": "9f7737ceceb64587f7c2a5bd9b0616092cfe4ba2"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/models/dto/ccd/CaseData.java": "544975f6b47e5ba67d6b7e85b961bee60c6e9dc3"
+  "prl-cos-api:src/main/java/uk/gov/hmcts/reform/prl/controllers/citizen/ReasonableAdjustmentsController.java": "f32a0b22372a52872c3165a62d79b77e36521f8b"
 ---
 
 # Case Flags

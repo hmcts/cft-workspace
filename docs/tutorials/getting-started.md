@@ -51,9 +51,9 @@ If you're not using VS Code, run those steps yourself on the host.
 ./scripts/index
 ```
 
-## 4. First Claude Code interaction
+## 4. First AI-assisted interaction
 
-Try one of:
+Start your preferred client from the workspace root. In Claude Code, try one of:
 
 ```
 /repo-doctor
@@ -62,11 +62,20 @@ Try one of:
 /cft-list-integrations work_allocation
 ```
 
-The first two read static state. The latter two consult `INDEX.md` — if it's empty (no product CLAUDE.md generated yet), Claude will offer to run `/docs-generate-product-md` first.
+In Codex, invoke the equivalent skills with `$`:
+
+```
+$repo-doctor
+$cft-tour ccd
+$cft-ccd-find-feature notice_of_change
+$cft-list-integrations work_allocation
+```
+
+The first two read static state. The latter two consult `INDEX.md` — if it is empty, the client will offer to run `docs-generate-product-md` first.
 
 ## 5. Working inside a clone
 
-`cd` into a specific clone before running build/test commands. Each is its own git repo with its own toolchain — see its README and `CLAUDE.md`.
+`cd` into a specific clone before running build/test commands. Each is its own git repo with its own toolchain — see its `README.md` and any local `AGENTS.md` or `CLAUDE.md`.
 
 ## Common stumbles
 

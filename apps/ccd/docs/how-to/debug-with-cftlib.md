@@ -41,6 +41,19 @@ confluence:
 title: Debug with cftlib
 diataxis: how-to
 product: ccd
+sources_sha:
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "e3587808bd1477ab4a47aa39c0b6ac5468479f7d"
+  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLib.java": "71544992866ebc3f02139e17b9782c9437213a22"
+  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLibConfigurer.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
+  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/CFTLibApiImpl.java": "e3587808bd1477ab4a47aa39c0b6ac5468479f7d"
+  "rse-cft-lib:cftlib/lib/cftlib-agent/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibAgent.java": "1af3bf04972042b8b6c862d4a3dbed93c7753e29"
+  "rse-cft-lib:cftlib/lib/cftlib-agent/src/main/java/uk/gov/hmcts/rse/ccd/lib/definitionstore/JsonDefinitionReader.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
+  "rse-cft-lib:cftlib/lib/test-runner/src/main/java/uk/gov/hmcts/rse/ccd/lib/test/CftlibTest.java": "1b82c829cfc6fb569ee0086afbbc520b27882ec4"
+  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ESIndexer.java": "cc031d19e1b4ff87cdc66c0f6609ee54241ec04b"
+  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java": "9098a05a1f349631f606f4831c0c024deb6a4b5a"
+  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/ControlPlane.java": "71544992866ebc3f02139e17b9782c9437213a22"
+  "rse-cft-lib:cftlib/lib/runtime/compose/docker-compose.yml": "3803e3cd277d57d3882136a8399c68acae2ca000"
 ---
 
 # Debug with cftlib

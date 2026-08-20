@@ -52,6 +52,19 @@ confluence:
     last_modified: "unknown"
     space: "AM"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "f2c71dea6e9fc93641f7c24ceb6123d73d392f68"
+  "am-org-role-mapping-service:src/main/resources/validationrules/core/core.drl": "37fcddad0d4f0e3d838a53cbc175216801c62992"
+  "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-caseworker-mapping.drl": "172d397ac2e19a02dd1002c167c78b8808346234"
+  "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-office-holder-mapping.drl": "c15c7771f4f24dbfecdc81514fe9f16c2546ed6c"
+  "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-org-role-mapping.drl": "c15c7771f4f24dbfecdc81514fe9f16c2546ed6c"
+  "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-multi-region.drl": "46e747cfd12cfc43666e94a95023ea2141f15c71"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RequestMappingService.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/DroolConfig.java": "5123dc2c5c4d127394df67e80c538e5122088d28"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/DBFlagConfigurtion.java": "8cfe7e78243ad32c6ace946dbf71b253857fd487"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java": "7373b7ddfa64d9e91983b82761d8291a5759120e"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/helper/AssignmentRequestBuilder.java": "b829373f4c4976248de36658b4a273ae170700e0"
+  "am-org-role-mapping-service:src/main/resources/db/migration/V1.2__new_flag_config_table.sql": "f096b045752bcaf71c4a3871bdb5dd950b7e1bbc"
 ---
 
 ## TL;DR

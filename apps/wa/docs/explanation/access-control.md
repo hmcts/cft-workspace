@@ -46,6 +46,18 @@ confluence:
     last_modified: "unknown"
     space: "WA"
 confluence_checked_at: "2026-05-13T00:00:00Z"
+sources_sha:
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/access/AccessControlService.java": "6b290b8fc5cd2a75d26f171ca967c9272be32b04"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/role/RoleAssignmentService.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/RoleAssignmentVerificationService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/restrict/ClientAccessControlService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java": "272fb0b4257fe638eeea7af521ae84738cec491a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/entity/TaskRoleResource.java": "a6e0eb1659e9b67f5ef737edcd4340c33bac0421"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/clients/RoleAssignmentServiceApi.java": "8a21818f6814d7331d13f2cd1f5ee1169a906ccf"
+  "wa-task-management-api:src/main/resources/db/migration/V1.0.18__add_permissions_to_task_roles.sql": "86aa1324fa8c298c3c76c114e76b5757d0675ec5"
+  "wa-task-management-api:src/main/resources/db/migration/V1.0.29__add_sensitive_task_event_logs_tables.sql": "19417dc4db267275f5286549238e69ce2576259b"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/role/entities/enums/RoleCategory.java": "325feb909e70c2475aea55e548ad0b1e7bd05ee6"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/TaskActionsController.java": "1d99034722b1261ca9e19f97571a035b04c649d1"
 ---
 
 ## TL;DR
