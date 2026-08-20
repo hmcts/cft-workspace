@@ -69,8 +69,9 @@ what one lint run says outright.
 
 It clones the cited repos, runs the source-mode check, and if anything is
 stale or broken, hands the report to Claude to reconcile the prose against the
-current source, re-record the SHAs, and **commit**. The workflow pushes, not
-Claude — see [Why the push is a workflow step](#why-the-push-is-a-workflow-step).
+current source, re-record the SHAs, and **commit — once per product, as it
+goes**. The workflow pushes, not Claude — see [Why the push is a workflow
+step](#why-the-push-is-a-workflow-step).
 
 ### Why it clones the way it does
 
@@ -119,8 +120,9 @@ only the files Claude actually diffs costs well under a second each.
 
 ### Why the push is a workflow step
 
-Claude reconciles the pages and commits. The **`Push to master` step** does the
-push. That split is deliberate, and it was bought with two lost runs.
+Claude reconciles the pages and commits. The **`Push to master` step** pushes
+whatever commits it finds — one, or one per product. That split is deliberate,
+and it was bought with two lost runs.
 
 A push from inside the prompt fails in the worst possible way. The action's
 output is suppressed by default (see `verbose` above), so the error goes
@@ -175,31 +177,35 @@ though Claude's work was fine. That is why `Push to master` is gated on
 
 ### When the run doesn't fit the budget
 
-Claude reconciles pages one at a time and commits **once, at the end**. So the
-job is all-or-nothing: if it hits `timeout-minutes` mid-way, every page it
-reconciled is lost. That has happened twice — 2026-08-10 (38 pages) and
-2026-08-20 (70 pages, cancelled at the 60-minute wall having committed nothing).
+Claude commits **once per product**: reconcile every affected page under
+`apps/<slug>/docs/`, then `--record --product=<slug>`, `docs-index`, `git add`
+that tree, commit, next product. Root `docs/` pages are the product
+`workspace`, which is the slug `--product` takes for them.
+
+That granularity is not a preference, it is the finest one that's honest.
+`--record` has no per-page scope — it pins every page it discovers,
+unconditionally, "correct as of now" — so a run that reconciled 10 of CCD's 40
+pages and then recorded would pin the other 30 as fresh without reading them,
+turning the drift report green over prose nobody checked. Per-*product* is safe
+because the whole product is reconciled before it is recorded, and it degrades
+honestly: a run killed mid-product loses only that product's work, and those
+pages come back on next week's report still stale. Going finer needs a
+`--page=<path>` scope added to `scripts/doc-drift` first.
+
+Before this, Claude committed once at the end and the job was all-or-nothing.
+It hit `timeout-minutes` mid-way twice, losing everything — 2026-08-10 (38
+pages) and 2026-08-20 (70 pages, cancelled at the 60-minute wall having
+committed nothing).
 
 A normal weekly delta is a handful of pages and fits 60 minutes easily. A
-**backlog** doesn't, and the backlog is self-feeding: every run that fails to
-land its work leaves the same pages stale for next week, plus whatever drifted
+**backlog** doesn't, and it used to be self-feeding: every run that failed to
+land its work left the same pages stale for next week, plus whatever drifted
 since. Roughly a page every 45 seconds is what the 2026-08-20 run managed.
 
 To clear one, dispatch with `timeout_minutes` raised — 180 for ~70 pages. Costs
-a few tens of pounds of Bedrock, and it is still all-or-nothing, so check the
-run rather than assuming.
-
-If that stops being good enough, the fix is per-page commits, and it needs a
-change to `scripts/doc-drift` first. `--record` has no per-page scope — it pins
-every page it discovers, unconditionally, "correct as of now", and the finest
-scope available is `--product=<slug>`. So a run that reconciled 10 of CCD's 40
-pages and then recorded would pin the other 30 as fresh without reading them,
-turning the drift report green over prose nobody checked. That is a worse
-failure than losing the run, which is why per-page commits are not the current
-design. Either add a `--page=<path>` scope to `--record`, or have Claude commit
-prose edits as it goes and record all the SHAs in one final pass — the second
-needs no script change and degrades honestly, since an interrupted run just
-leaves those pages still reported stale.
+a few tens of pounds of Bedrock. A run that runs out of budget now keeps the
+products it finished, so the next run starts from a smaller backlog; check which
+products landed rather than assuming the whole report was cleared.
 
 ### Required setup
 

@@ -183,7 +183,20 @@ jobs:
 
                 ./scripts/doc-drift --mode=source
 
-            to see the report. Work through the affected pages ONE AT A TIME.
+            to see the report.
+
+            Commit INCREMENTALLY, one product at a time. Group the affected
+            pages by the tree they live in — `apps/<slug>/docs/...` belongs to
+            product `<slug>`, and root `docs/...` pages are the product
+            `workspace`. Take one product, reconcile every affected page in it,
+            commit, and only then move to the next.
+
+            Do this even if you think you have time to do everything first.
+            This job has a wall-clock budget and gets killed at it; a commit
+            that exists is pushed, and everything still uncommitted is thrown
+            away. Several past runs lost hours of work that way.
+
+            Within a product, work through the pages ONE AT A TIME.
 
             For each page reported `stale` — a cited file changed since the page
             was written:
@@ -214,22 +227,40 @@ jobs:
             do not touch the citation. Note them in the commit body if you commit
             anything else.
 
-            When every page is handled, re-pin the SHAs and verify:
+            When every affected page in the CURRENT product is handled, re-pin
+            that product's SHAs, verify, and commit — for `apps/ccd/docs`:
 
-                ./scripts/doc-drift --record
-                ./scripts/doc-drift --mode=source     # expect 0 stale, 0 broken
+                ./scripts/doc-drift --record --product=ccd
+                ./scripts/doc-drift --mode=source --product=ccd   # expect 0 stale, 0 broken
                 ./scripts/docs-index
+                git add apps/ccd/docs DOCS.md
+                git commit -m "Reconcile apps/ccd doc drift"
 
-            Then commit:
+            For root-docs pages the slug is `workspace`, so that is
+            `--product=workspace` and `git add docs DOCS.md`.
 
-                git add -A docs apps/*/docs DOCS.md
-                git commit -m "<summary of what actually changed>"
+            Then move to the next product and repeat. One commit per product.
+
+            Never run a bare `./scripts/doc-drift --record`. It re-pins EVERY
+            page it finds, including products you have not looked at yet, which
+            asserts pages are correct when you have not read them — and it
+            silently ends the drift report that would have brought you back to
+            them. `--product` is the finest scope `--record` has: there is no
+            per-page option, so a product's `--record` covers all of its pages
+            at once. Only run it once every affected page in that product is
+            reconciled.
+
+            If you are leaving one of a product's pages alone (see the rule
+            below), do NOT run `--record` for that product at all. Commit the
+            prose fixes you did make and say in the body which page was skipped;
+            its SHAs stay stale so next week's run reports it again.
 
             Rules:
-            - Do NOT run `git push`. The workflow pushes your commit for you,
-              with a freshly minted token and a visible error if it fails. A
-              push from here would use a credential that may have expired
-              mid-run and would fail silently in a log nobody can read.
+            - Do NOT run `git push`. The workflow pushes your commits for you —
+              all of them, in one push, with a freshly minted token and a
+              visible error if it fails. A push from here would use a credential
+              that may have expired mid-run and would fail silently in a log
+              nobody can read.
             - ONLY ever `git add` paths under docs/, apps/*/docs/, or DOCS.md.
               Everything under apps/<product>/<repo>/, libs/<x>/, platops/<x>/ is
               a separate cloned repo — this workspace must never track its
@@ -241,16 +272,23 @@ jobs:
             - Do NOT put `Co-Authored-By: Claude`, a `Claude-Session` trailer, or
               any claude.ai link in the commit message.
             - `--record` pins SHAs whether or not the prose is right, so it
-              asserts the page is now correct. Only run it after you have
-              actually reconciled each page.
+              asserts every page in its scope is now correct. Only run it, and
+              only with `--product`, after you have actually reconciled that
+              product's pages.
             - If a page's drift is beyond a confident fix — the upstream change is
               large, or the right prose is a judgement call — leave that page
-              alone, do NOT record its SHAs, and say so in the commit body. A
-              still-stale page is better than a confidently wrong one.
+              alone, skip `--record` for its product, and say so in the commit
+              body. A still-stale page is better than a confidently wrong one.
+            - Running out of time is fine; losing work is not. If you are part
+              way through a product when you sense the budget closing in, commit
+              the prose you have already fixed rather than starting another page
+              — without `--record`, since the product isn't finished. Those
+              pages stay reported stale, which is correct: the edits are safe to
+              keep, the "this page is now right" claim isn't.
             - If nothing genuinely needed changing, make no commit and say so.
           claude_args: |
             --dangerously-skip-permissions
-            --append-system-prompt "You are running unattended in a GitHub Action on hmcts/cft-workspace. Your commit is pushed straight to master with no human review. Be conservative: correct only what the source proves wrong, and leave anything ambiguous untouched. The repos under apps/, libs/ and platops/ are blobless, no-checkout CI clones — use `git show <ref>:<path>` to read their files, never the Read tool, and never edit inside them. Do not run `git push`; a later workflow step does that."
+            --append-system-prompt "You are running unattended in a GitHub Action on hmcts/cft-workspace. Your commits are pushed straight to master with no human review, and the job is killed at its wall-clock budget — so commit each product as you finish it rather than saving it all for the end. Be conservative: correct only what the source proves wrong, and leave anything ambiguous untouched. The repos under apps/, libs/ and platops/ are blobless, no-checkout CI clones — use `git show <ref>:<path>` to read their files, never the Read tool, and never edit inside them. Do not run `git push`; a later workflow step does that."
             --allowedTools "Read,Glob,Grep,Write,Edit,Bash(git:*),Bash(./scripts/doc-drift:*),Bash(./scripts/docs-index:*),Bash(yq:*)"
 
       # The token from the top of the job is up to an hour old by now and may
