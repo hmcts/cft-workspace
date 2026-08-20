@@ -21,6 +21,7 @@ repos:
   - apps/xui/rpx-xui-node-lib
   - apps/xui/rpx-xui-translation
   - apps/xui/rpx-xui-dev-utils
+  - apps/xui/rpx-xui-icp-api
 confluence_spaces:
   - EUI
   - EXUI
@@ -32,7 +33,8 @@ XUI is the HMCTS caseworker and legal professional front-end platform. It delive
 deployed web applications — Manage Cases (caseworkers and judiciary), Manage Organisations
 (solicitor firms), and Approve Organisation (HMCTS admin approval of legal organisations) — plus
 a set of shared Angular and Node libraries. XUI does not own CCD case data; it is a UI platform
-that orchestrates and proxies calls to CCD and surrounding platform services.
+that orchestrates and proxies calls to CCD and surrounding platform services. XUI also owns the
+In Court Presentation API used by Media Viewer to coordinate live evidence-presenting sessions.
 
 ## Repos
 
@@ -54,6 +56,8 @@ that orchestrates and proxies calls to CCD and surrounding platform services.
   the web apps for Welsh-language support.
 - `apps/xui/rpx-xui-dev-utils` — Developer tooling scripts (Key Vault secret helpers, PR bot
   config, repo secret management); not deployed at runtime.
+- `apps/xui/rpx-xui-icp-api` — Node API that creates and manages In Court Presentation sessions
+  for Media Viewer using Redis and Azure Web PubSub.
 
 ## Architecture
 
@@ -82,6 +86,12 @@ All three apps authenticate end-users through IDAM OIDC, with OAuth2 client IDs 
 `xuimowebapp`, and `xuiapproveorgwebapp` respectively, and obtain S2S tokens from
 `rpe-service-auth-provider`.
 
+Manage Cases embeds `@hmcts/media-viewer`; its `/icp/sessions` integration is implemented by
+repository `rpx-xui-icp-api`. During the build-only migration stage, the live endpoint remains
+the existing `em-icp` service. A later controlled cutover will introduce the XUI runtime before
+traffic moves. The API validates the caller's IDAM token, creates or retrieves the presentation
+session, issues an Azure Web PubSub client token, and stores session and participant state in Redis.
+
 ## CCD touchpoints
 
 XUI is the CCD UI platform, not a CCD-based service — it holds no case definitions of its own.
@@ -94,7 +104,8 @@ XUI acts as the UI orchestration layer for those flows but does not implement th
 ## External integrations
 
 - `idam`: OIDC login via `https://idam-api.platform.hmcts.net`; OAuth2 client IDs `xuiwebapp`,
-  `xuimowebapp`, `xuiapproveorgwebapp`; handled by `@hmcts/rpx-xui-node-lib` middleware.
+  `xuimowebapp`, `xuiapproveorgwebapp`; handled by `@hmcts/rpx-xui-node-lib` middleware. The
+  ICP API validates incoming bearer tokens against IDAM `/o/userinfo`.
 - `s2s`: S2S tokens obtained from `rpe-service-auth-provider`; microservice name `xui_webapp`;
   configured in `config/default.json` under `services.s2s` in each app.
 - `am`: Calls `am-role-assignment-service` and `am-org-role-mapping-service` for case-level role
@@ -123,3 +134,6 @@ XUI acts as the UI orchestration layer for those flows but does not implement th
   data) and is not deployed or included in any app bundle.
 - `ccd-case-ui-toolkit` is published as `@hmcts/ccd-case-ui-toolkit` on npm and versioned
   independently; all three deployed apps pin a specific patch version in their `package.json`.
+- The ICP repository is owned in the XUI namespace. The build-only migration stage temporarily
+  retains the live `em-icp` runtime; a separate reviewed change will introduce XUI chart, image,
+  infrastructure and service identities before the EM runtime is retired.
