@@ -25,6 +25,7 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java
   - am-role-assignment-service:src/main/resources/validationrules/core/specific-access-global.drl
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/fields/fields.purger.ts
 status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
@@ -97,6 +98,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   ? "am-role-assignment-service:src/main/resources/validationrules/core/specific-access-global.drl"
   : "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/fields/fields.purger.ts": "0d6dcbac15aa7d3174f67df5ed87e82c79d3a0be"
 ---
 
 # Role Assignment
@@ -252,8 +254,7 @@ To support NoC events, the case-type definition must:
 * Declare a top-level COR field with Create/Read/Update permission for `caseworker-caa` and `caseworker-approver`.
 * On the **NoC Request** event, default `ApprovalStatus` to `"1"` (Approved) for auto-approval, or `"0"` (Pending) otherwise; configure a post-commit callback to `CheckForNoCApproval`. The event must be available only to `caseworker-caa`.
 * On the **NoC Approval** and **Rejection** events, default `ApprovalStatus` to `"1"` and `"2"` respectively; configure an about-to-start callback to `ApplyNoCDecision`. Available only to `caseworker-approver`.
-
-<!-- CONFLUENCE-ONLY: COR show/hide quirk — service-team configs may need to mark CaseRoleId as READONLY rather than hidden because CCD's hide-field capability does not preserve the contents of complex-type elements. Not verified in source; recommendation comes from RCCD config guidance. -->
+* Give `CaseRoleId` `display_context: READONLY` rather than hiding it with a show condition. XUI's `FieldsPurger` exempts a field from hidden-field clearing only when its `display_context` is `READONLY` (`fields.purger.ts:46,184-186`). A hidden Complex field is cleared sub-field by sub-field, and `retain_hidden_value` on the parent does not protect its children — each Complex sub-field is deleted unless it sets the flag itself (`fields.purger.ts:106-166`). Hiding a COR therefore blanks the `CaseRoleId` that `hasCaseRoleId()` uses to detect an in-flight NoC.
 
 ## Case assignment vs NoC: key distinction
 

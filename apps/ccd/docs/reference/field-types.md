@@ -33,10 +33,18 @@ sources:
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20220923_3686__CCD-3686__JudicialUser.sql
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_2__GA2_CaseAccessGroup.sql
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_4__GA4_CaseAccessGroups_collection.sql
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20201218__RDM-10041__CaseLocation.sql
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20210818_12761__RDM-12761_Update_base_type_field_ids_for_WorkAllocation.sql
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/DisplayContextParameterValidator.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/FieldTypeParser.java
   - ccd-definition-store-api:elastic-search-support/src/main/resources/application.yml
   - ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/search/MetaData.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/BaseTypeValidator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/CaseDataValidator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/CollectionValidator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/EmailValidator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/TextValidator.java
 status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence:
@@ -92,12 +100,21 @@ sources_sha:
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20220923_3686__CCD-3686__JudicialUser.sql": "69a04c63a2788de12a872d4f6d7d7ea690bb459d"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_2__GA2_CaseAccessGroup.sql": "0433376e83a1001e75f42e1d775e3035ca257145"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_4__GA4_CaseAccessGroups_collection.sql": "0433376e83a1001e75f42e1d775e3035ca257145"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V20201218__RDM-10041__CaseLocation.sql": "fc252db8e43e2a01d4c2ab3465f3f96e503c5e84"
+  ? "ccd-definition-store-api:repository/src/main/resources/db/migration/V20210818_12761__RDM-12761_Update_base_type_field_ids_for_WorkAllocation.sql"
+  : "0695abac5904488378bd57fbea368e6aee2c3364"
   ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/DisplayContextParameterValidator.java"
   : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/FieldTypeParser.java": "8b9a6ba16a83f14c7d6f4b8bfe335e448fc2935a"
   "ccd-definition-store-api:elastic-search-support/src/main/resources/application.yml": "a3eb4d238899d2957cc65251aad0a455c981dc93"
   ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java"
   : "70a1523ad356b828a6e094f4246effdeeeadda7b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/search/MetaData.java": "bf6f9ecc0149aba4c80456c27b6d5fef74616ad7"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/BaseTypeValidator.java": "4d62406e1aeae6eec1090134f678b9647a1518a1"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/CaseDataValidator.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/CollectionValidator.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/EmailValidator.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/TextValidator.java": "f34badd9680b0b3745186c74d9d828f5e3c1e5bc"
 ---
 
 # Field Types
@@ -118,14 +135,14 @@ CCD field types are declared in the `FieldType` column of the `CaseField` spread
 
 | Type | JSON shape | Min / Max applies to | Backend regex | Elasticsearch mapping |
 |---|---|---|---|---|
-| `Text` | `{"type": "string"}` | length (chars) — definable on `CaseField` and on element rows in `ComplexTypes`. **Min/max length cannot be set on a `Text` inside a `Collection`** — wrap it in a Complex type instead. <!-- CONFLUENCE-ONLY: not verified in source --> | none | `text` + `.keyword` sub-field (lowercase normalizer) |
+| `Text` | `{"type": "string"}` | length (chars) — definable on `CaseField` and on element rows in `ComplexTypes`. **Min/max length cannot be set on a `Text` inside a `Collection`** (see the notes below) — wrap it in a Complex type instead. | none | `text` + `.keyword` sub-field (lowercase normalizer) |
 | `TextArea` | `{"type": "string"}` | length | none | same as `Text` |
 | `RichTextArea` | `{"type": "string"}` — HTML markup | **`Min` only** (see below) | none | same as `Text` |
 | `Number` | `{"type": "number"}` (stored as string) | numeric value (min ≤ value ≤ max) | none | `double` |
 | `MoneyGBP` | string of pennies, e.g. `"1200"` for £12.00 | value in **pennies** | none | `double` <!-- DIVERGENCE: previous draft claimed `long`, but `application.yml:77` maps `MoneyGBP: defaultDouble`. Source wins. --> |
 | `Date` | `{"type": "string", "format": "date"}` — `YYYY-MM-DD` | earliest / latest date (`dd/mm/yyyy` in `Min`/`Max`) | none | `date` (with `ignore_malformed: true`; no `format` constraint at index level) |
 | `DateTime` | `{"type": "string", "format": "date-time"}` — e.g. `"2020-05-05T15:00:00.000"` | earliest / latest date+time | none | `date` (with `ignore_malformed: true`) |
-| `Email` | `{"type": "string"}` | length | RFC 5322 (Spring Boot 3 onwards uses `jakarta.mail` for validation) <!-- CONFLUENCE-ONLY: not verified in source --> | `keyword` (lowercase normalizer) |
+| `Email` | `{"type": "string"}` | length | `jakarta.mail.internet.InternetAddress.validate()`, run after the field's own `RegularExpression` and the base type's, both of which still apply (`EmailValidator.java:8-9,52-79`) | `keyword` (lowercase normalizer) |
 | `PhoneUK` | `{"type": "string"}` | length | `^(((\+44\s?\d{4}|\(?0\d{4}\)?)\s?\d{3}\s?\d{3})|((\+44\s?\d{3}|\(?0\d{3}\)?)\s?\d{3}\s?\d{4})|((\+44\s?\d{2}|\(?0\d{2}\)?)\s?\d{4}\s?\d{4}))(\s?\#(\d{4}|\d{3}))?$` (`V0001__Base_version.sql:2547–2549`) | `text` + `.keyword` + `phone_number_analyzer` <!-- DIVERGENCE: previous draft claimed plain `keyword`, but `application.yml:19,76` defines `ccdPhoneUK` with `text`+keyword sub-field+phone_number_analyzer. Source wins. --> |
 | `Postcode` | `{"type": "string"}` | length | `^([A-PR-UWYZ0-9][A-HK-Y0-9][AEHMNPRTVXY0-9]?[ABEHMNPRVWXY0-9]? {1,2}[0-9][ABD-HJLN-UW-Z]{2}|GIR 0AA)$` (`V0001__Base_version.sql:2540–2542`) | `keyword` <!-- DIVERGENCE: the type is registered as `Postcode` (lowercase 'c') in `field_type` and `application.yml`, not `PostCode`. Source wins. --> |
 | `YesOrNo` | `{"type": "string", "enum": ["Yes", "No"]}` | n/a | none | `keyword` |
@@ -146,7 +163,8 @@ from `TextArea`:
 
 Notes that apply to most primitives:
 - `Min`/`Max` on `CaseField` set bounds at the top level; for the same primitive used as a sub-field of a Complex type, set them on the element row in `ComplexTypes`.
-- Min/max length validation is **opt-in** — providing a value of length 0 / null does not trigger min-length validation. <!-- CONFLUENCE-ONLY: not verified in source -->
+- Min/max length validation is **opt-in**: every base-type validator returns without error when the value is absent, `null`, blank, whitespace-only, or `{}` (`BaseTypeValidator.java:15-20`, `TextValidator.java:30-32`, `EmailValidator.java:31-33`). `Min` therefore cannot be used to make a field required — an empty submission passes it, and required-ness has to come from `DisplayContext: Mandatory` or a `mid_event` callback.
+- A primitive element inside a `Collection` has nowhere to carry length bounds. `Min`/`Max` on the collection's `CaseField` row are folded into the derived collection type (`FieldTypeParser.java:39-51`) and read as an item count (`CollectionValidator.java:51-71`); each item is then validated against a field synthesised from the collection's element type (`CaseDataValidator.java:185-227`), which has no bounds of its own. Wrapping the primitive in a Complex type gives it a `ComplexTypes` element row, where `Min`/`Max` do apply.
 
 ### Default search behaviour per type
 
@@ -189,7 +207,7 @@ All three require a companion `FixedLists` sheet row per list code (`ListElement
 | `FixedRadioList` | same as `FixedList` | Radio-button variant | Renders all options simultaneously — keep lists short (≤5 items). |
 | `MultiSelectList` | array of codes | (See above) | — |
 
-`FixedListEdit` ("Either select / enter / select and edit. True Combo box of drop-down list and text field") is documented on Confluence as **not a supported type**; it is not registered in `field_type`. <!-- CONFLUENCE-ONLY: not verified in source -->
+`FixedListEdit` ("Either select / enter / select and edit. True Combo box of drop-down list and text field") is not usable. No migration inserts it into `field_type` and it has no constant on `FieldTypeUtils.java`, so naming it in a `FieldType` cell aborts the import with `Missing field type: FixedListEdit` (`FieldTypeParser.java:34-36`). It survives only as an Elasticsearch type mapping (`application.yml:86`).
 
 ## Dynamic list types
 
@@ -259,11 +277,11 @@ Sub-fields: `CaseReference` (Text, required), `ReasonForLink` (collection of `Li
 
 ### `CaseLocation`
 
-Sub-fields: `Region`, `BaseLocation` (both Text). Used by hearing/listing integrations.
+Sub-fields `region` and `baseLocation`, typed `Region` and `BaseLocation` rather than `Text` (`V20201218__RDM-10041__CaseLocation.sql:16-24`, renamed from `RegionId`/`BaseLocationId` by `V20210818_12761__RDM-12761_Update_base_type_field_ids_for_WorkAllocation.sql`). The SDK carries both as `String` (`CaseLocation.java`). Used by hearing/listing integrations.
 
 ### `Region` / `BaseLocation`
 
-Registered as base types (`FieldTypeUtils.java:44–45`) and ES-mapped as `defaultText` (`application.yml:87–88`). Confluence marks both as **in development** — temporarily backed by `String` rather than a fixed list, as an interim solution because the standard `FixedList` baseType cannot have service-customised values. <!-- CONFLUENCE-ONLY: "in development" framing not verified in source — types are seeded and indexed today. -->
+Registered as base types by `V20201218__RDM-10041__CaseLocation.sql:10-14` (`FieldTypeUtils.java:44–45`) and ES-mapped as `defaultText` (`application.yml:87–88`). Confluence marks both as **in development** — temporarily backed by `String` rather than a fixed list, as an interim solution because the standard `FixedList` baseType cannot have service-customised values. <!-- CONFLUENCE-ONLY: "in development" framing not verified in source — types are seeded and indexed today. -->
 
 ### `Organisation`
 

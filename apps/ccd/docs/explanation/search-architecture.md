@@ -20,6 +20,13 @@ sources:
   - ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java
   - ccd-definition-store-api:elastic-search-support/src/main/resources/globalSearchCasesMapping.json
   - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/DisplayApiController.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/ReferenceDataRepository.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/global/GlobalSearchResponseTransformer.java
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/search/search.service.ts
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/request/request.options.builder.ts
+  - rpx-xui-webapp:src/cases/services/search-filter.service.ts
+  - rpx-xui-webapp:src/cases/containers/case-list/case-list.component.ts
+  - rpx-xui-webapp:src/cases/containers/case-search/case-search.component.ts
 status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
@@ -78,6 +85,13 @@ sources_sha:
   : "70a1523ad356b828a6e094f4246effdeeeadda7b"
   "ccd-definition-store-api:elastic-search-support/src/main/resources/globalSearchCasesMapping.json": "3888fb1a78316b9ab3ee597967e4424be68d2e6c"
   "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/DisplayApiController.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/ReferenceDataRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/global/GlobalSearchResponseTransformer.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/search/search.service.ts": "823aaf51cb883d45d718f29508cccb8e73544e6b"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/request/request.options.builder.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
+  "rpx-xui-webapp:src/cases/services/search-filter.service.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:src/cases/containers/case-list/case-list.component.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:src/cases/containers/case-search/case-search.component.ts": "8577c8c217f3e58ec34ce4efde89c468268befb7"
 ---
 
 # Search Architecture
@@ -114,8 +128,9 @@ Work-basket search is the oldest surface. It is driven entirely by definition co
 
 The work-basket surface is **per-case-type** and **single-jurisdiction**. It cannot search across multiple case types simultaneously.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-**Status:** ExUI's Manage Case "Workbasket" and "Search" pages are being migrated off this DB-backed endpoint and onto `/internal/searchCases` with `use_case=WORKBASKET` and `use_case=SEARCH` respectively (Internal Search API LLD § 2.2; tracking ticket `EUI-1777`). The legacy `WorkBasketResultFields` and `SearchResultFields` tabs are retained for now but are slated to be merged into the more general `SearchCasesResultFields` tab.
+ExUI's Manage Case "Workbasket" and "Search" pages do not use this DB-backed endpoint. Both post to `/internal/searchCases` with `use_case=WORKBASKET` and `use_case=SEARCH` respectively (`search.service.ts:63-81`; `SearchView` admits only those two values, `request.options.builder.ts:108`). Which of the two paths a page takes is decided by `elasticSearchFlag` (`search-filter.service.ts:18-24`), which is initialised to `true` and never reassigned in either container (`case-list.component.ts:94,476-482`, `case-search.component.ts:66`), so the DB-backed branch is unreachable from ExUI even though the toolkit still exposes it (`search.service.ts:27-42`). The consequence for service teams is that `WorkBasketInputFields` and `WorkBasketResultFields` configuration is served through the Elasticsearch path: a case type with no working index or search alias yields an empty work basket, with no relational fallback.
+
+The `WorkBasketResultFields` and `SearchResultFields` tabs are slated to be merged into the more general `SearchCasesResultFields` tab (Internal Search API LLD § 2.2, tracking ticket `EUI-1777`). <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ---
 
@@ -210,8 +225,11 @@ Validation rules (all return HTTP 400 on violation):
 
 Configured via `SearchCasesResultFields` sheet → `search_cases_result_fields` table. This sheet has a `UseCase` column that allows different column sets for different contexts (e.g. `ORGCASES`, `WORKBASKET`). The definition-store endpoint is `GET /api/display/search-cases-result-fields/{id}?use_case=<value>` (`DisplayApiController.java:131–144`).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-For `/globalSearch` specifically, the endpoint enriches each result with reference-data lookups (`baseLocationName`, `regionName`, `caseManagementCategoryName`, `HMCTSServiceShortDescription`, `CCDJurisdictionName`, `CCDCaseTypeName`) drawn from a daily-refreshed in-process cache (TTL 5 days). The cache is hydrated from `refdata/location/building-locations` and `refdata/location/orgServices`. `SearchCriteria` field contents are **not** returned in the response; only the standard result envelope.
+For `/globalSearch`, exactly three result fields are resolved from reference data: `hmctsServiceShortDescription` (keyed on the case's `HMCTSServiceId` supplementary-data value), `baseLocationName` and `regionName` (keyed on `CaseManagementLocation`) — `GlobalSearchResponseTransformer.java:94-115`. `caseManagementCategoryName`, `CCDJurisdictionName` and `CCDCaseTypeName` come from case data and the case-type definition, not from reference data (`GlobalSearchResponseTransformer.java:106-117`).
+
+The reference data is fetched from `/refdata/location/building-locations` and `/refdata/location/orgServices` into two in-process Spring caches (`ReferenceDataRepository.java:36-42,55-71`) and refreshed on a cron schedule (`ReferenceDataRepository.java:94-105`), configured as a 04:00 daily refresh with a five-day TTL (`application.properties:313-316`). A failed reference-data call is swallowed and returns an empty list (`ReferenceDataRepository.java:88-91`), so a reference-data outage surfaces as results carrying ids with null `baseLocationName`, `regionName` and `hmctsServiceShortDescription` rather than as a failed search.
+
+`SearchCriteria` contents are partly returned: the `OtherCaseReferences` collection is flattened onto each result as `otherReferences` (`GlobalSearchResponseTransformer.java:104,139-148`). `SearchParty` entries are indexed for matching but never appear in the result envelope (`GlobalSearchResponseTransformer.java:101-119`).
 
 ---
 

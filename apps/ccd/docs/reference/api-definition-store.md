@@ -16,6 +16,12 @@ sources:
   - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/ImportAuditController.java
   - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/BaseTypeController.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ProcessUploadServiceImpl.java
+  - ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/SecurityConfiguration.java
+  - ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/security/JwtGrantedAuthoritiesConverter.java
+  - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/AccessProfileRepository.java
+  - ccd-api-gateway:app.js
+  - ccd-api-gateway:config/custom-environment-variables.yaml
+  - ccd-api-gateway:app/user/user-request-authorizer.js
 status: confluence-augmented
 confluence:
   - id: "499712037"
@@ -61,6 +67,13 @@ sources_sha:
   "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/BaseTypeController.java": "5f8a3fedd665c17cbceb9750960be742926116c1"
   ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ProcessUploadServiceImpl.java"
   : "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/SecurityConfiguration.java": "7a660c165f7a9560f1db3098eea56dcdd9956b51"
+  ? "ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/security/JwtGrantedAuthoritiesConverter.java"
+  : "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/AccessProfileRepository.java": "39523b968786c57ac7735e69207717040a279ea1"
+  "ccd-api-gateway:app.js": "3f031872171ee24e8a9d026e41d57390f105de08"
+  "ccd-api-gateway:config/custom-environment-variables.yaml": "e7a46f5a3712f875c35ec322ce0077e80b44a4b2"
+  "ccd-api-gateway:app/user/user-request-authorizer.js": "c9a09d7bde8a42c6d1f0ad4b2acec9e903bc9130"
 ---
 
 # API: Definition Store
@@ -91,11 +104,9 @@ On success the response may include:
 
 `reindex=true` creates a new ES index, migrates data, then atomically flips the alias (`ElasticDefinitionImportListener.java:72-89`).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence states the import is gated through the API Gateway at paths like
-     /definition_import/import in AAT/Demo, requiring a CCD_IMPORT_USER_TOKEN JWT
-     with the ccd-import role. This gateway routing is not defined in definition-store
-     source but rather in the API gateway configuration. -->
+`/import` demands the `ccd-import` authority, alongside `/elastic-support/index`, the reindex-task endpoints and `GET /import-jobs/**` (`SecurityConfiguration.java:81-85`, `ImportController.java:39`). IDAM roles become authorities verbatim — `SimpleGrantedAuthority` is constructed straight from the `/o/userinfo` role strings with no normalisation (`JwtGrantedAuthoritiesConverter.java:41-45`) — so `hasAuthority("ccd-import")` is an exact, case-sensitive match.
+
+From a browser, the route in is `ccd-api-gateway`, which proxies `/definition_import` to `PROXY_DEFINITION_IMPORT` and strips the prefix, so `POST /definition_import/import` arrives at the definition store as `POST /import` (`ccd-api-gateway:app.js:97-100`, `config/custom-environment-variables.yaml:4`). The gateway only checks that the caller holds a valid IDAM token: its role check fires for URLs containing `/caseworkers/` and for one hardcoded probate print path, neither of which matches `/definition_import` (`ccd-api-gateway:app/user/user-request-authorizer.js:67-93`). The `ccd-import` gate is entirely the definition store's, so pointing an unprivileged token at the gateway route fails at the definition store with 403, not at the gateway.
 
 ### Case type retrieval
 
@@ -133,10 +144,7 @@ On success the response may include:
 
 These endpoints are called by `ccd-admin-web` to register IDAM roles before definition import. Roles referenced in Authorisation tabs must exist here; if missing, the import fails with a validation error.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence documents that IDAM roles are case-sensitive and must be lowercase by
-     convention. The definition-store source does not enforce lowercase but the role
-     must match exactly what is registered in IDAM. -->
+Role names are matched byte-for-byte, not case-insensitively: lookups go through derived Spring Data queries on the `reference` column (`AccessProfileRepository.java:12-14`), which become plain SQL equality, and nothing lowercases the string on the way in. Lowercase is a convention, not something the store enforces — register `Caseworker-test` and it will be a distinct access profile from `caseworker-test`.
 
 ### Draft definitions
 
@@ -211,11 +219,7 @@ Based on operational experience:
 1. **Missing field references** -- field IDs referenced in event configs or layouts but not defined on the `CaseField` tab.
 2. **Undefined FixedList/ComplexType** -- `FieldTypeParameter` references a list or complex type that does not exist on the corresponding tab.
 3. **Missing user roles** -- roles referenced in `Authorisation` tabs that have not been registered via `/api/user-role`. Fix by calling `PUT /api/user-role` with the role and classification before re-importing.
-4. **Case-sensitive role names** -- IDAM roles must match exactly (e.g. `caseworker-test` not `Caseworker-test`).
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- The case-sensitivity guidance comes from Confluence troubleshooting page 1063059491.
-     Source does not explicitly enforce lowercase but the role string is matched verbatim
-     against IDAM. -->
+4. **Case-sensitive role names** -- role references are compared verbatim against the `reference` column (`AccessProfileRepository.java:12-14`), so `Caseworker-test` on an `Authorisation` tab will not resolve a registered `caseworker-test` and the import fails as an unknown role.
 
 ## Response shapes
 

@@ -11,6 +11,13 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/callbacks/SignificantItem.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/callbacks/GetCaseCallbackResponse.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseDetails.java
+  - ccd-data-store-api:src/main/resources/application.properties
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java
+  - cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-confirm/case-edit-confirm.component.ts
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-confirm/case-edit-confirm.html
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/domain/confirmation.model.ts
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/markdown/markdown-component.module.ts
 status: confluence-augmented
 confluence:
   - id: "1438948553"
@@ -51,6 +58,14 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/callbacks/SignificantItem.java": "6f9c38a7fbd69966893d2ab2cd9108bbd036c551"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/callbacks/GetCaseCallbackResponse.java": "79f714a392fbf79aec7acc2e648fb56bc7a11f68"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseDetails.java": "aa61dd252c0e9a2607835f1034c7dcf0376eebba"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
+  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "e2f115cfbdce6268b717d319e1c22ea4d8d9d1b2"
+  ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-confirm/case-edit-confirm.component.ts"
+  : "db39163cb7de92af326a333fe7430558a051c135"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-confirm/case-edit-confirm.html": "315741f6698ef3b7d46e49e27742eefae21d0e24"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/domain/confirmation.model.ts": "7f1b0d12f0af5a80788e266558817af09930cd4f"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/markdown/markdown-component.module.ts": "315741f6698ef3b7d46e49e27742eefae21d0e24"
 ---
 
 # Callback Contract
@@ -230,11 +245,11 @@ The `submitted` callback uses `AfterSubmitCallbackResponse`, a simpler shape wit
 | `confirmation_header` | string | Markdown. Rendered as the confirmation panel heading (green box) in ExUI. |
 | `confirmation_body` | string | Markdown. Rendered as the confirmation panel body below the heading. |
 
-Both fields are optional. If the callback returns an error or times out, the failure is caught and logged — the case has already been saved (`DefaultCreateEventOperation.java:100-104`). The confirmation page button text ("Close and Return to case details") is hardcoded in `ccd-case-ui-toolkit` and cannot be customised via the callback response.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Both fields are optional. If the callback returns an error or times out, the failure is caught and logged — the case has already been saved (`DefaultCreateEventOperation.java:100-104`). The confirmation page button text is hardcoded as `Close and Return to case details` (`ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-confirm/case-edit-confirm.component.ts:18`) and the callback response cannot change it: the `Confirmation` object the toolkit builds from the response carries only case ID, status, header and body, and the template renders the button label from a separate component field (`case-edit-confirm.html:20`).
 
-Markdown supported in these fields includes headings (`#`), bold, links, line breaks (`\n`, `<br/>`), and paragraphs. See [ngx-md](https://dimpu.github.io/ngx-md/) for the supported subset.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Both fields go through the toolkit's `<ccd-markdown>` component, which delegates to `ngx-markdown` (`markdown-component.module.ts:4`) — a `marked`-backed renderer, so the full CommonMark set is available, not a restricted subset. Headings, bold, links, line breaks and paragraphs all render.
+
+<!-- DIVERGENCE: Confluence 1417545038 documents the confirmation-page markdown subset as ngx-md. Source: the toolkit imports ngx-markdown (ccd-case-ui-toolkit projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/markdown/markdown-component.module.ts:4). Source wins. -->
 
 ---
 
@@ -291,14 +306,17 @@ Each callback type has its own retries/timeout column in the CCD definition:
 
 ### Effective timeout values
 
-| Retry value | Attempt 1 timeout | Attempt 2 (after 1s delay) | Attempt 3 (after 3s delay) |
-|---|---|---|---|
-| Empty (default) | 60 s | 60 s | 60 s |
-| `0` | 60 s (single attempt, no retry) | N/A | N/A |
-| Any other value | 60 s | 60 s | 60 s |
+The integers in a `RetriesTimeout*` column are never read as timeouts. `isRetriesDisabled()` is the only consumer, and it tests for a single-element list containing `0` (`CallbackInvoker.java:207-209`) — every other value, including a comma-separated list like `2,5,10`, is indistinguishable from leaving the column blank. `CallbackService.java:42` records the discard.
 
-> The per-callback configurable timeout values advertised in older documentation (comma-separated lists like `2,5,10`) are **not implemented** in CCD. Any value other than `0` behaves identically to leaving the column blank. The timeout is always 60 seconds per attempt.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+The per-attempt timeout is a service-wide setting, not a per-callback one: `http.client.read.timeout`, defaulting to 30000 ms (`application.properties:195`) and set to `29000` in every deployed environment, production included (`cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml:40`).
+
+| Retry value | Attempts | Worst-case wall clock |
+|---|---|---|
+| Empty (default) | 3, at T, T+1 s, T+4 s | ~91 s (3 × 29 s + 4 s of backoff) |
+| `0` | 1, no retry | ~29 s |
+| Any other value | 3, at T, T+1 s, T+4 s | ~91 s |
+
+<!-- DIVERGENCE: Confluence 1139900520 states the callback timeout is always 60 s per attempt, giving a 184 s ceiling. Source: the per-attempt limit is http.client.read.timeout — 30000 ms by default (ccd-data-store-api application.properties:195) and 29000 ms in every deployed environment (cnp-flux-config apps/ccd/ccd-data-store-api/prod.yaml:40), for a ~91 s ceiling. Source wins. -->
 
 ### Timeout complications
 
@@ -308,14 +326,14 @@ Multiple layers impose their own timeouts. The callback code must be idempotent 
 |---|---|---|
 | CCD API Gateway | 30 s | User session dropped; CCD API may still be waiting |
 | ExUI API (Node) | 120 s | Request fails from user perspective |
-| CCD Data Store (callback) | 60 s per attempt, up to 184 s total | `CallbackException` raised |
+| CCD Data Store (callback) | 29 s per attempt, up to ~91 s total | `CallbackException` raised |
 
-If the gateway times out before CCD finishes its retry cycle, the user sees an error, but the callback may still succeed server-side. On the user's next page load, the case may have advanced.
+The data-store ceiling sits close to the gateway's, so a callback that exhausts its retries will almost always outlive the browser request. The user sees an error, but the callback may still succeed server-side, and on the next page load the case may have advanced.
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ### HTTP client timeouts
 
-Connection and read timeouts are set via `${http.client.connection.timeout}` and `${http.client.read.timeout}` (`RestTemplateConfiguration.java`).
+Connection and read timeouts are set via `${http.client.connection.timeout}` and `${http.client.read.timeout}` (`RestTemplateConfiguration.java:48-52`), both defaulting to 30000 ms (`application.properties:194-195`).
 
 ---
 

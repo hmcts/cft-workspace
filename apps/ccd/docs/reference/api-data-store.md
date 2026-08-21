@@ -12,6 +12,19 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/AuthorisedSupplementaryDataUpdateOperation.java
   - ccd-data-store-api:src/main/resources/application.properties
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/EventTokenService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/DefaultCaseDetailsRepository.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseDetailsEntity.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/endpoint/exceptions/CaseConcurrencyException.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/stdapi/CallbackInvoker.java
+  - service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/ServiceAuthorisationApi.java
+  - service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/generators/ServiceAuthTokenGenerator.java
+  - service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/generators/TotpGenerator.java
+  - cnp-flux-config:apps/ccd/ccd-case-disposer/prod.yaml
+  - cnp-flux-config:apps/money-claims/cmc-s2s/demo.yaml
+  - ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/service/v2/CaseCollectorService.java
+  - ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/data/CaseLinkRepository.java
 status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence:
@@ -55,6 +68,19 @@ sources_sha:
   ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/AuthorisedSupplementaryDataUpdateOperation.java"
   : "80adc76067063ba3c3600fb3e0674b41bfe5426f"
   "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/EventTokenService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/DefaultCaseDetailsRepository.java": "3f31c2b5662bbfbe8d341fb02ce3688124b5cdd6"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseDetailsEntity.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/endpoint/exceptions/CaseConcurrencyException.java": "b40a37b41eef311b5612999246c6cf88fa759026"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/stdapi/CallbackInvoker.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
+  "service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/ServiceAuthorisationApi.java": "931705928066bd80f800c760c9b252877b522db0"
+  "service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/generators/ServiceAuthTokenGenerator.java": "a71a28926ddede4c0d0136bd47506b2f73fdc57e"
+  "service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/generators/TotpGenerator.java": "a71a28926ddede4c0d0136bd47506b2f73fdc57e"
+  "cnp-flux-config:apps/ccd/ccd-case-disposer/prod.yaml": "21e817f95455da6f6b4b85904c4770ca75714008"
+  "cnp-flux-config:apps/money-claims/cmc-s2s/demo.yaml": "354f256227ac3d25f687b696bc83a137b52a1cfa"
+  "ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/service/v2/CaseCollectorService.java": "0fe304c9f7bd495b893bb01fb6a93e28c6776056"
+  "ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/data/CaseLinkRepository.java": "0fe304c9f7bd495b893bb01fb6a93e28c6776056"
 ---
 
 # API: Data Store
@@ -79,8 +105,9 @@ Every request to the Data Store API requires two headers:
 
 The S2S token identifies the calling microservice. Only services listed in `DATA_STORE_S2S_AUTHORISED_SERVICES` are permitted. The default list includes: `ccd_gw`, `ccd_data`, `aac_manage_case_assignment`, `ccd_case_document_am_api`, `am_role_assignment_service`, and several service-team backends.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-To generate an S2S token manually (e.g. for AAT testing), use the microservice secret from Azure Key Vault setting `MICROSERVICEKEYS_<SERVICE_NAME>` in the `rpe-service-auth-provider` App Service, generate a 6-digit TOTP, then POST to `rpe-service-auth-provider-<env>.service.core-compute-<env>.internal/lease`.
+To mint an S2S token by hand (for AAT testing, say), reproduce what `ServiceAuthTokenGenerator` does: derive a time-based one-time password from the microservice's Base32 secret over HMAC-SHA1, then `POST /lease` with a JSON body of `microservice` and `oneTimePassword` and read the token out of the `text/plain` response (`service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/generators/ServiceAuthTokenGenerator.java:26-33`, `TotpGenerator.java:22-28`, `ServiceAuthorisationApi.java:26-29`).
+
+Each microservice's shared secret is injected into the S2S provider as `MICROSERVICEKEYS_<SERVICE_NAME>`, uppercased with underscores for hyphens (`cnp-flux-config:apps/money-claims/cmc-s2s/demo.yaml:12-28`). The provider itself is reachable in-cluster at `http://rpe-service-auth-provider-<env>.service.core-compute-<env>.internal` (`cnp-flux-config:apps/ccd/ccd-case-disposer/prod.yaml:19`), which is what the data store's `idam.s2s-auth.url` points at (`application.properties:104`).
 
 ## Endpoints
 
@@ -93,7 +120,7 @@ To generate an S2S token manually (e.g. for AAT testing), use the microservice s
 | `POST` | `/cases/{caseId}/events` | `CaseController.createEvent` | Submit event on existing case |
 | `POST` | `/case-types/{caseTypeId}/cases` | `CaseController.createCase` | Create new case (returns 16-digit CCD reference) |
 
-The token returned by the start-event call must be included as `CaseDataContent.token` in the submit body. `CreateCaseEventService` validates it at `CreateCaseEventService.java:210-216`; a stale or mismatched token is rejected with HTTP 409.
+The token returned by the start-event call must be included as `CaseDataContent.token` in the submit body. It is an HS256-signed JWT whose claims pin the event to a single user, case, case type, jurisdiction and state, plus a hash of the case data and the case's entity version and revision (`EventTokenService.java:65-78`). `CreateCaseEventService` validates it at `CreateCaseEventService.java:211-217`. A token whose event, case, jurisdiction, case type or subject does not match the request is rejected as `Cannot find matching start trigger` — HTTP 404, not 409 (`EventTokenService.java:137-148`); an absent token gives HTTP 400 (`EventTokenService.java:130-132`).
 
 **Typical integration pattern** (from service frontends):
 
@@ -105,8 +132,9 @@ Or for an existing case:
 1. `GET /cases/{caseId}/event-triggers/{eventId}` -- obtain token
 2. `POST /cases/{caseId}/events` -- submit with token + data
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-Avoid parallel requests with the same IDAM user -- the event token mechanism uses optimistic locking and concurrent submissions by the same user will conflict.
+Do not run events on the same case in parallel. Validation copies the token's `entity_version` claim back onto the case before the write (`EventTokenService.java:150-152`), and `case_data` carries a JPA `@Version` column (`CaseDetailsEntity.java:139-140`), so the second of two events started from the same case version fails its `merge`/`flush` and comes back as HTTP 409 with `Unfortunately we were unable to save your work to the case...` (`DefaultCaseDetailsRepository.java:78-83`, `CaseConcurrencyException.java:6`). The conflict is on the case, not the user — two different users each holding their own valid token collide the same way.
+
+<!-- DIVERGENCE: Confluence 1285226659 frames the concurrency hazard as parallel requests by the same IDAM user. Source: the optimistic lock is the case row's @Version column (ccd-data-store-api CaseDetailsEntity.java:139-140, DefaultCaseDetailsRepository.java:78-83), so any two concurrent events on one case conflict regardless of who submits them. Source wins. -->
 
 ### Case retrieval (v2 external)
 
@@ -309,11 +337,13 @@ For cross-case-type search, results contain only metadata by default (no case fi
 ## Key behaviours
 
 - **`submitted` callback fires after DB commit.** Failure is caught and logged; it does not roll back the case save (`DefaultCreateEventOperation.java:100-104`).
-- **Callback retry.** `about_to_start` and `about_to_submit` retry up to 3 times (T+1s, T+4s). Set `retriesTimeout: [0]` on an event to disable retry (`CallbackService.java:75`).
+- **Callback retry.** Every callback type — `about_to_start`, `mid_event`, `about_to_submit`, `submitted`, `get_case` — retries up to 3 times (T, T+1 s, T+4 s) (`CallbackService.java:75,87`). Set the callback's `RetriesTimeout` column to exactly `[0]` to disable retry; any other value is ignored (`CallbackInvoker.java:207-209`).
 - **Authorisation wrappers.** Both start- and submit-event operations are injected with an `@Qualifier("authorised")` decorator that enforces RBAC before delegating to the default implementation.
 - **Decentralised case types.** If a case type matches a prefix in `ccd.decentralised.case-type-service-urls`, reads and writes are routed to the external `/ccd-persistence/*` endpoints instead of the local DB. `about_to_submit` and `submitted` callbacks are skipped for decentralised events (`CallbackInvoker.java:98-99, 123-125`).
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- **No strict rate limits.** There is no documented rate-limiting on the API, but monitor for volume and failures. Production rollback of case data requires the CCD disposal tool.
+- **No rate limiting.** `ccd-data-store-api` ships no throttling filter or quota configuration; a misbehaving caller is bounded only by pod count and connection pool size, so volume and failure rates have to be watched externally.
+- **Deletion is TTL-driven, not on demand.** `ccd-case-disposer` selects cases by `resolved_ttl < CURRENT_DATE` for its configured case types (`ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/data/CaseLinkRepository.java:25`, `CaseCollectorService.java:79-98`) — there is no way to hand it a list of case references. A group of linked cases is skipped entirely unless every case in the group has expired (`CaseCollectorService.java:56-77`), so one long-lived case keeps its whole link graph alive.
+
+<!-- DIVERGENCE: Confluence 1285226659 states that rolling back case data in production is done with the CCD disposal tool. Source: ccd-case-disposer only collects cases whose resolved_ttl has already passed (ccd-case-disposer CaseLinkRepository.java:25, CaseCollectorService.java:79-98); it takes case types, not case references, and cannot target arbitrary cases. Source wins. -->
 
 ## Environment URLs
 

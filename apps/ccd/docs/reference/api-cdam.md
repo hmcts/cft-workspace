@@ -21,6 +21,11 @@ sources:
   - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/ApplicationParams.java
   - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/util/ApplicationUtils.java
   - ccd-case-document-am-api:src/main/resources/application.yaml
+  - ccd-case-document-am-api:src/main/resources/service_config.json
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/AuthorisedServices.java
+  - rpx-xui-webapp:src/app/app.constants.ts
+  - rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts
+  - rpx-xui-webapp:src/assets/config/config.json
 status: confluence-augmented
 confluence:
   - id: "1456373814"
@@ -78,6 +83,11 @@ sources_sha:
   ? "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/util/ApplicationUtils.java"
   : "d54aae25a8de4bcfc1c8c49c2542522f0b14180c"
   "ccd-case-document-am-api:src/main/resources/application.yaml": "116d99f942a127dd17a3f08d8f3622e7006dc5cc"
+  "ccd-case-document-am-api:src/main/resources/service_config.json": "5e9a44cd94d3808723ba7080618af2d3348928d9"
+  "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/AuthorisedServices.java": "e893297272ba2a0bf3e742f4a65cfa6083226e9d"
+  "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
+  "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "eed279a4dd5502643063241d86c2911799acac38"
+  "rpx-xui-webapp:src/assets/config/config.json": "eed279a4dd5502643063241d86c2911799acac38"
 ---
 
 # API: CDAM (Case Document Access Management)
@@ -88,7 +98,7 @@ sources_sha:
 - Documents uploaded via CDAM are stored immediately (before the CCD event completes) with a TTL — **1 day by default**, not minutes; the TTL is cleared when the event successfully attaches documents.
 - Hash tokens (SHA-256, salted with the S2S TOTP secret) prevent URL-swapping attacks; CCD data-store validates and strips them before persisting case data. A token is **not stable across the attach boundary** — the caseId is part of the digest input once known.
 - Auth: S2S (`ServiceAuthorization`) + `service_config.json` whitelisting on all CDAM calls; user JWT (`Authorization`) additionally required for download.
-- Callers must be listed in `CASE_DOCUMENT_S2S_AUTHORISED_SERVICES` (flux config) and ExUI must enable CDAM via LaunchDarkly per case type.
+- Callers must be listed in `CASE_DOCUMENT_S2S_AUTHORISED_SERVICES` (flux config). ExUI's LaunchDarkly flag is an *exclusion* list — secure mode is on for every case type unless the case type is named in `mc-cdam-exclusion-list`.
 - In local dev (cftlib), CDAM runs in-process on `http://localhost:4455`.
 
 ## CDAM REST endpoints
@@ -268,12 +278,12 @@ Auth headers are sourced from `SecurityUtils.authorizationHeaders()`. CDAM Feign
 
 To enable CDAM for a new service/case type:
 
-1. **S2S whitelist**: Add the service's S2S name to `CASE_DOCUMENT_S2S_AUTHORISED_SERVICES` in `cnp-flux-config/apps/ccd/ccd-case-document-am-api/<env>.yaml`.
-2. **service_config.json**: Configure permitted case types, jurisdiction, and permissions in `ccd-case-document-am-api`'s `service_config.json`.
-3. **LaunchDarkly**: ExUI must enable CDAM for the case type via LD flag — this ensures documents uploaded during manage-case event callbacks persist correct metadata.
-4. **Service code**: The calling service must use CDAM endpoints (not direct EM/doc-store calls), passing the correct case type that matches the `service_config.json` entry.
+1. **S2S whitelist**: add the service's S2S name to `CASE_DOCUMENT_S2S_AUTHORISED_SERVICES`, which backs `idam.s2s-authorised.services` (`application.yaml:72-73`). Production sets it in `cnp-flux-config:apps/ccd/ccd-case-document-am-api/prod.yaml:17`; the in-repo default list applies only where the variable is unset.
+2. **`service_config.json`**: add an entry giving the service's permitted `caseTypeId` list, `jurisdictionId` and `permissions`. This file is a **classpath** resource, bound through `@PropertySource(value = "classpath:service_config.json")` on `AuthorisedServices` (`AuthorisedServices.java:12-20`), so unlike step 1 it is not environment-overridable — onboarding a service needs a CDAM code change and release. Every document endpoint calls `checkServicePermission`, which resolves the caller's entry and rejects the call with `ForbiddenException` unless the case type, jurisdiction and requested permission all match (`DocumentManagementServiceImpl.java:350-370`, `:376-405`). `"*"` is accepted as a wildcard in either field (`:381`, `:392`).
+3. **LaunchDarkly**: check the case type is *not* in ExUI's `mc-cdam-exclusion-list` flag (`app.constants.ts:10`, registered at `ccd-case.config.ts:45-49`).
+4. **Service code**: the calling service must use CDAM endpoints rather than dm-store directly, and must send the case type its `service_config.json` entry names — `validateCaseTypeId` compares the submitted `caseTypeId` against that list (`DocumentManagementServiceImpl.java:376-386`).
 
-<!-- CONFLUENCE-ONLY: onboarding steps from pages 1915164271 and 1953044768 — not verified in source -->
+<!-- DIVERGENCE: Confluence 1915164271 and 1953044768 describe step 3 as enabling CDAM for a case type by LaunchDarkly flag. The flag is an exclusion list (mc-cdam-exclusion-list, seeded from documentSecureModeCaseTypeExclusions in rpx-xui-webapp:src/assets/config/config.json:18): secure mode is on by default and listing a case type opts it out. Source wins. -->
 
 ## Feature flags
 

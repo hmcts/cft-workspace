@@ -27,6 +27,11 @@ sources:
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_MultiplePages/CaseEvent.json
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/PublishedEvent.java
+  - ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventScheduler.java
+  - ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventPublisher.java
+  - ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdMessageQueueRepository.java
+  - ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdServiceBusProperties.java
+  - cnp-flux-config:apps/ccd/message-publisher/prod-00.yaml
 examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_MultiplePages/CaseEvent.json
   - libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/PublishedEvent.java
@@ -74,6 +79,11 @@ sources_sha:
   ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_MultiplePages/CaseEvent.json"
   : "01a70f64ffabade51fd2d3849223d55037c72252"
   "libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/PublishedEvent.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
+  "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventScheduler.java": "f6e8da81cdba5d42749e5419393a74a44a38fe7c"
+  "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventPublisher.java": "7d89554b6041589e987b918b9811a97d9e54524b"
+  "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdMessageQueueRepository.java": "c2823aeb77a6c8a7863c255953ab994b1d3e2a9d"
+  "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdServiceBusProperties.java": "f6e8da81cdba5d42749e5419393a74a44a38fe7c"
+  "cnp-flux-config:apps/ccd/message-publisher/prod-00.yaml": "9db152427f417c9fd7e1036966f6162b2198b3b0"
 ---
 
 # Asynchronous Case-Event Messaging
@@ -230,11 +240,11 @@ Key environment variables:
 
 ## Decentralised case types
 
-Under [decentralised data persistence](decentralisation.md), the source of truth for a case's data moves out of the data store and into the owning service. Message publishing moves with it, but the mechanism is deliberately unchanged:
+Under [decentralised data persistence](decentralisation.md), the source of truth for a case's data moves out of the data store and into the owning service. The outbox mechanism moves with it, keeping the same payload shape and the same per-event opt-in:
 
 - The decentralised service runs the **same Transactional Outbox Pattern**: when it persists a case event it inserts a row into **its own** `ccd.message_queue_candidates` table in the same atomic transaction. This is implemented in the SDK, not left to the service — `MessagePublisher.publishEvent()` does the insert (`MessagePublisher.java:84-95`) and is called from `AuditEventService.saveAuditRecord` (`AuditEventService.java:195-213`), inside the submission transaction. The message body is built with CCD's own `DataBlockGenerator` / `DefinitionBlockGenerator`, so the payload shape matches centralised publishing.
 - The publish decision uses the same per-event `publish` flag as centralised CCD (`MessagePublisher.java:64-68`).
-- **`ccd-message-publisher` is reused as-is** — a decentralised service deploys its own instance pointed at its own database. There is no code fork; the publisher is database-agnostic and only needs JDBC access plus the Service Bus connection string. <!-- CONFLUENCE-ONLY: the reuse/deployment model is from the "Decentralised data persistence" LLD (RCCD 1875854371); the SDK-side outbox write is confirmed in source but which process drains the table was not verified. -->
+- **The service drains its own outbox in-process**, using the SDK's `ccd-servicebus-support` module rather than a separate publisher deployment. A scheduled task polls on the same default 10-second cron, gated on both `spring.jms.servicebus.enabled` and `ccd.servicebus.scheduler-enabled` (`CcdCaseEventScheduler.java:11-24`). Candidate rows are claimed with `SELECT ... FOR UPDATE SKIP LOCKED` (`CcdMessageQueueRepository.java:22-30`), so multiple service instances can poll the same table without publishing a message twice — the standalone publisher relies on a single replica plus a plain JPA slice instead. The loop drains batch after batch until a short batch, then deletes published rows past the retention window (`CcdCaseEventPublisher.java:30-70`). Batch size defaults to 100 and published-row retention to 90 days (`CcdServiceBusProperties.java:9-26`), against 1000 and 7 days for the standalone publisher. The JMS property mapping is the same, `JMSXGroupID` included, taken from `CaseId` (`CcdCaseEventPublisher.java:128-133`), so a consumer cannot tell which process published a message. <!-- DIVERGENCE: the "Decentralised data persistence" LLD (RCCD 1875854371) asserts ccd-message-publisher is reused as-is, each decentralised service deploying its own instance against its own database. Source: the drain loop ships in the ccd-config-generator SDK module ccd-servicebus-support and runs inside the service process (CcdCaseEventScheduler.java:11-24, CcdCaseEventPublisher.java:30-70, CcdMessageQueueRepository.java:22-30); the only message-publisher HelmRelease in cnp-flux-config targets the ccd-data-store-api database (cnp-flux-config:apps/ccd/message-publisher/prod-00.yaml:4-9). Source wins. -->
 - For decentralised case types the data store **suppresses** the `AboutToSubmit` and `Submitted` callbacks and delegates persistence via a single `POST /ccd-persistence/cases` call to the owning service, so the outbox insert happens in the service's transaction rather than CCD's. The at-least-once guarantee to downstream consumers (work allocation et al.) is preserved end-to-end.
 
 ## Downstream consumers

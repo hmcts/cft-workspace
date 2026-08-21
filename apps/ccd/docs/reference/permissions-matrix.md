@@ -30,6 +30,15 @@ sources:
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/RoleToAccessProfilesParser.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/model/DefinitionDataItem.java
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20220209_13110__RDM-13110_CaseAccessCategories.sql
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AccessControlServiceImpl.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/CompoundAccessControlService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/AuthorisedCreateEventOperation.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseFieldDefinition.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcase/AuthorisedGetCaseOperation.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AuthorisedGetCaseViewOperation.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AuthorisedGetEventTriggerOperation.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getevents/AuthorisedGetEventsOperation.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/AuthorisedSearchOperation.java
 examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseField.json
 status: confluence-augmented
@@ -112,6 +121,15 @@ sources_sha:
   : "8afc4a0f8bb4856b4044542fcb140ed668c11990"
   ? "ccd-definition-store-api:repository/src/main/resources/db/migration/V20220209_13110__RDM-13110_CaseAccessCategories.sql"
   : "4258cd8b230205318b56fe8018880751d9c030c9"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AccessControlServiceImpl.java": "a66e2e926b41eaf32c730953a31f8d6f2e90919f"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/CompoundAccessControlService.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/AuthorisedCreateEventOperation.java": "20b95a21e98b143b1c833f84f28ee6ef8664ed66"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseFieldDefinition.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcase/AuthorisedGetCaseOperation.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AuthorisedGetCaseViewOperation.java": "5a3784952c770de7096124db8c1b4cd81f6aba78"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AuthorisedGetEventTriggerOperation.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getevents/AuthorisedGetEventsOperation.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/AuthorisedSearchOperation.java": "a15443393cabe95329a00e7ace1e4be18a555703"
 ---
 
 # Permissions Matrix
@@ -123,7 +141,7 @@ sources_sha:
 - When multiple access profiles match, the caller receives the **union** of all grants — `anyMatch` semantics (if any profile has the permission, it passes).
 - Enforcement is either **error** (reject the request with 403/404) or **filter** (silently omit the object from the response), depending on the API operation and CRUD scope.
 - A child complex-field ACL can never grant more access than its parent field's ACL for the same access profile.
-- The `D` permission is rarely appropriate; `U` on events is unused. Only assign `C` when a role genuinely needs to create/trigger.
+- `D` is only ever consulted on collection fields; `U` on an event is never consulted. Only assign `C` when a role genuinely needs to create/trigger.
 
 ---
 
@@ -135,8 +153,8 @@ Each Authorisation sheet row carries a `CRUD` column whose characters map direct
 |-----------|-----------|----------------------|--------------------|--------------------|-------------------|
 | `C`       | `create`  | Role can initiate a new case | Role can trigger this event | -- (unused) | Role can supply a value for this field during creation |
 | `R`       | `read`    | Role can retrieve the case | Role can see the event in history | Role can see cases in this state | Role can see this field's value |
-| `U`       | `update`  | Role can update case data | -- (unused) | -- (unused) | Role can change this field's value |
-| `D`       | `delete`  | Role can delete the case | -- (unused) | -- (unused) | Role can clear/remove this field's value |
+| `U`       | `update`  | Role can update case data | -- (not consulted) | Role can trigger events on cases in this state | Role can change this field's value |
+| `D`       | `delete`  | -- (not consulted) | -- (not consulted) | -- (not consulted) | Role can remove items from a collection field |
 
 > `create` is a reserved SQL keyword; the DDL quotes it as `"create"` (`V0001__Base_version.sql:122`, `Authorisation.java:31`).
 
@@ -144,11 +162,12 @@ Valid CRUD string examples: `"CRUD"`, `"CR"`, `"R"`, `"CRU"`. Characters are cas
 
 ### Practical guidelines
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+- **`D` reaches only collection items.** `CAN_DELETE` is consulted in exactly three places in data-store: the collection display-context parameter (`AccessControlService.java:255`) and the two collection-item checks in `CompoundAccessControlService.java:114-115` and `:188`. Nothing tests `delete` on a case type, event or state, and clearing a simple field's value is an update, so `D` outside a collection row changes no behaviour.
+- **Only assign `C` when you want a role to create something.** Without `C` on the case type a caller cannot open a case (`AuthorisedCreateCaseOperation.java:104-109`), and without `C` on the event it cannot trigger it (`:111-117`, `AuthorisedCreateEventOperation.java:224-229`). Both raise `ResourceNotFoundException`, so the caller sees a 404 rather than a 403 — a missing `C` is indistinguishable from a case type or event that does not exist.
+- **`U` and `D` on events have no effect.** The update leg of an event checks `U` on the *case type* and on the case's *current state* instead (`AuthorisedCreateEventOperation.java:246-252`), so a state with no `U` row for a profile silently blocks every event on cases sitting in it.
 
-- **`D` is rarely ever used** in practice. Most services never need to allow deletion of fields or cases.
-- **Only assign `C` when you want a role to create something**; omitting `C` prevents the role from initiating new cases or triggering events.
-- **`U` and `D` on events have no meaningful effect** -- events cannot be updated or deleted.
+<!-- CONFLUENCE-ONLY: the claim that most services never in practice need field or case deletion is a usage observation, not verifiable in source -->
+
 
 ---
 
@@ -177,22 +196,30 @@ At runtime, `ccd-data-store-api` checks CRUD grants in two ways depending on the
 
 ### API Enforcement Matrix
 
-The following table shows which CRUD checks apply to each Standard API operation, based on data-store source (`AuthorisedCreateCaseOperation`, `AuthorisedGetCaseViewOperation`, `AuthorisedSearchOperation`):
+The following table shows which CRUD checks apply to each Standard API operation, taken from the `Authorised*Operation` decorator for each:
 
-| API Operation | C (case type) | C (event) | C (fields) | R (case type) | R (event) | R (fields) | R (state) | U (event) | U (fields) | U (state) |
+| API Operation | C (case type) | C (event) | C (fields) | R (case type) | R (event) | R (state) | R (fields) | U (case type) | U (state) | U (fields) |
 |---------------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `createCase`      | E | E | E | F | - | F | - | - | - | - |
-| `createEvent`     | - | E | E | F | - | F | - | E | E | E |
-| `getCase`         | - | - | - | F | - | F | F | - | - | - |
-| `startEvent`      | - | - | - | F | - | F | - | - | - | - |
-| `getEvents`       | - | - | - | F | F | - | - | - | - | - |
-| `search`          | - | - | - | F | - | F | F | - | - | - |
+| `createCase`                    | E | E | E | F | - | - | F | - | - | - |
+| `createEvent`                   | - | E | E | F | - | - | F | E | E | E |
+| `getCase`                       | - | - | - | F | - | F | F | F | F | - |
+| `startEvent` (for a case type)  | E | E | F | E | - | - | - | - | - | - |
+| `startEvent` (for a case)       | - | E | - | E | - | - | - | E | E | F |
+| `getEvents`                     | - | - | - | F | F | - | - | - | - | - |
+| `search`                        | - | - | - | F | - | F | F | - | - | - |
 
-**Legend**: E = check, reject on failure; F = check, filter on failure; `-` = not checked.
+**Legend**: E = check, reject on failure; F = check, filter on failure; `-` = not checked. There is no `U (event)` or `D` column because no operation consults either.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Reading the rows:
 
-When an event creates a **new** field value, `C` on that field is checked (E). When it updates an **existing** field, `U` on that field is checked (E).
+- `createCase` — `verifyCreateAccess` rejects on `C` for case type, event and fields, then `verifyReadAccess` returns `null` without `R` on the case type and strips unreadable fields from the response (`AuthorisedCreateCaseOperation.java:73-126`).
+- `createEvent` — `C` on the event, `U` on the case type and on the case's current state, and a per-field upsert check (`AuthorisedCreateEventOperation.java:215-263`).
+- `getCase` — `R` on case type and state gate the whole case (`AuthorisedGetCaseOperation.java:71-75`); the case *view* additionally empties the actionable-events list when `U` on the case type or state is missing, which is why a case can be readable with no available events (`AuthorisedGetCaseViewOperation.java:113-131`).
+- `startEvent` — the case-type form (opening a new case) requires `R` and `C` on the case type plus `C` on the event, then filters fields by `C` (`AuthorisedGetEventTriggerOperation.java:81-90`, `:165-181`, `:210-218`). The per-case form requires `R` and `U` on the case type, `C` on the event and `U` on the state, then marks fields the profile cannot update as read-only rather than removing them (`:109-116`, `:183-207`, `:220-232`).
+- `getEvents` — `R` on the case type empties the list, then each audit event is filtered by `R` on its `event_acl` row (`AuthorisedGetEventsOperation.java:98-106`).
+- `search` — `R` on the case type empties the result set, then results are filtered by `R` on the case's state and by field-level `R` (`AuthorisedSearchOperation.java:70-98`).
+
+Within `createEvent`, the field check is per-field and direction-sensitive: a field name present in the new data but absent from the existing data needs `C`, a field whose value differs from the stored value needs `U`, and an unchanged field needs neither (`AccessControlServiceImpl.java:138-169`, `:407-430`). A profile with `U` but no `C` can therefore edit a field that already holds a value and fails the same event outright once that field is populated for the first time.
 
 ---
 
@@ -209,9 +236,9 @@ When CRUD is applied to a Collection field (via `AuthorisationCaseField`), the p
 
 **Important**: `R` must be explicitly granted for `U` or `D` to be meaningful -- a user cannot update or delete what they cannot see. `R` is not assumed.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Collections nested inside a complex type get the same treatment, not the top-level field's parameter: `updateCollectionDisplayContextParameterByAccess` walks the whole field tree and calls `generateDisplayContextParameter` against each collection's own ACL list (`AccessControlServiceImpl.java:261-274`, `AccessControlService.java:239-248`, `:250-264`). Those nested ACLs are copies of the top-level field's, cloned down the tree by `CaseFieldDefinition.propagateACLsToNestedFields` (`CaseFieldDefinition.java:230-239`), so a nested collection behaves like its ancestor until an `AuthorisationComplexType` row overrides its path.
 
-Collection-level CRUD only applies when the **top-level** case field is a Collection. If a Collection appears at a lower nesting level within a complex type, CRUD applies to the top-level field as normal.
+Enforcement of the write follows the same per-depth ACL. `CompoundAccessControlService` recurses through the submitted value: adding an item needs `C` (`CompoundAccessControlService.java:61-103`) and removing one needs `D` (`:105-144`) on the ACL of whichever collection the item belongs to, at whatever depth.
 
 ---
 
@@ -310,11 +337,13 @@ Rules enforced by `CaseFieldEntityComplexFieldACLValidatorImpl`:
 3. A child path cannot have **higher** access than its parent for the same profile -- checked via `Authorisation.hasLowerAccessThan()` (`Authorisation.java:154-172`, `CaseFieldEntityComplexFieldACLValidatorImpl.java:127-150`).
 4. Predefined complex types (e.g. `Address`, `OrderSummary`) cannot have `complex_field_acl` rows at all (`CaseFieldEntityComplexFieldACLValidatorImpl.java:38-49`).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+At runtime `CaseFieldDefinition.propagateACLsToNestedFields()` resolves these rows in three passes (`CaseFieldDefinition.java:223-228`):
 
-**Omission equals hidden**: If you omit any element of a ComplexType from `AuthorisationComplexType`, it has no effective permissions and will be hidden from the user.
+1. **Inheritance** — every nested field, at every depth, is given a copy of the top-level field's ACLs (`:230-239`).
+2. **Override** — each `complex_field_acl` row replaces the same profile's entry on its target path, and that path's resolved ACLs are re-propagated to everything below it (`:241-254`). A profile therefore inherits from the deepest ancestor that has an explicit row.
+3. **Omission equals hidden** — for each explicit row, the siblings sharing its parent path that have no row of their own lose that profile's ACL entirely, recursively (`:256-290`). With no `read` entry left, the sub-field is filtered out of the response.
 
-**Inheritance propagation**: Parent-level CRUD propagates to child fields. If you have multiple levels of children and stop defining ACL at a certain level, children below that level inherit from the last explicitly defined level.
+Pass 3 only fires for siblings of a path that *is* named. A complex field with no `AuthorisationComplexType` rows at all keeps the inherited top-level access on every sub-field — declaring one sibling is what starts excluding the others, so adding a single row to grant one sub-field silently revokes access to the rest of that level for that profile.
 
 ---
 

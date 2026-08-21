@@ -8,7 +8,12 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseTypeTabGenerator.java
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/NoFaultDivorce.java
   - ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/DefaultAccess.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/AuthorisationCaseFieldGenerator.java
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/model/CaseTypeTab.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AbstractDisplayGroupParser.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AbstractAuthorisedCaseViewOperation.java
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-viewer/case-full-access-view/case-full-access-view.component.ts
 status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
@@ -47,7 +52,14 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseTypeTabGenerator.java": "e7e93f75d554917dda9b750161232701c096f1b1"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/NoFaultDivorce.java": "a000eefc369f6bfa1b17291ea3c5aebbb3ebf4f7"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/DefaultAccess.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/AuthorisationCaseFieldGenerator.java": "0cb5b7fbcd3031dfa32ac45d7dd191db04eec059"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/model/CaseTypeTab.java": "29f31a3f90f265880dd22227caf98d7b928fe306"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AbstractDisplayGroupParser.java"
+  : "9bc6616b1c69561a49bf23a748745c2df60217bc"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AbstractAuthorisedCaseViewOperation.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-viewer/case-full-access-view/case-full-access-view.component.ts"
+  : "0e06e04fea8507450dc5345137d4340d0f460fa9"
 ---
 
 # Add a Tab
@@ -129,9 +141,11 @@ configBuilder
 
 If `.forRoles(...)` is not called, the SDK leaves `UserRole` blank, which the data store treats as "applies to all roles that pass field-level access checks" (per `CaseTypeTab.UserRole` column in the glossary: "Blank is the default if a Role doesn't have a mapping").
 
-When you specify multiple roles, the emitted JSON contains a separate tab record per role, each with its own `TabDisplayOrder` increment — services should be aware that the same `tabId` can appear multiple times in the JSON.
+When you specify multiple roles, each role gets its own record with its own `TabDisplayOrder` increment, and the role name is **appended to the tab ID**: `TabID` is written as `tabId + role`, so `internalReviewTab` under two roles emits `internalReviewTabcaseworker` and `internalReviewTabcaseworker-admin` in files named `<tabDisplayOrder>_<tabId><role>.json` (`CaseTypeTabGenerator.java:54,68`). The `TabLabel` is the same on every record, so the user still sees one tab.
 
-The runtime model exposes the role on each tab via `CaseTypeTab.getRole()` (`CaseTypeTab.java:69–75`).
+That suffixing is load-bearing rather than cosmetic. The definition store groups rows into one display group per `CaseEventID` + `TabID` (`AbstractDisplayGroupParser.java:93-97`) and rejects a group in which more than one row carries an access profile — "Please provide one access profile row per tab" (`AbstractDisplayGroupParser.java:163-192`). Distinct tab IDs are what keep the per-role rows in separate groups. The `UserRole` column the SDK writes is read as `AccessProfile`, for which it is a registered alias (`ColumnName.java:9`).
+
+The runtime model exposes the role on each tab via `CaseTypeTab.getRole()` (`CaseTypeTab.java:69–75`), and the data store discards any tab whose role is set and is not one of the caller's access profiles (`AbstractAuthorisedCaseViewOperation.java:79-82`).
 
 ### 4. Control field-level visibility via field access
 
@@ -151,19 +165,19 @@ A citizen visiting the case will see fields with `DefaultAccess` but not fields 
 
 ### 5. Hide a tab with a tab-level show condition (optional)
 
-To hide an entire tab unless a condition is met, attach a `showCondition` to the `TabBuilder` (the field is exposed via `Tab.showCondition`, `Tab.java:19`). The SDK writes it onto the **first** field row only (`CaseTypeTabGenerator.java:70–72`), which the data store treats as the tab's overall `TabShowCondition`:
+To hide an entire tab unless a condition is met, call `.showCondition(...)` on the `TabBuilder` — the setter is generated from the `Tab.showCondition` field (`Tab.java:19`):
 
 ```java
 configBuilder
     .tab("linkedCaseTab", "Linked cases")
+    .showCondition("previousCaseId!=\"\"")
     .field(CaseData::getPreviousCaseId)
     .field(CaseData::getAmendedCaseId);
-// (To set the tab show condition you need to use the underlying TabBuilder
-//  showCondition setter — most service teams set it via Tab.builder() directly
-//  or via a custom helper.)
 ```
 
-<!-- CONFLUENCE-ONLY: not verified in source — Confluence says "this would have an effect on all tabs with the same TabID value" (1440511391). Source confirms TabShowCondition is only written on the first field row of each role-record (CaseTypeTabGenerator.java:70-72), but the runtime aggregation behaviour ("applies to all rows with the same TabID") is enforced by the data store, not the SDK. -->
+The SDK writes `TabShowCondition` onto the **first** field row of each record only (`CaseTypeTabGenerator.java:70–72`), and that single value governs the whole tab: the definition store collapses every row sharing a `TabID` into one display group and takes the group's show condition from whichever row supplies one (`AbstractDisplayGroupParser.java:194-205`). Putting `TabShowCondition` on two rows of the same `TabID` is not a way to give a tab two conditions — the import fails with "Please provide single condition in TabShowCondition column".
+
+A tab show condition is a display rule, not an access control. The data store returns the condition alongside the tab's fields and the browser decides whether to render the tab (`case-full-access-view.component.ts:487-493`), so the field values of a hidden tab still travel to the client. Use `@CCD(access = ...)` when the data itself must not leave the data store.
 
 The expression syntax is the standard CCD show-condition language (`text="value"`, `text!="value"`, `text CONTAINS "value"`, with `*` and blank wildcards, AND/OR with parentheses, dotted paths into ComplexTypes, and `[STATE]` / `[INJECTED_DATA.x]` metadata references). See [Show Conditions](https://tools.hmcts.net/confluence/pages/viewpage.action?pageId=1056801404) on Confluence for the full grammar.
 
@@ -201,9 +215,17 @@ The generator increments `TabDisplayOrder` starting at `1` (or `2` if it auto-in
 
 ### 8. Be aware of the auto-injected CaseHistory tab
 
-If your `configure()` method does **not** define a tab with `tabId == "CaseHistory"`, the SDK automatically adds one as the first tab on the case view (`CaseTypeTabGenerator.java:30–32`). To suppress or relocate it, define your own `tab("CaseHistory", "...")` explicitly.
+If your `configure()` method does **not** define a tab with `tabId == "CaseHistory"`, the SDK automatically adds one as the first tab on the case view (`CaseTypeTabGenerator.java:30–32`). To relocate or relabel it, define your own `tab("CaseHistory", "...")` explicitly.
 
-<!-- CONFLUENCE-ONLY: not verified in source — UI behaviour for hiding the History tab on per-role basis is described elsewhere on Confluence; the SDK only auto-injects a single global one. -->
+The auto-injected tab is written once, with no role, so it is not hidden per role by tab configuration. Hide it for particular roles with `ConfigBuilder.omitHistoryForRoles(...)` (`ConfigBuilder.java:50`, `ConfigBuilderImpl.java:155-157`):
+
+```java
+configBuilder.omitHistoryForRoles(UserRole.SYSTEM_UPDATE);
+```
+
+That withholds the `caseHistory` field's `CRU` grant from those roles when `AuthorisationCaseField.json` is generated (`AuthorisationCaseFieldGenerator.java:92-95`). Because the data store drops any tab left with no readable fields (`AbstractAuthorisedCaseViewOperation.java:74-78`), the History tab disappears for those roles rather than rendering empty. Every other role still gets `CRU` on `caseHistory`, so this is opt-out, not opt-in.
+
+<!-- DIVERGENCE: Confluence asserts per-role hiding of the History tab is UI behaviour and that the SDK only auto-injects a single global tab. Source: ConfigBuilder.omitHistoryForRoles is a first-class SDK call (ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java:50) implemented by withholding the caseHistory grant per role (ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/AuthorisationCaseFieldGenerator.java:92-95), which the data store turns into a dropped tab (ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AbstractAuthorisedCaseViewOperation.java:74-78). Source wins. -->
 
 ### 9. Regenerate the JSON definition
 
@@ -213,7 +235,7 @@ Run the SDK generator to emit updated definition JSON:
 ./gradlew generateCCDConfig
 ```
 
-The SDK writes one file per tab into `<output>/CaseTypeTab/<tabDisplayOrder>_<tabId>.json` and also appends any `Label`-type fields it created into `CaseField.json` (`CaseTypeTabGenerator.java:51–60`). Exact output path is controlled by your project's `ccd { }` Gradle block. Import the updated definition into the definition store.
+The SDK writes one file per tab record into `<output>/CaseTypeTab/<tabDisplayOrder>_<tabId><role>.json` and also appends any `Label`-type fields it created into `CaseField.json` (`CaseTypeTabGenerator.java:51–60`). Exact output path is controlled by your project's `ccd { }` Gradle block. Import the updated definition into the definition store.
 
 ## Caseworker vs citizen visibility
 
@@ -223,10 +245,10 @@ Within the caseworker channel, what each role actually sees follows this hierarc
 
 | Layer                                             | If unmet, the role sees…                              |
 | ------------------------------------------------- | ----------------------------------------------------- |
-| Tab `forRoles` mapping (if specified)             | …no row of the tab at all                             |
-| Tab `TabShowCondition` evaluates true             | …no row of the tab                                    |
-| Field's `@CCD(access = ...)` grants `READ`        | …the tab without the field                            |
-| Field's `FieldShowCondition` evaluates true       | …the tab without the field                            |
+| Tab `forRoles` mapping (if specified)             | …no row of the tab at all (data store)                |
+| Field's `@CCD(access = ...)` grants `READ`        | …the tab without the field, and no tab at all once every field has been filtered out (data store) |
+| Tab `TabShowCondition` evaluates true             | …no tab, but the field values still reach the browser (browser) |
+| Field's `FieldShowCondition` evaluates true       | …the tab without the field, whose value still reaches the browser (browser) |
 
 `DefaultAccess` (`test-projects/.../DefaultAccess.java:22-30`) grants `READ` to all roles including `CITIZEN`. `CaseworkerAccess` typically restricts to caseworker roles only — fields annotated this way are invisible to citizens even if they ever reach a tab where the field is listed.
 
@@ -236,7 +258,7 @@ Within the caseworker channel, what each role actually sees follows this hierarc
 2. If `forRoles` was used, log in as a role both inside and outside the mapping and confirm visibility flips accordingly.
 3. Log in as a citizen and confirm that fields restricted to caseworker access classes are absent (they will not appear at all).
 4. Inspect the generated JSON under `<output>/CaseTypeTab/`. Confirm:
-   - One file per `(tabId, role)` combination, named `<tabDisplayOrder>_<tabId>.json`.
+   - One file per `(tabId, role)` combination, named `<tabDisplayOrder>_<tabId><role>.json`.
    - `TabFieldDisplayOrder` starts at 1 and increments per field.
    - `Channel` is `CaseWorker`.
    - `TabShowCondition` (if any) is set on the row where `TabFieldDisplayOrder == 1`.

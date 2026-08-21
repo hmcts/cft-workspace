@@ -18,6 +18,8 @@ sources:
   - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/dto/UploadResponse.java
   - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/Document.java
   - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/DmUploadResponse.java
+  - ccd-case-document-am-api:src/main/resources/service_config.json
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/endpoints/CaseDocumentAmController.java
 status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
@@ -67,6 +69,8 @@ sources_sha:
   "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/dto/UploadResponse.java": "a262b3b2ba9eca3e0a51d2f1381cc1f14010ccc4"
   "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/Document.java": "b4e4ec6110b8632d6923379968fb4446b3b50caa"
   "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/DmUploadResponse.java": "a262b3b2ba9eca3e0a51d2f1381cc1f14010ccc4"
+  "ccd-case-document-am-api:src/main/resources/service_config.json": "5e9a44cd94d3808723ba7080618af2d3348928d9"
+  "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/endpoints/CaseDocumentAmController.java": "cf06c5f0618c9dc1bcdc5c636d899ae2500ef2af"
 ---
 
 # Documents and CDAM
@@ -156,10 +160,13 @@ The service team then places those values (and the `document_hash`) into the cas
 before submitting the CCD event.
 
 > **Bulk-scan-only token endpoint:** CDAM also exposes `GET /cases/documents/{documentId}/token` to
-> regenerate a hash token for an already-uploaded document. Service segregation logic restricts it
-> to the bulk-scan orchestrator only (Confluence: *GET /cases/documents/{documentId}/token*).
-> Service teams cannot use this endpoint to "re-tag" a document outside an upload.
-> <!-- CONFLUENCE-ONLY: bulk-scan-only restriction; not verified in source. -->
+> regenerate a hash token for an already-uploaded document. It demands the `HASHTOKEN` permission,
+> resolved from the calling service's name in the S2S token (`CaseDocumentAmController.java:403-427`),
+> and `bulk_scan_orchestrator` is the only entry in the service-segregation config holding that
+> permission (`service_config.json:142-154`). That entry also carries
+> `caseTypeIdOptionalFor: ["HASHTOKEN"]` plus `BULKSCAN` / `BULKSCAN_Exception` token-generation
+> defaults, so it can mint a token before the exception record has a real case type. Every other
+> service is rejected, so a document cannot be "re-tagged" outside an upload.
 
 The legacy `EvidenceManagementUploadService` flow for FinRem (`secure_doc_enabled` toggle) was an
 intermediate stage during CDAM rollout — production services should use `CaseDocumentClient` directly.

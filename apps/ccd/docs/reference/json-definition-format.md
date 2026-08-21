@@ -18,6 +18,11 @@ sources:
   - ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/ShellMappingEntity.java
   - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/ShellMappingController.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/MoneyGBPValidator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/aggregated/CompoundFieldOrderService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/aggregated/CaseViewFieldBuilder.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/CategoryValidator.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/RoleToAccessProfilesValidator.java
+  - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/UserRoleController.java
 status: confluence-augmented
 confluence:
   - id: "207804327"
@@ -63,6 +68,12 @@ sources_sha:
   ? "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/ShellMappingController.java"
   : "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/types/MoneyGBPValidator.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/aggregated/CompoundFieldOrderService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/aggregated/CaseViewFieldBuilder.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/CategoryValidator.java": "e133f2d8f9c04adfe8f167dca0128fe9fe9da093"
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/RoleToAccessProfilesValidator.java"
+  : "4258cd8b230205318b56fe8018880751d9c030c9"
+  "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/UserRoleController.java": "bda0438d09f29d99f546185907272748a1224c49"
 ---
 
 # JSON Definition Format
@@ -195,8 +206,9 @@ Controls per-element display within complex-type fields when `DisplayContext=COM
 | `PublishAs` | No | Alias (max 70) |
 | `LiveFrom` / `LiveTo` | No | |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- The Confluence glossary states that if ListElement is not listed here, the element will not be displayed at all when COMPLEX context is used. This is business/UI logic not directly verifiable in definition-store source. -->
+Rows on this sheet override display metadata and ordering for elements that already belong to the complex type; they do not select which elements appear. Data store hands the rows to `CompoundFieldOrderService.sortNestedFieldsFromCaseEventComplexFields()`, which promotes the children that carry a `FieldDisplayOrder` and appends every remaining child in definition order (`CompoundFieldOrderService.java:32-48`, `:77-80`, `:100-105`), reached from `CaseViewFieldBuilder.java:74-80`. Leaving an element off the sheet leaves it on the form in its definition position; hiding it takes a `FieldShowCondition` or withholding read access on the sub-field via `AuthorisationComplexType`.
+
+<!-- DIVERGENCE: The Confluence glossary states that an element not listed on EventToComplexTypes is not displayed at all under a COMPLEX display context. Source: CompoundFieldOrderService appends unlisted children in encounter order rather than dropping them (ccd-data-store-api:CompoundFieldOrderService.java:20-25, :104). Source wins. -->
 
 Source: `SheetName.java:10 (CASE_EVENT_TO_COMPLEX_TYPES)`, `ColumnName.java`.
 
@@ -233,10 +245,11 @@ Defines a hierarchy of document categories for organising case documents.
 | `ParentCategoryID` | No | FK to another CategoryID for sub-categories |
 | `LiveFrom` / `LiveTo` | No | |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- The Categories sheet is documented in Confluence glossary but the SheetName enum (line 37) confirms it as CATEGORY("Categories"). -->
+`CategoryValidator` runs the sheet through five checks on import (`CategoryValidator.java:34-39`): the `(CaseTypeID, CategoryID)` pair must be unique (`:71-88`), `CategoryID`, `CategoryLabel` and a non-negative integer `DisplayOrder` are all mandatory (`:142-152`), the `CaseTypeID` must resolve to a case type defined in the same spreadsheet (`:154-163`), and a non-empty `ParentCategoryID` must name a `CategoryID` listed under that same case type (`:52-69`) — a cross-case-type parent fails the import with "ParentCategoryID: … belongs to a different case type."
 
-Source: `SheetName.java:37`, `ColumnName.java:113–115`.
+`DisplayOrder` uniqueness is enforced by grouping on `(CaseTypeID, CategoryID, DisplayOrder)` and on `(CaseTypeID, ParentCategoryID, DisplayOrder)` (`:102-130`). The first grouping already includes the unique `CategoryID`, so in practice only the second bites: two categories may share a `DisplayOrder` provided they sit under different parents, and top-level categories (empty `ParentCategoryID`) compete with each other for a distinct order.
+
+Source: `SheetName.java:37`, `ColumnName.java:113–115`, `CategoryValidator.java`.
 
 ## AuthorisationCaseField
 
@@ -480,18 +493,17 @@ Maps Role Assignment service roles to CCD AccessProfiles.
 | Column | Required | Notes |
 |---|---|---|
 | `CaseTypeID` | Yes | |
-| `RoleName` | No | Name of role from Role Assignment service |
+| `RoleName` | Yes | Name of role from Role Assignment service. Not in `ColumnName.isRequired`, so the blank check comes from `RoleToAccessProfilesValidator` instead |
 | `ReadOnly` | No | `True`/`Yes`/`T`/`Y` matches readonly roles; else `False`/`No`/`N`/`F`/`NULL` |
-| `AccessProfiles` | No | Comma-separated list of AccessProfiles to assign |
+| `AccessProfiles` | Yes | Comma-separated list of AccessProfiles to assign. Blank check as for `RoleName` |
 | `Authorisation` | No | Comma-separated authorisation identifiers required |
 | `CaseAccessCategories` | No | Comma-separated category patterns (max 1000) |
 | `Disabled` | No | `True`/`Yes`/`T`/`Y` disables the mapping |
 | `LiveFrom` / `LiveTo` | No | |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence states that each AccessProfile must be pre-registered as a user-role via Admin Web or the userRoleCreateUsingPOST API before the mapping will take effect. -->
+Every value in `AccessProfiles` must already exist as a registered access profile, or the whole import is rejected with `Access Profile '<name>' not found in column 'AccessProfiles' in the sheet 'RoleToAccessProfiles'` (`RoleToAccessProfilesValidator.java:53-64`). The candidate set is loaded once from the `role` table at the start of the import (`ImportServiceImpl.java:183`), so a profile created mid-import is not visible; register it beforehand through `POST /api/user-role` (`UserRoleController.java:35,:39,:64-78`), which Admin Web calls on the operator's behalf. `RoleName` and `AccessProfiles` are both rejected when blank, and `(RoleName, CaseTypeID, CaseAccessCategories)` must be unique across the sheet (`:26-43`, `:67-80`).
 
-Source: `SheetName.java:32`, `ColumnName.java:99–103`.
+Source: `SheetName.java:32`, `ColumnName.java:99–103`, `RoleToAccessProfilesValidator.java`, `UserRoleController.java`.
 
 ## Validation behaviour
 

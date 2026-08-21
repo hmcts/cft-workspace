@@ -19,6 +19,11 @@ sources:
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/gatewayfilters/AllowedRoutesFilter.java
   - aac-manage-case-assignment:src/main/resources/application.yaml
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/DelegatingSupplementaryDataUpdateOperation.java
+  - ccd-data-store-api:src/main/resources/db/migration/V0001__Base_version.sql
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/ApplicationParams.java
+  - ccd-user-profile-api:src/main/resources/db/migration/V0001__Base_version.sql
 status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
@@ -69,6 +74,12 @@ sources_sha:
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/ras/RoleAssignmentService.java": "b6a8f0db1eec277476c44fffbb3b35f0622f5443"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/gatewayfilters/AllowedRoutesFilter.java": "a326a5ea1efbfaf5f71b6537c7dacc3837530672"
   "aac-manage-case-assignment:src/main/resources/application.yaml": "9910b14cfb1fcad7a811420150a69864df3bf528"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/DelegatingSupplementaryDataUpdateOperation.java"
+  : "e492e2aceaf88592e102b0363fddaa50ca4fc278"
+  "ccd-data-store-api:src/main/resources/db/migration/V0001__Base_version.sql": "2dc4bd32091d4f764d6ac7150265d04ed016bd1b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/user/DefaultUserRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/ApplicationParams.java": "6bd724e7501334211b25c150e57a1180f2df758d"
+  "ccd-user-profile-api:src/main/resources/db/migration/V0001__Base_version.sql": "b21fe52547d17cdc8b37f06fba81bb40c9ec7621"
 ---
 
 # CCD Architecture
@@ -194,7 +205,7 @@ Browser-based admin UI. Uploads definition Excel files to `ccd-definition-store-
 
 Two services appear in older deployment diagrams and Confluence references but are not authoritative for new development; they are listed in the HLD CCD 5.0 roadmap as planned for decommissioning:
 
-- **`ccd-user-profile-api`** — predates IDAM. Stored users, roles, and jurisdictions; this information is now derived from IdAM roles. Still deployed alongside data-store but expected to be removed.
+- **`ccd-user-profile-api`** — holds a user's work-basket defaults (jurisdiction, case type, state) plus the jurisdictions they have been granted, and audits changes to them; it stores no roles or user identities beyond the email-shaped id (`ccd-user-profile-api:src/main/resources/db/migration/V0001__Base_version.sql:26-57`). Roles come from IDAM and role assignment instead. Data-store still calls `GET /user-profile/users` on it to resolve those defaults when rendering a user's landing work basket (`ApplicationParams.java:397-398`, `DefaultUserRepository.java:127-137`), so it cannot be removed until that call has a replacement.
 - **`ccd-api-gateway-web`** — historic Reform API gateway sitting in front of CCD. XUI talks directly to data-store / AAC for new work.
 
 The HLD also flags `ccd-admin-web` for eventual decommissioning once the definition-import workflow moves into a more modern surface.
@@ -292,9 +303,11 @@ Pointer rows differ from full case rows:
 | `last_state_modified_date` | Last state change | `NULL` | `CasePointerRepository.java:45` |
 | `version` | Optimistic-lock counter | Tracks last-processed remote `revision` for derived data (Case Links, resolvedTTL) | |
 | `resolved_ttl` | TTL for retain & dispose | Service-configured value, OR a 1-year default to clean up dangling pointers | `CasePointerRepository.java:48-51` |
-| `supplementary_data` | JSONB | `NULL` (managed by service) | <!-- CONFLUENCE-ONLY: not verified in source --> |
+| `supplementary_data` | JSONB | `NULL` — the column is nullable with no default and the pointer write never populates it | `CasePointerRepository.java:39-53`, data-store `V0001__Base_version.sql:73` |
 
 The 1-year default `resolvedTTL` exists so that if CCD crashes between pointer creation and the subsequent service call, the dangling pointer is eventually swept up by retain & dispose.
+
+Supplementary data for a decentralised case lives with the owning service, not on the pointer: `DelegatingSupplementaryDataUpdateOperation` tests `persistenceResolver.isDecentralised(caseReference)` and forwards the update through `ServicePersistenceClient.updateSupplementaryData()`, returning the service's response (`DelegatingSupplementaryDataUpdateOperation.java:20-32`). Anything reading `case_data.supplementary_data` directly — a report, a query against the data-store database — therefore sees nothing for decentralised cases.
 
 ### Concurrency: revision and the SynchronisedCaseProcessor
 

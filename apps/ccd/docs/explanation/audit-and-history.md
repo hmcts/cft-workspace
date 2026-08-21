@@ -21,6 +21,9 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/service/DecentralisedAuditEventLoader.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseAuditEventRepository.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AbstractAuthorisedCaseViewOperation.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/FieldTypeParser.java
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql
 status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
@@ -63,6 +66,9 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/service/DecentralisedAuditEventLoader.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseAuditEventRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2c5e11485c5e17da845232984205437ee223296a"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AbstractAuthorisedCaseViewOperation.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/FieldTypeParser.java": "8b9a6ba16a83f14c7d6f4b8bfe335e448fc2935a"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
 ---
 
 # Audit and History
@@ -141,12 +147,12 @@ if (caseFieldDefinition.getFieldTypeDefinition().getType().equals(CASE_HISTORY_V
 }
 ```
 
-Service teams configure the History tab by adding a top-level field of type `CaseHistoryViewer` to their case type, then placing that field on a tab labelled "History". This is the mechanism documented in Confluence "Make your own 'History' Tab" (id 980418584). Notable constraints from that page (not enforced in source, so verify before relying on them):
+Service teams configure the History tab by adding a top-level field of type `CaseHistoryViewer` to their case type, then placing that field on a tab labelled "History". This is the mechanism documented in Confluence "Make your own 'History' Tab" (id 980418584). Configuration constraints:
 
 - The CaseTab cannot have ID `History` or `data` — these conflict with internal structures. <!-- CONFLUENCE-ONLY: not verified in source -->
 - The field's `Label` and `HintText` are required by the schema but never displayed (the viewer renders its own labels).
-- `FieldTypeParameter` and `RegularExpression` are not applicable to `CaseHistoryViewer` fields. <!-- CONFLUENCE-ONLY: not verified in source -->
-- Only the **R** of CRUD is functional. Read access controls visibility; create/update/delete are no-ops. <!-- CONFLUENCE-ONLY: not verified in source -->
+- `FieldTypeParameter` and `RegularExpression` have no effect. The importer reads `FieldTypeParameter` only for list and collection base types (`FieldTypeParser.java:31-32,53-57`), and `CaseHistoryViewer` is seeded as a bare type with no base type (definition store `V0001__Base_version.sql:2694-2695`). A `RegularExpression` does get registered as a derived type (`FieldTypeParser.java:39-51`), but it can never match: the data store overwrites the field's value with the audit-event list every time the case view is built.
+- Only the **R** of CRUD is functional. The case-view path filters tabs and their fields against `CAN_READ` and nothing else (`AbstractAuthorisedCaseViewOperation.java:73-94`); create, update and delete grants have nothing to act on because the data store injects the field's value and XUI never submits it back.
 - Show/hide conditions can be applied to dynamically toggle the History view per role or state.
 
 The `ccd-config-generator` SDK (`CaseFieldGenerator.java:46`) generates a `CaseHistoryViewer` field automatically when service teams use the standard `History` tab pattern.

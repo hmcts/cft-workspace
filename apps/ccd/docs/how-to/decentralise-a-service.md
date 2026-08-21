@@ -17,6 +17,9 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPI.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPIInterceptor.java
   - ccd-data-store-api:src/main/resources/application.properties
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/DelegatingSupplementaryDataUpdateOperation.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java
   - rpx-xui-webapp:src/cases/utils/decentralised-redirect.util.ts
@@ -71,6 +74,10 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPI.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPIInterceptor.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java": "e3fca30b92506584a590ae203811d60202129d2d"
+  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/DelegatingSupplementaryDataUpdateOperation.java"
+  : "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "a2e5c9892a3a612b44af41cd14091271de38b1c4"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "e00246fd7f6870e3e737d286b5a5725dab466681"
   "rpx-xui-webapp:src/cases/utils/decentralised-redirect.util.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
@@ -249,18 +256,27 @@ environments set `CASE_TYPE_SUFFIX=pr-123` to namespace the case type ID
 
 #### What CCD writes for a decentralised case pointer
 
-CCD persists an **immutable pointer** (`reference`, `jurisdiction`, `case_type_id`,
-`created_date`) in its `case_data` table. All mutable columns are zeroed: `state=''`,
-`security_classification=RESTRICTED`, `data={}`, `supplementary_data=NULL`. The `resolved_ttl`
-column remains CCD-authoritative. See [decentralisation explanation](../explanation/decentralisation.md)
+CCD persists an **immutable pointer** in its `case_data` table, keeping only what it needs to
+route a request: `reference`, `jurisdiction`, `case_type_id` and `created_date`. The zeroing is
+applied in code as the pointer is built, not by a schema migration — `CasePointerRepository`
+clones the incoming case details and then blanks every mutable field: `data` and
+`data_classification` to `{}`, `security_classification` to `RESTRICTED`, `state` to the empty
+string, and `last_modified`, `last_state_modified_date` and `version` to `NULL`
+(`CasePointerRepository.java:39-54`). Supplementary data is never written to the pointer;
+reads and updates route to the service instead
+(`DelegatingSupplementaryDataUpdateOperation.java:23-28`). The `resolved_ttl` column remains
+CCD-authoritative. See [decentralisation explanation](../explanation/decentralisation.md)
 for the full column mapping.
 
-<!-- CONFLUENCE-ONLY: column-by-column zeroing rules described in the LLD; not verified by direct grep of CCD repo Flyway migrations in this pass -->
-
 The pointer is written in a **new, independent transaction** (`REQUIRES_NEW`) so it commits
-even if `submitEvent` subsequently fails. On failure (4xx, or 2xx with non-empty `errors`)
-CCD cleans up the pointer. Orphans left by CCD crashes are invisible to API consumers and
-reaped via a 1-year default `resolvedTTL`.
+even if `submitEvent` subsequently fails (`CasePointerRepository.java:38`). On failure (4xx, or
+2xx with non-empty `errors`) CCD cleans up the pointer in its own `REQUIRES_NEW` transaction
+(`SubmitCaseTransaction.java:326`). That delete is guarded by `data = '{}'::jsonb`
+(`CasePointerRepository.java:79-88`), so it can only ever remove an empty pointer — a
+centralised case, or a pointer that somehow acquired data, is left alone and the failure is
+logged instead. Orphans left by CCD crashes are invisible to API consumers and reaped via the
+1-year default `resolvedTTL` applied when the pointer carries none
+(`CasePointerRepository.java:28,48-51`).
 
 ---
 

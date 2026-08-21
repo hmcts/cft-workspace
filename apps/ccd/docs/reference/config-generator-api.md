@@ -18,6 +18,12 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Submit.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Start.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java
+  - ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java
+  - ccd-config-generator:README.md
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventCaseFieldParser.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java
 status: confluence-augmented
 confluence:
   - id: "1518683566"
@@ -58,6 +64,12 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Submit.java": "d975f9829c1df4a0856e56c222d5137638d92f82"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Start.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java": "5aac4f32ba9d903d5fde3474938c9afaaee510b8"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
+  "ccd-config-generator:README.md": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventCaseFieldParser.java": "843130d6c79bef2ad7718def447cf88bedfef23d"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
 ---
 
 # Config Generator API reference
@@ -194,12 +206,13 @@ All field methods accept a typed property getter (`TypedPropertyGetter<T, ?>` i.
 | `list(getter)` | - | Yes | Begin collection (`ListValue<U>`) builder. |
 | `done()` | - | - | Return to parent builder (exits complex/list context). |
 
-Labels support markdown-style headings (`"## Section Title"`) and appear both in the event form and optionally on the CYA page when `showSummary = true`.
-<!-- CONFLUENCE-ONLY: label fourth-param showSummary for CYA visibility not verified in source beyond FieldCollection.java:484 -->
+Labels support markdown-style headings (`"## Section Title"`). The two- and three-argument overloads hard-code `showSummary(false)` (`FieldCollection.java:469-482`); only the four-argument form lets a label reach the CYA page, by passing the flag straight through (`:484-493`).
 
 ### Check Your Answers (CYA) page behaviour
 
-When `.showSummary()` is called on an event, each field's `showSummary` flag determines whether it appears on the generated CYA page with a "Change" link. The `ShowSummaryChangeOption` column in the generated definition is set to `"Y"` for fields with `showSummary = true`. Fields added via `*NoSummary` methods are excluded from CYA.
+A field's `showSummary` flag is the sole input to `ShowSummaryChangeOption`: the generator writes `"Y"` when the flag is set and omits the column otherwise (`CaseEventToFieldsGenerator.java:156-160`), and the definition store reads that column into `EventCaseFieldEntity.showSummaryChangeOption` (`EventCaseFieldParser.java:45-46`, `ColumnName.java:70`). Fields added via `*NoSummary` methods therefore carry no `ShowSummaryChangeOption` at all.
+
+`ShowSummaryContentOption` is a separate column driven by `@CCD(showSummaryContent = true)` (`JsonUtils.java:119-121`) — the builder's `showSummary` never sets it.
 
 ---
 
@@ -499,8 +512,9 @@ public class MyCaseConfig implements CCDConfig<MyCaseData, State, UserRole> {
 
 ## Ejecting from the SDK
 
-The ccd-config-generator library generates standard CCD JSON output compatible with the `ccd-definition-processor` tooling. If limitations are encountered, teams can "eject" by running `generateCCDConfig` once, then maintaining the JSON directly. The generated JSON is a valid input for the XLS-to-import pipeline.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+`generateCCDConfig` is a plain `JavaExec` task running `uk.gov.hmcts.ccd.sdk.Main`, whose only output is the directory named by the `ccd.configDir` extension property, registered as a Gradle task output (`CcdSdkPlugin.java:29-48`). That directory holds the same per-sheet JSON the definition store expects, so `ccd-definition-processor`'s `json2xlsx` turns it into an importable spreadsheet with no SDK involvement (`README.md:99-126`). Running the task once and then maintaining the JSON by hand is a supported exit path.
+
+Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:603-617`).
 
 ---
 

@@ -17,6 +17,9 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Search.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SearchField.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SortOrder.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/SearchFieldAndResultGenerator.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/WorkBasketGenerator.java
 status: confluence-augmented
 last_reviewed: "2026-08-20T00:00:00Z"
 confluence_checked_at: "2026-08-20T00:00:00Z"
@@ -58,6 +61,9 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Search.java": "13b5729ed4cda7019a9487095888171eb91ccf6a"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SearchField.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SortOrder.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/SearchFieldAndResultGenerator.java": "8a5ceec6799e93975a91e430eb586a3c5160a88e"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/WorkBasketGenerator.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
 ---
 
 # Enable Work Basket
@@ -167,9 +173,30 @@ sources_sha:
 
    `workBasketResultFields()` and `workBasketInputFields()` both return a `Search.SearchBuilder` — the same builder type used for `searchResultFields()` and `searchInputFields()` (`ConfigBuilder.java:43-49`).
 
-2. Run the definition generator (`./gradlew generateCCDConfig` / `gCC`) to produce the updated JSON files, then import as normal.
+2. For anything the `.field()` overloads do not take — default ordering, a per-role override, a show condition or a display-context parameter — build `SearchField` objects and pass them in one call to `.fields(...)`. `SearchField` carries `order`, `userRole`, `showCondition`, `listElementCode` and `displayContextParameter` alongside `id` and `label` (`SearchField.java:9-15`):
 
-   <!-- CONFLUENCE-ONLY: The SDK currently does not expose fluent builders for ResultsOrdering, AccessProfile-keyed per-role overrides, FieldShowCondition, or DisplayContextParameter on workbasket fields. Services that need those features today either post-process the generated JSON or fall back to editing the spreadsheet directly. Not verified as a permanent gap — this may close in a future SDK release. -->
+   ```java
+   builder.workBasketResultFields().fields(List.of(
+       SearchField.<UserRole>builder()
+           .id("dateAndTimeSubmitted")
+           .label("Date submitted")
+           .displayContextParameter("#DATETIMEDISPLAY(d MMMM yyyy)")
+           .order(SortOrder.FIRST.DESCENDING)
+           .build(),
+       SearchField.<UserRole>builder()
+           .id("hearingDetails")
+           .label("Hearing details")
+           .userRole(UserRole.LOCAL_AUTHORITY)
+           .build()));
+   ```
+
+   `WorkBasketGenerator` writes each property onto the emitted row: `order` becomes `ResultsOrdering`, `userRole` becomes `UserRole` (which the importer reads as `AccessProfile`, `ColumnName.java:9`), `showCondition` becomes `FieldShowCondition`, and `listElementCode` and `displayContextParameter` pass through under their own names (`SearchFieldAndResultGenerator.java:50-75`, `WorkBasketGenerator.java:11-14`). Rows are merged on `CaseFieldID` + `UserRole` (`SearchFieldAndResultGenerator.java:47`), so repeating a field ID under different roles yields one row per role rather than overwriting.
+
+   `SortOrder` offers priorities `FIRST` through `FIFTH` (`SortOrder.java:7-11`), but the definition store only accepts `1` or `2`. Using `THIRD`, `FOURTH` or `FIFTH` generates rows that fail import against `^(1|2):(ASC|DESC)$`.
+
+   <!-- DIVERGENCE: Confluence asserts the SDK exposes no way to set ResultsOrdering, per-role AccessProfile overrides, FieldShowCondition or DisplayContextParameter on workbasket fields, leaving services to post-process the generated JSON or edit the spreadsheet by hand. Source: all four are properties of SearchField (ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SearchField.java:9-15) and WorkBasketGenerator emits every one of them (ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/SearchFieldAndResultGenerator.java:50-75). Source wins. -->
+
+3. Run the definition generator (`./gradlew generateCCDConfig` / `gCC`) to produce the updated JSON files, then import as normal.
 
 ### Per-role configuration
 

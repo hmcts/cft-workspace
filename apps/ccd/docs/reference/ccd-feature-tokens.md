@@ -26,6 +26,8 @@ confluence_checked_at: "2026-04-29T00:00:00Z"
 title: CCD Feature Tokens
 diataxis: reference
 product: ccd
+sources_sha:
+  "docs/reference/taxonomy.md": "c7cf3f5ea4fc4034acb23667a638ec03fbaefaa3"
 ---
 
 # CCD Feature Tokens
@@ -73,8 +75,9 @@ List only tokens the product has actively configured. Omit universal features. S
 
 CCD provides over 40 out-of-the-box platform capabilities that any service can use. The taxonomy tokens above are a deliberately small subset — only features that **differentiate** products and represent an explicit opt-in configuration step.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-The following capabilities are considered **universal** (available to all CCD-based services without explicit opt-in) and are therefore excluded from the token vocabulary:
+The exclusion is a rule of the taxonomy itself: "Universal features (event history, supplementary data) are excluded — they apply to every CCD-based service and don't disambiguate" (`docs/reference/taxonomy.md:61`). None of the capabilities below appears in the controlled vocabulary (`docs/reference/taxonomy.md:65-82`), so a product enabling one of them records nothing in `ccd_features` and stays invisible to `/cft-ccd-find-feature` for that capability.
+
+The following capabilities are treated as **universal** (available to all CCD-based services without explicit opt-in):
 
 | Universal capability | Notes |
 |---|---|

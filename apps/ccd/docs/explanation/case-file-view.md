@@ -19,6 +19,7 @@ sources:
   - libs/ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/case-file-view-field.component.ts
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/case-file-view-field.component.html
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/components/case-file-view-folder/case-file-view-folder.component.ts
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/documentdata/DocumentDataRequest.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/AuthorisedCreateEventOperation.java
@@ -76,6 +77,8 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/case-file-view-field.component.ts"
   : "335a72b64bdac28348840ca53fb03c38e4834825"
+  ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/case-file-view-field.component.html"
+  : "5f996827b783988a4425cb39a3257d49e9f5ac99"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/components/case-file-view-folder/case-file-view-folder.component.ts"
   : "a805d467a9ac1ffd57c709719912ff707854b7ca"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/documentdata/DocumentDataRequest.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
@@ -293,7 +296,7 @@ CFV lives in `ccd-case-ui-toolkit` under the `palette` component family. It acti
 
 <!-- DIVERGENCE: the EUI "Low Level Design - Case File View" (id 1329660520) describes adding a dedicated `CaseFileView` *base field type* to the palette switch. The shipped toolkit instead activates CFV via a generic `ComponentLauncher` field keyed on the `#ARGUMENT(CaseFileView)` display-context parameter (palette.service.ts). The dedicated-field-type design was superseded by the ComponentLauncher mechanism. Source wins. -->
 
-The early EUI LLD also envisaged a tabbed **mode selector** offering Index and Bookmark views alongside the Case File view; only the Case File view shipped. <!-- CONFLUENCE-ONLY: Index/Bookmark modes are aspirational in the EUI LLD and not present in source. -->
+The EUI LLD's tabbed **mode selector**, offering Index and Bookmark views alongside the Case File view, is not part of the shipped component: the template renders one `Case file` heading over a folder tree and media viewer with no mode switch (`case-file-view-field.component.html:27-60`), and the toolkit's `projects/` tree contains no occurrence of "bookmark" at all. Anything a service team wants to expose as a document index has to be built as a separate field.
 
 On init the host component calls `CaseFileViewService.getCategoriesAndDocuments(caseId)` and renders a split pane — the folder tree on the left, the Media Viewer on the right. The tree (`CaseFileViewFolderComponent`) uses the Angular CDK nested tree and supports:
 
