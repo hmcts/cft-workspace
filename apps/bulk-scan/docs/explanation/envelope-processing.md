@@ -29,6 +29,14 @@ sources:
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/common/Event.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorCode.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/ActionController.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/EnvelopeHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/ExceptionClassificationHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CaseFinder.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/casecreation/AutoCaseCreator.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -86,6 +94,19 @@ sources_sha:
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/common/Event.java": "77a26ce3d10483278a94f3148a618b69f1e66cbe"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorCode.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/ActionController.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/EnvelopeHandler.java"
+  : "62fe0c75a70105fec15bc965e9ce8bf39eac4b05"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/ExceptionClassificationHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CaseFinder.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/casecreation/AutoCaseCreator.java": "2b0ff9656c512532859844cfa7c588a9e45769db"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java": "191d098f8515659ce5fe6dfc59a5f553efa019ca"
 ---
 
 ## TL;DR
@@ -400,15 +421,34 @@ The notification is sent to the supplier's HTTPS endpoint with Basic Auth. The r
 
 ## Exception Record creation rules
 
-When the orchestrator cannot process an envelope on the happy path, it creates a CCD Exception Record. Per the Technical Specification and business rules:
+When the orchestrator cannot process an envelope on the happy path, it creates a CCD Exception Record.
+`EnvelopeHandler` switches on the envelope's classification and delegates to one handler per case
+(`EnvelopeHandler.java:28-43`); each handler decides between the automatic outcome and an exception record.
 
-1. **Supplementary evidence with no case number** -- envelope classified as `supplementary_evidence` but `case_number` is null or empty.
-2. **Case not found** -- envelope has `supplementary_evidence` classification with a `case_number` that does not exist in CCD.
-3. **OCR validation warnings on new application** -- `new_application` classification with OCR forms where validation returned warnings (not errors).
-4. **Supplier-classified exception** -- `envelope_classification` set to `exception` by the scanning supplier per SIP business rules.
-5. **Any other failure** -- anything outside the happy path results in an exception record.
+| Classification | Exception record created when |
+|---|---|
+| `supplementary_evidence` | No matching case is found, **or** a case is found but attaching the documents to it fails (`SupplementaryEvidenceHandler.java:42-79`) |
+| `supplementary_evidence_with_ocr` | The container has `autoCaseUpdateEnabled` off (unconditional), or the auto-update returns `ABANDONED`, or it returns `ERROR` and the message has already been redelivered `MAX_RETRIES` (2) times (`SupplementaryEvidenceWithOcrHandler.java:37-64`) |
+| `new_application` | Auto case creation returns `ABORTED_WITHOUT_FAILURE` or `UNRECOVERABLE_FAILURE`, or returns `POTENTIALLY_RECOVERABLE_FAILURE` after `deliveryCount` reaches 2 (`NewApplicationHandler.java:38-71`) |
+| `exception` | Always — the supplier classified it as an exception, so there is no automatic path to try (`ExceptionClassificationHandler.java:26-36`) |
+| anything else | Never. `UnknownClassificationException` is thrown instead (`EnvelopeHandler.java:38-41`) |
 
-<!-- CONFLUENCE-ONLY: Exception record creation rules from "Bulk Scan, Bulk print & FaCT Useful Links" page (1638182762). Rules align with orchestrator behaviour but exact implementation is in bulk-scan-orchestrator (not cloned). -->
+Three details are easy to get wrong:
+
+- **A missing case number is not a separate rule.** `CaseFinder.findCase` only searches when `caseRef` is
+  non-empty and numeric (`CaseFinder.java:84-86`), and falls back to `legacyCaseRef` when the primary
+  lookup finds nothing (`:66-79`). An absent, malformed, or unmatched reference all collapse into the same
+  "no case found" branch, and a case may still be found by its legacy reference.
+- **Recoverable failures are retried before an exception record is created.** On both the
+  `new_application` and `supplementary_evidence_with_ocr` paths, a potentially-recoverable failure
+  re-throws so Azure Service Bus redelivers the message; only once `deliveryCount` reaches 2 does the
+  handler fall back to an exception record.
+- **`ABORTED_WITHOUT_FAILURE` means the service opted out**, not that something broke — it is returned
+  when `autoCaseCreationEnabled` is false for the container (`AutoCaseCreator.java:54-58`).
+  `UNRECOVERABLE_FAILURE` covers multiple existing cases matched (`:78`), an unrecoverable transformation
+  failure (`:83-89`), and a 4xx from CCD (`:137`).
+
+<!-- DIVERGENCE: page 1638182762 lists "OCR validation warnings on new application" as an exception-record rule. The orchestrator's automatic new-application path does not branch on transformation warnings — EnvelopeTransformer only distinguishes UNRECOVERABLE from POTENTIALLY_RECOVERABLE (EnvelopeTransformer.java:118-120). `warnings` and `ignore_warnings` appear only on the transformation used by the CCD callbacks against an existing exception record. Source wins. -->
 
 ## Orchestrator retry behaviour
 
