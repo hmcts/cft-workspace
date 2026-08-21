@@ -68,7 +68,7 @@ sources_sha:
 | `em-stitching-api` | `0.19.2133` | `emstitch,evidence` | Yes (DM Store + Azurite) | `em-stitching-aat` |
 | `em-native-pdf-annotator-app` | `0.19.2134` | `emnpa,evidence` | Yes (DM Store + Azurite) | `em-npa-aat` |
 | `em-hrs-api` | `0.19.2133` | `emhrs` | Yes (Azurite only) | `em-hrs-api-aat` |
-<!-- DIVERGENCE: Confluence "Developer Environments" page and earlier draft stated HRS uses DM Store + Azurite, but em-hrs-api:src/cftlib/resources/docker-compose-local.yml shows only Azurite (no DM Store container). Source wins. -->
+<!-- DIVERGENCE: Confluence "Developer Environments" states HRS uses DM Store + Azurite, but em-hrs-api:src/cftlib/resources/docker-compose-local.yml shows only Azurite (no DM Store container). Source wins. -->
 
 ## Run em-annotation-api locally
 

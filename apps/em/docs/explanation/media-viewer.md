@@ -25,6 +25,10 @@ sources:
   - em-media-viewer:README.md
   - em-icp-api:api/routes/sessions.ts
   - em-icp-api:api/model/interfaces.ts
+  - em-media-viewer:package.json
+  - em-media-viewer:projects/media-viewer/src/lib/viewers/grab-n-drag.directive.ts
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationServiceImpl.java
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/repository/AnnotationRepository.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -76,6 +80,13 @@ sources_sha:
   "em-media-viewer:README.md": "cb1055c515b2ef4270bce54cdbe991247f3583d6"
   "em-icp-api:api/routes/sessions.ts": "738fef6ffb0390b60945df12a14f17bfd28ffdea"
   "em-icp-api:api/model/interfaces.ts": "0f1f0e91169d8c69a356c250ba05ff2ac13c185d"
+  "em-media-viewer:package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
+  ? "em-media-viewer:projects/media-viewer/src/lib/viewers/grab-n-drag.directive.ts"
+  : "353aadba4f2c7f0d85b9815b931a82d0de8662c0"
+  ? "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationServiceImpl.java"
+  : "cb1b245382e54dbfed78167e1aaf5e237f3d9a32"
+  ? "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/repository/AnnotationRepository.java"
+  : "cb1b245382e54dbfed78167e1aaf5e237f3d9a32"
 ---
 
 ## TL;DR
@@ -115,11 +126,13 @@ The annotation system supports:
 - **Box-draw annotations** (PDF and image) — enabled via `showDrawButton` toolbar option. Boxes can be resized after creation by dragging corners.
 - **Comments** — attached to highlight/box regions; the `unsavedChanges` output emits `true` when edits are pending. Comments include user name, text, and timestamp (displayed in local timezone). Removing a highlight also removes its associated comment.
 
-<!-- CONFLUENCE-ONLY: Annotations are private to the creating user only (no sharing). This is stated in the User Guide but the visibility rule is enforced server-side by em-annotation-api, not verified in em-media-viewer source. -->
+Annotations are private to whoever created them — there is no sharing. The rule is not a viewer concern at all: `em-annotation-api` scopes every read to the calling user, querying `findByCreatedBy(getCurrentUser(), …)` for lists and `findByIdAndCreatedBy` for single fetches (`AnnotationServiceImpl.java:132-135`, `AnnotationRepository.java:23-25`). The same `createdBy` scoping is applied to annotation sets, rectangles, tags and bookmarks.
 
 The annotation overlay layer uses absolutely positioned `<div>` elements (not HTML5 Canvas), chosen because Canvas complicates bubbling HTML events. Two modes are available: **text mode** (intercepts text-selection events from the PDF.js text layer) and **draw mode** (listens for click-and-drag events to create a selection rectangle).
 
-<!-- CONFLUENCE-ONLY: Touch support in draw mode (for creating annotations via touch gestures) was originally implemented using Hammer.js according to the LLD, but the current source does not import Hammer.js — this may have been replaced by native pointer events. -->
+Touch input uses native pointer events, not a gesture library. `hammerjs` is still declared as a dependency (`package.json:78`) but nothing under `projects/media-viewer/src` imports it. Pan/drag is handled by `grab-n-drag.directive.ts` via `pointerdown` / `window:pointermove` / `window:pointerup` (`:19`, `:31`, `:46`); the annotation components listen on `mousedown` / `mouseup`.
+
+<!-- DIVERGENCE: the LLD describes draw-mode touch support as implemented with Hammer.js. Source imports it nowhere; the dependency is a leftover in package.json. Source wins. -->
 
 ### Redactions
 
