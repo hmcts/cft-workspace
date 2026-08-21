@@ -164,7 +164,7 @@ Bulk refresh endpoint returning full profiles with nested appointments, authoris
 }
 ```
 
-<!-- DIVERGENCE: Confluence and the draft previously used snake_case "ccd_service_name" for the JSON key, but source (RefreshRoleRequest.java:18) shows @JsonProperty("ccdServiceName") — camelCase. Source wins. -->
+<!-- DIVERGENCE: Confluence uses snake_case "ccd_service_name" for the JSON key, but source (RefreshRoleRequest.java:18) shows @JsonProperty("ccdServiceName") — camelCase. Source wins. -->
 
 Exactly one of the four parameters must be populated (`ElinksRefreshUserValidator`):
 

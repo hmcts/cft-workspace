@@ -244,7 +244,7 @@ Add your service to the access list in `wa-shared-infrastructure/aat.tfvars`:
 additional_managed_identities_access = ["et", "sptribs", "civil", "ia", "sscs", "fpl", "pcs"]
 ```
 
-(`pcs` is the entry we added.) This is consumed by `cnp-module-key-vault` to add a `secrets get`
+(`pcs` is the entry being added here — use your own service's name.) This is consumed by `cnp-module-key-vault` to add a `secrets get`
 access policy for your identity. Once the WA team merges and applies it, the CSI mount succeeds and
 pods leave `Init:0/1`.
 

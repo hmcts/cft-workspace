@@ -171,7 +171,7 @@ The `termination_process` column distinguishes how a task reached a terminal sta
 | `EXUI_USER_CANCELLATION` | `EXUI_USER_CANCELLATION` | User explicitly cancelled the task via ExUI |
 | `EXUI_CASE_EVENT_CANCELLATION` | `CASE_EVENT_CANCELLATION` | Case event triggered automatic cancellation |
 
-<!-- DIVERGENCE: Confluence (HLD Task Repository v1.2) and the draft previously listed these as uniform EXUI_* patterns, but source (TerminationProcess.java) shows the serialised JSON values use a hyphen in CASE-EVENT and omit the EXUI_ prefix for cancellation. Source wins. -->
+<!-- DIVERGENCE: Confluence (HLD Task Repository v1.2) lists these as uniform EXUI_* patterns, but source (TerminationProcess.java) shows the serialised JSON values use a hyphen in CASE-EVENT and omit the EXUI_ prefix for cancellation. Source wins. -->
 
 Source: `TerminationProcess.java`; values added in migrations `V1.0.35`/`V1.0.36`/`V1.0.38`.
 

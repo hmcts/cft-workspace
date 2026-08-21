@@ -408,7 +408,7 @@ The payment service publishes status updates to the Azure Service Bus topic `ccp
    - A card payment status changes (triggered by `GET /card-payments/{internal-reference}/status` or the scheduled status-update job)
    - The `payment-callback-service` FF4j feature flag is enabled (`CallbackService.FEATURE`)
 
-<!-- DIVERGENCE: Confluence/draft previously referenced the feature flag name as "service-callback", but source (CallbackService.java:8) shows the actual feature flag name is "payment-callback-service". Source wins. -->
+<!-- DIVERGENCE: Confluence references the feature flag name as "service-callback", but source (CallbackService.java:8) shows the actual feature flag name is "payment-callback-service". Source wins. -->
 
 ### Callback payload (Service Request flow)
 

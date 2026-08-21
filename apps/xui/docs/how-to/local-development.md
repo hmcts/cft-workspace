@@ -144,9 +144,8 @@ Before starting, ensure you have:
    export FEATURE_SECURE_COOKIE_ENABLED=false
    export FEATURE_APP_INSIGHTS_ENABLED=false
    ```
-   <!-- DIVERGENCE: Confluence says NODE_CONFIG_ENV in .env.defaults controls environment (development/demo), not NODE_ENV. Source (api/.env.defaults) confirms NODE_CONFIG_ENV=development. The draft previously used "export NODE_ENV=development" and "export PORT=3001" which are not needed — local.ts hardcodes port 3001 and .env.defaults sets NODE_CONFIG_DIR and NODE_CONFIG_ENV. Source wins. -->
-
    Key points:
+   - You do not need `NODE_ENV` or `PORT`. Environment selection is `NODE_CONFIG_ENV`, set in `api/.env.defaults` (along with `NODE_CONFIG_DIR`), and the port is hard-coded to 3001 in `local.ts`.
    - `FEATURE_SECURE_COOKIE_ENABLED=false` is needed when running over plain HTTP locally.
    - All feature-flag env vars require JSON-string format (`"true"` / `"false"`) because `custom-environment-variables.json` declares `__format: "json"` for them.
    - The dev entry point (`api/local.ts`) hardcodes port 3001 — there is no need to set `PORT`.

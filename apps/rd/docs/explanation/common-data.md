@@ -214,9 +214,7 @@ Query parameters (all optional):
 | `externalReferenceType` | Filter by external system reference type |
 | `externalReference` | Filter by external system reference |
 
-All list-of-values records share a uniform 13-column structure (the `ListOfValues.csv` and `OtherCategories.csv` files include all 13; `CaseLinkingReasons.csv` uses only the first 11):
-
-<!-- DIVERGENCE: Draft originally said "11-column structure" but source (application-crd-list-of-values-router.yaml, application-crd-other-categories-router.yaml) shows 13 columns. The extra two (external_reference, external_reference_type) were added in V1_14__Alter_List_Of_Values.sql. Source wins. -->
+All list-of-values records share a uniform 13-column structure (the `ListOfValues.csv` and `OtherCategories.csv` files include all 13; `CaseLinkingReasons.csv` uses only the first 11). The last two — `external_reference` and `external_reference_type` — were added later, by `V1_14__Alter_List_Of_Values.sql`:
 
 | # | Column | Type | Length | Notes |
 |---|--------|------|--------|-------|

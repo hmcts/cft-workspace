@@ -221,7 +221,7 @@ Configured in `RetryConfig` (`RetryConfig.java:22-31`). Applied to FTP upload op
 | `file-upoad.retries` / `DEFAULT_RETRIES` | int | `5` | Maximum retry attempts on `FtpException` |
 | `file-upoad.wait-time-in-ms` / `DEFAULT_WAIT_TIME_IN_MS` | long | `2000` | Initial backoff delay (ms); exponential multiplier applied thereafter |
 
-<!-- DIVERGENCE: Draft originally listed these as ftp.retry.max-attempts / ftp.retry.backoff-delay-ms, but RetryConfig.java:23-24 and application.yaml:206 show the actual keys are file-upoad.retries / file-upoad.wait-time-in-ms (note the typo "upoad" is real in source). Source wins. -->
+The `upoad` misspelling is real in source (`RetryConfig.java:23-24`, `application.yaml:206`) — the property keys will not bind if you correct it.
 
 ## Stale letters
 

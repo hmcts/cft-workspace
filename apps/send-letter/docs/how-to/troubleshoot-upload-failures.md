@@ -164,9 +164,7 @@ The upload loop processes a maximum of `BATCH_SIZE = 10` letters per scheduler c
 
 ## Step 6: Check the db-poll-delay
 
-<!-- DIVERGENCE: Draft previously stated db-poll-delay was 120000 milliseconds. Source application.yaml:177 shows DB_POLL_DELAY:2 and UploadLettersTask.java:103 uses minusMinutes(dbPollDelay). The delay is 2 minutes (integer), not 120000ms. Source wins. -->
-
-The scheduler only picks up letters created more than 2 minutes ago (`application.yaml:177`). The value is in **minutes**, not milliseconds. If you are testing and expecting immediate upload, wait at least 2 minutes after submission.
+The scheduler only picks up letters created more than 2 minutes ago — `DB_POLL_DELAY:2` (`application.yaml:177`), consumed as `minusMinutes(dbPollDelay)` (`UploadLettersTask.java:103`). The value is in **minutes**, not milliseconds. If you are testing and expecting immediate upload, wait at least 2 minutes after submission.
 
 ```yaml
 tasks:
