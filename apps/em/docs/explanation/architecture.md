@@ -20,6 +20,16 @@ sources:
   - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/MetaDataResource.java
   - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/controller/HearingRecordingController.java
   - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/storage/HearingRecordingStorageImpl.java
+  - em-hrs-api:src/main/resources/application.yaml
+  - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/dto/CcdBundleDTO.java
+  - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/AutomatedStitchingExecutor.java
+  - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/orchestratorcallbackhandler/CcdCallbackBundleUpdater.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java
+  - cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml
+  - cnp-flux-config:apps/em/em-hrs-api/em-hrs-api.yaml
+  - ccd-case-document-am-api:src/main/resources/application.yaml
+  - document-management-store-app:src/main/resources/application.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -64,6 +74,17 @@ sources_sha:
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/MetaDataResource.java": "b84e15b87ad87e891117a17c4da4085249314af5"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/controller/HearingRecordingController.java": "d9c7ef9373e8c43c3e74ab89520efb383ee52c2b"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/storage/HearingRecordingStorageImpl.java": "edbea18aa61de15d32c1ec7c7e866f53ed209fb9"
+  "em-hrs-api:src/main/resources/application.yaml": "060237e2439c825ca8e9ac5463b95004c812d1f8"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/dto/CcdBundleDTO.java": "ef1f0dadf296361643cc5f8744528fbaaf7300d6"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/AutomatedStitchingExecutor.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  ? "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/orchestratorcallbackhandler/CcdCallbackBundleUpdater.java"
+  : "6c1a512c71e548439d96afbe0645b3521685081a"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
+  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "e2f115cfbdce6268b717d319e1c22ea4d8d9d1b2"
+  "cnp-flux-config:apps/em/em-hrs-api/em-hrs-api.yaml": "93f8e05ae8e157f3be88666251c85144a0e46b5e"
+  "ccd-case-document-am-api:src/main/resources/application.yaml": "116d99f942a127dd17a3f08d8f3622e7006dc5cc"
+  "document-management-store-app:src/main/resources/application.yaml": "e37f459dc0a2bbda59e687d605b89084e1733c82"
 ---
 
 ## TL;DR
@@ -139,10 +160,11 @@ sequenceDiagram
 - On failure, a GOV.UK Notify email is sent to the user (if `enableEmailNotification: true` in the bundle config).
 
 **CCD callback timeout constraint**:
-- CCD imposes a 10-second timeout on all callbacks, with up to 3 retries (each also subject to 10 seconds). The only configuration option is to disable retries, leaving a single 10-second window.
+- The per-attempt budget is the `restTemplate` read timeout in `ccd-data-store-api`, set to 29s in every deployed environment (`cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml:40`, applied via `RestTemplateConfiguration.java:72-80`).
+- `CallbackService.send` is `@Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 3))` (`ccd-data-store-api:CallbackService.java:75`), giving three attempts in total — the initial call plus retries at T+1s and T+3s. A read timeout is itself the retry trigger, so an overrunning sync stitch is re-invoked while the first task may still be running.
 - Synchronous stitching of a single small bundle typically completes in 5-11 seconds (first task may hit a ~6-second batch poll delay; subsequent tasks benefit from a warm executor).
 - For multi-bundle scenarios, consumer services are advised to call the orchestrator concurrently or use the async path to avoid exceeding the timeout.
-<!-- CONFLUENCE-ONLY: CCD 10-second callback timeout and retry behaviour from "Addressing CCD timeouts when stitching multiple documents" - not verified in source -->
+<!-- DIVERGENCE: Confluence page 1945632872 states a 10-second callback timeout with up to 3 retries on top of the initial call, configurable only by disabling retries. Source has a 29s read timeout in every deployed environment, 3 attempts in total, and no configurable retry count. Source wins. -->
 
 **Stitching engine** (`em-stitching-api`):
 - Tasks are persisted to `versioned_document_task` in PostgreSQL. A Spring Batch job polls every 6 seconds (`spring.batch.document-task-milliseconds: 6000`) with chunk size 5 and pessimistic write locking.
@@ -215,7 +237,7 @@ sequenceDiagram
 - Blob copy uses Azure `BlockBlobClient.beginCopy` with SAS tokens (5-minute or 95-minute expiry depending on AD auth mode). Existing non-zero-byte blobs are skipped (`HearingRecordingStorageImpl.java:147-149`).
 - Download access is controlled by a custom `PermissionEvaluator`: users with `caseworker-hrs-searcher` or `caseworker-hrs` IDAM roles get unconditional access; others can access via sharee email grants (valid for 72 hours).
 - Operational reports (monthly hearing, weekly, audit) are sent via SMTP, while sharee notification emails use GOV.UK Notify.
-- The service runs with 4 replicas; throughput is approximately 4 recordings/second (1-second Quartz interval per pod).
+- The service runs 2 replicas per cluster and autoscales to 4 (`cnp-flux-config:apps/em/em-hrs-api/em-hrs-api.yaml:10,13-14`). Each pod's Quartz ingestion job fires every second (`hrs.ingestion-interval-in-seconds`, `em-hrs-api:application.yaml:146`), so ingest throughput scales with the replica count rather than being fixed.
 - A `DELETE /delete` endpoint supports Retain and Dispose compliance for hearing recording disposal.
 
 ### Recording sources and business context
@@ -234,14 +256,14 @@ sequenceDiagram
 | Authentication | IDAM OAuth2 JWT (resource server) on all Java services |
 | Service-to-service | `service-auth-provider-java-client` S2S tokens; each service has its own S2S name and whitelist |
 | Document storage | CDAM (`ccd-case-document-am-api`) for new documents; legacy DM Store path remains for tasks without `caseTypeId`/`jurisdictionId` |
-| Document size limits | Video (.MP4): 500MB max; Audio (.MP3): 500MB max; all other files: 300MB max; bundle output: ~1GB practical max before timeouts |
+| Document size limits | One ceiling for every content type: CDAM caps a single file and a whole request at 1024MB (`ccd-case-document-am-api:src/main/resources/application.yaml:39-41`); the legacy DM Store path allows 4000MB (`document-management-store-app:src/main/resources/application.yaml:23-24`) |
 | Database | PostgreSQL with Flyway migrations on all stateful services |
 | Distributed locking | ShedLock (JDBC-backed) on `em-stitching-api` and `em-hrs-api` scheduled jobs |
 | Local development | `rse-cft-lib` (`bootWithCCD` Gradle task) for annotation, stitching, NPA, and HRS services |
 | Contract testing | Pact (consumer + provider) published to Pact Broker |
 | Retain and Dispose | `em-annotation-api` and `em-native-pdf-annotator-app` have deletion endpoints for R&D compliance; `em-hrs-api` has `DELETE /delete` for recording disposal |
 
-<!-- CONFLUENCE-ONLY: Document size limits (500MB video/audio, 300MB other, 1GB bundle) from "DTS - Evidence Management" - not verified in source -->
+<!-- DIVERGENCE: Confluence "DTS - Evidence Management" gives per-type limits of 500MB for video and audio, 300MB for everything else and about 1GB for bundle output. No service enforces a per-type limit: CDAM applies a single 1024MB multipart ceiling and DM Store a single 4000MB one, neither of which inspects content type. The per-type figures are policy, not enforcement. Source wins. -->
 
 ## Non-functional requirements
 
@@ -268,14 +290,11 @@ Bundles are stored as CCD Complex Types within case data — CCD holds only docu
 | `Folder` | Logical grouping within a bundle; contains N `BundleDocument` entries |
 | `BundleDocument` | Reference to a single source document (URI, name, sort index) |
 
-Bundle states (tracked in `stitchStatus` on the Bundle complex type):
-- **open** — bundle is being edited, documents can be added/removed
-- **in-progress** — stitching is actively running
-- **locked** — stitching complete, bundle is immutable
+`stitchStatus` on the `Bundle` complex type is a free-text field (`em-ccd-orchestrator:CcdBundleDTO.java:43`) with exactly two writers, both of which pass `getTaskState().toString()` (`AutomatedStitchingExecutor.java:61`, `CcdCallbackBundleUpdater.java:62`). The values a consumer will see are therefore the stitching-api `TaskState` names — `NEW`, `IN_PROGRESS`, `DONE`, `FAILED` (`em-stitching-api:TaskState.java:7`). CCD itself applies no bundle-level locking; a bundle remains editable through normal case events whatever `stitchStatus` says, so services that need to prevent edits mid-stitch must gate their own event show-conditions on the field.
 
 Services define these complex types in their CCD configuration spreadsheet and trigger bundling via CCD events configured as `aboutToSubmit` callbacks to the orchestrator.
 
-<!-- CONFLUENCE-ONLY: Bundle states (open, in-progress, locked) from "Document Bundling & Stitching HLD Release v1.1" - not verified in source -->
+<!-- DIVERGENCE: Confluence page 1011351714 documents bundle states "open", "in-progress" and "locked". Source writes stitchStatus only from em-stitching-api's TaskState enum (NEW, IN_PROGRESS, DONE, FAILED) and implements no locking. Source wins. -->
 
 ## See also
 

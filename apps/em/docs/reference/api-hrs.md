@@ -19,7 +19,17 @@ sources:
   - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/HearingRecordingSegment.java
   - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/AuditActions.java
   - em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/parse/FilenameParser.java
-status: needs-fix
+  - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/ccd/CcdDataStoreApiClient.java
+  - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/ccd/CaseDataContentCreator.java
+  - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/HearingRecordingServiceImpl.java
+  - em-hrs-ingestor:charts/em-hrs-ingestor/values.yaml
+  - cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml
+  - cnp-flux-config:apps/em/em-hrs-ingestor/prod.yaml
+  - cnp-flux-config:apps/em/em-hrs-ingestor/demo.yaml
+  - cnp-flux-config:apps/em/em-hrs-ingestor/schedule-off.yaml
+  - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/TtlServiceImpl.java
+  - em-hrs-api:src/main/resources/ttl_jurisdiction_map.json
+status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
   - apps/em/em-hrs-ingestor/src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/parse/FilenameParser.java
@@ -64,6 +74,16 @@ sources_sha:
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/HearingRecordingSegment.java": "d630cce32118cdb8542105f873badc789f893246"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/AuditActions.java": "2b6f84a016f3ec51c5b39effae8a88bcfa77725e"
   "em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/parse/FilenameParser.java": "6d60056cc3b7383e3c68c6cc2ae8d896c1af9f78"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/ccd/CcdDataStoreApiClient.java": "fe363f04c8f00149a7ef413db5de4819d13438a0"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/ccd/CaseDataContentCreator.java": "1195877a87ffdc97426c40cfe5555a9e48a1628d"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/HearingRecordingServiceImpl.java": "fe363f04c8f00149a7ef413db5de4819d13438a0"
+  "em-hrs-ingestor:charts/em-hrs-ingestor/values.yaml": "36ae29fef9a7b3cb16585c2d0a66d8f7015ff342"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml": "bfb56a4e4b01264c2db7eec7d682392d6491e172"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/prod.yaml": "6b3ddae167745d42b28307678f3716427e7a2a21"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/demo.yaml": "bfb56a4e4b01264c2db7eec7d682392d6491e172"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/schedule-off.yaml": "efd8da51ac2efac7c99921ecd07c2be314bf91a6"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/TtlServiceImpl.java": "1195877a87ffdc97426c40cfe5555a9e48a1628d"
+  "em-hrs-api:src/main/resources/ttl_jurisdiction_map.json": "d01e774a5454063d4159b4bdc62caa9b41aa4381"
 ---
 
 ## TL;DR
@@ -73,7 +93,7 @@ sources_sha:
 - Download is gated by IDAM role (`caseworker-hrs-searcher`, `caseworker-hrs`) or sharee email grant with 72-hour expiry.
 - All endpoints require both S2S token (from whitelist) and IDAM JWT.
 - Hearing sources supported: `CVP` (Cloud Video Platform) and `VH` (Video Hearings).
-- TTL is per-service-code (from `ttl_service_map.json`), defaulting to `P20Y` when no mapping exists.
+- TTL is resolved from the service-code map, then the jurisdiction-code map, then a `P20Y` default; civil and family retain for 6 years, everything else 20.
 
 ## Endpoints
 
@@ -156,10 +176,12 @@ Valid `hearingSource` values: `CVP`, `VH` (`HearingSource.java`).
 ### CCD case creation
 
 On successful blob copy, HRS creates or updates a CCD case:
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- If no existing CCD case matches the recording reference + datetime, a new case is created under case type `HearingRecordings`.
-- If a case already exists, additional segments are attached as CCD documents.
-- The CCD case stores metadata: filename, cloudroom name, jurisdiction, court/location code, case reference, hearing date/time, service code, and file size.
+
+- Existing recordings are looked up with `findByRecordingRefAndFolderName(recordingRef, folder)` (`em-hrs-api:HearingRecordingServiceImpl.java:107-112`) — the recording reference plus the folder name, with no datetime component. If nothing matches, a new case is created under jurisdiction `HRS`, case type `HearingRecordings`, event `createCase` (`em-hrs-api:CcdDataStoreApiClient.java:29,33-34,61,70`).
+- If a case already exists, the segment is appended via the `manageFiles` event (`em-hrs-api:CcdDataStoreApiClient.java:35,103,116`). `createCaseUpdateData` skips the append when a document with the same filename is already on the case (`em-hrs-api:CaseDataContentCreator.java:70-74`), so re-ingesting a known segment is a no-op.
+- The case stores `recordingFiles` (filename, document URL, segment number, and file size converted to MB), `recordingDate`, `recordingTimeOfDay`, `hearingSource`, `hearingRoomRef`, `serviceCode`, `jurisdictionCode`, `courtLocationCode`, `recordingReference` and the TTL object (`em-hrs-api:CaseDataContentCreator.java:44-60,103-113`). Two details cut against the obvious reading: `recordingReference` is populated from the DTO's `caseRef`, not its `recordingRef`; and `recordingTimeOfDay` is only `"AM"` or `"PM"`, derived from whether the recording hour is before noon (`em-hrs-api:CaseDataContentCreator.java:119-122`) — the full hearing timestamp is not stored on the case.
+
+<!-- DIVERGENCE: Confluence describes the CCD lookup as matching on recording reference plus datetime, and lists the stored metadata as including the hearing date/time. Source matches on recording reference plus folder name, and stores only a date plus an AM/PM marker. Source wins. -->
 
 ## GET /folders/{name}
 
@@ -247,6 +269,8 @@ The end-to-end solution uses these authorisation mechanisms:
 | `em-hrs-api` | GOV.UK Notify | REST (send email) | Private API key |
 | XUI / ExUI proxy | `em-hrs-api` | REST (download, share) | S2S (`xui_webapp`) + user IDAM |
 <!-- CONFLUENCE-ONLY: not verified in source -->
+
+The Azure IAM role assignments above live in the service's infrastructure repo. The S2S half is in-repo and unqualified by environment: `em-hrs-api` accepts `ccd_gw`, `em_gw`, `em_hrs_ingestor`, `xui_webapp`, `ccd`, `ccd_data` and `ccd_case_disposer` (`em-hrs-api:application.yaml:103`), and no flux file overrides `S2S_NAMES_WHITELIST`, so that list is what runs everywhere. Case deletion is gated by a second, narrower list of `ccd_case_disposer` and `em_gw` (`em-hrs-api:application.yaml:220`).
 
 ## Domain model
 
@@ -359,16 +383,18 @@ The original CVP naming used 2-letter jurisdiction codes. These are now supersed
 
 ## TTL (time-to-live) and retention
 
-Recording TTL is determined per-service-code via a static lookup (`ttl_service_map.json`):
+TTL resolution has three steps, in order: the service-code map, then the jurisdiction-code map, then the default (`em-hrs-api:TtlServiceImpl.java:25-35`). A recording whose filename failed to yield a service code therefore falls through to its jurisdiction code, and one with neither gets the 20-year default — so a parse gap lengthens retention rather than shortening it. The service-code map (`em-hrs-api:ttl_service_map.json`) holds:
 
 | Service code pattern | TTL | Approximate jurisdiction |
 |---------------------|-----|------------------------|
 | `AAA*`, `ABA*` | `P6Y` (6 years) | Civil |
 | `BBA*`, `BCA*`, `BDA*`, `BGA*`, `BHA*`, `BAA*`, `BAB*`, `BAC*`, `BEA*`, `BFA*`, `BTA*`, `BLA*`, `BIA*`, `BKA*`-`BKC*`, `BMA*` | `P20Y` (20 years) | Family, Tribunals |
 | `ZZZ0`, `ZZY1` | `P20Y` (20 years) | Test/unknown |
-| Unmapped codes | `P20Y` (default) | Fallback |
+| Unmapped codes | falls through to the jurisdiction map, then `P20Y` | Fallback |
 
-<!-- DIVERGENCE: Confluence "HRS - Retain & Dispose" page (1824136756) states default TTL for unknown service/jurisdiction is "7 years". But em-hrs-api:src/main/resources/application.yaml:209 shows `default-ttl: ${DEFAULT_TTL:P20Y}` (20 years). Source wins. -->
+The jurisdiction-code map (`em-hrs-api:ttl_jurisdiction_map.json`) covers 25 codes. Every entry is `P20Y0M0D` except civil (`CV`) and family (`FM`), which are `P6Y0M0D` — matching the `AAA*`/`ABA*` service codes above.
+
+<!-- DIVERGENCE: Confluence "HRS - Retain & Dispose" page (1824136756) states default TTL for unknown service/jurisdiction is "7 years". But em-hrs-api:src/main/resources/application.yaml:211-212 shows `default-ttl: ${DEFAULT_TTL:P20Y}` (20 years). Source wins. -->
 
 The Retain & Dispose integration uses `ccd_case_disposer` to call the `DELETE /delete` endpoint when a case's TTL has expired. The feature flag `DELETE_CASE_ENDPOINT_ENABLED` (default `true`) controls whether the endpoint is active.
 
@@ -389,24 +415,26 @@ Skill codes follow the pattern `SKILL:HRS:<key>` where `<key>` maps to a case ac
 
 | Property | Env var | Default | Description |
 |----------|---------|---------|-------------|
-| `hrs.ingestion-interval-in-seconds` | — | `1` | Quartz poll interval per pod |
+| `hrs.ingestion-interval-in-seconds` | `INGESTION_INTERVAL_IN_SECONDS` | `1` | Quartz poll interval per pod (`em-hrs-api:application.yaml:146`) |
 | `hrs.allowed-roles` | `ALLOWED_ROLES` | `caseworker-hrs-searcher,caseworker-hrs` | IDAM roles with unconditional download access |
 | `idam.s2s-authorised.services` | `S2S_NAMES_WHITELIST` | See whitelist table above | S2S service name whitelist |
 | `endpoint.deleteCase.enabled` | `DELETE_CASE_ENDPOINT_ENABLED` | `true` | Feature flag for DELETE endpoint |
 | `authorisation.deleteCase.s2s-names-whitelist` | `DELETE_CASE_S2S_WHITELIST` | `ccd_case_disposer,em_gw` | S2S whitelist for DELETE |
-<!-- REVIEW: Property name is 'shareelink.ttl' in application.yaml:155, not 'sharee.validity-in-hours'. The Java field injected via @Value("${shareelink.ttl}") is named validityInHours. Value 72 is correct. -->
-| `sharee.validity-in-hours` | — | `72` | Sharee link expiry (hours) |
-| `ttl.default-ttl` | `DEFAULT_TTL` | `P20Y` | Default recording retention |
+| `shareelink.ttl` | `SHAREE_LINK_TTL` | `72` | Sharee link expiry in hours (`em-hrs-api:application.yaml:157-158`); injected as the field `validityInHours` |
+| `ttl.default-ttl` | `DEFAULT_TTL` | `P20Y` | Default recording retention (`em-hrs-api:application.yaml:211-212`) |
 | `hrs.use-ad-auth` | `USE_AD_AUTH_FOR_SOURCE_BLOB_CONNECTION` | — | Switch to user-delegation SAS via managed identity |
 | `report.api-key` | — | — | Base64-encoded API key for `/report` endpoints |
 
 ## Ingestor scheduling
 
 The `em-hrs-ingestor` is deployed as a Kubernetes CronJob:
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- Frequency: 30-minute intervals, staggered between production clusters, during off-peak hours (9pm-5am).
-- On/off switch via flux environment variables `ENABLE_CRON_JOB` and `MAX_FILES_TO_PROCESS`.
-- Concurrency policy: `Forbid` — parallel runs are not permitted.
+
+- Frequency: every 30 minutes, around the clock, in both the base and production value files (`schedule: "*/30 * * * *"` — `cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml:9` and `prod.yaml:8`). There is no off-peak window and no per-cluster stagger. Demo runs every 10 minutes (`demo.yaml:8`), and `schedule-off.yaml:13` parks the job on the non-firing date `0 0 31 2 *`.
+- On/off switch is `ENABLE_CRONJOB` (no underscore before `JOB`), set `true` in production (`cnp-flux-config:apps/em/em-hrs-ingestor/prod.yaml:11`).
+- `MAX_FILES_TO_PROCESS` caps each run: 50 in the base file, 250 in production, 500 in demo (`em-hrs-ingestor.yaml:17`, `prod.yaml:12`, `demo.yaml:13`). At 250 files per 30-minute run, production tops out around 500 files per hour per cluster.
+- Concurrency policy: `Forbid` — parallel runs are not permitted (`em-hrs-ingestor:charts/em-hrs-ingestor/values.yaml:10`). A run that overshoots 30 minutes means the next tick is skipped rather than queued.
+
+<!-- DIVERGENCE: Confluence states the ingestor runs at 30-minute intervals during off-peak hours only (9pm-5am), staggered between production clusters, with an ENABLE_CRON_JOB switch. Flux schedules it every 30 minutes around the clock with no stagger, and the variable is ENABLE_CRONJOB. Source wins. -->
 - If duplicate ingestion occurs (e.g. overlapping schedules), warnings are logged but no duplicate data is created due to filename uniqueness constraints.
 - If any file fails ingestion, it will be retried on the next cycle.
 
@@ -414,7 +442,7 @@ The `em-hrs-ingestor` is deployed as a Kubernetes CronJob:
 
 ### FilenameParser: regex constants
 
-The four regex patterns that `em-hrs-ingestor` applies to CVP/VH filenames, in declaration order. All patterns are compiled with `Pattern.CASE_INSENSITIVE`.
+The five regex constants that `em-hrs-ingestor` declares for CVP/VH filenames, in declaration order (`em-hrs-ingestor:FilenameParser.java:19-29`). All are compiled with `Pattern.CASE_INSENSITIVE`. Two of them — `TRIBUNALS_FILE_FORMAT_REGEX` and `ROYAL_COURTS_OF_JUSTICE_FILE_WITHOUT_LOCATION_FORMAT_REGEX` — are character-for-character identical, and the dispatch chain tests the RCJ-without-location matcher first (`em-hrs-ingestor:FilenameParser.java:83-96`), so the tribunals branch can never be reached.
 
 ```java
 // Source: apps/em/em-hrs-ingestor/src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/parse/FilenameParser.java
@@ -426,8 +454,12 @@ private static final String ROYAL_COURTS_OF_JUSTICE_FILE_WITH_LOCATION_FORMAT_RE
 private static final String CIVIL_AND_FAMILY_FILE_FORMAT_REGEX
     = "^([A-Z][A-Z][A-Z]\\d)-(\\d{3,4})-([A-Z0-9-]*)_([0-9-.]*)-([A-Z]{3})_(\\d+)$";
 
-// Priority 3: Tribunals / RCJ without location code
+// Declared third, tested fourth — unreachable, identical to the pattern below
 private static final String TRIBUNALS_FILE_FORMAT_REGEX
+    = "^([A-Z][A-Z][A-Z]\\d)-([A-Z0-9-]*)_([0-9-.]*)-([A-Z]{3})_(\\d+)$";
+
+// Priority 3: RCJ without location code
+private static final String ROYAL_COURTS_OF_JUSTICE_FILE_WITHOUT_LOCATION_FORMAT_REGEX
     = "^([A-Z][A-Z][A-Z]\\d)-([A-Z0-9-]*)_([0-9-.]*)-([A-Z]{3})_(\\d+)$";
 
 // Priority 4: Minimal fallback — anything left of timestamp becomes caseRef

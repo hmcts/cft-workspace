@@ -19,6 +19,11 @@ sources:
   - em-media-viewer:package.json
   - em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.html
   - em-media-viewer:projects/media-viewer/src/assets/all.scss
+  - em-media-viewer:projects/media-viewer/src/lib/toolbar/main-toolbar/main-toolbar.component.ts
+  - em-media-viewer:projects/media-viewer/src/lib/viewers/rotation-persist/rotation-persist.directive.ts
+  - em-media-viewer:projects/media-viewer/src/lib/viewers/rotation-persist/rotation-api.service.ts
+  - document-management-store-app:src/main/resources/application.yaml
+  - ccd-case-document-am-api:src/main/resources/application.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -61,6 +66,11 @@ sources_sha:
   "em-media-viewer:package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
   "em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.html": "d0021abc1a687f247765d65ff348e43a7684b441"
   "em-media-viewer:projects/media-viewer/src/assets/all.scss": "9cc5bcc989fd88b8605877ba4db99e399d75ae6f"
+  "em-media-viewer:projects/media-viewer/src/lib/toolbar/main-toolbar/main-toolbar.component.ts": "d0021abc1a687f247765d65ff348e43a7684b441"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/rotation-persist/rotation-persist.directive.ts": "353aadba4f2c7f0d85b9815b931a82d0de8662c0"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/rotation-persist/rotation-api.service.ts": "5dc69692a133835ba839c5d14b4af967168b75b6"
+  "document-management-store-app:src/main/resources/application.yaml": "e37f459dc0a2bbda59e687d605b89084e1733c82"
+  "ccd-case-document-am-api:src/main/resources/application.yaml": "116d99f942a127dd17a3f08d8f3622e7006dc5cc"
 ---
 
 ## TL;DR
@@ -207,8 +217,9 @@ Key inputs:
 | `width` | `string` | `'100%'` | CSS width value |
 | `toolbarButtonOverrides` | `any` | `{}` | Partial override of `ToolbarButtonVisibilityService` properties |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence (LLD) mentions contentType values "video" and "audio" as strategy types, but source (media-viewer.component.ts) uses enum values "mp4" and "mp3" only. The strategy pattern exists internally but consumers must use the specific codec names. -->
+`contentType` must be one of nine literal values, spread across three internal enums (`em-media-viewer:media-viewer.component.ts:38-54`): `pdf` and `image` (core), `mp4` and `mp3` (multimedia), and `excel`, `word`, `powerpoint`, `txt`, `rtf` (convertible — routed through the PDF viewer after conversion). Matching is case-insensitive because the checks upper-case the input before comparing enum keys (`em-media-viewer:media-viewer.component.ts:195-204`), but there are no generic `video`/`audio` values.
+
+<!-- DIVERGENCE: The Confluence LLD lists contentType strategies as generic media types including "video" and "audio". Source accepts only the nine literals above; passing "video" or "audio" falls through every supported-type check. Source wins. -->
 
 Key outputs:
 
@@ -347,8 +358,9 @@ The Document Store accepts uploads for all MIME types listed below. "Supported" 
 | MP4 video | .mp4 | HTML5 player |
 | MP3 audio | .mp3 | HTML5 player |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence states Document Store accepts documents up to 1GB and multimedia up to 500MB, total payload up to 4000MB. These are backend limits, not enforced by the media-viewer library. -->
+Size limits are a backend concern — the library enforces none. Uploads that go through CDAM, which is the path every CCD service now uses, hit a single 1024MB ceiling applied to both a file and a whole request (`ccd-case-document-am-api:src/main/resources/application.yaml:39-41`); the value is hardcoded, with no environment variable to raise it. The legacy direct-to-DM-Store path applies one 4000MB ceiling to both, driven by a single variable (`document-management-store-app:src/main/resources/application.yaml:23-24`). Neither service inspects content type, so no per-type limit exists.
+
+<!-- DIVERGENCE: Confluence states Document Store accepts documents up to 1GB and multimedia up to 500MB, with a total payload of 4000MB. The 1GB figure is enforced, but by CDAM's 1024MB multipart limit rather than by dm-store, which allows 4000MB; the 500MB multimedia carve-out exists nowhere, as neither service distinguishes content types. Source wins. -->
 
 ## Annotation behaviour
 
@@ -363,15 +375,15 @@ Key behaviours:
 - It is not possible to highlight text spanning two pages
 - Copy-text is disabled after document rotation
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence User Guide states zoom levels range from 10, 25, 50, 75, 100, 125, 150, 250, 300, 500%. This is PDF.js default behaviour, not configured in em-media-viewer source. -->
+Zoom is not PDF.js's default ladder — `em-media-viewer` declares its own: `zoomScales = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2.5, 3, 5]` (`em-media-viewer:main-toolbar.component.ts:67`), i.e. 10, 25, 50, 75, 100, 125, 150, 250, 300 and 500%. The list is a plain public field with no `@Input`, so consumers cannot change the steps without forking.
 
 ## Persist rotation
 
 The persist-rotation feature allows saving the rotation setting for a document. Any subsequent viewer of the same document sees it in the saved orientation.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence states this feature is "dormant" and requires explicit activation per service. The toolbar button showSaveRotationButton exists in source but defaults to false for all content types. -->
+The feature is not opt-in per service. `RotationPersistDirective` is applied unconditionally to all three viewer hosts in the component template (`em-media-viewer:media-viewer.component.html:58,75,87`), it loads the saved rotation on every `mediaLoadStatus` event and immediately re-applies it (`em-media-viewer:rotation-persist.directive.ts:44-55`), and it persists via `POST /em-anno/metadata` (`em-media-viewer:rotation-api.service.ts:10,25`). What is conditional is only the *Save* button: `showSaveRotationButton` starts `false` (`em-media-viewer:toolbar-button-visibility.service.ts:22`) and the directive flips it `true` the moment the current rotation differs from the saved one (`em-media-viewer:rotation-persist.directive.ts:60`). So reading a saved rotation always happens; the user just cannot write a new one until they have rotated the page.
+
+<!-- DIVERGENCE: Confluence describes rotation persistence as dormant, requiring explicit per-service activation. The directive is applied unconditionally and always restores a saved rotation; only the Save button's visibility is conditional, and it is driven by rotation state rather than by service configuration. Source wins. -->
 
 ## Local development with em-showcase
 

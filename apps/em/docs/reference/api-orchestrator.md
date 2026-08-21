@@ -25,6 +25,10 @@ sources:
   - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/dto/CcdBundleDTO.java
   - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/stitching/dto/TaskState.java
   - em-ccd-orchestrator:src/main/resources/application.yaml
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java
+  - cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml
+  - cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -78,6 +82,10 @@ sources_sha:
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/dto/CcdBundleDTO.java": "ef1f0dadf296361643cc5f8744528fbaaf7300d6"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/stitching/dto/TaskState.java": "5f104466747d04beb3cbf3af7d4d101bca610510"
   "em-ccd-orchestrator:src/main/resources/application.yaml": "9c723a508e24a368bea1efe920dc5db755a97833"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
+  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "e2f115cfbdce6268b717d319e1c22ea4d8d9d1b2"
+  "cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml": "6a067bebc6c00192c4c8c66cb7dfeb55061a9419"
 ---
 
 ## TL;DR
@@ -99,7 +107,7 @@ sources_sha:
 | POST | `/api/clone-ccd-bundles` | Synchronous | Clones an existing bundle (deep copy). |
 | POST | `/api/stitching-complete-callback/{caseId}/{triggerId}/{bundleId}` | Inbound callback | Called by `em-stitching-api` when an async task completes; updates CCD case data with the stitched document. |
 
-The stitching-complete-callback endpoint is gated by the feature toggle `endpoint-toggles.stitching-complete-callback` (default: `true`, `application.yaml:97`).
+The stitching-complete-callback endpoint is gated by the feature toggle `endpoint-toggles.stitching-complete-callback` (`ENABLE_STITCHING_COMPLETE_CALLBACK`, default `true`, `application.yaml:101-102`).
 
 ## CCD Callback Request Format
 
@@ -252,27 +260,27 @@ In cloud: `CALLBACK_DOMAIN` is set to `em-ccd-orchestrator-{env}.service.core-co
 The synchronous path (`/api/stitch-ccd-bundles`) polls `em-stitching-api` for task completion:
 
 - Polls `GET {EM_STITCHING_API_URL}/api/document-tasks/{id}` until `taskState` is not `NEW` or `IN_PROGRESS`.
-- Exponential back-off starting at 1 second: `sleepTime += 1000 * (attempt + 2)` (`StitchingService.java:186-190`).
+- Back-off grows by `sleepTime += 1000 * (attempt + 2)` (`StitchingService.java:186-190`), producing sleeps of 1s, 3s, 6s, 10s, 15s, 21s, 28s — 84 seconds of waiting if every poll finds the task unfinished.
 - Maximum 7 retries (`MAX_RETRY_TO_POLL_STITCHING=7`). After exhaustion, throws `StitchingTaskMaxRetryException`.
 - On success, reads `$.bundle.stitchedDocumentURI` and `$.bundle.hashToken` from the response.
 
 ### CCD Callback Timeout Constraint
 
-CCD imposes a **10-second timeout** on all callbacks. By default CCD retries failed callbacks 3 times, each subject to the same 10-second limit. The only available downstream option is to disable retries entirely (still a single 10-second attempt).
+The callback budget is the `restTemplate` read timeout in `ccd-data-store-api`, set to **29 seconds** in every deployed environment (`cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml:40`, applied in `RestTemplateConfiguration.java:72-80`). `CallbackService.send` is `@Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 3))` (`ccd-data-store-api:CallbackService.java:75`), so a timed-out callback gets three attempts in total — the original plus T+1s and T+3s — and a read timeout is itself the retry trigger. An overrunning sync stitch is therefore re-invoked while the first stitching task may still be running.
 
-The sync stitching path can exceed this timeout when:
-- The stitching service has a batch processing delay (~5 seconds on cold start).
-- The orchestrator polls at ~1-second intervals, adding latency after stitching completes.
+The sync stitching path can exceed this budget when:
+- The stitching service has a batch processing delay (up to 6 seconds while waiting for the next batch poll).
+- The polling back-off overshoots: after the fourth poll the orchestrator is sleeping 10 seconds or more at a time, so a task that finished early still waits out the sleep.
 - Multiple bundles are stitched sequentially within one callback.
 
 For scenarios requiring multiple bundles, use the async path (`/api/new-bundle`) or have the calling service execute stitch calls concurrently.
-<!-- CONFLUENCE-ONLY: CCD 10-second timeout limit not verified in source (enforcement is in CCD data-store, not this repo) -->
+<!-- DIVERGENCE: Confluence documents a 10-second CCD callback timeout with 3 retries on top of the initial call and an option to disable retries. ccd-data-store-api sets a 29s read timeout in every deployed environment, makes 3 attempts in total, and exposes no retry-count configuration. Source wins. -->
 
 ## Authentication
 
 | Layer | Mechanism |
 |-------|-----------|
-| Service-to-service | S2S token validated by `ServiceAuthFilter`. Default whitelisted callers (`application.yaml:85`): `sscs, ccd, em_gw, ccd_data, iac, em_stitching_api, xui_webapp, civil_service, prl_cos_api, ethos_repl_service, et_cos`. Additional services (e.g. `sptribs_case_api`, `civil_general_applications`) may be added via the `S2S_NAMES_WHITELIST` env var at deployment time. |
+| Service-to-service | S2S token validated by `ServiceAuthFilter`. In-repo default (`application.yaml:87`): `sscs, ccd, em_gw, ccd_data, iac, em_stitching_api, xui_webapp, civil_service, prl_cos_api, ethos_repl_service, et_cos`. Production replaces it wholesale via `S2S_NAMES_WHITELIST` with `sscs, ccd, ccd_data, iac, em_stitching_api, civil_service, prl_cos_api, sptribs_case_api, et_cos, ethos_repl_service` (`cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml:15`) — `em_gw` and `xui_webapp` are not accepted in production. |
 | User identity | OAuth2 JWT validated by Spring Security resource server. |
 | Outbound to stitching-api | JWT passed as `Authorization` header; fresh S2S token generated per request (`StitchingService.java:135-136`). |
 

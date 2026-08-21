@@ -19,6 +19,12 @@ sources:
   - em-media-viewer:projects/media-viewer/src/lib/store/reducers/document.reducer.ts
   - em-media-viewer:projects/media-viewer/src/lib/store/actions/bookmark.actions.ts
   - em-media-viewer:projects/media-viewer/src/lib/viewers/rotation-persist/rotation-api.service.ts
+  - em-media-viewer:projects/media-viewer/src/lib/viewers/rotation-persist/rotation-persist.directive.ts
+  - em-media-viewer:projects/media-viewer/src/lib/icp/icp-presenter.service.ts
+  - em-icp-api:app.ts
+  - em-icp-api:config/default.yaml
+  - em-icp-api:infrastructure/main.tf
+  - em-icp-api:infrastructure/template/api-policy.xml
   - em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts
   - em-media-viewer:projects/media-viewer/src/lib/viewers/unsupported-viewer/unsupported-viewer.component.ts
   - em-media-viewer:projects/media-viewer/ng-package.json
@@ -77,6 +83,12 @@ sources_sha:
   "em-media-viewer:projects/media-viewer/src/lib/store/reducers/document.reducer.ts": "86b5722206924c0c5cc27851d0f1396e92ef1b39"
   "em-media-viewer:projects/media-viewer/src/lib/store/actions/bookmark.actions.ts": "b4b821cf5b1e3c4ff0c783276185b2184e40cf9c"
   "em-media-viewer:projects/media-viewer/src/lib/viewers/rotation-persist/rotation-api.service.ts": "5dc69692a133835ba839c5d14b4af967168b75b6"
+  "em-media-viewer:projects/media-viewer/src/lib/viewers/rotation-persist/rotation-persist.directive.ts": "353aadba4f2c7f0d85b9815b931a82d0de8662c0"
+  "em-media-viewer:projects/media-viewer/src/lib/icp/icp-presenter.service.ts": "7fbca0248d76d5f270d03fa63e168c08c28f7f15"
+  "em-icp-api:app.ts": "e3c4291e17f7089071890ea4ef415830639a1282"
+  "em-icp-api:config/default.yaml": "0f58d80173158002ad1d58a5d5add63ad48afc4c"
+  "em-icp-api:infrastructure/main.tf": "036d49e9f67657cc1e63c9e85ea1b85e2f265c60"
+  "em-icp-api:infrastructure/template/api-policy.xml": "df4195deb5455ee2ba547418d339478a3f557797"
   "em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts": "fa3728864c83874e15ea556857123115bc616eb6"
   "em-media-viewer:projects/media-viewer/src/lib/viewers/unsupported-viewer/unsupported-viewer.component.ts": "353aadba4f2c7f0d85b9815b931a82d0de8662c0"
   "em-media-viewer:projects/media-viewer/ng-package.json": "a2c84c421d8b92aaf03c3a85772b26ee6becdbbc"
@@ -163,14 +175,14 @@ The sidebar also shows the document's native PDF outline (table of contents) whe
 
 ## Rotation persistence
 
-The `RotationPersistDirective` (selector `[mvRotationPersist]`) enables saving rotation state for a document across sessions. It uses `RotationApiService` which calls:
+The `RotationPersistDirective` (selector `[mvRotationPersist]`) saves and restores a document's rotation across sessions. It uses `RotationApiService`, which calls:
 
 - `GET /em-anno/metadata/{documentId}` — retrieve saved rotation
-- `POST /em-anno/metadata/` — persist rotation state
+- `POST /em-anno/metadata` — persist rotation state (`em-media-viewer:rotation-api.service.ts:10,25`)
 
-The toolbar option `showSaveRotationButton` controls whether the save-rotation button is visible. By default this is `false` in all presets — consuming services must explicitly enable it.
+The directive is applied unconditionally to every viewer in the library's own template (`em-media-viewer:media-viewer.component.html:58,75,87`), and it re-applies any stored rotation as soon as the document reports a successful load (`em-media-viewer:rotation-persist.directive.ts:44-55`). Only the save-rotation button is conditional: `showSaveRotationButton` starts `false` (`em-media-viewer:toolbar-button-visibility.service.ts:22`) and the directive sets it to `true` whenever the current rotation differs from the stored one (`em-media-viewer:rotation-persist.directive.ts:60`). No toolbar preset or `@Input` sets that flag, so its visibility tracks rotation state rather than per-service configuration.
 
-<!-- CONFLUENCE-ONLY: The User Guide states rotation persistence is currently "dormant" and must be explicitly activated per-service. This aligns with the default being false in source. -->
+<!-- DIVERGENCE: The User Guide states rotation persistence is currently "dormant" and must be explicitly activated per-service. In source the directive is applied unconditionally and always restores a stored rotation; nothing gates it per-service, and the only conditional element is the save button, whose visibility is driven by rotation state. Source wins. -->
 
 ## Error handling and load status
 
@@ -307,7 +319,9 @@ interface PdfPosition {
 | `PARTICIPANTS_UPDATED` | `IcpParticipantsListUpdated` | Server -> Client |
 | `CLIENT_DISCONNECTED` | `IcpClientDisconnectedFromSession` | Server -> Client |
 
-<!-- CONFLUENCE-ONLY: The ICP LLD states a limit of 2 messages per second to prevent flooding the WebSocket server. This throttle is not visible in the em-media-viewer client source; it may be enforced server-side by em-icp-api or Azure Web PubSub configuration. -->
+Nothing throttles outbound events. The presenter's `onPositionUpdate` hands each position change straight to the socket service (`em-media-viewer:icp-presenter.service.ts:52-55`), and no operator in `lib/icp` samples or debounces the stream. Rate limiting exists only on the REST surface: `/icp/sessions` is capped at 10 requests per 15-second window (`em-icp-api:app.ts:37-40,83`, `em-icp-api:config/default.yaml:22-24`), and the APIM policy in front of the API allows 3 calls per 15 seconds per subscription key (`em-icp-api:infrastructure/template/api-policy.xml:21`). The Web PubSub hub itself is provisioned with no messaging quota beyond its SKU capacity (`em-icp-api:infrastructure/main.tf:136-141,186-198`).
+
+<!-- DIVERGENCE: The ICP LLD states a limit of 2 messages per second to prevent flooding the WebSocket server. No such throttle exists in em-media-viewer, in em-icp-api, or in the Web PubSub hub's Terraform; the only rate limits are on REST calls. Source wins. -->
 
 Note: `em-icp-api` is marked as archived in its README, but the code and its API spec remain present and the client code in `em-media-viewer` remains fully functional.
 

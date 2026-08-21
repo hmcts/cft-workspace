@@ -19,6 +19,16 @@ sources:
   - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/util/StringUtilities.java
   - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/config/Config.java
   - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdCloneBundleController.java
+  - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/dto/CcdBundleFolderDTO.java
+  - em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/enumeration/ImageRendering.java
+  - em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/pdf/PDFWatermark.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java
+  - cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml
+  - sscs-tribunals-case-api:definitions/benefit/sheets/ComplexTypes/ComplexTypes.json
+  - sscs-tribunals-case-api:definitions/benefit/sheets/CaseEvent/CaseEvent.json
+  - sscs-common:src/main/java/uk/gov/hmcts/reform/sscs/ccd/domain/EventType.java
+  - ia-ccd-definitions:definitions/appeal/json/ComplexTypes.json
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -65,6 +75,16 @@ sources_sha:
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/util/StringUtilities.java": "35ba2c7fffd5d32cb6550d9b249d5e49152c1c49"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/config/Config.java": "bd3df6d2894c1f0ac17942e700975a20d7f111b9"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdCloneBundleController.java": "5bc8c4fda1c1b561846b3d960398f7fc86700ac5"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/dto/CcdBundleFolderDTO.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/enumeration/ImageRendering.java": "531d06a9344c8aa2a2efee8f0983a7162a6249ec"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/pdf/PDFWatermark.java": "009637514c50c93005620ba1a705fd0c64163b07"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
+  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "e2f115cfbdce6268b717d319e1c22ea4d8d9d1b2"
+  "sscs-tribunals-case-api:definitions/benefit/sheets/ComplexTypes/ComplexTypes.json": "2aa731d023c3297dbd475234aaf7273149213af9"
+  "sscs-tribunals-case-api:definitions/benefit/sheets/CaseEvent/CaseEvent.json": "e0b03eca9bbbb16fa1161237a3e43067637724e0"
+  "sscs-common:src/main/java/uk/gov/hmcts/reform/sscs/ccd/domain/EventType.java": "e814e0bfa4078e9dbc3cb012de340688b17eeafd"
+  "ia-ccd-definitions:definitions/appeal/json/ComplexTypes.json": "4b5c2446a45c9f079df06a17c0a2d6785830182f"
 ---
 
 ## TL;DR
@@ -73,7 +93,7 @@ sources_sha:
 - Bundle contents are defined in a YAML config file packaged inside the `em-ccd-orchestrator` JAR under `bundleconfiguration/`.
 - The CCD case must have a `caseBundles` collection field and a `bundleConfiguration` (or `multiBundleConfiguration`) field naming the YAML config to use.
 - The orchestrator calls `em-stitching-api`, which merges the documents into a single PDF and returns the stitched document URL via CDAM.
-- CCD imposes a **10-second callback timeout** -- prefer the async path for large bundles or multiple-bundle scenarios.
+- CCD gives each callback attempt a **29-second read timeout** and makes three attempts in total -- prefer the async path for large bundles or multiple-bundle scenarios.
 - Adding a new bundle config requires a code change to `em-ccd-orchestrator` and a redeploy -- there is no external config volume. Contact `#bundling-integration` on Slack for S2S whitelist changes.
 
 ## Prerequisites
@@ -160,8 +180,7 @@ documentImage:
   imageRendering: translucent        # opaque (foreground) | translucent (background)
 ```
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-Note: If `translucent` is selected, the image may be obscured by other objects on the page due to the way PDF layers are generated.
+Note: `translucent` is not transparency — `TRANSLUCENT` maps to PDFBox's `Overlay.Position.BACKGROUND` while `opaque` maps to `FOREGROUND` (`em-stitching-api:ImageRendering.java:7-10`), and that position is handed straight to `Overlay.setOverlayPosition` (`em-stitching-api:PDFWatermark.java:77`). A `translucent` image is drawn *behind* the page content, so anything opaque in the document — a white page background, a scanned image — hides it completely.
 
 #### Custom documents
 
@@ -176,8 +195,9 @@ In your CCD definition, ensure the event that triggers bundling populates one of
 
 The orchestrator reads these fields in `AutomatedCaseUpdater.java:102-121`. If **both** fields are present, `multiBundleConfiguration` takes precedence. If neither is present, it falls back to a hardcoded map (only `"SSCS" -> "sscs-bundle-config.yaml"`) or the default `"default-config.yaml"`.
 
-Your CCD definition should also include the following complex types in the ComplexTypes tab: `Bundle`, `BundleDocument`, `BundleFolder`, and `BundleSubfolder`. These model the bundle data structure stored in CCD. The `bundleConfiguration` field is typically backed by a FixedList in the CCD definition, allowing caseworkers to select the config file from a dropdown.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Your CCD definition should also include the following complex types in the ComplexTypes tab: `Bundle`, `BundleDocument`, `BundleFolder`, and `BundleSubfolder`. These model the bundle data structure stored in CCD, and live services declare exactly that set — see `sscs-tribunals-case-api:definitions/benefit/sheets/ComplexTypes/ComplexTypes.json:276-303` or `ia-ccd-definitions:definitions/appeal/json/ComplexTypes.json`. The `bundleConfiguration` field is typically backed by a FixedList in the CCD definition, allowing caseworkers to select the config file from a dropdown.
+
+Folder nesting is two levels deep and no deeper. `Bundle.folders` is a collection of `BundleFolder`, `BundleFolder.folders` is a collection of `BundleSubfolder`, and `BundleSubfolder` has no `folders` element at all — CCD complex types cannot be self-referential. The orchestrator's own `CcdBundleFolderDTO` *is* self-referential (`folders` is a `List<CcdValue<CcdBundleFolderDTO>>`, `em-ccd-orchestrator:CcdBundleFolderDTO.java:14-16`), so a bundle configuration that nests three levels will serialise from the orchestrator but has nowhere to land in the case definition.
 
 ### 3. Register the CCD callback URL
 
@@ -190,10 +210,10 @@ In your CCD event definition, configure a **mid-event callback** or **about-to-s
 | `POST /api/new-bundle` | Asynchronous automated bundling -- same as async but intended for automated/scheduled triggers. |
 | `POST /api/clone-ccd-bundles` | Clones an existing bundle to a new bundle (no stitching involved). |
 
-**Choosing sync vs async**: CCD imposes a **10-second timeout** on all callbacks (with up to 3 retries by default). The synchronous path can exceed this limit for large bundles -- real-world measurements show a single stitching operation can take 5-11 seconds depending on document count and whether the stitching service executor is warmed up. **Use the async path** (`/api/async-stitch-ccd-bundles`) for:
+**Choosing sync vs async**: a CCD callback gets a **29-second read timeout** per attempt (`cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml:40`, applied via `ccd-data-store-api:RestTemplateConfiguration.java:72-80`), and `CallbackService.send` makes **three attempts in total** — the initial call plus retries at T+1s and T+3s, from `@Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 3))` (`ccd-data-store-api:CallbackService.java:75`). The retry count is not configurable. Because a read timeout is itself a retry trigger, an overrunning synchronous stitch is re-invoked while the previous attempt may still be stitching. The synchronous path can exceed the budget for large bundles -- real-world measurements show a single stitching operation can take 5-11 seconds depending on document count and whether the stitching service executor is warmed up. **Use the async path** (`/api/async-stitch-ccd-bundles`) for:
 - Bundles with many documents or large PDFs
 - Multiple bundles in a single event (e.g. English + Welsh, original + redacted)
-- Any scenario where exceeding 10s is plausible
+- Any scenario where a single callback plausibly runs past 29 seconds, or where a duplicate re-invocation would be harmful
 
 For **synchronous** stitching, the response body contains the updated `caseBundles` array with the stitched document URL already populated. Your callback handler receives this directly.
 
@@ -246,7 +266,7 @@ The Confluence "Bundling Integration Guide" recommends defining the following st
 | `cloneBundle` | Copy an existing bundle to a new one |
 | `asyncStitchingComplete` | System event for async callback updates |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Only `asyncStitchingComplete` is required by EM — the orchestrator hardcodes that ID and nothing else. The rest are a naming convention that live services do follow: SSCS's Benefit case type defines `editBundle`, `cloneBundle`, `createBundle` and `asyncStitchingComplete` (`sscs-tribunals-case-api:definitions/benefit/sheets/CaseEvent/CaseEvent.json:268,619,827,1954`) and carries `stitchBundle` in its `EventType` enum (`sscs-common:src/main/java/uk/gov/hmcts/reform/sscs/ccd/domain/EventType.java`). Nothing in EM reads these four IDs, so a service is free to name them differently.
 
 ### 6. (Optional) Enable email notifications
 
@@ -270,7 +290,7 @@ This requires the `NOTIFICATION_API_KEY` to be set in the orchestrator's environ
 |---------|-------|-----|
 | HTTP 400 from orchestrator | Exception during stitching or config load | Check `errors` array in response; review orchestrator logs for stack trace |
 | `StitchingTaskMaxRetryException` | Stitching-api did not complete within 7 poll attempts (total wait can be ~28s with exponential backoff) | Check `em-stitching-api` health and queue depth; the task may still complete asynchronously. Consider switching to the async endpoint. |
-| CCD callback timeout / event fails on submit | Synchronous stitching exceeded CCD's 10-second callback timeout | Switch to `/api/async-stitch-ccd-bundles`. If you must use sync, reduce bundle document count or stitch bundles concurrently from your service before the CCD callback. |
+| CCD callback timeout / event fails on submit | Synchronous stitching exceeded CCD's 29-second per-attempt read timeout | Switch to `/api/async-stitch-ccd-bundles`. If you must use sync, reduce bundle document count or stitch bundles concurrently from your service before the CCD callback. |
 | Bundle config not found | Filename in `bundleConfiguration` does not match any file in `bundleconfiguration/` classpath | Ensure the YAML file is committed and the orchestrator is redeployed |
 | `caseBundles` not populated | CCD field name mismatch | The orchestrator hardcodes `"caseBundles"` -- your case type must use exactly this field name |
 | Async callback never arrives | `CALLBACK_DOMAIN` not set or unreachable from stitching-api | Verify `CALLBACK_DOMAIN` resolves to the orchestrator's internal hostname in the target environment |
@@ -320,7 +340,7 @@ folders:
 
 ## See also
 
-- [Stitching and Bundling](../explanation/stitching-and-bundling.md) — explains why the async path exists (CCD 10-second timeout), Spring Batch processing internals, versioned tasks, and full bundle YAML field reference
+- [Stitching and Bundling](../explanation/stitching-and-bundling.md) — explains why the async path exists (the CCD callback read timeout), Spring Batch processing internals, versioned tasks, and full bundle YAML field reference
 - [API: Orchestrator](../reference/api-orchestrator.md) — `em-ccd-orchestrator` endpoint reference with request/response shapes, bundle DTO validation rules, and callback flow
 - [API: Stitching](../reference/api-stitching.md) — `em-stitching-api` endpoint reference, `DocumentTask` lifecycle, and callback mechanism
 - [Local Development with cftlib](local-development-cftlib.md) — how to run `em-stitching-api` locally and test end-to-end stitching without deploying to AAT

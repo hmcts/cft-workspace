@@ -20,6 +20,8 @@ sources:
   - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Metadata.java
   - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/enumeration/AnnotationType.java
   - em-annotation-api:src/main/resources/application.yaml
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationSetServiceImpl.java
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/SecurityConfiguration.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -66,6 +68,8 @@ sources_sha:
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Metadata.java": "b84e15b87ad87e891117a17c4da4085249314af5"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/enumeration/AnnotationType.java": "c1e103cfbca25a5fdf8d8da4afc53d5ca5e064d9"
   "em-annotation-api:src/main/resources/application.yaml": "4d60b72a3debbf1db23b103c6e2fe590940d29f1"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationSetServiceImpl.java": "cb1b245382e54dbfed78167e1aaf5e237f3d9a32"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/SecurityConfiguration.java": "a1728d11379a77b55678f497d2debd6cc01d3872"
 ---
 
 ## TL;DR
@@ -295,11 +299,11 @@ This endpoint supports the **Retain & Dispose** flow: when the Doc Disposer hard
 
 ## Annotation privacy and scoping
 
-Annotations are currently **private by default** — only the creating user can see their own annotations. This is enforced at the application level via `SecurityUtils.getCurrentUserLogin()` in the filter endpoint.
+Annotations are **private to their author, with no sharing mechanism**. `findOneByDocumentId` resolves the caller from the security context and queries `findByDocumentIdAndCreatedBy(documentId, login)` (`em-annotation-api:AnnotationSetServiceImpl.java:115-117`), so the filter endpoint can only ever return a set the caller created. `createdBy` is inherited from `AbstractAuditingEntity` and populated by Spring Data auditing, not by the request body.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+A design for annotation sharing via Access Management integration was documented (privacy levels: Private, Internal Only, All Users, Share with specific users/roles), with an agreed MVP scope of "Private" and "All Users". None of it exists in the service: there is no grant entity, no privacy-level column on `AnnotationSet` (`em-annotation-api:AnnotationSet.java:21-23`), no Access Management client dependency, and no endpoint that widens visibility beyond the author.
 
-A design for annotation sharing via Access Management integration was documented (privacy levels: Private, Internal Only, All Users, Share with specific users/roles). The agreed MVP scope covered only "Private" and "All Users" settings. It is unclear from the source whether this AM integration was ever implemented — the current codebase shows no calls to an AM `filterResource` API. The filter endpoint (`/api/annotation-sets/filter`) returns only the calling user's annotation set, consistent with the "private only" mode.
+<!-- DIVERGENCE: Confluence describes an Access Management integration with four privacy levels for annotation sharing and leaves its implementation status open. em-annotation-api has no grant entity, privacy field, Access Management dependency or sharing endpoint; every read path is filtered by the caller's own IDAM login. Source wins. -->
 
 ### Business rules for annotation creation
 
@@ -310,6 +314,8 @@ A design for annotation sharing via Access Management integration was documented
 | Case Worker | No | N/A |
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
+
+The API itself applies no role gate: the security filter chain authorises `/api/**` with `.authenticated()` and nothing more (`em-annotation-api:SecurityConfiguration.java:79`), and no resource method carries `@PreAuthorize` or a role check. Any caller holding a valid IDAM token and an allowed S2S token can create an annotation, so the role rules above must be enforced by the consuming frontend.
 
 ## Data scoping: documents not cases
 

@@ -22,6 +22,13 @@ sources:
   - em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/enumeration/PaginationStyle.java
   - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/StitchingCompleteCallbackController.java
   - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/CallbackUrlCreator.java
+  - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/stitching/StitchingService.java
+  - em-stitching-api:src/main/resources/application.yaml
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java
+  - cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml
+  - cnp-flux-config:apps/em/em-stitching/prod.yaml
+  - cnp-flux-config:apps/em/em-stitching/demo.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -67,6 +74,13 @@ sources_sha:
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/enumeration/PaginationStyle.java": "b6f4464eb93864835832b1480c04d9f9a6254897"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/StitchingCompleteCallbackController.java": "6c1a512c71e548439d96afbe0645b3521685081a"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/CallbackUrlCreator.java": "971e03d1e207771b5a64840bd90e2454d9a3c410"
+  "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/stitching/StitchingService.java": "6c1a512c71e548439d96afbe0645b3521685081a"
+  "em-stitching-api:src/main/resources/application.yaml": "b4fa29544c90897df72b4f8376efe1600cc4c154"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
+  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "e2f115cfbdce6268b717d319e1c22ea4d8d9d1b2"
+  "cnp-flux-config:apps/em/em-stitching/prod.yaml": "f8c9392b084b99a982aeadfd89b758b53b05885f"
+  "cnp-flux-config:apps/em/em-stitching/demo.yaml": "61030bf8543ac4c56b5b8c1a8f0a9fb4bafd8c5b"
 ---
 
 ## TL;DR
@@ -211,7 +225,7 @@ When `taskState` is `FAILED`, `failureDescription` contains the error message (m
 | `DONE` | Stitching complete; `bundle.stitchedDocumentURI` populated |
 | `FAILED` | Stitching failed; see `failureDescription` |
 
-The batch reader polls every 6 seconds (configurable via `DOCUMENT_TASK_MILLISECONDS`, defaults to `6000`). Only tasks with `version <= currentBuildNumber` are picked up, enabling zero-downtime rolling deployments. Tasks are selected with `PESSIMISTIC_WRITE` locking and ordered by `createdDate` (oldest first).
+The batch reader polls every 6 seconds (configurable via `DOCUMENT_TASK_MILLISECONDS`, defaults to `6000` — `em-stitching-api:application.yaml:43`). Only tasks with `version <= currentBuildNumber` are picked up, enabling zero-downtime rolling deployments. Tasks are selected with `PESSIMISTIC_WRITE` locking and ordered by `createdDate` (oldest first).
 
 The batch uses a chunk size of 5 (i.e. up to 5 tasks processed per batch iteration).
 
@@ -222,13 +236,15 @@ Based on production observations and performance testing:
 
 - A 298-page bundle (7 documents, 2 Word + 5 PDF, ~70MB) stitches in approximately 21 seconds.
 - A 1000-page bundle is expected to take around 1 minute.
-- The first task in a batch cycle may incur a ~5 second delay waiting for the batch job to fire. Subsequent tasks in the same cycle are picked up almost immediately if the executor is warm.
-- The `em-ccd-orchestrator` polls the stitching service at ~1-second intervals for completion status, adding latency after stitching completes.
+- The first task in a batch cycle waits up to 6 seconds for the batch job to fire, because the trigger is `@Scheduled(fixedDelayString = "${spring.batch.document-task-milliseconds}")` (`em-stitching-api:BatchConfiguration.java:108`) and production leaves the `DOCUMENT_TASK_MILLISECONDS:6000` default in place — the prod override is commented out (`cnp-flux-config:apps/em/em-stitching/prod.yaml:20`) and only demo lowers it, to 5000 (`cnp-flux-config:apps/em/em-stitching/demo.yaml:16`). Because it is a fixed *delay* rather than a fixed rate, the gap is measured from the end of the previous run, so a long stitch pushes the next pickup out further. Subsequent tasks in the same cycle are picked up almost immediately if the executor is warm.
+- The `em-ccd-orchestrator` poll interval widens each time: 1s, 3s, 6s, 10s, 15s, 21s, 28s (`em-ccd-orchestrator:StitchingService.java:180-193`). Only the first two polls are prompt; from the fourth onward the orchestrator sleeps 10 seconds or more, so a task finishing just after a poll waits out the whole next sleep.
 
 ### CCD callback timeout considerations
 
-CCD imposes a 10-second timeout on all callbacks. When stitching is triggered from within a CCD `aboutToSubmit` callback (via the orchestrator's synchronous `/api/stitch-ccd-bundles` endpoint), bundles with many pages or multiple bundles in sequence risk exceeding this timeout. For multiple bundles, service teams should:
-<!-- CONFLUENCE-ONLY: not verified in source -->
+The per-attempt budget for a CCD callback is the `restTemplate` read timeout in `ccd-data-store-api`, set to 29s in every deployed environment (`cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml:40`, applied via `ccd-data-store-api:RestTemplateConfiguration.java:72-80`). `CallbackService.send` is annotated `@Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 3))` (`ccd-data-store-api:CallbackService.java:75`), so there are three attempts in total — the initial call plus retries at T+1s and T+3s — and the retry count is not configurable. A read timeout is itself a retry trigger, so an overrunning synchronous stitch is re-invoked while the first attempt may still be stitching.
+
+When stitching is triggered from within a CCD `aboutToSubmit` callback (via the orchestrator's synchronous `/api/stitch-ccd-bundles` endpoint), bundles with many pages or multiple bundles in sequence risk exceeding the read timeout. For multiple bundles, service teams should:
+<!-- DIVERGENCE: Confluence documents a 10-second CCD callback timeout with 3 retries on top of the initial call and an option to disable retries. ccd-data-store-api sets a 29s read timeout in every deployed environment, makes 3 attempts in total, and exposes no retry-count configuration. Source wins. -->
 
 - Use the asynchronous endpoint (`/api/async-stitch-ccd-bundles`) where possible.
 - Execute concurrent stitching requests to reduce total wall-clock time.

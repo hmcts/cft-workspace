@@ -20,6 +20,26 @@ sources:
   - em-hrs-api:src/main/resources/application.yaml
   - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/controller/HearingRecordingController.java
   - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/AnnotationSetResource.java
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/AnnotationSet.java
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationSetServiceImpl.java
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/SecurityConfiguration.java
+  - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/SegmentDownloadServiceImpl.java
+  - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/TtlServiceImpl.java
+  - em-hrs-api:src/main/resources/ttl_service_map.json
+  - em-hrs-api:src/main/resources/ttl_jurisdiction_map.json
+  - em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/parse/FilenameParser.java
+  - em-hrs-ingestor:charts/em-hrs-ingestor/values.yaml
+  - em-ccd-orchestrator:src/main/resources/application.yaml
+  - cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml
+  - cnp-flux-config:apps/em/em-hrs-ingestor/prod.yaml
+  - cnp-flux-config:apps/em/em-hrs-api/em-hrs-api.yaml
+  - cnp-flux-config:apps/em/em-anno/em-anno.yaml
+  - cnp-flux-config:apps/em/em-stitching/em-stitching.yaml
+  - cnp-flux-config:apps/em/em-stitching/prod.yaml
+  - cnp-flux-config:apps/em/em-ccd-orchestrator/em-ccd-orchestrator.yaml
+  - cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml
+  - em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/storage/HearingRecordingStorageImpl.java
+  - em-hrs-api:infrastructure/main.tf
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -64,6 +84,26 @@ sources_sha:
   "em-hrs-api:src/main/resources/application.yaml": "060237e2439c825ca8e9ac5463b95004c812d1f8"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/controller/HearingRecordingController.java": "d9c7ef9373e8c43c3e74ab89520efb383ee52c2b"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/AnnotationSetResource.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/AnnotationSet.java": "b84e15b87ad87e891117a17c4da4085249314af5"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationSetServiceImpl.java": "cb1b245382e54dbfed78167e1aaf5e237f3d9a32"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/SecurityConfiguration.java": "a1728d11379a77b55678f497d2debd6cc01d3872"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/SegmentDownloadServiceImpl.java": "711d96e5651c5f1932656ef6981ee45ea7ab10fc"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/TtlServiceImpl.java": "1195877a87ffdc97426c40cfe5555a9e48a1628d"
+  "em-hrs-api:src/main/resources/ttl_service_map.json": "22cc67abb7fca8771a32236166bc0076e616ea17"
+  "em-hrs-api:src/main/resources/ttl_jurisdiction_map.json": "d01e774a5454063d4159b4bdc62caa9b41aa4381"
+  "em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/parse/FilenameParser.java": "6d60056cc3b7383e3c68c6cc2ae8d896c1af9f78"
+  "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/storage/HearingRecordingStorageImpl.java": "edbea18aa61de15d32c1ec7c7e866f53ed209fb9"
+  "em-hrs-api:infrastructure/main.tf": "95fbc75a270365df1bdcd821a44892ba1451d840"
+  "em-hrs-ingestor:charts/em-hrs-ingestor/values.yaml": "36ae29fef9a7b3cb16585c2d0a66d8f7015ff342"
+  "em-ccd-orchestrator:src/main/resources/application.yaml": "9c723a508e24a368bea1efe920dc5db755a97833"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml": "bfb56a4e4b01264c2db7eec7d682392d6491e172"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/prod.yaml": "6b3ddae167745d42b28307678f3716427e7a2a21"
+  "cnp-flux-config:apps/em/em-hrs-api/em-hrs-api.yaml": "93f8e05ae8e157f3be88666251c85144a0e46b5e"
+  "cnp-flux-config:apps/em/em-anno/em-anno.yaml": "e0cf73ff3eb319f8c9a5d137e61ad9a741b4aedb"
+  "cnp-flux-config:apps/em/em-stitching/em-stitching.yaml": "a931df75d6e016c94724fe2e1946b3cbd580dab0"
+  "cnp-flux-config:apps/em/em-stitching/prod.yaml": "f8c9392b084b99a982aeadfd89b758b53b05885f"
+  "cnp-flux-config:apps/em/em-ccd-orchestrator/em-ccd-orchestrator.yaml": "d47b37850f521bf21148e69a77a0c25a62cfcc74"
+  "cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml": "6a067bebc6c00192c4c8c66cb7dfeb55061a9419"
 ---
 
 ## TL;DR
@@ -71,8 +111,8 @@ sources_sha:
 - Evidence Management (EM) is the document processing and presentation layer for HMCTS CFT services, providing four capability areas: stitching/bundling, annotations/redactions, hearing recordings, and in-court presentation.
 - Service teams trigger bundling via CCD callbacks to `em-ccd-orchestrator`, which submits stitching jobs to `em-stitching-api` and returns the merged PDF URL back into CCD case data. Maximum bundle size is 1GB (higher is possible but may cause timeouts).
 - `em-stitching-api` downloads source documents from CDAM, converts non-PDF formats via Docmosis, merges them with Apache PDFBox, and uploads the result — all asynchronously via Spring Batch.
-- Annotations and redactions are managed by `em-annotation-api` and `em-native-pdf-annotator-app`, surfaced through the `@hmcts/media-viewer` Angular library embedded in XUI. Annotations are private to the author by default.
-- Hearing recordings flow from CVP/VH Blob Storage through `em-hrs-ingestor` (a Kubernetes CronJob, off-peak 9pm-5am) into `em-hrs-api` for metadata storage, CCD case creation, and authorised playback via share links (72-hour TTL).
+- Annotations and redactions are managed by `em-annotation-api` and `em-native-pdf-annotator-app`, surfaced through the `@hmcts/media-viewer` Angular library embedded in XUI. Annotations are private to their author, with no sharing mechanism.
+- Hearing recordings flow from CVP/VH Blob Storage through `em-hrs-ingestor` (a Kubernetes CronJob running every 30 minutes) into `em-hrs-api` for metadata storage, CCD case creation, and authorised playback via share links (72-hour TTL).
 - The service is classified as **High** criticality, runs 24/7/365, and is deployed with at least 2 pods per cluster across 2 AKS clusters for auto failover.
 
 ## Capability areas
@@ -160,8 +200,8 @@ Output events: `mediaLoadStatus` (SUCCESS/FAILURE/UNSUPPORTED), `viewerException
 - Two modes: **text mode** (highlights selected text) and **draw mode** (box highlights with Hammer.js touch support).
 - Redaction reuses the same highlighting mechanism with different CSS classes and backend API routes.
 - Bookmarks are stored via the annotations API and use PDF.js location/destination handling for navigation.
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- Annotations are private to the creating user by default. The Confluence LLD describes an Access Management GRANT system for sharing annotations (Public grants override user-specific grants), but this may not be fully implemented.
+- Annotations are private to the creating user, with no way to widen that. `annotation_set` carries a unique constraint on `(created_by, document_id)` (`em-annotation-api:AnnotationSet.java:21-23`), lookups resolve the set through `securityUtils.getCurrentUserLogin()` (`AnnotationSetServiceImpl.java:45,116`), and the service's whole authorisation rule is `requestMatchers("/api/**").authenticated()` (`SecurityConfiguration.java:79`). Two people annotating the same document each get their own set and cannot see each other's work.
+<!-- DIVERGENCE: The Confluence LLD describes an Access Management GRANT system for sharing annotations, in which Public grants override user-specific grants. em-annotation-api has no grant entity, endpoint, repository method or Access Management dependency; every read path is filtered by the caller's own IDAM login. Source wins. -->
 
 **Annotation data model** (from `em-annotation-api` REST resources):
 
@@ -182,7 +222,7 @@ Hearing recordings are captured by CVP (Cloud Video Platform) and VH (Video Hear
 
 **Scheduling and execution:**
 
-The ingestor is deployed as a **Kubernetes CronJob** scheduled at 30-minute intervals during off-peak hours (9pm through 5am), staggered between the two production clusters. It is controlled by two environment variables: `ENABLE_CRON_JOB` (on/off) and `MAX_FILES_TO_PROCESS` (batch size, default 50). When triggered, the Spring Boot application starts, runs ingestion once, then calls `System.exit(0)` (`em-hrs-ingestor:src/main/java/.../listener/IngestWhenApplicationReadyListener.java:67`). Parallel operation is forbidden via `.spec.concurrencyPolicy=Forbid`, though overlapping runs between disconnected clusters will produce warnings but not duplicate data.
+The ingestor is deployed as a **Kubernetes CronJob** on `*/30 * * * *` — every 30 minutes, around the clock, with no off-peak window (`cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml:9`, `prod.yaml:8`). It is controlled by `ENABLE_CRONJOB` (on/off, `prod.yaml:11`) and `MAX_FILES_TO_PROCESS`, which is 50 in the base values and raised to 250 in production (`em-hrs-ingestor.yaml:17`, `prod.yaml:12`). Because each run is capped, a backlog larger than the cap is drained over successive runs rather than in one pass. When triggered, the Spring Boot application starts, runs ingestion once, then calls `System.exit(0)` (`em-hrs-ingestor:src/main/java/.../listener/IngestWhenApplicationReadyListener.java:67`). Parallel operation is forbidden via `concurrencyPolicy: Forbid` (`em-hrs-ingestor:charts/em-hrs-ingestor/values.yaml:10`), though overlapping runs between disconnected clusters will produce warnings but not duplicate data.
 <!-- DIVERGENCE: Confluence says ingestor processes back 60 minutes of files; source shows CVP_PROCESS_BACK_TO_DAY=2 (processes back 2 days). Source wins. -->
 
 **Ingestion flow:**
@@ -198,12 +238,14 @@ The ingestor is deployed as a **Kubernetes CronJob** scheduled at 30-minute inte
 
 Recordings follow a naming convention parsed by the ingestor:
 
-| Format | Pattern | Used by |
+| Format | Pattern | Matches |
 |--------|---------|---------|
-| With location code | `JJ-LLLL-CCCCCCC_yyyy-MM-dd-HH.mm.ss.SSS-zzz_V` | Civil, Family, Royal Courts of Justice |
-| Without location code | `JJ-CCCCCCC_yyyy-MM-dd-HH.mm.ss.SSS-zzz_V` | Tribunals (EE, ES, GR, HWE, IA, PC, SE, TC, WP, EA, AU, IU, LU, TUX, CI, QB, HF, BP, SC, CR) |
-| Invalid/fallback | Everything left of timestamp becomes case reference | Unparseable filenames |
-<!-- CONFLUENCE-ONLY: not verified in source -->
+| With location code | `SSSS-LLLL-CASEREF_yyyy-MM-dd-HH.mm.ss.SSS-TZ_V` | Location code `0372` or `0266` (Royal Courts of Justice), then any 3-4 digit code (Civil, Family) |
+| Without location code | `SSSS-CASEREF_yyyy-MM-dd-HH.mm.ss.SSS-TZ_V` | Everything else, including tribunals |
+| Invalid/fallback | Everything left of the timestamp becomes the case reference | Unparseable filenames |
+
+`SSSS` is a four-character service code — three letters then a digit, such as `BBA3` (`FilenameParser.java:19-29`). A four-digit location code has its leading zeros stripped, a three-digit one is kept verbatim (`FilenameParser.java:109-112`). `TZ` is a three-letter zone id fed straight to `ZoneId.of()`, so an unrecognised zone throws rather than defaulting (`FilenameParser.java:157-164`).
+<!-- DIVERGENCE: Confluence documents the leading token as a two-character jurisdiction code and lists the two-letter tribunal codes (EE, ES, GR, HWE, IA, PC, SE, TC, WP, EA, AU, IU, LU, TUX, CI, QB, HF, BP, SC, CR) as selecting the without-location format. The parser's leading token is a four-character service code and no two-letter code appears in any of its patterns; those codes are jurisdiction keys used for retention lookup in em-hrs-api, not parser input. Source wins. -->
 
 **HRS-API endpoints:**
 
@@ -217,11 +259,11 @@ Recordings follow a naming convention parsed by the ingestor:
 
 **Access control:**
 
-- Allowed IDAM roles: `caseworker-hrs-searcher`, `caseworker-hrs` (`em-hrs-api:src/main/resources/application.yaml:146`)
-- S2S whitelist: `ccd_gw`, `em_gw`, `em_hrs_ingestor`, `xui_webapp`, `ccd`, `ccd_data`, `ccd_case_disposer`
-- Share links expire after a configurable TTL (default 72 hours, `shareelink.ttl` property)
-- Azure Managed Identity (`rpa-prod-mi`) used for blob storage access via IAM roles (Storage Blob Data Reader, Storage Blob Delegator)
-<!-- CONFLUENCE-ONLY: not verified in source -->
+- Allowed IDAM roles: `caseworker-hrs-searcher`, `caseworker-hrs` (`ALLOWED_ROLES`, `em-hrs-api:src/main/resources/application.yaml:149`)
+- S2S whitelist: `ccd_gw`, `em_gw`, `em_hrs_ingestor`, `xui_webapp`, `ccd`, `ccd_data`, `ccd_case_disposer` (`S2S_NAMES_WHITELIST`, `application.yaml:103`); the `DELETE /delete` endpoint applies a narrower list of `ccd_case_disposer`, `em_gw` (`application.yaml:220`)
+- Share links expire after a configurable TTL, default 72 hours (`shareelink.ttl` / `SHAREE_LINK_TTL`, `application.yaml:157-158`), compared against `sharedOn` in `SegmentDownloadServiceImpl.isAccessValid` (`:227-232`)
+- Azure Managed Identity used for blob storage access: the service builds a `DefaultAzureCredential` and signs downloads with a user delegation key rather than an account key (`em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/storage/HearingRecordingStorageImpl.java:266,280-296`). The identity is the shared EM one, `rpa-<env>-mi` — `rpa-prod-mi` in production (`em-hrs-api:infrastructure/main.tf:53-56`)
+<!-- CONFLUENCE-ONLY: The IAM role names granted to that identity on the CVP/VH storage account (Storage Blob Data Reader, Storage Blob Delegator) come from Confluence. They are assigned outside the cloned repos, so they cannot be verified in source. -->
 
 **Reporting:**
 
@@ -264,14 +306,18 @@ The following HMCTS services depend on EM capabilities:
 | Recovery time | ~2 hours to full restore |
 | Maximum bundle size | 1GB (can be increased; higher may cause timeouts) |
 | Database backup | Azure geo-replicated; transaction logs every 5 min, differential every 12h, full weekly |
-| Data retention | 7 days of backups; recording default TTL is 20 years (`DEFAULT_TTL: P20Y`) |
+| Data retention | 7 days of backups; recording TTL is resolved per service code, then per jurisdiction code, then from `DEFAULT_TTL` (`P20Y`) |
 <!-- CONFLUENCE-ONLY: not verified in source -->
+
+The replica figure is the deployed floor, not a ceiling: each EM Java service is pinned at 2 replicas per cluster with autoscaling to 4, across two clusters (`cnp-flux-config:apps/em/em-anno/em-anno.yaml:10,13`, `apps/em/em-stitching/em-stitching.yaml:10` with `apps/em/em-stitching/prod.yaml:14`, `apps/em/em-ccd-orchestrator/em-ccd-orchestrator.yaml:10` with `apps/em/em-ccd-orchestrator/prod.yaml:11`, `apps/em/em-hrs-api/em-hrs-api.yaml:10,13-14`).
+
+Recording retention resolves in `TtlServiceImpl.createTtl` — a service-code entry wins, then a jurisdiction-code entry, then `DEFAULT_TTL` (`em-hrs-api:TtlServiceImpl.java:25-35`, `application.yaml:211-212`). Those maps are not uniformly 20 years: `CV` and `FM` get 6 years in `ttl_jurisdiction_map.json`, and every `AAA*`/`ABA*` service code gets 6 years in `ttl_service_map.json`. A recording whose filename yields no recognised service code falls through to the 20-year default, so a parse gap silently lengthens retention.
 
 ## Integration patterns for service teams
 
 Service teams interact with EM primarily through two integration points:
 
-**Triggering a bundle** — configure a CCD event callback to hit `em-ccd-orchestrator`. The orchestrator is an S2S-authorised service; whitelisted callers include `ccd_data`, `xui_webapp`, `civil_service`, `prl_cos_api`, `sptribs_case_api`, `et_cos`, `ethos_repl_service`, and `civil_general_applications`. Your case definition must include a `caseBundles` complex field and a `bundleConfiguration` field that names the YAML config file.
+**Triggering a bundle** — configure a CCD event callback to hit `em-ccd-orchestrator`. The orchestrator is an S2S-authorised service, and the whitelist is per environment. Production admits `sscs`, `ccd`, `ccd_data`, `iac`, `em_stitching_api`, `civil_service`, `prl_cos_api`, `sptribs_case_api`, `et_cos` and `ethos_repl_service` (`cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml:15`) — notably not `xui_webapp`, which the in-repo default does allow (`em-ccd-orchestrator:src/main/resources/application.yaml:87`). A new consumer needs a flux change to that list, not just a service definition. Your case definition must include a `caseBundles` complex field and a `bundleConfiguration` field that names the YAML config file.
 
 **Embedding document viewing** — add the `@hmcts/media-viewer` Angular library to your frontend. It handles PDF rendering, annotation CRUD (against `em-annotation-api`), and redaction workflows (against `em-native-pdf-annotator-app`). The library communicates with backend services via proxy routes you configure in your Express/nginx layer.
 

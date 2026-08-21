@@ -25,6 +25,11 @@ sources:
   - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/DeleteDocumentDataInterceptor.java
   - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/CommentHeaderConfig.java
   - em-annotation-api:src/main/resources/application.yaml
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationSetServiceImpl.java
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/BookmarkServiceImpl.java
+  - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/errors/EmptyResponseException.java
+  - em-annotation-api:src/main/resources/db/migration/V1__baseline_migration.sql
+  - em-media-viewer:projects/media-viewer/src/lib/store/effects/annotation.effects.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -74,6 +79,11 @@ sources_sha:
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/DeleteDocumentDataInterceptor.java": "907765858535794d0fa8c55b5500c2e0be034679"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/CommentHeaderConfig.java": "ec97bb95c09e500d78f7a95517ed16bb3a6f4d94"
   "em-annotation-api:src/main/resources/application.yaml": "4d60b72a3debbf1db23b103c6e2fe590940d29f1"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationSetServiceImpl.java": "cb1b245382e54dbfed78167e1aaf5e237f3d9a32"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/BookmarkServiceImpl.java": "274d9b3c252af7c11e053bb8664cd43c91e2472b"
+  "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/errors/EmptyResponseException.java": "1a11a892b05081699066a311af6254d72462c197"
+  "em-annotation-api:src/main/resources/db/migration/V1__baseline_migration.sql": "add3a179ffab7d64ba1d19d6ba443c70914603dd"
+  "em-media-viewer:projects/media-viewer/src/lib/store/effects/annotation.effects.ts": "0f7db9d92d1ca62c1b8d684c741d39168ef2e63e"
 ---
 
 ## TL;DR
@@ -241,13 +251,12 @@ Returns all bookmarks for the current user on the specified document (`BookmarkR
 
 The recommended pattern used by `em-media-viewer` and XUI consumers:
 
-1. **Get or create annotation set** — call `GET /api/annotation-sets/filter?documentId={id}`. If HTTP 404 is returned, create a new annotation set via `POST /api/annotation-sets`.
+1. **Get or create annotation set** — call `GET /api/annotation-sets/filter?documentId={id}`. When no set exists the endpoint returns **HTTP 204 with an empty body**, not 404: it throws `EmptyResponseException` (`em-annotation-api:FilterAnnotationSet.java:70`), which carries `@ResponseStatus(HttpStatus.NO_CONTENT)` (`em-annotation-api:EmptyResponseException.java:6`). Its own OpenAPI annotation advertises 404 (`em-annotation-api:FilterAnnotationSet.java:54`), so generated clients that branch on 404 will silently treat "no annotations" as success. `em-media-viewer` checks the status code explicitly (`if (res.status === 204)` — `em-media-viewer:annotation.effects.ts:22`). On 204, create a new annotation set via `POST /api/annotation-sets`.
 2. **Post annotation** — create annotations (highlights, areas) via `POST /api/annotations` referencing the annotation set ID.
 3. **Add comment** — comments are nested within the annotation payload. To add a comment to an existing annotation, use `PUT /api/annotations` with the updated annotation body including the new comment.
 4. **Retrieve all** — re-fetch the annotation set via the filter endpoint to get the full tree (annotations, comments, rectangles).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-This get-or-create pattern is documented in the "EM DM - Annotations" Confluence page and matches the observed media-viewer client behaviour. There is no explicit lock mechanism for concurrent updates to the same annotation.
+There is no lock mechanism for concurrent updates to the same annotation. What does exist is a database uniqueness guarantee that makes the get-or-create race safe: `annotation_set` carries `CONSTRAINT unique_set_per_doc_and_user UNIQUE (created_by, document_id)` (`em-annotation-api:src/main/resources/db/migration/V1__baseline_migration.sql:184`). Two concurrent creates for the same user and document cannot both succeed — the loser gets a constraint violation, and re-running step 1 then returns the winner's set.
 
 ## Set document rotation metadata
 
@@ -305,11 +314,11 @@ Returns HTTP 204. The operation is idempotent — succeeds even if no data exist
 
 ## Permissions model
 
-- All `/api/**` endpoints require both IDAM JWT and S2S token (`SecurityConfiguration.java:71`).
-- Authorised S2S callers default to `em_gw,xui_webapp` (configurable via `S2S_NAMES_WHITELIST` env var, `application.yaml:115`).
-- Annotation sets are user-scoped: `findOneByDocumentId` filters by `SecurityUtils.getCurrentUserLogin()` (`AnnotationSetServiceImpl.java:97–99`).
-- Bookmark write/update/delete operations enforce ownership — a `ResourceNotFoundException` is thrown if the bookmark belongs to a different user (`BookmarkServiceImpl.java:73–77`, `BookmarkServiceImpl.java:110–113`).
-- The document-data deletion endpoint (`DELETE /api/documents/{docId}/data`) has a separate S2S whitelist (`em_gw,dm_store` via `DELETE_DOCUMENT_DATA_WHITELIST` env var) and is feature-toggled via `endpoint-toggles.document-data-deletion`.
+- All `/api/**` endpoints require both IDAM JWT and S2S token (`SecurityConfiguration.java:71-83`). Authorisation is `requestMatchers("/api/**").authenticated()` and nothing more (`SecurityConfiguration.java:79`) — no role or authority is checked anywhere in the service.
+- Authorised S2S callers default to `em_gw,xui_webapp` (configurable via `S2S_NAMES_WHITELIST` env var, `application.yaml:117-118`).
+- Annotation sets are user-scoped: `findOneByDocumentId` filters by `SecurityUtils.getCurrentUserLogin()` (`AnnotationSetServiceImpl.java:115-117`).
+- Bookmark write/update/delete operations enforce ownership — a `ResourceNotFoundException` is thrown if the bookmark belongs to a different user (`BookmarkServiceImpl.java:75`, `BookmarkServiceImpl.java:112`; bulk updates throw at `:124`).
+- The document-data deletion endpoint (`DELETE /api/documents/{docId}/data`) has a separate S2S whitelist (`em_gw,dm_store` via `DELETE_DOCUMENT_DATA_WHITELIST`, `application.yaml:184`) and is feature-toggled via `endpoint-toggles.document-data-deletion`, whose env var is `ENABLE_DOCUMENT_DELETE_ENDPOINT` and which defaults to `true` (`application.yaml:138-140`).
 - Only the annotation creator can edit or delete their annotations — there is no sharing mechanism in the current source code.
 
 <!-- CONFLUENCE-ONLY: not verified in source -->

@@ -92,7 +92,7 @@ sources_sha:
 - The orchestrator receives CCD callbacks at `/api/stitch-ccd-bundles` (sync) or `/api/new-bundle` / `/api/async-stitch-ccd-bundles` (async), maps bundle YAML config to a `DocumentTask`, and POSTs it to stitching-api.
 - Stitching-api persists `DocumentTask` to the `versioned_document_task` table, then a scheduled Spring Batch job picks it up, downloads source documents from CDAM, converts non-PDF formats via Docmosis/ImageConverter, merges using Apache PDFBox `PDFMergerUtility`, and uploads the result.
 - Bundle structure is driven by YAML configuration files (`bundleconfiguration/*.yaml`) that define folders, document filters, pagination, cover pages, watermarks, and email notifications.
-- CCD imposes a 10-second callback timeout -- sync stitching must complete within this window or the callback fails; the async path avoids this constraint entirely.
+- CCD gives each callback attempt a 29-second read timeout and makes three attempts in total -- sync stitching must complete inside one attempt or the callback fails and is re-invoked; the async path avoids the constraint entirely.
 - On completion, stitching-api POSTs back to the orchestrator's `/api/stitching-complete-callback/{caseId}/{triggerId}/{bundleId}` endpoint, which writes the stitched document URI into CCD case data.
 
 ## The CCD callback trigger
@@ -115,7 +115,7 @@ The bundle structure is determined by YAML configuration files shipped inside th
 
 ### Sync path
 
-`CcdBundleStitchingService.stitchBundle()` calls `StitchingService.stitch()` which POSTs the task to `{EM_STITCHING_API_URL}/api/document-tasks` and then polls `GET /api/document-tasks/{id}` with exponential back-off starting at 1 second (`StitchingService.java:180-191`). Maximum 7 retries (`MAX_RETRY_TO_POLL_STITCHING`); each attempt increases sleep time by `SLEEP_TIME * (i + 2)` where `SLEEP_TIME=1000ms`. After exhausting retries, a `StitchingTaskMaxRetryException` is thrown.
+`CcdBundleStitchingService.stitchBundle()` calls `StitchingService.stitch()` which POSTs the task to `{EM_STITCHING_API_URL}/api/document-tasks` and then polls `GET /api/document-tasks/{id}` with widening back-off starting at 1 second (`StitchingService.java:180-193`). Maximum 7 retries (`MAX_RETRY_TO_POLL_STITCHING`); each attempt increases sleep time by `SLEEP_TIME * (i + 2)` where `SLEEP_TIME=1000ms`, giving 1s, 3s, 6s, 10s, 15s, 21s, 28s. After exhausting retries, a `StitchingTaskMaxRetryException` is thrown.
 
 ### Async path
 
@@ -426,7 +426,7 @@ task may still be running**, producing duplicate work and potentially duplicate 
 
 This is the primary reason the async path exists:
 
-- **Sync path risk**: The orchestrator's polling loop (`StitchingService.poll()`) sleeps with exponential back-off (`1s, 3s, 5s, 7s, ...` up to 7 retries). A cold stitching-api that hasn't run its batch job in the last 6 seconds will add up to 6 seconds of batch-schedule delay before the task is even picked up. Combined with document download, conversion, and merge time, that eats a large fraction of the 29s budget — and the production figures in [Performance characteristics](#performance-characteristics) below (~21s for a 298-page bundle) show real bundles crossing it.
+- **Sync path risk**: The orchestrator's polling loop (`StitchingService.poll()`) sleeps for 1s, 3s, 6s, 10s, 15s, 21s then 28s across its 7 attempts (`sleepTime += SLEEP_TIME * (i + 2)`, `StitchingService.java:180-193`) — 84 seconds of waiting if every poll finds the task unfinished, which is itself far past the callback budget. A cold stitching-api that hasn't run its batch job in the last 6 seconds will add up to 6 seconds of batch-schedule delay before the task is even picked up. Combined with document download, conversion, and merge time, that eats a large fraction of the 29s budget — and the production figures in [Performance characteristics](#performance-characteristics) below (~21s for a 298-page bundle) show real bundles crossing it.
 
 - **Async path solution**: The async endpoints (`/api/async-stitch-ccd-bundles`, `/api/new-bundle`) return immediately after submitting the task. Stitching completes out-of-band; the callback writes results back to CCD independently of the original event timeout.
 

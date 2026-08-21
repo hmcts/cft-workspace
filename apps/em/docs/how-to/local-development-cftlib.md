@@ -12,6 +12,11 @@ sources:
   - em-native-pdf-annotator-app:src/cftlib/resources/docker-compose-local.yml
   - em-hrs-api:src/cftlib/java/uk/gov/hmcts/reform/em/hrs/cftlib/CftLibConfig.java
   - em-hrs-api:src/cftlib/resources/docker-compose-local.yml
+  - rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java
+  - rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java
+  - rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java
+  - ccd-data-store-api:src/main/resources/application.properties
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -40,6 +45,11 @@ sources_sha:
   "em-native-pdf-annotator-app:src/cftlib/resources/docker-compose-local.yml": "a0bc4b6c4879ce836bdc90f57295f746b391d86e"
   "em-hrs-api:src/cftlib/java/uk/gov/hmcts/reform/em/hrs/cftlib/CftLibConfig.java": "2b91f3dbb6217677d09c5042d3d189c692608179"
   "em-hrs-api:src/cftlib/resources/docker-compose-local.yml": "02a2b73d70fbc57f454d35f00a04541d9d3bca2d"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "e3587808bd1477ab4a47aa39c0b6ac5468479f7d"
+  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java": "9098a05a1f349631f606f4831c0c024deb6a4b5a"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
 ---
 
 ## TL;DR
@@ -234,20 +244,17 @@ Once `em-stitching-api` is running via `bootWithCCD`:
   ```groovy
   jvmArgs = ['-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5006']
   ```
-  Then create a Remote Debug run configuration in IntelliJ on port `5006`. The task will wait for the debugger to attach before proceeding.
-  <!-- CONFLUENCE-ONLY: not verified in source -->
+  Then create a Remote Debug run configuration in IntelliJ on port `5006`. The task will wait for the debugger to attach before proceeding. `jvmArgs` is available because `bootWithCCD` is a `CftlibExec`, which extends Gradle's `JavaExec` (`rse-cft-lib:CftlibExec.java:17`, `rse-cft-lib:CftLibPlugin.java:174-182`). The plugin's own arguments are appended at execution time rather than assigned (`rse-cft-lib:CftlibExec.java:115-126`), so assigning `jvmArgs` in `build.gradle` does not discard them.
 
 - **IntelliJ Gradle panel**: The `bootWithCCD` task is accessible in the Gradle tool window under Tasks. You can run or debug it directly from there without using the terminal.
   <!-- CONFLUENCE-ONLY: not verified in source -->
 
-- **Clean boot**: Docker containers persist between runs. To force a fresh start, set the environment variable `RSE_LIB_CLEAN_BOOT=true` before running `bootWithCCD`, or manually tear down containers with:
+- **Clean boot**: Docker containers persist between runs. Setting `RSE_LIB_CLEAN_BOOT` before running `bootWithCCD` adds `--force-recreate --renew-anon-volumes` to the compose invocation (`rse-cft-lib:ComposeRunner.java:38,71`). Only the variable's presence is tested, not its value, so `RSE_LIB_CLEAN_BOOT=false` still forces a clean boot; unset it to go back to reuse. Setting `CI` has the same effect. This governs cftlib's own `cftlib` compose project — a repo's extra containers live in a separate project and need tearing down by hand:
   ```bash
   docker compose -f src/cftlib/resources/docker-compose-local.yml -p cftlib-additional down -v
   ```
-  <!-- CONFLUENCE-ONLY: not verified in source -->
 
-- **Full callback logging**: Add `environment 'LOG_CALLBACK_DETAILS', '*'` to the `bootWithCCD` block to produce full logging of case data sent between callbacks.
-  <!-- CONFLUENCE-ONLY: not verified in source -->
+- **Full callback logging**: Add `environment 'LOG_CALLBACK_DETAILS', '*'` to the `bootWithCCD` block to produce full logging of case data sent between callbacks. The variable feeds `ccd.callback.log.control` (`ccd-data-store-api:application.properties:285`), which is parsed as a comma-separated list. `*` logs every callback; any other entry is matched as a substring of the callback URL (`ccd-data-store-api:CallbackService.java:262-266`), so `LOG_CALLBACK_DETAILS` can be narrowed to one endpoint — for example `stitch-ccd-bundles` — instead of logging everything.
 
 - **Refreshing secrets**: If your `.aat-env` file is stale (e.g., after Key Vault rotation), run `./gradlew reloadEnvSecrets` to delete and re-fetch it.
 
