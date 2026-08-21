@@ -29,6 +29,9 @@ sources:
   - em-media-viewer:projects/media-viewer/src/lib/viewers/grab-n-drag.directive.ts
   - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationServiceImpl.java
   - em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/repository/AnnotationRepository.java
+  - em-media-viewer:projects/media-viewer/package.json
+  - em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.html
+  - em-media-viewer:projects/media-viewer/src/assets/all.scss
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -87,6 +90,9 @@ sources_sha:
   : "cb1b245382e54dbfed78167e1aaf5e237f3d9a32"
   ? "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/repository/AnnotationRepository.java"
   : "cb1b245382e54dbfed78167e1aaf5e237f3d9a32"
+  "em-media-viewer:projects/media-viewer/package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
+  "em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.html": "d0021abc1a687f247765d65ff348e43a7684b441"
+  "em-media-viewer:projects/media-viewer/src/assets/all.scss": "9cc5bcc989fd88b8605877ba4db99e399d75ae6f"
 ---
 
 ## TL;DR
@@ -325,8 +331,9 @@ Note: `em-icp-api` is marked as archived in its README, but the code and its API
 
 | Category | Packages |
 |----------|----------|
-| **Bundled** (shipped in the package) | `pdfjs-dist`, `mutable-div`, `socket.io-client`*, `uuid`, `@swimlane/ngx-datatable` |
-| **Peer** (must be in consuming app) | `@angular/*` 20.x, `@ngrx/*` 20, RxJS, `govuk-frontend`, `rpx-xui-translation` |
+| **Bundled** (shipped in the package) | `pdfjs-dist`, `mutable-div`, `socket.io-client`*, `uuid`, `@swimlane/ngx-datatable`, `moment-timezone`, `tslib` |
+| **Peer** (declared, must be in consuming app) | `@angular/*` 20.x (except `@angular/cdk`, still on the 17 line), `@ngrx/*` 20, RxJS, `ngx-chips`, `rpx-xui-translation` |
+| **Undeclared but required** | `govuk-frontend` — the library's templates use GOV.UK classes and its stylesheet overrides GOV.UK selectors, but neither dependency block names it |
 
 \* `socket.io-client` is declared in `package.json` but **not imported anywhere** in the library source. ICP now uses native `WebSocket` with Azure Web PubSub. This is a dead dependency retained from the earlier Socket.IO-based implementation.
 

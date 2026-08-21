@@ -26,6 +26,10 @@ sources:
   - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/StitchingCompleteCallbackController.java
   - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/notification/NotificationService.java
   - em-ccd-orchestrator:src/main/resources/bundleconfiguration/complex-example.yaml
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java
+  - ccd-data-store-api:src/main/resources/application.properties
+  - cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -76,6 +80,10 @@ sources_sha:
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/StitchingCompleteCallbackController.java": "6c1a512c71e548439d96afbe0645b3521685081a"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/notification/NotificationService.java": "bd3df6d2894c1f0ac17942e700975a20d7f111b9"
   "em-ccd-orchestrator:src/main/resources/bundleconfiguration/complex-example.yaml": "c9f34034b621149bf9da290484501407f540e196"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "e2f115cfbdce6268b717d319e1c22ea4d8d9d1b2"
 ---
 
 ## TL;DR
@@ -393,13 +401,32 @@ folders:
 
 ## CCD callback timeout constraint
 
-CCD imposes a **10-second timeout** on all callbacks. By default, it retries failed callbacks 3 times, each also subject to a 10-second limit. The only downstream configuration option is to disable retries entirely (still a single 10-second attempt).
+Callbacks are dispatched through `ccd-data-store-api`'s `restTemplate` bean, whose connect and read
+timeouts come from `HTTP_CLIENT_CONNECTION_TIMEOUT` / `HTTP_CLIENT_READ_TIMEOUT`
+(`ccd-data-store-api:application.properties:194-195`, applied in `RestTemplateConfiguration.java:72-80`).
+Both default to 30s, and every deployed environment sets the read timeout to **29s**
+(`cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml:40`). That 29s — not 10s — is the per-attempt
+budget your callback has.
 
-<!-- CONFLUENCE-ONLY: The 10-second timeout and 3-retry default is documented in Confluence page 1945632872 but the CCD callback timeout config is in ccd-data-store-api, not in EM repos. not verified in source -->
+`CallbackService.send` is annotated `@Retryable(value = {CallbackException.class}, maxAttempts = 3,
+backoff = @Backoff(delay = 1000, multiplier = 3))` (`CallbackService.java:75`, `:87`), so a failure gets
+**three attempts in total** — the initial call plus retries at T+1s and T+3s, as the code's own comment
+states. There is no per-event override: `ccd.callback.retries=1,5,10` (`application.properties:78-79`) is
+read into `ApplicationParams.getCallbackRetries()` but no production code path calls it, and
+`CallbackService.java:42` records why ("RDM-4316 discarded timeout/backoff value in case event definition
+until requirements are cleared").
 
-This timeout is the primary reason the async path exists:
+<!-- DIVERGENCE: Confluence page 1945632872 states a 10-second callback timeout, 3 retries on top of the initial call, and an option to disable retries. Source has a 29s read timeout in every deployed environment, 3 attempts in total rather than 3 retries, and no configurable retry count at all. Source wins. -->
 
-- **Sync path risk**: The orchestrator's polling loop (`StitchingService.poll()`) sleeps with exponential back-off (`1s, 3s, 5s, 7s, ...` up to 7 retries). A cold stitching-api that hasn't run its batch job in the last 6 seconds will add up to 6 seconds of batch-schedule delay before the task is even picked up. Combined with document download, conversion, and merge time, sync stitching frequently exceeds 10 seconds for anything beyond trivial bundles.
+The retry behaviour matters more than the timeout, because a read timeout is exactly what triggers it.
+`sendRequest` catches `RestClientException` and returns empty (`CallbackService.java:167-174`), which makes
+`sendSingleRequest` throw `CallbackException` (`:110-115`) — the annotation's retry trigger. So a sync stitch
+that overruns 29s is not simply failed — it is **re-invoked up to two more times while the first stitching
+task may still be running**, producing duplicate work and potentially duplicate documents.
+
+This is the primary reason the async path exists:
+
+- **Sync path risk**: The orchestrator's polling loop (`StitchingService.poll()`) sleeps with exponential back-off (`1s, 3s, 5s, 7s, ...` up to 7 retries). A cold stitching-api that hasn't run its batch job in the last 6 seconds will add up to 6 seconds of batch-schedule delay before the task is even picked up. Combined with document download, conversion, and merge time, that eats a large fraction of the 29s budget — and the production figures in [Performance characteristics](#performance-characteristics) below (~21s for a 298-page bundle) show real bundles crossing it.
 
 - **Async path solution**: The async endpoints (`/api/async-stitch-ccd-bundles`, `/api/new-bundle`) return immediately after submitting the task. Stitching completes out-of-band; the callback writes results back to CCD independently of the original event timeout.
 

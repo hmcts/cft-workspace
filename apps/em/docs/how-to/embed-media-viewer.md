@@ -15,6 +15,10 @@ sources:
   - em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts
   - em-media-viewer:projects/media-viewer/src/lib/icp/icp-session-api.service.ts
   - em-media-viewer:projects/media-viewer/src/lib/viewers/pdf-viewer/pdf-js/pdf-js-wrapper.ts
+  - em-media-viewer:projects/media-viewer/package.json
+  - em-media-viewer:package.json
+  - em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.html
+  - em-media-viewer:projects/media-viewer/src/assets/all.scss
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -53,14 +57,18 @@ sources_sha:
   "em-media-viewer:projects/media-viewer/src/lib/viewers/viewer-exception.model.ts": "fa3728864c83874e15ea556857123115bc616eb6"
   "em-media-viewer:projects/media-viewer/src/lib/icp/icp-session-api.service.ts": "52688fbd2c9836734906256332d6bddf09507c4c"
   "em-media-viewer:projects/media-viewer/src/lib/viewers/pdf-viewer/pdf-js/pdf-js-wrapper.ts": "86b9adfa5ffc1bed792b123e99a3d95517690915"
+  "em-media-viewer:projects/media-viewer/package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
+  "em-media-viewer:package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
+  "em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.html": "d0021abc1a687f247765d65ff348e43a7684b441"
+  "em-media-viewer:projects/media-viewer/src/assets/all.scss": "9cc5bcc989fd88b8605877ba4db99e399d75ae6f"
 ---
 
 ## TL;DR
 
-- `@hmcts/media-viewer` (v4.2.18) is an Angular library that renders PDFs, images, and multimedia with annotation/redaction overlays.
+- `@hmcts/media-viewer` is an Angular library that renders PDFs, images, and multimedia with annotation/redaction overlays.
 - Install via npm/yarn, import `MediaViewerModule`, configure `angular.json` assets, and wire proxy routes in your Node backend.
 - All API calls are relative paths -- the consuming app must proxy `/em-anno`, `/api/markups`, `/api/redaction`, and `/documents` to the correct backend services.
-- Requires Angular ^20.0.0, NgRx ^20 as peer dependencies. `rpx-xui-translation` is a runtime dependency of the host app (used at `1.1.2-CME-780-9` currently).
+- Requires Angular ^20.0.0, NgRx ^20 as peer dependencies. `rpx-xui-translation` is also a declared peer dependency, and the host app must call `RpxTranslationModule.forRoot()` — the library only imports `forChild()`.
 - The PDF.js worker must be served at `/assets/build/pdf.worker.min.js` or PDFs will not render.
 - Supports content types: `pdf`, `image` (core); `mp4`, `mp3` (multimedia); `excel`, `word`, `powerpoint`, `txt`, `rtf` (convertible via Docmosis/LibreOffice backend).
 
@@ -88,13 +96,20 @@ Ensure peer dependencies are satisfied (from `projects/media-viewer/package.json
 | `@angular/core` | ^20.0.0 |
 | `@angular/forms` | ^20.0.0 |
 | `@angular/platform-browser` | ^20.0.0 |
+| `@angular/router` | ^20.0.0 |
+| `@angular/cdk` | ^17.3.8 |
 | `@ngrx/effects` | ^20 |
 | `@ngrx/store` | ^20 |
 | `@ngrx/store-devtools` | ^20 |
+| `rxjs` | ^7.8.1 |
+| `ngx-chips` | exact pin — read it from the manifest |
+| `rpx-xui-translation` | exact pin — read it from the manifest |
 
-The library also bundles these as non-peer dependencies: `pdfjs-dist` (^4.10.38), `socket.io-client` (^4.8.0), `@swimlane/ngx-datatable` (^20.0.0), `mutable-div` (^2.0.0), `uuid` (^11.0.3).
+Two of these are exact pins rather than ranges, so a host app on a different version of either will not satisfy the peer range: `ngx-chips` and `rpx-xui-translation`. Note also that `@angular/cdk` is pinned a major line behind the rest of the Angular peers.
 
-Your host app should also provide `rpx-xui-translation`, `govuk-frontend`, and `rxjs`.
+The library bundles these as non-peer dependencies: `pdfjs-dist` (^4.10.38), `socket.io-client` (^4.8.0), `@swimlane/ngx-datatable` (^20.0.0), `moment-timezone` (^0.5.28), `mutable-div` (^2.0.0), `uuid` (^11.0.3), `tslib` (^2.3.0).
+
+Your host app must also provide `govuk-frontend`, which the library needs but does not declare in either dependency block. Its templates use GOV.UK classes directly (`em-media-viewer:projects/media-viewer/src/lib/media-viewer.component.html:13`) and its stylesheet overrides GOV.UK selectors rather than defining them (`em-media-viewer:projects/media-viewer/src/assets/all.scss:34,38`). The demo shell satisfies this itself (`em-media-viewer:package.json:77`); a consuming app has to do the same.
 
 ### 2. Import MediaViewerModule
 
