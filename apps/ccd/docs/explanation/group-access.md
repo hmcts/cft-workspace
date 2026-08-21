@@ -270,7 +270,7 @@ sequenceDiagram
 
 ## SDK support
 
-**`ccd-config-generator` generates both sheets.** Support landed on master in [PR 1063](https://github.com/hmcts/dtsse-ccd-config-generator/pull/1063) (`Access group roles`, 13 August 2026), which supersedes the two earlier attempts this section used to describe as in flight. There are two ways to declare an access type, and they produce the same model objects, so `AccessTypeGenerator` and `AccessTypeRoleGenerator` emit identical JSON either way.
+**`ccd-config-generator` generates both sheets.** Support is on master as of [PR 1063](https://github.com/hmcts/dtsse-ccd-config-generator/pull/1063) (`Access group roles`, 13 August 2026). There are two ways to declare an access type, and they produce the same model objects, so `AccessTypeGenerator` and `AccessTypeRoleGenerator` emit identical JSON either way.
 
 **Imperative.** `ConfigBuilder.accessType(String accessTypeId)` and `ConfigBuilder.accessTypeRole(String accessTypeId)` return builders that populate a row directly (`ConfigBuilder.java:87-89`).
 
