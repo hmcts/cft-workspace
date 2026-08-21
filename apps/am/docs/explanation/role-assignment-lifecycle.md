@@ -20,6 +20,18 @@ sources:
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/RoleConfigRole.java
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ParseRequestService.java
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/CacheControlConfig.java
+  - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/deleteroles/DeleteRoleAssignmentOrchestrator.java
+  - am-role-assignment-service:src/main/resources/roleconfig/role_common.json
+  - am-role-assignment-service:src/main/resources/validationrules/core/conflict-of-interest-global.drl
+  - am-role-assignment-service:src/main/resources/validationrules/ccd/ccd-case-role-validation.drl
+  - am-role-assignment-service:src/main/resources/application.yaml
+  - am-role-assignment-service:charts/am-role-assignment-service/values.yaml
+  - am-role-assignment-service:charts/am-role-assignment-service/values.aat.template.yaml
+  - am-role-assignment-service:charts/am-role-assignment-service/values.preview.template.yaml
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedataaccesscontrol/RoleAssignmentAttributesResource.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java
+  - ccd-data-store-api:src/main/resources/application.properties
+  - cnp-flux-config:apps/am/am-role-assignment-service/prod.yaml
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -63,6 +75,19 @@ sources_sha:
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/RoleConfigRole.java": "e0d36cc40e590356e570f9d3fe78d983f6d192f8"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ParseRequestService.java": "b570497f596fc184b488c5419d0dd4d3f8ec6e91"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/CacheControlConfig.java": "8cf863afdc12718dcea4011c2aca808facad734a"
+  ? "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/deleteroles/DeleteRoleAssignmentOrchestrator.java"
+  : "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
+  "am-role-assignment-service:src/main/resources/roleconfig/role_common.json": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "am-role-assignment-service:src/main/resources/validationrules/core/conflict-of-interest-global.drl": "ecbc331219eccec01275cfcfd0326507a09f7f86"
+  "am-role-assignment-service:src/main/resources/validationrules/ccd/ccd-case-role-validation.drl": "b22c2601ed4603746a832b0b16c18d33a504d283"
+  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-role-assignment-service:charts/am-role-assignment-service/values.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-role-assignment-service:charts/am-role-assignment-service/values.aat.template.yaml": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
+  "am-role-assignment-service:charts/am-role-assignment-service/values.preview.template.yaml": "e869c163161f8b96767a34e45aae0b3cb4644c8c"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedataaccesscontrol/RoleAssignmentAttributesResource.java": "484119b15a8eacd34f30af868e363047f014cd40"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "cnp-flux-config:apps/am/am-role-assignment-service/prod.yaml": "e781760115094d551f69723716c4a8bb3c6591e3"
 ---
 
 ## TL;DR
@@ -100,18 +125,24 @@ Every role assignment carries the following core fields (defined in `Assignment.
 
 ### Supported attribute keys
 
-The `attributes` JSONB map supports a defined set of keys (all stored as strings). Per the HLD, the currently supported attributes are:
+`attributes` is a free-form JSONB map — RAS does not restrict the key set, and pattern validation only checks the keys a role's own pattern names. The "Used for access control" column below therefore means "a consumer reads this key", not "RAS enforces it".
 
 | Attribute | Description | Used for access control |
 |-----------|-------------|------------------------|
-| `caseId` | CCD case ID — limits the role to a single case | Yes |
-| `jurisdiction` | Jurisdiction/service within which the role applies | Yes |
-| `caseType` | CCD case type identifier | Yes |
-| `region` | Region ID (from CRD/JRD reference data) | Yes |
-| `baseLocation` | Court/location ePIMMS property ID | Yes |
+| `caseId` | CCD case ID — limits the role to a single case | Yes (CCD) |
+| `jurisdiction` | Jurisdiction/service within which the role applies | Yes (CCD, WA) |
+| `caseType` | CCD case type identifier | Yes (CCD, WA) |
+| `region` | Region ID (from CRD/JRD reference data) | Yes (CCD, WA) |
+| `location` | Court/location ePIMMS property ID | Yes (CCD) |
+| `baseLocation` | Booking location ID, written by ORM's booking-derived judicial rules | WA only — CCD does not deserialise this key |
 | `primaryLocation` | Actor's primary/default location (same across all their roles) | No |
-| `contractType` | Salaried vs fee-paid (for judicial role mapping rules) | No |
-| `organisationId` | Professional reference data organisation ID | Yes |
+| `contractType` | `Salaried`, `Fee-Paid` or `Voluntary`, copied from the JRD appointment type | No |
+| `caseAccessGroupId` | Associates the assignment with a CCD case-access group | Yes (CCD) |
+| `substantive` | `"Y"` or `"N"`, written by RAS pattern validation from the role config | No |
+| `bookable` | `"true"` on fee-paid judicial roles; gates the ExUI booking journey | No |
+
+CCD deserialises exactly `jurisdiction`, `caseType`, `caseId`, `region`, `location`, `contractType` and `caseAccessGroupId`, ignoring any other key (`ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedataaccesscontrol/RoleAssignmentAttributesResource.java:36-42`). Neither `organisationId` nor `actorName` exists anywhere in AM source outside sample request fixtures, so neither is written by ORM or read by CCD.
+
 <!-- CONFLUENCE-ONLY: The HLD lists an "actorName" attribute described as "pending approval, will be used to avoid overhead of retrieving name from reference data" — not verified in source -->
 
 ### Classification ordering
@@ -183,7 +214,8 @@ The recommended approach for new services:
 - **Internal users** (staff/judiciary): configure access against organisational roles (for broad case sets) or case roles (for specific case responsibility).
 - **System users**: use organisational role assignments, not IdAM roles.
 
-Any `RoleToAccessProfiles` entry with an `idam:` prefix (e.g. `idam:caseworker-solicitor-civil`) represents legacy technical debt.
+Any `RoleToAccessProfiles` entry with an `idam:` prefix (e.g. `idam:caseworker-solicitor-civil`) represents legacy technical debt. Those entries still resolve at runtime: CCD synthesises an in-memory `idam:`-prefixed role assignment for each of the caller's IDAM roles and appends it to the set fetched from RAS (`ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java:43-78`), behind a flag that defaults to on and is not disabled in any environment (`ccd-data-store-api:src/main/resources/application.properties:273`). See [Overview](overview.md) for the full mechanism.
+
 <!-- CONFLUENCE-ONLY: Business rationale and migration guidance from "IdAM vs role assignment access control" (AM space) — not verified in source -->
 
 ## Creation lifecycle
@@ -303,7 +335,7 @@ Delete operations also pass through Drools validation (the `DeleteRoleAssignment
 
 ## ETag-based caching
 
-To support efficient querying by CCD data store (the primary consumer making ~30+ calls/sec for actor role lookups), RAS implements HTTP ETag caching on the `GET /am/role-assignments/actors/{actorId}` endpoint.
+To support efficient querying by CCD data store, its heaviest consumer for actor role lookups, RAS implements HTTP ETag caching on the `GET /am/role-assignments/actors/{actorId}` endpoint.
 
 The `actor_cache_control` table stores:
 
@@ -319,12 +351,11 @@ When CCD data store sends `If-None-Match` with the previously received ETag, RAS
 
 ## Delete by query safety
 
-The `POST /am/role-assignments/query/delete` endpoint deletes all role assignments matching a query. This is powerful but potentially dangerous in production where many role types coexist on a case. Best practices from the AM team:
+The `POST /am/role-assignments/query/delete` endpoint deletes all role assignments matching a query, and it is all-or-nothing: every matched record is set to `DELETE_REQUESTED` and put through the rules, and unless *all* of them come back `DELETE_APPROVED` the request is `REJECTED` and nothing is deleted, with a `422` returned (`DeleteRoleAssignmentOrchestrator.java:203-233` and `:163-168`). One unapprovable record therefore costs the whole batch, which is the practical reason to filter tightly:
 
-- **Always include `grantType: ["SPECIFIC"]`** in the query — omitting this risks deleting `EXCLUDED` roles (conflicts of interest).
-- **Filter by `roleCategory`** to avoid inadvertently removing citizen or professional case roles.
-- **Specify `roleName` explicitly** rather than relying on broad filters.
-- **Never use this endpoint to delete professional case roles** — those are maintained by the Assign Case Access APIs which keep supplementary case data in sync.
+- **Always include `grantType: ["SPECIFIC"]`** — `conflict-of-interest` is a `CASE` role whose only permitted `grantType` is `EXCLUDED` (`role_common.json:1043-1059`), and its deletion is approved only when a case-allocator approval fact is present (`conflict-of-interest-global.drl:40-50`).
+- **Filter by `roleCategory`** — `PROFESSIONAL` and `CITIZEN` case roles are approved for deletion only when the S2S `clientId` is `ccd_data`, `aac_manage_case_assignment` or `ccd_case_disposer` (`ccd-case-role-validation.drl:67-82`). Any other caller that matches one fails the entire request.
+- **Specify `roleName` explicitly** — the match set is loaded in internal pages and held in memory before validation (`DeleteRoleAssignmentOrchestrator.java:321-352`), so a broad filter is both slower and likelier to pull in a record no rule will approve.
 
 Example minimum-filter query for safely removing WA case roles:
 
@@ -347,9 +378,9 @@ Example minimum-filter query for safely removing WA case roles:
 
 In non-production environments (Preview, AAT, ITHC, Demo), the Drools rule requiring `clientId == "am_org_role_mapping_service"` for creating organisational roles can be bypassed via the `BYPASS_ORG_DROOL_RULE` environment variable. This allows service teams to create org role assignments directly for functional testing without routing through ORM.
 
-- **Production**: `BYPASS_ORG_DROOL_RULE=false` (enforced via `values.prod.template.yaml`)
-<!-- REVIEW: BYPASS_ORG_DROOL_RULE defaults to false in application.yaml:181 (${BYPASS_ORG_DROOL_RULE:false}), not true. It is set to true in lower envs via Helm overrides (values.aat.template.yaml:12, values.preview.template.yaml:33), not by the application.yaml default. -->
-- **Lower environments**: `BYPASS_ORG_DROOL_RULE=true` (default in `application.yaml`)
+- **Default**: off — `byPassOrgDroolRule: ${BYPASS_ORG_DROOL_RULE:false}` (`application.yaml:181`), and the base chart repeats `false` (`charts/am-role-assignment-service/values.yaml:48`).
+- **Lower environments**: switched on by Helm overrides — `values.aat.template.yaml:12`, `values.preview.template.yaml:33` — and in flux for AAT, Demo and Perftest.
+- **Production**: `false`, set explicitly (`cnp-flux-config:apps/am/am-role-assignment-service/prod.yaml:18`).
 
 The `ParseRequestService.java:41-48` reads this value and sets `request.byPassOrgDroolRule`, which the Drools rule checks: `$rq: Request(byPassOrgDroolRule || clientId == "am_org_role_mapping_service")`.
 

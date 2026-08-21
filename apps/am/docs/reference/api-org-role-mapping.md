@@ -22,6 +22,15 @@ sources:
   - am-org-role-mapping-service:src/main/resources/db/migration/V20260622_117__POFCC-117_Enable_possessions_wa_1_0_Prod.sql
   - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java
   - am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/CRDMessagingConfiguration.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/JRDMessagingConfiguration.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/helper/AssignmentRequestBuilder.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/ParseRequestService.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RequestMappingService.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/crd/JobTitle.java
+  - am-org-role-mapping-service:src/main/resources/validationrules/sscs/sscs-caseworker-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/hrs/hrs-admin-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/iac/iac-judicial-org-role-mapping.drl
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -72,13 +81,22 @@ sources_sha:
   "am-org-role-mapping-service:src/main/resources/db/migration/V20260622_117__POFCC-117_Enable_possessions_wa_1_0_Prod.sql": "2e01f7521d23c6ba3e96cf345e68638ae4fbd02d"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
   "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/CRDMessagingConfiguration.java": "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/JRDMessagingConfiguration.java": "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/helper/AssignmentRequestBuilder.java": "b829373f4c4976248de36658b4a273ae170700e0"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/ParseRequestService.java": "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RequestMappingService.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/crd/JobTitle.java": "f2c71dea6e9fc93641f7c24ceb6123d73d392f68"
+  "am-org-role-mapping-service:src/main/resources/validationrules/sscs/sscs-caseworker-mapping.drl": "42f6660e5ccd56ea7678591ee13c499abb8e978c"
+  "am-org-role-mapping-service:src/main/resources/validationrules/hrs/hrs-admin-mapping.drl": "edf77e986bd6e61648abd5ad21d1489940cca617"
+  "am-org-role-mapping-service:src/main/resources/validationrules/iac/iac-judicial-org-role-mapping.drl": "1078cff8b07f276117db53c07033fe3c204921cd"
 ---
 
 ## TL;DR
 
 - ORM (Org Role Mapping Service) runs on port 4098 and provisions organisational role assignments for staff and judicial users by bridging Reference Data (CRD/JRD) to the Role Assignment Service (RAS).
-<!-- REVIEW: Source shows maxRetries=10 and delay=1 minute (FIXED mode), not "max 4 delivery attempts, 5-minute lock duration". See am-org-role-mapping-service:src/main/java/.../config/servicebus/CRDMessagingConfiguration.java:68-71. -->
-- Primary trigger is Azure Service Bus (CRD/JRD topics) with PEEKLOCK mode, max 4 delivery attempts, 5-minute lock duration; HTTP endpoints exist for batch refresh and on-demand judicial refresh.
+- Primary trigger is Azure Service Bus (CRD/JRD topics) consumed in `PEEK_LOCK` mode with auto-complete disabled; HTTP endpoints exist for batch refresh and on-demand judicial refresh.
+- The AMQP client retries connection-level failures 10 times at a fixed 1-minute interval -- `CRDMessagingConfiguration.java:68-71`. This is transport retry, separate from the subscription's message delivery count.
 - `POST /am/role-mapping/refresh` triggers async full re-evaluation (returns 202); `POST /am/role-mapping/judicial/refresh` is synchronous.
 - All RAS calls use `replaceExisting=true` -- ORM always replaces the full set of org roles for a user, never appends.
 - Authorised S2S callers: `am_org_role_mapping_service`, `am_role_assignment_service`, `am_role_assignment_refresh_batch`, `xui_webapp`.
@@ -188,12 +206,10 @@ ORM subscribes to two ASB topics for real-time role provisioning:
 
 ### Message processing behaviour
 
-- Messages received in **PEEKLOCK** mode via `ServiceBusProcessorClient`.
+- Messages are received in `PEEK_LOCK` mode with auto-complete disabled -- `am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/CRDMessagingConfiguration.java:82-83` and `am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/JRDMessagingConfiguration.java:82-83`.
 - Message body is deserialized into a `UserRequest` (list of user IDs that changed).
-- On successful processing, the message is completed via `messageContext.complete()`.
-- On error, the message is **not** abandoned -- it will not be redelivered until the lock expires (5 minutes).
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- Maximum 4 delivery attempts configured on the ASB subscription. After 4 failed attempts, messages move to the dead letter queue.
+- `messageContext.complete()` runs only after `BulkAssignmentOrchestrator.createBulkAssignmentsRequest` returns -- `TopicConsumer.java:60-80`. Neither consumer calls `abandon()`, so a mapping failure leaves the message locked: redelivery waits for the lock to expire rather than happening immediately, and a persistent failure therefore burns one delivery attempt per lock period rather than looping.
+- Maximum 4 delivery attempts configured on the ASB subscription. After 4 failed attempts, messages move to the dead letter queue, and the lock duration is 5 minutes. Both values are set on the subscription itself, not in ORM.
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ### Error handling
@@ -237,12 +253,12 @@ All Feign clients use `@Retryable`:
 
 ### CRD response processing rules
 
-When processing caseworker profiles from CRD:
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- Only the **primary base location** (`isPrimary=true`) is used for the `primaryLocation` attribute.
-- **All roles** for a user are considered for mapping (the `isPrimary` flag on role is ignored).
-- **All work areas** (service codes) are considered when applying mapping rules.
-- A user with `deleteFlag=true` (or soft-deleted) results in an empty `requestedRoles` array, which causes RAS to delete all existing assignments.
+Each CRD caseworker profile is flattened into one `CaseWorkerAccessProfile` per (role x work
+area) pair before the rules run -- `AssignmentRequestBuilder.java:126-167`:
+
+- **All roles** and **all work areas** on the profile are offered to the mapping rules; the cartesian product means a user with 3 roles across 2 services presents 6 access profiles, each of which can match a different rule.
+- Only the base location with `isPrimary=true` supplies `primaryLocationId` and `primaryLocationName`. A profile that does not have exactly one primary base location is rejected as invalid before mapping -- `ParseRequestService.java:99-107`.
+- The profile's `suspended` flag is copied onto every access profile, and every mapping rule's `CaseWorkerAccessProfile(...)` pattern requires `!suspended`. A suspended user therefore matches no rule, and the resulting empty `requestedRoles` array is what makes RAS delete that user's existing assignments.
 
 ## RAS assignment request shape
 
@@ -291,14 +307,16 @@ x-correlation-id: <uuid>
 
 ### Judicial-specific attributes
 
-For judicial users, additional attributes are populated from JRD data:
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- `beginTime`: Judicial Office Appointment start date.
-- `endTime`: Judicial Office Appointment end date.
-- `authorisations`: List of authorisation IDs from `judicial_office.authorisation.authorisation_id`.
-- `region`: From `judicial_office_appointment.region_id`.
-- `baseLocation`: From `judicial_office_appointment.base_location_id`.
-- `contractType`: From `judicial_user_profile.contract_type`.
+A JRD judicial profile is flattened into one `JudicialAccessProfile` per (appointment x service
+code) pair -- `AssignmentRequestBuilder.java:169-219`. These appointment fields feed the
+resulting role assignment:
+
+- `beginTime` / `endTime`: the appointment's start and end dates. Judicial rules extend the end date by one day when setting `endTime` on the assignment -- `iac-judicial-org-role-mapping.drl:52`.
+- `authorisations`: a top-level field on the assignment, not an entry in `attributes`, holding the appointment's active ticket codes (authorisations whose end date is unset or in the future) -- `AssignmentRequestBuilder.java:232-240`.
+- `region`: the appointment's CFT region ID.
+- `baseLocation` and `primaryLocation`: the appointment's base location ID, and its ePIMS ID when the appointment is the principal one (otherwise empty).
+- `contractType`: derived from the appointment, not from the user profile. Rules either copy the appointment's contract type ID or set the literal `"Salaried"` / `"Fee-Paid"` based on the office held -- `iac-judicial-org-role-mapping.drl:74-78`.
+- Only roles with no end date or a future end date count as business roles for `JudicialOfficeHolder` matching -- `AssignmentRequestBuilder.java:221-230`.
 
 ## Database schema
 
@@ -436,7 +454,11 @@ Every service in this table has a Drools rule package listed in
 
 ## Role ID mapping (CRD Role ID to ORM Role Name)
 
-The CRD `roleId` field maps to organisation role names via Drools rules:
+The CRD `roleId` field carries a job-title code. `JobTitle` holds the canonical code-to-title
+list -- `am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/crd/JobTitle.java:8-29`
+-- and the Drools rules match on the code to decide which organisation role name to grant. A code
+present in `JobTitle` but not matched by any rule for a given service code yields no role for that
+user in that service.
 
 | CRD Role ID | Staff Role Name |
 |-------------|----------------|
@@ -461,8 +483,13 @@ The CRD `roleId` field maps to organisation role names via Drools rules:
 | 19 | IBCA Caseworker |
 | 20 | WLU Administrator |
 | 21 | WLU Team Leader |
-| 22 | HRS Team Leader |
-<!-- CONFLUENCE-ONLY: not verified in source -->
+| 22 | HRS Team Leader (`hrs-team-leader`) |
+| 23 | Bailiff Administrator |
+
+Code 16 is absent from `JobTitle`; SSCS matches it directly on `roleId == "16"` to grant
+`registrar` -- `sscs-caseworker-mapping.drl:84-101`. Rules that match by job title rather than
+by raw code go through `hasValidJobTitle(JobTitle.X)`, as HRS does for code 22 --
+`hrs-admin-mapping.drl:28-45`.
 
 ## Examples
 

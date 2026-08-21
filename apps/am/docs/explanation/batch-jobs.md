@@ -16,6 +16,7 @@ sources:
   - am-role-assignment-refresh-batch:charts/am-role-assignment-refresh-batch/values.yaml
   - am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql
   - am-org-role-mapping-service:src/main/resources/application.yaml
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/apihelper/Constants.java
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -57,6 +58,7 @@ sources_sha:
   "am-role-assignment-refresh-batch:charts/am-role-assignment-refresh-batch/values.yaml": "f69f12cdfd2c865a3bb0501d84c105aad0948a51"
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql": "4634ca2f2028547d964f2f1deb111816ffa5da75"
   "am-org-role-mapping-service:src/main/resources/application.yaml": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/apihelper/Constants.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
 ---
 
 ## TL;DR
@@ -137,8 +139,7 @@ When the batch calls `POST /am/role-mapping/refresh?jobId=<id>`, ORM:
 2. Reads the `refresh_jobs` row to determine `role_category` and `jurisdiction`.
 3. Calls CRD (for staff) or JRD (for judicial) to page through all users matching that category/jurisdiction. Page size is controlled by `refresh.Job.pageSize` (default 400, configurable via `REFRESH_JOB_PAGE_SIZE`).
 4. For each page of users, runs Drools mapping rules and calls RAS `POST /am/role-assignments` with `replaceExisting: true`.
-<!-- REVIEW: The status value is 'COMPLETED' not 'COMPLETE'. See am-org-role-mapping-service:src/main/java/.../apihelper/Constants.java:49 which defines COMPLETED = "COMPLETED". -->
-5. On success: sets `status = 'COMPLETE'`. On partial failure: sets `status = 'ABORTED'` and stores failed user IDs.
+5. On success: sets `status = 'COMPLETED'`. On partial failure: sets `status = 'ABORTED'` and stores failed user IDs.
 6. Returns `202 ACCEPTED` immediately — the batch does not wait for completion.
 
 The `refresh.Job.sortDirection` (default `ASC`) and `refresh.Job.sortColumn` config control paging order through reference data.
@@ -212,8 +213,9 @@ The refresh batch reads from and ORM writes to the `refresh_jobs` table in the `
 
 ORM's refresh endpoint (`POST /am/role-mapping/refresh?jobId=<id>`) processes the job asynchronously and updates the status:
 
-<!-- REVIEW: Status value should be 'COMPLETED' not 'COMPLETE'. See am-org-role-mapping-service:src/main/java/.../apihelper/Constants.java:49. -->
-- **NEW -> COMPLETE**: all users processed successfully.
+The three status values are defined as `NEW`, `COMPLETED` and `ABORTED` (`am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/apihelper/Constants.java:48-50`).
+
+- **NEW -> COMPLETED**: all users processed successfully.
 - **NEW -> ABORTED**: partial failure. Failed `user_ids` are stored; a new job with `linked_job_id` pointing to this one can be created for retry.
 
 The refresh batch only picks up rows with `status = 'NEW'`. After all processing, operators verify no `NEW` rows remain.

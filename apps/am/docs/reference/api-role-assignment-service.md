@@ -17,6 +17,14 @@ sources:
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/FeatureFlagEnum.java
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ValidationModelService.java
   - am-role-assignment-service:src/main/resources/roleconfig/role_common.json
+  - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ParseRequestService.java
+  - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/util/ValidationUtil.java
+  - am-role-assignment-service:src/main/resources/validationrules/core/challenged-access-global.drl
+  - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/CacheControlConfig.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/RoleAssignmentAttributes.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/LocationMatcher.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/RegionMatcher.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -67,6 +75,14 @@ sources_sha:
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/FeatureFlagEnum.java": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ValidationModelService.java": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
   "am-role-assignment-service:src/main/resources/roleconfig/role_common.json": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ParseRequestService.java": "b570497f596fc184b488c5419d0dd4d3f8ec6e91"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/util/ValidationUtil.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
+  "am-role-assignment-service:src/main/resources/validationrules/core/challenged-access-global.drl": "efd0f0d312881d8523cfa5cfa17d553ec4366aac"
+  "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/CacheControlConfig.java": "8cf863afdc12718dcea4011c2aca808facad734a"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/RoleAssignmentAttributes.java": "6e54c6ae57480c1a72d28e6d2f94ff0f9d8bb44f"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/LocationMatcher.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/RegionMatcher.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java": "7e4eb810bfd5adca1c0c9825960a6e1e5a9c8851"
 ---
 
 ## TL;DR
@@ -160,7 +176,19 @@ The Drools validation engine considers four distinct identities when evaluating 
 | Authenticated User ID | `Authorization` token | The user account submitting the HTTP request |
 | Assignee ID | `requestedRoles[].actorId` | The target user receiving the role assignment |
 
-<!-- CONFLUENCE-ONLY: Confluence states that for UI-originating calls, assignerId should equal authenticated user ID, but is not defaulted — must be explicitly provided. not verified in source -->
+On the create path `assignerId` is mandatory and is never defaulted: `parseRequest` sets
+`clientId` and `authenticatedUserId` from the tokens but leaves `assignerId` as supplied, and
+`validateAssignmentRequest` runs `validateId` over it -- `ParseRequestService.java:44-59` and
+`ValidationUtil.java:138`. A blank or absent `assignerId` fails with
+`400 An input parameter is Null/Empty` -- `ValidationUtil.java:75-82`.
+
+The delete path is the exception: `prepareDeleteRequest` calls `setAssignerId`, which takes the
+value from an `assignerId` request header and falls back to the authenticated user ID when the
+header is absent -- `ParseRequestService.java:100-137`.
+
+Several rules require the two to agree. Challenged-access rules match on
+`assignerId == authenticatedUserId`, so a caller that passes another user's ID as assigner gets the
+assignment rejected rather than approved -- `challenged-access-global.drl:33`, `:87`, `:144`.
 
 ### Authorised S2S callers
 
@@ -398,19 +426,29 @@ Ordered: `RESTRICTED` > `PRIVATE` > `PUBLIC`. A user with RESTRICTED classificat
 
 The `attributes` field on a role assignment is a flexible JSONB map. Common keys:
 
-| Key | Description | Used for access control |
-|-----|-------------|------------------------|
+The "read by CCD" column below means the key is deserialized into CCD's
+`RoleAssignmentAttributes` and used by a matcher when filtering a user's assignments against a case
+-- `ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/RoleAssignmentAttributes.java:14-23`.
+Keys outside that set are still stored and returned by RAS, and are consumed by other clients such
+as Work Allocation, but they have no effect on CCD case access.
+
+| Key | Description | Read by CCD |
+|-----|-------------|-------------|
 | `jurisdiction` | Case jurisdiction (e.g. `IA`, `SSCS`, `CIVIL`) | Yes |
 | `caseId` | 16-digit CCD case reference | Yes |
 | `caseType` | CCD case type ID | Yes |
-| `region` | Regional location code (from LRD) | Yes |
-| `baseLocation` | Base location code (ePIMMS property ID) | Yes |
-| `primaryLocation` | Primary court/office location (same for all assignments of a given user) | No |
-| `contractType` | Judicial contract type: `SALARIED` or `FEEPAY` | No |
+| `region` | Regional location code, matched against the case's `caseManagementLocation.region` -- `RegionMatcher.java:20-41` | Yes |
+| `location` | Matched against the case's `caseManagementLocation.baseLocation` -- `LocationMatcher.java:20-41` | Yes |
+| `caseAccessGroupId` | Associates a role assignment to multiple cases from CCD (group role assignment) | Yes |
+| `contractType` | Judicial contract type, `Salaried` or `Fee-Paid` -- `RoleAssignmentConstants.java:33-34` | Deserialized but not matched |
+| `baseLocation` | Base location code (ePIMS property ID), set by ORM judicial rules | No |
+| `primaryLocation` | Primary court/office location; mandatory in the role-config patterns for most organisational roles -- `role_common.json:123-125` | No |
 | `substantive` | `"Y"` or `"N"` -- set by Drools pattern validation | No |
-| `caseAccessGroupId` | Associates a role assignment to multiple cases from CCD (group role assignment) | No |
+| `workTypes` | Comma-separated work types, consumed by Work Allocation | No |
+| `bookable` | Set by judicial rules for fee-paid office holders | No |
 
-<!-- CONFLUENCE-ONLY: HLD mentions organisationId (professional reference data org ID) and actorName (text representation of actor name) as future attributes, but neither is present in current role config JSON files. not verified in source -->
+`organisationId` and `actorName` do not appear anywhere in the role-config catalogue or the RAS
+Java sources, so neither is accepted or validated as an attribute today.
 
 ## Drools validation pipeline
 
@@ -533,6 +571,13 @@ The `BYPASS_ORG_DROOL_RULE` environment variable (default `false`) allows non-OR
 (`application.yaml:181`)
 
 ## Performance characteristics
+
+A `ShallowEtagHeaderFilter` is registered over `/am/role-assignments/actors/*` --
+`CacheControlConfig.java:11-18` -- and `GET /am/role-assignments/actors/{actorId}` accepts
+`If-None-Match` -- `GetAssignmentController.java:68-79`. A caller repeating the same actor lookup
+gets `304 Not Modified` with no body when nothing has changed. The filter is shallow: the
+assignments are still queried and serialised server-side to compute the digest, so this saves
+response bandwidth for high-frequency callers such as CCD data store, not database work.
 
 <!-- CONFLUENCE-ONLY: LLD states RAS should handle up to 30 calls/sec for GET /actors/{actorId} from CCD data store (target: 40 calls/sec with 33% headroom). RAS has been performance-tested for up to 2000 max role assignments per single user; beyond that, performance may degrade. not verified in source -->
 

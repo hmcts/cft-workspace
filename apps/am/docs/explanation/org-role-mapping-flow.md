@@ -25,6 +25,26 @@ sources:
   - am-org-role-mapping-service:src/main/resources/application.yaml
   - am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql
   - am-role-assignment-refresh-batch:src/main/java/uk/gov/hmcts/reform/roleassignmentrefresh/domain/service/process/RefreshJobsOrchestrator.java
+  - am-org-role-mapping-service:src/main/resources/validationrules/employment/employment-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/sscs/sscs-caseworker-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-admin-mapping.drl
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/RoleAssignment.java
+  - am-org-role-mapping-service:src/main/resources/validationrules/fr/fr-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/possessions/possessions-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/privatelaw/privatelaw-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/publiclaw/publiclaw-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/sscs/sscs-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/stcic/stcic-judicial-org-role-mapping.drl
+  - am-judicial-booking-service:src/main/resources/db/migration/V1_1__init_tables.sql
+  - am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteJudicialExpiredRecords.java
+  - am-role-assignment-batch-service:src/main/resources/application.yaml
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/RoleAssignmentFilteringResult.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/RoleAttributeMatcher.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/LocationMatcher.java
+  - rpx-xui-webapp:src/booking/containers/booking-home/booking-home.component.html
+  - rpx-xui-webapp:src/booking/containers/utils/booking-error-handler.ts
+  - rpx-xui-webapp:api/accessManagement/index.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -80,6 +100,26 @@ sources_sha:
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql": "4634ca2f2028547d964f2f1deb111816ffa5da75"
   ? "am-role-assignment-refresh-batch:src/main/java/uk/gov/hmcts/reform/roleassignmentrefresh/domain/service/process/RefreshJobsOrchestrator.java"
   : "7c1fd658b6c1687cdabce688b6d28759f39a7ccc"
+  "am-org-role-mapping-service:src/main/resources/validationrules/employment/employment-judicial-org-role-mapping.drl": "433429a46f5af70c664e249f5bf84a62d2c3beea"
+  "am-org-role-mapping-service:src/main/resources/validationrules/sscs/sscs-caseworker-mapping.drl": "42f6660e5ccd56ea7678591ee13c499abb8e978c"
+  "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-admin-mapping.drl": "c15c7771f4f24dbfecdc81514fe9f16c2546ed6c"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java": "7e4eb810bfd5adca1c0c9825960a6e1e5a9c8851"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/RoleAssignment.java": "715406f155892e160c4e197d54c7d6f4207a2322"
+  "am-org-role-mapping-service:src/main/resources/validationrules/fr/fr-judicial-org-role-mapping.drl": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
+  "am-org-role-mapping-service:src/main/resources/validationrules/possessions/possessions-judicial-org-role-mapping.drl": "f2c71dea6e9fc93641f7c24ceb6123d73d392f68"
+  "am-org-role-mapping-service:src/main/resources/validationrules/privatelaw/privatelaw-judicial-org-role-mapping.drl": "1b2ec64659c7e77fe685e5853be198d1ec32f25b"
+  "am-org-role-mapping-service:src/main/resources/validationrules/publiclaw/publiclaw-judicial-org-role-mapping.drl": "fcdfb1cea50ee1d860963eead015847111abc007"
+  "am-org-role-mapping-service:src/main/resources/validationrules/sscs/sscs-judicial-org-role-mapping.drl": "75b324acbae0da519899d031d9b31e4a1e33b3f0"
+  "am-org-role-mapping-service:src/main/resources/validationrules/stcic/stcic-judicial-org-role-mapping.drl": "3ccbdde742b4e7b15a2e2fea1f2e8b0a0f3a8f54"
+  "am-judicial-booking-service:src/main/resources/db/migration/V1_1__init_tables.sql": "910817b922d76c16f7c7a1cdf63105516b36b705"
+  "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteJudicialExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "am-role-assignment-batch-service:src/main/resources/application.yaml": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/RoleAssignmentFilteringResult.java": "3e6786db4c5df9e1646fa4fd67529a6a11acaaa0"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/RoleAttributeMatcher.java": "484119b15a8eacd34f30af868e363047f014cd40"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/LocationMatcher.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  "rpx-xui-webapp:src/booking/containers/booking-home/booking-home.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/booking/containers/utils/booking-error-handler.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
+  "rpx-xui-webapp:api/accessManagement/index.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
 ---
 
 ## TL;DR
@@ -253,50 +293,61 @@ Each `RoleAssignment` in `requestedRoles` carries:
 | `grantType` | STANDARD | STANDARD |
 | `classification` | Per mapping rule | Per mapping rule |
 | `roleCategory` | Per mapping rule (e.g. `LEGAL_OPERATIONS`, `ADMIN`) | Per mapping rule (e.g. `JUDICIAL`) |
-| `beginTime` | null | Appointment start date |
-| `endTime` | null | Appointment end date |
-| `attributes.jurisdiction` | Service code from work area | From authorisations |
-| `attributes.primaryLocation` | ePIMMS ID (primary base location) | ePIMMS ID |
-| `attributes.region` | Not set | From appointment or booking |
-| `attributes.contractType` | Not set | SALARIED or FEEPAID |
-| `authorisations` | Not set | Comma-separated authorisation IDs from JRD |
+| `beginTime` | Not set | `$joh.getBeginTime()` — appointment start |
+| `endTime` | Not set | `$joh.getEndTime()` **plus one day** |
+| `attributes.jurisdiction` | Rule literal (e.g. `"SSCS"`) | Rule literal (e.g. `Jurisdiction.EMPLOYMENT.getName()`) |
+| `attributes.primaryLocation` | ePIMMS ID from `$cap.getPrimaryLocationId()` | ePIMMS ID from `$joh.getPrimaryLocation()` |
+| `attributes.region` | `$cap.getRegionId()` | `$joh.getRegionId()`, or `$bk.getRegionId()` on booking-derived rules |
+| `attributes.contractType` | Not set | `Salaried`, `Fee-Paid` or `Voluntary` |
+| `authorisations` | `$cap.getSkillCodes()` on most jurisdictions | `$joh.getTicketCodes()` |
 
-<!-- CONFLUENCE-ONLY: The exact set of attributes populated (region, location, contractType, authorisations) for judicial roles comes from the LLD Confluence page and Judicial Booking Mapping Rules page. The Drools rules define specific attribute combinations per jurisdiction. not verified in source -->
+The `jurisdiction` attribute is a constant written into each rule's consequence, not derived from the profile — a judicial rule in `employment/` writes `Jurisdiction.EMPLOYMENT.getName()` and an SSCS staff rule writes the string `"SSCS"` (`employment-judicial-org-role-mapping.drl:81`, `sscs-caseworker-mapping.drl:22-45`). That is why a rule file lives under a per-jurisdiction directory: the directory, not the reference data, decides the jurisdiction the assignment is scoped to.
+
+Judicial `endTime` is the appointment end date shifted forward by one day — `.endTime($joh.getEndTime() != null ? $joh.getEndTime().plusDays(1) : null)` (`employment-judicial-org-role-mapping.drl:95`). A judge whose appointment ends on the 30th keeps access through the whole of the 30th rather than losing it at midnight on the 29th/30th boundary. When JRD supplies no end date the assignment is open-ended.
+
+`contractType` takes one of exactly three literals — `Salaried`, `Fee-Paid`, `Voluntary` (`RoleAssignmentConstants.java:33-35`). Rules that write it use those constants, so `Fee-Paid` (hyphenated, mixed case) is the string a consumer must match on.
+
+`authorisations` is a top-level `List<String>` on the assignment, not a comma-separated attribute (`RoleAssignment.java:42`). Staff rules do populate it, from CRD skill codes — `.authorisations($cap.getSkillCodes())` in `civil-admin-mapping.drl:69` and in the civil, fr, iac, possessions, privatelaw, probate and publiclaw rule files. The employment, sscs, stcic and hrs staff files leave it unset, so whether a caseworker assignment carries authorisations depends on the jurisdiction that wrote the rule.
+
+<!-- DIVERGENCE: Confluence describes staff assignments as having no region, no contractType and no authorisations, and judicial jurisdiction as being derived from authorisations. In source staff rules set region from the CRD profile and most set authorisations from CRD skill codes, and jurisdiction is a per-rule literal on both paths. Source wins. -->
 
 ### Attribute matching semantics
 
-When RAS/CCD evaluates role assignments against case data, **all** attributes set on a role assignment must match the case data for that role to grant access. If an attribute is irrelevant to a role (e.g. a senior judicial position has regional, not location-specific, responsibility), it should **not** be set — setting it would incorrectly restrict access to a single court.
+When CCD evaluates role assignments against case data, **all** matchers must pass for the assignment to survive filtering — `hasPassedFiltering()` requires every filter result to be `TRUE`, and an assignment with no filter results at all is discarded (`ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/RoleAssignmentFilteringResult.java:24-29`).
 
-<!-- CONFLUENCE-ONLY: This attribute matching rule is from the Judicial Booking Mapping Rules Confluence page and represents the business rule that governs how services should configure their Drools mapping rules. not verified in source -->
+An unset attribute matches everything. Each matcher funnels through `isValuesMatching`, which returns `true` when the role assignment's value is absent and only compares strings when it is present (`ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/RoleAttributeMatcher.java:30-36`). Setting an attribute therefore narrows access and never widens it: a senior judicial role that should carry regional rather than court-level responsibility must leave `location` unset, because setting it restricts the role to cases whose `caseManagementLocation.baseLocation` equals that one value (`LocationMatcher.java:26,36-38`).
 
 ## Multi-region cloning
 
-Some jurisdictions (civil, publiclaw, sscs) require one role assignment per region (England/Wales regions 1-7). Rules call `cloneNewRoleAssignmentAndChangeRegion(ra, regionId)` to produce multiple assignments from a single match — `civil-judicial-org-role-mapping.drl:283-292`.
+Some jurisdictions (civil, publiclaw, sscs) require one role assignment per region (England/Wales regions 1-7). Rules call `cloneNewRoleAssignmentAndChangeRegion(ra, regionId)` to produce multiple assignments from a single match — `civil-judicial-org-role-mapping.drl:169-176`.
 
 ## The `bookable` attribute and ExUI booking UI
 
-Fee-paid judicial role assignments include a `bookable` attribute set to `"true"` in certain Drools rules (verified in `civil-judicial-org-role-mapping.drl:723`, `sscs-judicial-org-role-mapping.drl:474`, `publiclaw-judicial-org-role-mapping.drl:325`, `privatelaw-judicial-org-role-mapping.drl:321`, among others).
+Fee-paid judicial role assignments carry a `bookable` attribute. Seven jurisdictions write it — `civil-judicial-org-role-mapping.drl:353` and `:387`, `fr-judicial-org-role-mapping.drl:150`, `possessions-judicial-org-role-mapping.drl:75`, `privatelaw-judicial-org-role-mapping.drl:245`, `publiclaw-judicial-org-role-mapping.drl:325`, `sscs-judicial-org-role-mapping.drl:474` and `stcic-judicial-org-role-mapping.drl:374`. Every one writes the JSON **string** `"true"`, not a boolean, so a consumer testing for a boolean will not see the flag.
 
 **How it works:**
 
-1. If a user has **any** current role assignment with `bookable=true` in its attributes, ExUI presents the judicial booking UI on login.
-2. The judge can then: create a new booking (entering location + dates), continue with an existing booking, or skip directly to "My Work".
-3. When a booking is created or continued, ExUI calls ORM's `POST /am/role-mapping/judicial/refresh` endpoint, which recalculates all organisational roles for that judge incorporating the new/existing bookings.
+1. If a user in the `JUDICIAL` role category has any role assignment with `bookable` set, ExUI redirects to the booking journey on login. See [Judicial booking](judicial-booking.md) for the guard and the string/boolean handling.
+2. The page is headed "Work access" and offers three radio options: "Choose an existing booking", "Create a new booking", and "View tasks and cases" — `rpx-xui-webapp:src/booking/containers/booking-home/booking-home.component.html:5`, `:23`, `:71`, `:83`. The third option is not a plain skip; it routes the judge to their task and case lists without changing their bookings.
+3. Choosing or creating a booking makes ExUI call ORM's `POST /am/role-mapping/judicial/refresh` through the `refreshRoleAssignments` proxy, which recalculates that judge's organisational roles with the booking in scope — `rpx-xui-webapp:api/accessManagement/index.ts:36-85`.
 
-**Booking data model** (from `am-judicial-booking-service`):
+Booking creation and the follow-up refresh fail down separate paths. A failed create sends the judge to `/not-authorised`, `/service-down` or `/booking-service-down` by status code; a failed refresh always sends them to `/refresh-booking-service-down` (`rpx-xui-webapp:src/booking/containers/utils/booking-error-handler.ts:13-35`). The second case leaves a stored booking with no role assignments derived from it.
 
-| Field | Description |
-|-------|-------------|
-| `id` | Unique booking ID |
+**Booking data model** (`am-judicial-booking-service:src/main/resources/db/migration/V1_1__init_tables.sql:1-9`):
+
+| Column | Description |
+|--------|-------------|
+| `id` | `uuid`, primary key |
 | `user_id` | IDAM ID |
 | `region_id` | Location reference data region ID |
 | `location_id` | ePIMMS ID |
-| `first_day` | First day of booking (inclusive) |
-| `last_day` | Last day of booking (inclusive) |
+| `begin_time` | Start of the booking window |
+| `end_time` | End of the booking window |
+| `created` | Row creation timestamp |
 
-**Date conversion**: Role assignment `beginTime` = `first_day 00:00:00`, `endTime` = `last_day + 1 day, 00:00:00` (half-open interval).
+The table stores timestamps, not dates: the half-open interval is baked into the stored `end_time` rather than applied when the role assignment is derived.
 
-<!-- CONFLUENCE-ONLY: The ExUI booking UI flow (create/continue/skip), error management (retry on ORM failure), and the requirement that bookings are retained for 2 years come from the Judicial Booking Service HLD v1.2 Confluence page. not verified in source -->
+Bookings are held for two years and then deleted. `am-role-assignment-batch-service` runs a nightly `DELETE from booking b where b.end_time < (current_date - ?) + '00:00:00'::time` with the retention window taken from `days: ${DAYS:730}` — `DeleteJudicialExpiredRecords.java:103-107` and `am-role-assignment-batch-service:src/main/resources/application.yaml:45`.
 
 ## Batch refresh path
 

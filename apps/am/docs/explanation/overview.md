@@ -18,6 +18,11 @@ sources:
   - am-role-assignment-service:src/main/resources/validationrules/core/organisational-role-mapping-common.drl
   - am-role-assignment-service:src/main/resources/validationrules/ccd/ccd-case-role-validation.drl
   - am-role-assignment-service:src/main/resources/roleconfig/role_common.json
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AccessControl.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java
+  - ccd-data-store-api:src/main/resources/application.properties
+  - rpx-xui-webapp:api/roleAccess/dtos/to-role-assignment-dto.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -60,6 +65,11 @@ sources_sha:
   "am-role-assignment-service:src/main/resources/validationrules/core/organisational-role-mapping-common.drl": "683f8db55a52ff5a3f4cfa6dc64c582a3f6e83d8"
   "am-role-assignment-service:src/main/resources/validationrules/ccd/ccd-case-role-validation.drl": "b22c2601ed4603746a832b0b16c18d33a504d283"
   "am-role-assignment-service:src/main/resources/roleconfig/role_common.json": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AccessControl.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java": "da6f87b5a52f0e3c7afe6a76777ddf098bd5fe90"
+  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "rpx-xui-webapp:api/roleAccess/dtos/to-role-assignment-dto.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
 ---
 
 ## TL;DR
@@ -288,8 +298,6 @@ This is the primary mechanism used by CCD data store to avoid re-fetching role a
 
 ## Legacy vs new access control model
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-
 AM replaced the legacy CCD access-control model. Understanding the legacy model is important because backward compatibility is still supported:
 
 **Legacy model**: CCD enforced access using a combination of case roles and IDAM roles. If a user had a case role on a case, they received access configured for that case role **plus access configured for all their IDAM roles**. This led to problems including solicitors receiving citizen-level access and inability to distinguish between different parties' solicitors.
@@ -300,6 +308,10 @@ AM replaced the legacy CCD access-control model. Understanding the legacy model 
 - For **system users**: access is configured against organisational role assignments, granted via the RAS API.
 
 Any entries in CCD `RoleToAccessProfiles` configuration with an `idam:` prefix (e.g. `idam:caseworker-solicitor-civil`) are considered technical debt from the legacy model.
+
+The bridge that keeps those entries working is CCD's pseudo role assignment generator. On each access-control evaluation the data store reads the caller's IDAM roles and synthesises an in-memory role assignment per role, named with the `idam:` prefix, then appends them to the real assignments fetched from RAS — `ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AccessControl.java:5` and `ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java:43-78`. The pseudo assignments get `grantType: STANDARD` and a classification looked up from the case type's user-role definitions; for users who may only see explicitly granted cases they are instead emitted as `SPECIFIC`/`RESTRICTED` copies scoped to each non-excluded case role's `jurisdiction`/`caseType`/`caseId`. Role-to-access-profile lookups accept either the bare name or the prefixed one — `ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java:341-346`.
+
+Generation sits behind `enable-pseudo-role-assignments-generation`, which defaults to `true` — `ccd-data-store-api:src/main/resources/application.properties:273` — and no deployed CCD environment turns it off, so `idam:`-prefixed access profiles still resolve in production. Treating those mappings as removable therefore requires removing the IDAM role dependency in the case-type definition, not just switching the flag.
 
 ## The specific access workflow
 
@@ -321,9 +333,9 @@ All three use `process: specific-access` and `reference: <caseId>/<requestedRole
 4. Reviewer sees the justification, enters a decision (grant/deny) with optional time bounds.
 5. On **approval**: the `specific-access-requested` assignment is replaced with (a) the actual requested role giving case access, and (b) a `specific-access-granted` shadow for UI notification.
 6. On **rejection**: replaced with a `specific-access-denied` assignment shown in the user's "My Access" tab.
-7. Shadow/denied assignments auto-expire after approximately one month.
+7. Expiry is set by the caller, not by RAS. ExUI gives the `specific-access-requested` and `specific-access-granted` records the reviewer's chosen end date, defaulting to one month from creation when none is supplied; `specific-access-denied` is always given 14 days from creation, truncated to UTC midnight — `rpx-xui-webapp:api/roleAccess/dtos/to-role-assignment-dto.ts:65`, `:157` and `:213`.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- DIVERGENCE: Confluence describes shadow and denied assignments as auto-expiring after approximately one month. In source only the requested and granted records default to one month, and that default applies solely when the reviewer leaves the end date blank; the denied record is hard-coded to 14 days (`rpx-xui-webapp:api/roleAccess/dtos/to-role-assignment-dto.ts:157`). Source wins. -->
 
 ## ORM mapping: the replace-existing pattern
 

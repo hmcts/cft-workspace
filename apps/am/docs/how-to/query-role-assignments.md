@@ -13,6 +13,10 @@ sources:
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/PersistenceService.java
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/util/ValidationUtil.java
   - am-role-assignment-service:src/main/resources/application.yaml
+  - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/deleteroles/DeleteRoleAssignmentOrchestrator.java
+  - am-role-assignment-service:src/main/resources/roleconfig/role_common.json
+  - am-role-assignment-service:src/main/resources/validationrules/core/conflict-of-interest-global.drl
+  - am-role-assignment-service:src/main/resources/validationrules/ccd/ccd-case-role-validation.drl
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -43,6 +47,11 @@ sources_sha:
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/PersistenceService.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/util/ValidationUtil.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
   "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  ? "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/deleteroles/DeleteRoleAssignmentOrchestrator.java"
+  : "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
+  "am-role-assignment-service:src/main/resources/roleconfig/role_common.json": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "am-role-assignment-service:src/main/resources/validationrules/core/conflict-of-interest-global.drl": "ecbc331219eccec01275cfcfd0326507a09f7f86"
+  "am-role-assignment-service:src/main/resources/validationrules/ccd/ccd-case-role-validation.drl": "b22c2601ed4603746a832b0b16c18d33a504d283"
 ---
 
 ## TL;DR
@@ -310,13 +319,17 @@ This is useful when you need to distinguish case-scoped assignments from organis
 
 ## Related: Delete by query
 
-The `POST /am/role-assignments/query/delete` endpoint uses the same query structure (v2 format with `queryRequests` wrapper) but deletes matching records. Each record is validated against Drools rules before deletion. Key safety considerations:
+The `POST /am/role-assignments/query/delete` endpoint uses the same query structure (v2 format with `queryRequests` wrapper) but deletes matching records. Each record is validated against Drools rules before deletion.
 
-<!-- CONFLUENCE-ONLY: delete-by-query safety guidance from Confluence, not verified in source -->
+Deletion is all-or-nothing. Every matched assignment is set to `DELETE_REQUESTED` and passed
+through the rules; unless *all* of them come back `DELETE_APPROVED`, nothing is deleted, the
+request is marked `REJECTED` and the endpoint returns `422` --
+`DeleteRoleAssignmentOrchestrator.java:203-233` and `:163-168`. A single unapprovable record in a
+broad query costs the whole batch, so filter tightly:
 
-- Always include `grantType: ["SPECIFIC"]` to avoid deleting conflicts of interest (EXCLUDED grants).
-- Never delete professional case roles via this API -- those are maintained through the Assign Case Access APIs.
-- Include explicit `roleCategory` and `roleName` filters to avoid over-broad deletion in production.
+- Include `grantType: ["SPECIFIC"]` to keep exclusions out of the match set. `conflict-of-interest` is a `CASE` role whose only permitted `grantType` is `EXCLUDED` -- `role_common.json:1043-1059`, and its deletion is approved only when a case-allocator approval fact is present -- `conflict-of-interest-global.drl:40-50`.
+- Do not use this API for professional case roles. `PROFESSIONAL` and `CITIZEN` case roles are approved for deletion only when the S2S `clientId` is `ccd_data`, `aac_manage_case_assignment` or `ccd_case_disposer` -- `ccd-case-role-validation.drl:67-82`. Any other caller matching one of those records fails the whole request.
+- Include explicit `roleCategory` and `roleName` filters. The query is executed in internal pages and the whole match set is loaded into memory before validation -- `DeleteRoleAssignmentOrchestrator.java:321-352` -- so a broad filter is both slower and more likely to pull in a record no rule will approve.
 
 ## Verify
 

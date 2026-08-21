@@ -15,6 +15,9 @@ sources:
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/DroolConfig.java
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/RoleConfig.java
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/FeatureFlagEnum.java
+  - am-role-assignment-service:src/main/resources/validationrules/iac/iac-system-user-validation.drl
+  - am-role-assignment-service:src/main/resources/validationrules/privatelaw/privatelaw-system-user-validation.drl
+  - am-role-assignment-service:src/main/resources/validationrules/civil/civil-system-user-validation.drl
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -57,6 +60,9 @@ sources_sha:
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/DroolConfig.java": "d2e8dba140653845b1d8ac5664ed045d04a926cb"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/RoleConfig.java": "da2b7d064237e310df0653a490804fc8d9d028d3"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/FeatureFlagEnum.java": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "am-role-assignment-service:src/main/resources/validationrules/iac/iac-system-user-validation.drl": "4ff00cc93c97f9747334b1ef56647a753c04baa5"
+  "am-role-assignment-service:src/main/resources/validationrules/privatelaw/privatelaw-system-user-validation.drl": "73dbc532b1fe14014a1be35a9561f42bff6e5644"
+  "am-role-assignment-service:src/main/resources/validationrules/civil/civil-system-user-validation.drl": "8598231fcc1bdddefc409216785f6ad1518642ea"
 ---
 
 ## TL;DR
@@ -226,7 +232,23 @@ then
 end
 ```
 
-<!-- CONFLUENCE-ONLY: Confluence "Role Assignments for System Users" (1511137487) specifies naming conventions: process = "<component>-system-users", reference = "<subset>-system-users", roleName = "<service>-<purpose>-system-user". Not verified in source as a hard requirement, but all existing system-user rules follow this convention. -->
+`process`, `reference` and `roleName` are matched as literal strings, so nothing enforces a naming
+scheme -- a caller that sends a value the rule does not name gets `REJECTED` by the
+`salience -1000` fallback rather than a validation error naming the mismatch. The values in use are:
+
+| Service | `clientId` | `process` | `reference` | `roleName` |
+|---------|-----------|-----------|-------------|-----------|
+| IAC | `iac` | `iac-system-users` | `iac-hearings-system-user` | `hearing-manager`, `hearing-viewer` |
+| SSCS | `sscs` | `sscs-system-users` | `sscs-hearings-system-user` | `hearing-manager`, `hearing-viewer` |
+| Private Law (hearings) | `fis_hmc_api` | `private-law-system-users` | `private-law-hearings-system-user` | `hearing-manager`, `hearing-viewer` |
+| Private Law (case allocator) | `prl_cos_api` | `private-law-system-users` | `private-law-case-allocator-system-user` | `case-allocator` |
+| Public Law | `fpl_case_service` | `public-law-system-users` | `public-law-case-allocator-system-user` | `case-allocator` |
+| Civil | `civil_service` | `civil-system-user` | `civil-cbus-system-user` | `cbus-system-user` |
+
+Sources: `iac-system-user-validation.drl:15-35`, `organisational-role-mapping-common.drl:72-129`,
+`privatelaw-system-user-validation.drl:18-62`, `civil-system-user-validation.drl:20-40`.
+
+<!-- DIVERGENCE: Confluence "Role Assignments for System Users" (1511137487) gives the convention as process = "<component>-system-users", reference = "<subset>-system-users", roleName = "<service>-<purpose>-system-user". In source the `reference` values end in the singular `-system-user`; `roleName` is usually a generic role such as `hearing-manager` or `case-allocator` rather than a per-service system-user name; and Civil's `process` is the singular `civil-system-user`. Source wins. -->
 
 #### Using ExistingRoleAssignment for caller-role-based rules
 

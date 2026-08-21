@@ -17,6 +17,21 @@ sources:
   - am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-org-role-mapping.drl
   - am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteJudicialExpiredRecords.java
   - am-judicial-booking-service:src/main/resources/db/migration/V1_1__init_tables.sql
+  - am-org-role-mapping-service:src/main/resources/validationrules/fr/fr-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/possessions/possessions-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/privatelaw/privatelaw-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/publiclaw/publiclaw-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/sscs/sscs-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/stcic/stcic-judicial-org-role-mapping.drl
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/controller/testingsupport/RefreshJobsController.java
+  - am-role-assignment-batch-service:src/main/resources/application.yaml
+  - cnp-flux-config:apps/am/am-role-assignment-batch-service/prod.yaml
+  - rpx-xui-webapp:src/app/app-utils.ts
+  - rpx-xui-webapp:api/accessManagement/index.ts
+  - rpx-xui-webapp:src/booking/containers/booking-home/booking-home.component.html
+  - rpx-xui-webapp:src/booking/containers/utils/booking-error-handler.ts
+  - rpx-xui-webapp:src/booking/containers/utils/refresh-booking-service-down/refresh-booking-service-down.component.html
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -66,6 +81,22 @@ sources_sha:
   "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-org-role-mapping.drl": "c15c7771f4f24dbfecdc81514fe9f16c2546ed6c"
   "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteJudicialExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
   "am-judicial-booking-service:src/main/resources/db/migration/V1_1__init_tables.sql": "910817b922d76c16f7c7a1cdf63105516b36b705"
+  "am-org-role-mapping-service:src/main/resources/validationrules/fr/fr-judicial-org-role-mapping.drl": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
+  "am-org-role-mapping-service:src/main/resources/validationrules/possessions/possessions-judicial-org-role-mapping.drl": "f2c71dea6e9fc93641f7c24ceb6123d73d392f68"
+  "am-org-role-mapping-service:src/main/resources/validationrules/privatelaw/privatelaw-judicial-org-role-mapping.drl": "1b2ec64659c7e77fe685e5853be198d1ec32f25b"
+  "am-org-role-mapping-service:src/main/resources/validationrules/publiclaw/publiclaw-judicial-org-role-mapping.drl": "fcdfb1cea50ee1d860963eead015847111abc007"
+  "am-org-role-mapping-service:src/main/resources/validationrules/sscs/sscs-judicial-org-role-mapping.drl": "75b324acbae0da519899d031d9b31e4a1e33b3f0"
+  "am-org-role-mapping-service:src/main/resources/validationrules/stcic/stcic-judicial-org-role-mapping.drl": "3ccbdde742b4e7b15a2e2fea1f2e8b0a0f3a8f54"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java": "7e4eb810bfd5adca1c0c9825960a6e1e5a9c8851"
+  ? "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/controller/testingsupport/RefreshJobsController.java"
+  : "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
+  "am-role-assignment-batch-service:src/main/resources/application.yaml": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "cnp-flux-config:apps/am/am-role-assignment-batch-service/prod.yaml": "65bd3d613151c3022fa81bdfe62a93ce33b88145"
+  "rpx-xui-webapp:src/app/app-utils.ts": "eed279a4dd5502643063241d86c2911799acac38"
+  "rpx-xui-webapp:api/accessManagement/index.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
+  "rpx-xui-webapp:src/booking/containers/booking-home/booking-home.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/booking/containers/utils/booking-error-handler.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
+  "rpx-xui-webapp:src/booking/containers/utils/refresh-booking-service-down/refresh-booking-service-down.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
 ---
 
 ## TL;DR
@@ -97,7 +128,9 @@ Fee-paid Judicial Office Holders (JOHs) within CFT, which include:
 - Tribunal panel members (medical, financial, disability-qualified)
 - Family magistrates
 
-Services that currently configure booking-based access include: **Civil**, **Private Law**, **Public Law**, **ST CIC**, **Employment**, **IAC**, and **SSCS**. These are the services whose Drools rules contain `JudicialBooking` fact references.
+Seven jurisdictions configure booking-based access — their rule files are the only ones that reference the `JudicialBooking` fact: civil, fr (financial remedy), possessions, privatelaw, publiclaw, sscs and stcic. Employment and IAC do not; their judicial rules derive location from the JRD appointment alone.
+
+<!-- DIVERGENCE: Confluence lists Employment and IAC among the services configuring booking-based access. Neither jurisdiction's rule file references the `JudicialBooking` fact in source, while fr and possessions — absent from the Confluence list — both do. Source wins. -->
 
 Services without fee-paid judges, or that wish all fee-paid judges to see all cases without a booking gate, do not need to configure this feature.
 <!-- CONFLUENCE-ONLY: not verified in source -->
@@ -141,33 +174,29 @@ Key constraints:
 
 ### UX flow
 
-When a fee-paid judge logs into ExUI, the UI checks whether the user has any current role assignment with a `bookable: true` attribute. If so, the Booking UI is presented with three options:
+When a judge in the `JUDICIAL` role category holds a role assignment carrying `bookable`, ExUI redirects them to a page headed "Work access" offering three radio options — `rpx-xui-webapp:src/booking/containers/booking-home/booking-home.component.html:5`, `:23`, `:71`, `:83`:
 
-1. **Create a new booking** — capture location and dates, then:
-   - ExUI retrieves the region from Location Reference Data for the selected location.
-   - Creates the booking by calling JBS.
-   - Invokes ORM to recalculate the user's organisational roles.
-   - Redirects to the landing page.
-2. **Continue with an existing booking** — re-invokes ORM (to handle any prior mapping failure), then redirects.
-3. **Access My Work** — redirects directly without additional processing.
+1. **Create a new booking** — captures location and dates, POSTs to JBS via the `/am/createBooking` node proxy, then calls ORM's `POST /am/role-mapping/judicial/refresh` through `refreshRoleAssignments` before routing to `/work/my-work/list` (`rpx-xui-webapp:api/accessManagement/index.ts:36-85`).
+2. **Choose an existing booking** — skips the JBS write and calls `refreshRoleAssignments` only, which re-runs the mapping for a booking whose earlier refresh failed.
+3. **View tasks and cases** — routes straight to the task and case lists with no JBS or ORM call, leaving existing bookings untouched.
 
-If the booking creation succeeds but the ORM invocation fails, the user can log out and back in, choose "continue with existing booking", and ORM will be re-invoked. An error message instructs: "It has not been possible to grant you access to all the cases you may need. Please log out and log back in again to try again."
-<!-- CONFLUENCE-ONLY: not verified in source -->
+The create and refresh legs fail separately. A failed create is routed by status code — 401/403 to `/not-authorised`, 500 to `/service-down`, anything else to `/booking-service-down`; a failed refresh always routes to `/refresh-booking-service-down` (`rpx-xui-webapp:src/booking/containers/utils/booking-error-handler.ts:13-35`). The refresh case is the damaging one: the booking is already stored, but no role assignments were derived from it, so the judge holds a booking that grants nothing. That page reads "Sorry, due to a system error when your booking was created you cannot access cases." and directs the judge to log out and re-select the booking — which re-enters at option 2 and retries the refresh (`rpx-xui-webapp:src/booking/containers/utils/refresh-booking-service-down/refresh-booking-service-down.component.html:6-9`).
+
+<!-- DIVERGENCE: Confluence quotes the failure message as "It has not been possible to grant you access to all the cases you may need. Please log out and log back in again to try again." and names the third option "Access My Work". Source shows a different message on `/refresh-booking-service-down` and labels the third option "View tasks and cases". Source wins. -->
 
 ## The `bookable` attribute
 
-The `bookable` attribute is a Boolean value set in a role assignment's additional attributes. It controls which users see the Booking UI on ExUI login.
-
-Services configure their ORM Drools rules to emit `bookable: true` on at least one organisational role for the relevant subset of fee-paid users. In source, this appears as:
+`bookable` is written as the JSON **string** `"true"`, not a boolean. It controls which users see the Booking UI on ExUI login. In source it always appears as:
 
 ```java
 attribute.put("bookable", JacksonUtils.convertObjectIntoJsonNode("true"));
 ```
 
-Services currently setting `bookable: true`: Civil, Private Law, Public Law, ST CIC, SSCS.
+ExUI accounts for both shapes — `isBookableAndJudicialRole` accepts `bookable === true || bookable === 'true'` — but a new consumer that tests only for the boolean will never see the flag (`rpx-xui-webapp:src/app/app-utils.ts:291-303`).
 
-For users who may not receive any other organisational roles (common for fee-paid judiciary), the `bookable` attribute can be added to the standard `hmcts-judiciary` role.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Eight rules across seven jurisdictions set it: `civil-judicial-org-role-mapping.drl:353` and `:387`, `fr-judicial-org-role-mapping.drl:150`, `possessions-judicial-org-role-mapping.drl:75`, `privatelaw-judicial-org-role-mapping.drl:245`, `publiclaw-judicial-org-role-mapping.drl:325`, `sscs-judicial-org-role-mapping.drl:474` and `stcic-judicial-org-role-mapping.drl:374`.
+
+Every one of those rules sets it on a `fee-paid-judge` role assignment. No rule sets it on `hmcts-judiciary`, so a fee-paid judge whose only organisational role is `hmcts-judiciary` is not offered the Booking UI in any jurisdiction today.
 
 ## How ORM consumes bookings
 
@@ -230,7 +259,7 @@ From the "Judicial Booking Mapping Rules" Confluence page, key principles for ho
 | One booking produces multiple role assignments | A single booking can result in several role assignments for the same user |
 | Half-open intervals | Role assignment begin/end are always half-open: begin is inclusive, end is exclusive |
 | Authorisations are copied, not matched | Judicial authorisations (ticket codes) are copied into role assignments and applied by CCD, not used as booking match conditions |
-| `@ContractType` | Set to `SALARIED` or `Fee-Paid` on the role assignment |
+| `@ContractType` | One of exactly three literals — `Salaried`, `Fee-Paid`, `Voluntary` (`RoleAssignmentConstants.java:33-35`) |
 | Unset attributes mean no restriction | If an attribute (e.g. `@Location`) is not relevant, it should not be set — setting it would limit access to that single court |
 
 ## Lifecycle and expiry
@@ -245,14 +274,13 @@ The `am-role-assignment-batch-service` (a daily Kubernetes CronJob) purges expir
 DELETE from booking b where b.end_time < (current_date - ?) + '00:00:00'::time
 ```
 
-The retention period is configurable via `spring.judicial.days` (default: **730 days / 2 years**). This aligns with the business requirement that booking data be retained for 2 years to support audit review.
+The retention window is 730 days, from `days: ${DAYS:730}` (`am-role-assignment-batch-service:src/main/resources/application.yaml:45`). Prod deploys that same value and runs the CronJob at 22:00 daily — `cnp-flux-config:apps/am/am-role-assignment-batch-service/prod.yaml:8` and `:15`. A negative value aborts the task rather than deleting every row (`DeleteJudicialExpiredRecords.java:55-58`).
 
 ### Delete endpoint
 
-A `DELETE /am/bookings/{userId}` endpoint exists for per-user cleanup (e.g. offboarding), but it is marked `@Hidden` and excluded from the published Swagger spec.
+A `DELETE /am/bookings/{userId}` endpoint exists for per-user cleanup (e.g. offboarding). It returns 204 and is annotated `@Hidden`, so it is live but excluded from the published Swagger spec (`DeleteBookingController.java:17-41`). JBS exposes no `PUT` or `PATCH` on bookings, so a stored booking can be deleted but not amended.
 
-A `DELETE /am/role-mapping/judicial/bookings/{bookingId}` endpoint was documented in Confluence for ORM (to delete role assignments by booking reference), but this was explicitly marked as "out of scope from MVP" and does **not** exist in the current ORM source code.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+ORM has no booking-delete endpoint. Its only `@DeleteMapping` is `/am/testing-support/jobs/{jobId}` (`RefreshJobsController.java:126`), so the `DELETE /am/role-mapping/judicial/bookings/{bookingId}` route documented in Confluence was never built.
 
 ## Security considerations
 
@@ -262,7 +290,9 @@ A `DELETE /am/role-mapping/judicial/bookings/{bookingId}` endpoint was documente
 | 2 | Booking alone does not grant access | Access only results from role assignments created by service-specific ORM mapping rules |
 | 3 | Any user can create a booking for themselves | Only fee-paid judiciary have mapping rules that produce role assignments from bookings; other users' bookings have no effect |
 | 4 | Inappropriate or long bookings | Business accepted the risk for a tactical mechanism; a configurable upper limit on duration was planned |
-| 5 | Audit | The immutable booking table acts as its own audit log; bookings are retained for 2 years |
+| 5 | Audit | The booking table is the only record of a self-serve booking; rows are retained 730 days and then hard-deleted with no audit trail written |
+
+<!-- DIVERGENCE: Confluence describes the booking table as immutable, with no update or delete in initial scope, serving as its own audit log. Source has a live (Swagger-hidden) `DELETE /am/bookings/{userId}` and a nightly purge that removes rows outright, so the table is neither immutable nor a durable audit log beyond the retention window. Source wins. -->
 
 ## NFR: volume estimates
 

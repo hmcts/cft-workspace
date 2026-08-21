@@ -23,6 +23,18 @@ sources:
   - am-org-role-mapping-service:src/main/resources/validationrules/core/core.drl
   - am-org-role-mapping-service:src/main/resources/validationrules/core/log.drl
   - am-org-role-mapping-service:src/main/resources/validationrules/core/hearing-role-judicial-global.drl
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RefreshOrchestrator.java
+  - am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/apihelper/Constants.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/controller/testingsupport/RefreshJobsController.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/CRDMessagingConfiguration.java
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/servicebus/TopicConsumer.java
+  - am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-caseworker-mapping.drl
+  - am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-org-role-mapping.drl
+  - am-role-assignment-service:src/main/resources/roleconfig/role_common.json
+  - am-role-assignment-service:charts/am-role-assignment-service/values.aat.template.yaml
+  - am-role-assignment-service:charts/am-role-assignment-service/values.preview.template.yaml
+  - cnp-flux-config:apps/am/am-role-assignment-service/prod.yaml
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -82,6 +94,19 @@ sources_sha:
   "am-org-role-mapping-service:src/main/resources/validationrules/core/core.drl": "37fcddad0d4f0e3d838a53cbc175216801c62992"
   "am-org-role-mapping-service:src/main/resources/validationrules/core/log.drl": "a56c282c3071b4a6258c3e1f7e6093ae9ee49aa5"
   "am-org-role-mapping-service:src/main/resources/validationrules/core/hearing-role-judicial-global.drl": "fcdfb1cea50ee1d860963eead015847111abc007"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RefreshOrchestrator.java": "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
+  "am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql": "4634ca2f2028547d964f2f1deb111816ffa5da75"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/apihelper/Constants.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
+  ? "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/controller/testingsupport/RefreshJobsController.java"
+  : "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/CRDMessagingConfiguration.java": "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/servicebus/TopicConsumer.java": "175b92db711bc975d09a26f5d9561b1577299667"
+  "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-caseworker-mapping.drl": "172d397ac2e19a02dd1002c167c78b8808346234"
+  "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-org-role-mapping.drl": "c15c7771f4f24dbfecdc81514fe9f16c2546ed6c"
+  "am-role-assignment-service:src/main/resources/roleconfig/role_common.json": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
+  "am-role-assignment-service:charts/am-role-assignment-service/values.aat.template.yaml": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
+  "am-role-assignment-service:charts/am-role-assignment-service/values.preview.template.yaml": "e869c163161f8b96767a34e45aae0b3cb4644c8c"
+  "cnp-flux-config:apps/am/am-role-assignment-service/prod.yaml": "e781760115094d551f69723716c4a8bb3c6591e3"
 ---
 
 ## TL;DR
@@ -340,8 +365,7 @@ The `get-db-drools-flag` LD flag is a test utility that exposes an API endpoint 
 
 ## Bypass Mechanism for Lower Environments
 
-<!-- REVIEW: BYPASS_ORG_DROOL_RULE defaults to false in application.yaml:181 (${BYPASS_ORG_DROOL_RULE:false}), not true. Lower envs override to true via Helm values (values.aat.template.yaml:12, values.preview.template.yaml:33). -->
-RAS exposes an environment variable `BYPASS_ORG_DROOL_RULE` (default `true` in `application.yaml`, overridden to `false` in production via `values.prod.template.yaml`). When `true`, the `Request.byPassOrgDroolRule` flag is set by `ParseRequestService`, and the ORM trust rule's condition becomes:
+RAS exposes an environment variable `BYPASS_ORG_DROOL_RULE`, off by default — `byPassOrgDroolRule: ${BYPASS_ORG_DROOL_RULE:false}` (`am-role-assignment-service:src/main/resources/application.yaml:181`). Lower environments switch it on (`values.aat.template.yaml:12`, `values.preview.template.yaml:33`); production sets `false` explicitly (`cnp-flux-config:apps/am/am-role-assignment-service/prod.yaml:18`). When `true`, the `Request.byPassOrgDroolRule` flag is set by `ParseRequestService`, and the ORM trust rule's condition becomes:
 
 ```drl
 $rq: Request(byPassOrgDroolRule || clientId == "am_org_role_mapping_service")
@@ -355,50 +379,73 @@ Similarly, the `ccd_bypass_1_0` and `wa_bypass_1_0` DB feature flags enable test
 
 ### ORM: Caseworker mapping (single-stage)
 
-<!-- REVIEW: This simplified example does not match source. The real rule uses FeatureFlagEnum.CIVIL_WA_1_4 (not CIVIL_WA_1_0), roleId=="1" (not "4"), serviceCode in ("AAA6","AAA7") (not == "AAA6"), and uses RoleAssignment.builder() pattern not new RoleAssignment(). See am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-caseworker-mapping.drl:22-45 -->
 ```drl
 rule "v1_4_civil_senior_tribunal_caseworker_org_role"
 when
-    $f: FeatureFlag(status && flagName == FeatureFlagEnum.CIVIL_WA_1_0.getValue())
-    $cap: CaseWorkerAccessProfile(
-        roleId == "4", serviceCode == "AAA6", !suspended
-    )
+  $f:  FeatureFlag(status && flagName == FeatureFlagEnum.CIVIL_WA_1_4.getValue())
+  $cap: CaseWorkerAccessProfile(roleId == "1", serviceCode in ("AAA6", "AAA7"), !suspended)
 then
-    RoleAssignment ra = new RoleAssignment();
-    ra.setActorId($cap.getId());
-    ra.setRoleType(RoleType.ORGANISATION);
-    ra.setRoleName("senior-tribunal-caseworker");
-    ra.setGrantType(GrantType.STANDARD);
-    ra.setClassification(Classification.PUBLIC);
-    ra.setRoleCategory(RoleCategory.LEGAL_OPERATIONS);
-    // ... set attributes (jurisdiction, primaryLocation, region, workTypes)
-    insert(ra);
-end
+   Map<String,JsonNode> attribute = new HashMap<>();
+   attribute.put("jurisdiction", JacksonUtils.convertObjectIntoJsonNode("CIVIL"));
+   attribute.put("primaryLocation", JacksonUtils.convertObjectIntoJsonNode($cap.getPrimaryLocationId()));
+   attribute.put("workTypes", JacksonUtils.convertObjectIntoJsonNode("decision_making_work,access_requests"));
+  insert(
+      RoleAssignment.builder()
+      .actorIdType(ActorIdType.IDAM)
+      .actorId($cap.getId())
+      .roleCategory(RoleCategory.LEGAL_OPERATIONS)
+      .roleType(RoleType.ORGANISATION)
+      .roleName("senior-tribunal-caseworker")
+      .grantType(GrantType.STANDARD)
+      .classification(Classification.PUBLIC)
+      .readOnly(false)
+      .attributes(attribute)
+      .authorisations($cap.getSkillCodes())
+      .build());
+      logMsg("Rule : v1_4_civil_senior_tribunal_caseworker_org_role");
+end;
 ```
 
-(`civil-caseworker-mapping.drl:22-45`)
+(`am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-caseworker-mapping.drl:22-45`)
 
-### ORM: Judicial fee-paid role (requires booking)
+Note the shape rather than the specific values: attributes are built into a `Map<String, JsonNode>` and the assignment is constructed with the `RoleAssignment.builder()` fluent API, not setters. `roleId` is a CRD role identifier, not a role name, and one rule commonly covers several `serviceCode` values.
 
-Fee-paid judicial roles require a `JudicialBooking` fact to provide location and time boundaries:
+### ORM: Judicial role scoped by a booking
+
+A booking does not gate the `fee-paid-judge` role itself — that rule matches only on office and marks the assignment `bookable: "true"`. The booking drives a *second*, separate rule, which grants a location-scoped role for the booked period:
 
 ```drl
-rule "civil_fee_paid_judge_org_role"
+rule "civil_deputy_district_judge_org_role"
 when
-    $f: FeatureFlag(status && flagName == FeatureFlagEnum.CIVIL_WA_1_0.getValue())
-    $joh: JudicialOfficeHolder(office == "CIVIL Fee-Paid Judge")
-    $bk: JudicialBooking(userId == $joh.userId)
+  $f:  FeatureFlag(status && flagName == FeatureFlagEnum.CIVIL_WA_2_1.getValue())
+  $joh: JudicialOfficeHolder(office in ("CIVIL Deputy District Judge-Fee-Paid",
+                                        "CIVIL Deputy District Judge - Sitting in Retirement-Fee-Paid",
+                                        "CIVIL District Judge (sitting in retirement)-Fee-Paid"))
+  $bk: JudicialBooking(userId == $joh.userId)
 then
-    RoleAssignment ra = new RoleAssignment();
-    ra.setActorId($joh.getUserId());
-    ra.setBeginTime($bk.getBeginTime());
-    ra.setEndTime($bk.getEndTime());
-    // ... attributes include $bk.locationId, $bk.regionId
-    insert(ra);
-end
+   Map<String,JsonNode> attribute = new HashMap<>();
+   attribute.put("contractType", JacksonUtils.convertObjectIntoJsonNode("Fee-Paid"));
+   attribute.put("jurisdiction", JacksonUtils.convertObjectIntoJsonNode("CIVIL"));
+   attribute.put("primaryLocation", JacksonUtils.convertObjectIntoJsonNode($bk.getLocationId() != null ?
+   $bk.getLocationId():$joh.getPrimaryLocation()));
+   attribute.put("baseLocation", JacksonUtils.convertObjectIntoJsonNode($bk.getLocationId()));
+   attribute.put("region", JacksonUtils.convertObjectIntoJsonNode($bk.getRegionId()));
+   // ... workTypes
+  insert(
+      RoleAssignment.builder()
+      // ... actorId, roleCategory, roleType, grantType, classification
+      .roleName("deputy-district-judge")
+      .beginTime($bk.getBeginTime())
+      .endTime($bk.getEndTime())
+      .attributes(attribute)
+      .authorisations($joh.getTicketCodes())
+      .build());
+end;
 ```
 
-(`civil-judicial-org-role-mapping.drl:100-135`)
+(`am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-org-role-mapping.drl:62-97`)
+
+The booking supplies `beginTime`/`endTime` directly, and its `locationId` lands in both `baseLocation` and — where set — `primaryLocation`. With no booking the rule does not fire at all, so the judge keeps only the unscoped `fee-paid-judge` assignment.
 
 ### RAS: ORM trusted service rule
 
@@ -475,29 +522,32 @@ After a rule sets status to `CREATE_APPROVED`, the structural validation rule ma
 
 Each JSON file is an array of role objects:
 
-<!-- REVIEW: This example has three errors vs real source (role_common.json): (1) classification values are only ["PUBLIC","PRIVATE"] not ["PUBLIC","PRIVATE","RESTRICTED"]; (2) substantive should be false not true; (3) attributes only has "jurisdiction" as mandatory, not "primaryLocation". See am-role-assignment-service:src/main/resources/roleconfig/role_common.json -->
 ```json
 [
   {
     "name": "case-allocator",
     "label": "Case Allocator",
+    "description": "Case Allocator role for judicial users",
     "category": "JUDICIAL",
+    "substantive": false,
     "type": "ORGANISATION",
-    "substantive": true,
     "patterns": [
       {
         "roleType": { "mandatory": true, "values": ["ORGANISATION"] },
         "grantType": { "mandatory": true, "values": ["STANDARD"] },
-        "classification": { "mandatory": true, "values": ["PUBLIC","PRIVATE","RESTRICTED"] },
+        "classification": { "mandatory": true, "values": ["PUBLIC", "PRIVATE"] },
         "attributes": {
-          "jurisdiction": { "mandatory": true },
-          "primaryLocation": { "mandatory": true }
+          "jurisdiction": { "mandatory": true }
         }
       }
     ]
   }
 ]
 ```
+
+(`am-role-assignment-service:src/main/resources/roleconfig/role_common.json:1-30`)
+
+`classification` admits `PUBLIC` and `PRIVATE` only — a `RESTRICTED` organisational assignment fails pattern validation. `jurisdiction` is the sole mandatory attribute here; a pattern that also required `primaryLocation` would reject every assignment ORM derives for a user with no primary location on their CRD profile.
 
 The `validate_role_assignment_against_patterns` rule loads matching `RoleConfigPattern` facts and checks that the assignment's attributes satisfy all mandatory constraints. On match, it promotes status to `APPROVED` and sets the `substantive` attribute (`role-assignment-config-validation.drl:44-62`).
 
@@ -532,14 +582,32 @@ When Drools mapping rules are changed (e.g. adding a new role for a jurisdiction
 1. A row is inserted into ORM's `refresh_jobs` table with `status = NEW`, specifying `role_category` (e.g. `LEGAL_OPERATIONS`) and `jurisdiction` (e.g. `CIVIL` or `ALL`).
 2. The `am-role-assignment-refresh-batch` Kubernetes CronJob picks up `NEW` jobs and calls ORM's refresh API (`POST /am/role-mapping/refresh`).
 3. ORM fetches all affected user profiles from CRD/JRD (paginated), re-runs the Drools mapping rules, and sends the resulting role assignments to RAS with `replaceExisting = true`.
-4. On completion, the job status is updated to `COMPLETE`. Partial failures update status to `ABORTED` with failed user IDs stored for retry in a linked job.
-<!-- CONFLUENCE-ONLY: refresh_jobs table schema and retry semantics — not verified in source -->
+4. On completion the job status is set to `COMPLETED`; if any user failed, the status is set to `ABORTED`, the failing user IDs are written to the job's own `user_ids` array, and the `log` column records them -- `RefreshOrchestrator.java:291-309`.
+
+The table is `refresh_jobs(job_id, role_category, jurisdiction, status, comments, user_ids, log,
+linked_job_id, created)` with `job_id` defaulted from a `JOB_ID_SEQ` sequence --
+`V1.1__init_tables.sql:1-16`. Statuses are the string constants `NEW`, `COMPLETED` and `ABORTED`
+-- `Constants.java:48-50`.
+
+Only a job in `NEW` status will run: `fetchRefreshJobAndValidateStatus` rejects anything else with
+`ERROR_REFRESH_JOB_INVALID_STATE` -- `RefreshOrchestrator.java:117-127`. Retrying an `ABORTED` job
+therefore means creating a fresh `NEW` job for the failed user IDs rather than re-triggering the
+same `job_id`.
+
+<!-- DIVERGENCE: Confluence describes failed users being carried into a linked retry job. In source, `linked_job_id` is a column on `refresh_jobs` that is only populated by the testing-support endpoint `RefreshJobsController` (`RefreshJobsController.java:69-93`); no production path creates a linked job, and `updateJobStatus` stores the failed IDs on the aborted job itself. Source wins. -->
 
 The refresh batch is scheduled via CNP flux configuration (`cnp-flux-config >> apps >> am >> am-role-assignment-refresh-batch >> prod.yaml`). The `REFRESH_JOB` environment variable in ORM's flux config controls which job runs (e.g. `LEGAL_OPERATIONS-CIVIL-NEW-0-1`).
 
 ## ORM ASB Message Processing
 
-ORM subscribes to Azure Service Bus topics for CRD and JRD change events using PEEKLOCK mode. Messages are retried up to 4 times with a 5-minute lock duration between attempts (giving a 15-minute window for transient issues). After 4 failed attempts, messages move to the dead letter queue for manual recovery.
+ORM subscribes to Azure Service Bus topics for CRD and JRD change events in `PEEK_LOCK` mode with
+auto-complete disabled, and the AMQP client retries transport-level failures 10 times at a fixed
+1-minute interval -- `CRDMessagingConfiguration.java:68-83`. `TopicConsumer.processMessage`
+completes the message only after the mapping call returns, and no code path abandons it --
+`TopicConsumer.java:60-80`. A mapping failure therefore holds the message until its lock lapses
+instead of releasing it for immediate redelivery.
+
+Messages are retried up to 4 times with a 5-minute lock duration between attempts. After 4 failed attempts, messages move to the dead letter queue for manual recovery. Both the delivery limit and the lock duration are properties of the ASB subscription rather than of ORM.
 <!-- CONFLUENCE-ONLY: ASB retry count (4) and lock duration (5 min) — not verified in source -->
 
 ## Examples
