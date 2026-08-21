@@ -23,6 +23,13 @@ sources:
   - rpx-xui-translation:projects/rpx-xui-translation/src/public-api.ts
   - rpx-xui-webapp:api/auth/index.ts
   - rpx-xui-webapp:api/health/index.ts
+  - ccpay-bubble:package.json
+  - ccpay-bubble:src/app/app.module.ts
+  - em-media-viewer:package.json
+  - em-media-viewer:projects/media-viewer/package.json
+  - em-media-viewer:projects/media-viewer/src/lib/media-viewer.module.ts
+  - em-media-viewer:projects/media-viewer/src/lib/toolbar/toolbar.module.ts
+  - em-media-viewer:projects/media-viewer/src/lib/annotations/annotations.module.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -75,6 +82,13 @@ sources_sha:
   "rpx-xui-translation:projects/rpx-xui-translation/src/public-api.ts": "91c0b307dd4a8ac874f88112e3555aa3e6f97e17"
   "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-webapp:api/health/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "ccpay-bubble:package.json": "7d1ce67f737a32f8043f4bfca7e3daf8129da095"
+  "ccpay-bubble:src/app/app.module.ts": "b2d8aef5a92852479d4a223d5320a6ed82784d65"
+  "em-media-viewer:package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
+  "em-media-viewer:projects/media-viewer/package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
+  "em-media-viewer:projects/media-viewer/src/lib/media-viewer.module.ts": "9b4edc2c7f19264628215e37ddc7f89de2e4dd72"
+  "em-media-viewer:projects/media-viewer/src/lib/toolbar/toolbar.module.ts": "d0021abc1a687f247765d65ff348e43a7684b441"
+  "em-media-viewer:projects/media-viewer/src/lib/annotations/annotations.module.ts": "0f7db9d92d1ca62c1b8d684c741d39168ef2e63e"
 ---
 
 # Shared Libraries
@@ -347,7 +361,16 @@ Language preference is stored in cookie `exui-preferred-language` with `SameSite
 
 The translation library makes HTTP calls to `ts-translation-service`, but these are proxied through the BFF's Node layer rather than called directly from the browser. In `rpx-xui-webapp`, the proxy is configured at `/api/translation` and rewrites to the `/translation` path on the upstream microservice (`rpx-xui-webapp:api/proxy.config.ts:177-178`). The service URL is configured via `services.translation` in the app's `node-config` setup.
 
-<!-- CONFLUENCE-ONLY: The Welsh Language LLD states that rpx-xui-translation was also designed for use by Fee and Pay and Evidence Management Angular apps. Not verified in source whether those teams adopted it. -->
+### Consumers outside XUI
+
+Two non-XUI Angular apps in this workspace depend on the library:
+
+| Consumer | How it depends on the library |
+|----------|-------------------------------|
+| Fee and Pay — `ccpay-bubble` | Direct dependency (`ccpay-bubble:package.json:97`), calls `forRoot()` at the app root with `baseUrl: '/api/translation'` (`ccpay-bubble:src/app/app.module.ts:41,77-84`) — the same BFF proxy path XUI uses. It is the only Angular app among the cloned `apps/payment/` repos. |
+| Evidence Management — `em-media-viewer` | **Peer** dependency of the published `@hmcts/media-viewer` library (`em-media-viewer:projects/media-viewer/package.json:40`), plus a direct dependency of the demo shell (`em-media-viewer:package.json:85`). Three modules under `em-media-viewer:projects/media-viewer/src/lib/` import `RpxTranslationModule.forChild()` — `media-viewer.module.ts:61`, `toolbar/toolbar.module.ts:47`, `annotations/annotations.module.ts:54`. |
+
+The `forChild()` path is the one to watch. It returns the module with **no providers at all** (`rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.module.ts:22-26`), where `forRoot()` supplies both `RpxTranslationConfig` and `RpxTranslationService` (`:10-20`). `RpxTranslationService` is declared with a bare `@Injectable()` rather than `providedIn: 'root'` (`rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.service.ts:20`), so it has no provider unless `forRoot()` ran. Any service frontend embedding the media viewer must therefore call `RpxTranslationModule.forRoot()` itself — the media viewer will not bring the service with it, and the failure is an Angular DI error when a viewer component is first rendered, not at build time.
 
 ### Versioning notes
 
