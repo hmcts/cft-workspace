@@ -14,8 +14,11 @@ sources:
   - ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/dtos/requests/RefundStatusUpdateRequest.java
   - ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/state/RefundState.java
   - ccpay-refunds-app:src/main/resources/application.yaml
+  - ccpay-refunds-app:src/main/resources/db/changelog/db.changelog-0.4.yaml
   - ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/utils/RefundsUtil.java
   - ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundNotificationServiceImpl.java
+  - ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/config/security/SpringSecurityConfiguration.java
+  - ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/config/security/RefundStatusUpdateAuthorizationManager.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/RefundEligibilityUtil.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/service/RefundRemissionEnableServiceImpl.java
   - ccpay-payment-app:api/src/main/resources/application.properties
@@ -66,8 +69,11 @@ sources_sha:
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/dtos/requests/RefundStatusUpdateRequest.java": "d0970d044fc5fdc0c510e8095f159c2c1fe19858"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/state/RefundState.java": "5255433fa96cb8303a667ee0660219befd1cdc10"
   "ccpay-refunds-app:src/main/resources/application.yaml": "fcda3a69f83a92e6cd7b8292a99a9bfa349090a3"
+  "ccpay-refunds-app:src/main/resources/db/changelog/db.changelog-0.4.yaml": "e5be9586800b3dd0e5bd74bfa9f1948c771b98e0"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/utils/RefundsUtil.java": "1c8b7b924ea8aa9367a3c89bd489154ca5f62026"
   "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/services/RefundNotificationServiceImpl.java": "3749385a4df78f606ecf839387fd0f26328d8709"
+  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/config/security/SpringSecurityConfiguration.java": "9c1f60db6598dba461b9583daf0f3687df63ece9"
+  "ccpay-refunds-app:src/main/java/uk/gov/hmcts/reform/refunds/config/security/RefundStatusUpdateAuthorizationManager.java": "9c1f60db6598dba461b9583daf0f3687df63ece9"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/RefundEligibilityUtil.java": "a13eb9234676634eda91b7dbf48b0662eb89af67"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/service/RefundRemissionEnableServiceImpl.java": "65bcad2ffb092e534b051dbb0349914658506a57"
   "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
@@ -77,7 +83,7 @@ sources_sha:
 ## TL;DR
 
 - `ccpay-refunds-app` exposes a REST API for creating, reviewing, resubmitting, and reconciling refunds against payments held in `ccpay-payment-app`.
-- All endpoints require IDAM `Authorization` and S2S `ServiceAuthorization` headers; trusted S2S services: `payment_app`, `ccpay_bubble`, `api_gw`, `ccd_gw`, `xui_webapp`, `pcs_api`.
+- All endpoints require IDAM `Authorization` and S2S `ServiceAuthorization` headers; trusted S2S services: `payment_app`, `ccpay_bubble`, `api_gw`, `ccd_gw`, `xui_webapp`, `pcs_api`, `pt_api` (`application.yaml:70`).
 - Refund references follow the format `RF-NNNN-NNNN-NNNN-NNNN`.
 - The state machine drives: Sent for approval -> Approved -> Accepted/Rejected/Expired; with branches for Update required, Cancelled, Reissued, Closed.
 - LaunchDarkly flag `refunds-release` gates most user-facing endpoints (returns 503 when `true`); the Liberata callback and jobs endpoints are ungated.
@@ -90,31 +96,41 @@ sources_sha:
 
 | Method | Path | Purpose | Controller location |
 |--------|------|---------|-------------------|
-| `POST` | `/refund` | Create a new refund | `RefundsController.java:138` |
-| `GET` | `/refund` | List refunds by `?status=` or `?ccdCaseNumber=` | `RefundsController.java:163` |
-| `PATCH` | `/refund/{reference}` | Update refund status (Liberata callback) | `RefundsController.java:236` |
-| `PATCH` | `/refund/resubmit/{reference}` | Resubmit refund with updated reason/amount | `RefundsController.java:252` |
-| `PATCH` | `/refund/{reference}/action/{reviewer-action}` | Review: approve, reject, or request update | `RefundsController.java:312` |
-| `DELETE` | `/refund/{reference}` | Delete a refund | `RefundsController.java:344` |
-| `GET` | `/refund/{reference}/status-history` | Retrieve status change history | `RefundsController.java:274` |
-| `GET` | `/refund/{reference}/actions` | List available state-machine events | `RefundsController.java:328` |
-| `POST` | `/refund/reissue-expired/{reference}` | Reissue an expired refund | `RefundsController.java:428` |
+| `POST` | `/refund` | Create a new refund | `RefundsController.java:140` |
+| `GET` | `/refund` | List refunds by `?status=` or `?ccdCaseNumber=` | `RefundsController.java:165` |
+| `PATCH` | `/refund/{reference}` | Update refund status (Liberata callback) | `RefundsController.java:238` |
+| `PATCH` | `/refund/resubmit/{reference}` | Resubmit refund with updated reason/amount | `RefundsController.java:254` |
+| `PATCH` | `/refund/{reference}/action/{reviewer-action}` | Review: approve, reject, or request update | `RefundsController.java:314` |
+| `DELETE` | `/refund/{reference}` | Delete a refund | `RefundsController.java:346` |
+| `GET` | `/refund/{reference}/status-history` | Retrieve status change history | `RefundsController.java:276` |
+| `GET` | `/refund/{reference}/actions` | List available state-machine events | `RefundsController.java:330` |
+| `POST` | `/refund/reissue-expired/{reference}` | Reissue an expired refund | `RefundsController.java:430` |
+
+### Reference data
+
+| Method | Path | Purpose | Controller location |
+|--------|------|---------|-------------------|
+| `GET` | `/refund/reasons` | List refund reason codes and labels from `refund_reasons` | `RefundsController.java:123` |
+| `GET` | `/refund/rejection-reasons` | List caseworker rejection reasons from `rejection_reasons` | `RefundsController.java:268` |
+
+Both return `503` while the `refunds-release` flag is on, in common with the other user-facing endpoints (`RefundsController.java:125-127`, `:270-272`).
 
 ### Reconciliation and reporting
 
 | Method | Path | Purpose | Controller location |
 |--------|------|---------|-------------------|
-| `GET` | `/refunds` | List approved refunds for Liberata reconciliation | `RefundsController.java:399` |
-| `GET` | `/refund/refunds-report` | Date-range refund report | `RefundsController.java:456` |
-| `GET` | `/refund/payment-failure-report` | Payment failure report (gated by `payment-status-update-flag`) | `RefundsController.java:202` |
-| `PATCH` | `/payment/{paymentReference}/action/cancel` | Cancel refunds by payment reference | `RefundsActionController.java:37` |
+| `GET` | `/refunds` | List approved refunds for Liberata reconciliation | `RefundsController.java:401` |
+| `GET` | `/refund/refunds-report` | Date-range refund report | `RefundsController.java:458` |
+| `GET` | `/refund/payment-failure-report` | Payment failure report (gated by `payment-status-update-flag`) | `RefundsController.java:204` |
+| `PATCH` | `/payment/{paymentReference}/action/cancel` | Cancel refunds by payment reference | `RefundsActionController.java:39` |
 
 ### Jobs and notifications
 
 | Method | Path | Purpose | Controller location |
 |--------|------|---------|-------------------|
-| `PATCH` | `/jobs/refund-notification-update` | Retry failed email/letter notifications | `RefundsController.java:378` |
-| `GET` | `/refund/notifications/doc-preview` | Preview notification document (proxies to notifications service) | `RefundsController.java:289` |
+| `PATCH` | `/jobs/refund-notification-update` | Retry failed email/letter notifications | `RefundsController.java:380` |
+| `POST` | `/refund/notifications/doc-preview` | Preview notification document from a `DocPreviewRequest` body (proxies to notifications service) | `RefundsController.java:291` |
+| `PUT` | `/refund/resend/notification/{reference}` | Resend a notification with new contact details; `?notificationType=EMAIL\|LETTER` | `RefundsController.java:362` |
 
 ## Request and response shapes
 
@@ -170,7 +186,7 @@ Returns the generated refund reference:
 
 Valid `status` values: `ACCEPTED`, `REJECTED`, `EXPIRED`.
 
-Special case: when `status = "REJECTED"` and `reason = "Unable to apply refund to Card"`, the service internally sets the refund to APPROVED with `refundInstructionType = "RefundWhenContacted"` (`RefundStatusServiceImpl.java:132-144`).
+Special case: when `status = "REJECTED"` and the reason matches `"Unable to apply refund to Card"` (case-insensitively), the rejection is applied and then overwritten — the refund ends APPROVED with `refundInstructionType = "RefundWhenContacted"` and `updatedBy = "System user"` (`RefundStatusServiceImpl.java:135-158`).
 
 ### PATCH /refund/resubmit/{reference} -- ResubmitRefundRequest
 
@@ -241,7 +257,7 @@ Reason codes are stored in the `refund_reasons` table. Active codes run from `RR
 | `RR036` | Retrospective remission |
 | `RR037` | Overpayment |
 
-The `reason` column on the `refunds` table stores the raw code string (e.g. `RR036`), not a foreign key -- the FK constraint was explicitly dropped in `db.changelog-0.4.yaml:63`.
+The `reason` column on the `refunds` table stores the raw code string (e.g. `RR036`), not a foreign key -- the FK constraint on `refunds.reason` is added and then dropped again by `db.changelog-0.4.yaml:47-54`, `:64`. Codes `RR027`-`RR035` are named `Other - <jurisdiction>` and are submitted as `RR0NN-<free text>`; those are stored expanded as `<code>-<jurisdiction>-<free text>`, which no FK could satisfy (`RefundsServiceImpl.java:539-563`).
 
 ## Database schema
 
@@ -278,12 +294,13 @@ All endpoints require:
 - `Authorization` header: IDAM user JWT
 - `ServiceAuthorization` header: S2S token from a trusted service
 
-`PATCH /refund/*` is the exception. It used to be `permitAll()`; since CME-896 it is
-gated by `RefundStatusUpdateAuthorizationManager`, which admits either a user token
-holding `payments-refund`/`payments-refund-approver`, **or** a fully anonymous request
-whose S2S token resolves to the `ccpay_gw` microservice. A user token without a refund
-role is rejected even alongside a valid `ccpay_gw` S2S token, because the gateway
-branch only applies when there is no authenticated user at all. See
+`PATCH /refund/*` is the exception. It is gated by `RefundStatusUpdateAuthorizationManager`
+(`SpringSecurityConfiguration.java:133`), which admits either a user token holding
+`payments-refund`/`payments-refund-approver`, **or** a fully anonymous request whose S2S
+token resolves to the `ccpay_gw` microservice (`RefundStatusUpdateAuthorizationManager.java:45-60`,
+`:73-91`). A user token without a refund role is rejected even alongside a valid `ccpay_gw`
+S2S token, because the gateway branch only applies when there is no authenticated user at
+all. See
 [Refunds flow](../explanation/refunds-flow.md#idam-roles-and-security).
 
 ### Rate limiting
@@ -379,16 +396,17 @@ When a refund is created, the `refundInstructionType` is determined by the payme
 | Condition | Instruction type |
 |-----------|-----------------|
 | Bulk scan channel + cash/postal order/cheque | `RefundWhenContacted` |
-| All other payment methods | `SendRefund` |
+| Any other payment method | `SendRefund` |
+| `paymentMethod` omitted from the request | `null` -- `getTemplate()` then returns no template ID at notification time |
 
-Source: `RefundsServiceImpl.java:228-235`
+Source: `RefundsServiceImpl.java:227-236`, `RefundsUtil.java:51-85`
 
 Additionally, when Liberata rejects a refund with reason `"Unable to apply refund to Card"`, the system automatically:
 1. Sets `refundInstructionType` to `RefundWhenContacted`
 2. Resets the refund status to `APPROVED` (by "System user")
 3. This triggers the "Payit" journey where the payer is contacted to provide bank details
 
-Source: `RefundStatusServiceImpl.java:132-146`
+Source: `RefundStatusServiceImpl.java:135-158`
 
 ## Notification template selection
 
@@ -403,7 +421,7 @@ Notification templates are selected by `RefundsUtil.getTemplate()` based on a ma
 | `RefundWhenContacted` + reason = "Unable to apply refund to Card" | EMAIL | `notifications-email-refund-when-contacted-template-id` | Refund When Contacted |
 | `RefundWhenContacted` + reason = "Unable to apply refund to Card" | LETTER | `notifications-letter-refund-when-contacted-template-id` | Refund When Contacted Letter |
 
-Source: `RefundsUtil.java:47-85`, `application.yaml:159-169`
+Source: `RefundsUtil.java:47-85`, `application.yaml:163-173`
 
 ### Notification flags
 
@@ -436,7 +454,7 @@ Externally published endpoints for Liberata:
 | `GET` | `/refunds-api/refunds?start_date=...&end_date=...` | `GET /refunds` | Reconciliation: list approved refunds |
 | `PATCH` | `/refunds-api/refund/{reference}` | `PATCH /refund/{reference}` | Status callback (Accepted/Rejected/Expired) |
 
-<!-- DIVERGENCE: Confluence "External API Specifications" page lists the status callback as "POST https://cft-mtls-api-mgmt-appgw.platform.hmcts.net/refunds-api/refund/{reference}" but the source code (RefundsController.java:236) uses @PatchMapping. Source wins. -->
+<!-- DIVERGENCE: Confluence "External API Specifications" page lists the status callback as "POST https://cft-mtls-api-mgmt-appgw.platform.hmcts.net/refunds-api/refund/{reference}" but the source code (RefundsController.java:238) uses @PatchMapping. Source wins. -->
 
 The APIM configuration for the payments product is in `ccpay-payment-api-gateway/cft-api-mgmt.tf`. The refunds product is configured as a separate APIM product (`refunds`) with its own Liberata subscription key.
 
@@ -444,22 +462,20 @@ Source: `ccpay-payment-api-gateway:cft-api-mgmt-subscriptions.tf`, Confluence "E
 
 ## Payit refund journey (happy path)
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+When a card refund is rejected by Liberata (original card expired or cancelled), the refund is re-routed to Payit:
 
-When a card refund is rejected by Liberata (original card expired/cancelled), the system triggers the Payit journey:
+1. **Refund created** -- caseworker submits `POST /refund`; status "Sent for approval" (`RefundsController.java:140-153`)
+2. **Team leader approves** -- `PATCH /refund/{reference}/action/APPROVE`; status "Approved", after which the refund is returned by `GET /refunds` for Liberata to collect (`RefundReviewServiceImpl.java:83-96`)
+3. **Liberata accepts** -- `PATCH /refund/{reference}` with `ACCEPTED`; status "Accepted" (`RefundStatusServiceImpl.java:79-125`)
+4. **Card refund fails** -- Liberata calls back again with `REJECTED` and reason `"Unable to apply refund to Card"`. `updateRefundStatus` applies callback statuses directly without consulting `RefundState`, so a refund already in the otherwise terminal "Accepted" state can still be moved on (`RefundStatusServiceImpl.java:72-159`)
+5. **Auto-approved for Payit** -- the rejection is applied first, then `refundInstructionType` becomes `RefundWhenContacted`, the status is overwritten with "Approved", `updatedBy` becomes "System user", and the status history records `"Refund approved by system"` (`RefundStatusServiceImpl.java:135-158`)
+6. **Liberata accepts into Payit** -- a second `ACCEPTED` callback. Where the refund's history holds a REJECTED entry noted `"Unable to apply refund to Card"`, the ACCEPTED branch forces `refundInstructionType` to `RefundWhenContacted` and replaces the callback's reason with that note, so template selection lands on the refund-when-contacted pair rather than the card/PBA pair (`RefundStatusServiceImpl.java:89-93`, `:124`; `RefundsUtil.java:51-85`)
+7. **Notification sent** -- the refund-when-contacted email or letter is dispatched through `ccpay-notifications-service`, carrying a link to the Liberata BPA Refunds Portal at `https://bparefunds.liberata.com` (`RefundStatusServiceImpl.java:124-125`)
+8. **Payer claims refund** -- the payer quotes their payment and refund references on the portal and supplies bank details for NatWest Payit
 
-1. **Refund created** -- Caseworker initiates refund (status: "Sent for Approval")
-2. **Team Leader approves** -- Status changes to "Approved", refund sent to Liberata
-3. **Liberata accepts** -- Status: "Accepted"
-4. **Card refund fails** -- Liberata calls back with status `REJECTED`, reason `"Unable to apply refund to Card"`
-5. **Auto-approved for Payit** -- System automatically resets to "Approved" with `refundInstructionType = RefundWhenContacted`
-6. **Liberata accepts into Payit** -- Status: "Accepted" again
-7. **Offer and Contact notification** -- Email/letter sent to payer with link to `https://bparefunds.liberata.com`
-8. **Payer claims refund** -- Payer provides bank details via Payit portal
+<!-- CONFLUENCE-ONLY: the BPA Refunds Portal URL in step 7 and the claim mechanics in step 8 come from Confluence; the portal is Liberata-side and appears nowhere in ccpay-refunds-app. not verified in source -->
 
 For **offline payment refunds** (cash/cheque/postal order), the journey starts at step 6 directly since `refundInstructionType` is set to `RefundWhenContacted` at creation time.
-
-The Payit link (`https://bparefunds.liberata.com`) requires the payer to quote both their payment reference and refund reference.
 
 ## Examples
 

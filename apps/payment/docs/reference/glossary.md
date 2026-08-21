@@ -22,9 +22,9 @@ Terms used across the Fees & Pay documentation.
 
 **BGC slip** — Bank Giro Credit slip number. A max-6-digit reference from Exela identifying the banking batch/transaction for a bulk-scan payment. See [Bulk Scan Payments](../explanation/bulk-scan-payments.md).
 
-**Callback URL** — The endpoint a consuming service registers when creating a Service Request (field `call_back_url`) or legacy card payment (header `service-callback-url`). The platform sends payment status updates to this URL via Azure Service Bus and `ccpay-functions-node`. See [Payment Status Callbacks](payment-status-callbacks.md).
+**Callback URL** — The endpoint a consuming service registers when creating a Service Request (field `call_back_url`) or legacy card payment (header `service-callback-url`). The platform sends payment status updates to this URL via Azure Service Bus and `ccpay-callback-function`. See [Payment Status Callbacks](payment-status-callbacks.md).
 
-**ccpay-functions-node** — An Azure Function (Node.js, not in the payment repos) that subscribes to `ccpay-service-callback-topic` and delivers payment status payloads to consuming services via HTTP PUT. Retries 6 times at 30-minute intervals before dead-lettering. See [Payment Status Callbacks](payment-status-callbacks.md).
+**ccpay-callback-function** — An Azure Function (Node.js, not in the payment repos) that subscribes to `ccpay-service-callback-topic` and delivers payment status payloads to consuming services via HTTP PUT. Failed deliveries are re-queued with a 30-minute delay (`DELAY_MESSAGE_MINUTES`). See [Payment Status Callbacks](payment-status-callbacks.md).
 
 **CPO** — Case Payment Orders. The API (`cpo-case-payment-orders-api`) that links service requests to CCD cases. Updates are published via `ccpay-service-request-cpo-update-topic` and consumed by `ccpay-service-request-cpo-update-service`. See [Payment Lifecycle](../explanation/payment-lifecycle.md).
 
@@ -36,14 +36,13 @@ Terms used across the Fees & Pay documentation.
 
 **Exela / XBP** — The scanning supplier contracted by HMCTS to open postal envelopes, scan documents, and bank cheques/cash/postal orders. Also known as XBP (current trading name). See [Bulk Scan Payments](../explanation/bulk-scan-payments.md).
 
-<!-- REVIEW: The FF4j flag name for the callback feature is "payment-callback-service" (from CallbackService.FEATURE), not "service-callback". See model/src/main/java/uk/gov/hmcts/payment/api/service/CallbackService.java:8 and FF4jConfiguration.java:59-63. -->
-**FF4j** — Feature Flags for Java. A static/infrastructure feature-flag mechanism used in `ccpay-payment-app` for service-level gates (e.g. `payment-cancel`, `service-callback`, `bulk-scan-check`). Contrasts with LaunchDarkly which handles dynamic runtime toggles. See [Overview](../explanation/overview.md).
-
-**Flow ID** — A PCI-PAL identifier that routes a telephony payment to the correct payment form for a given jurisdiction. Each service (Probate, Divorce, PRL, IAC, etc.) has a distinct flow ID per provider (Antenna or Kerv). See [PCI-PAL Telephony](../explanation/pci-pal-telephony.md).
+**Flow ID** — A PCI-PAL identifier that routes a telephony payment to the correct payment form. The telephony system resolves it from the Reference Data service type, over a closed set of six: Probate, Divorce, Family Private Law and Immigration and Asylum Appeals each have their own, while Specified Money Claims and Financial Remedy share the strategic flow ID. Any other service type is rejected. See [PCI-PAL Telephony](../explanation/pci-pal-telephony.md).
 
 **GOV.UK Pay** — The government's card-payment platform. HMCTS routes all online card payments through GOV.UK Pay via `ccpay-payment-app`. Each HMCTS service jurisdiction has its own GOV.UK Pay account and API key. See [GOV.UK Pay Integration](../explanation/govuk-pay-integration.md).
 
 **IdempotencyKeys** — A database table (`idempotency_keys`) in `ccpay-payment-app` that prevents duplicate PBA payments against a Service Request. A request hashcode is recorded; subsequent requests with the same hash return the original response. See [API — Payments](api-payments.md).
+
+**LaunchDarkly** — The only runtime feature-flag mechanism in `ccpay-payment-app`, reached through the `FeatureToggler` interface. Five keys are evaluated: `apportion-feature`, `prod-strategic-fix`, `payment-status-update-flag`, `iac-supplementary-details-feature` and `refund-remission-lagtime-feature`. Every call site defaults to `false`. See [Architecture](../explanation/architecture.md#feature-flags).
 
 **Liberata** — The HMCTS middle-office finance supplier. Responsible for financial reconciliation (pulling payment data from PayHub via APIM twice per day), processing PBA account validation, and managing refund acceptance/rejection via callbacks. See [Reconciliation](../explanation/reconciliation.md).
 
@@ -59,7 +58,7 @@ Terms used across the Fees & Pay documentation.
 
 **PaymentStatusDto** — The JSON payload shape sent to consuming services via `ccpay-service-callback-topic` in the Ways2Pay (service-request) path. Contains `service_request_reference`, `ccd_case_number`, `service_request_status`, and a nested `payment` object. See [Payment Status Callbacks](payment-status-callbacks.md).
 
-**PCI-PAL** — A Payment Card Industry-compliant telephony payment provider used by HMCTS CTSCs. Handles card capture over the phone via an iframe in PayBubble. Two provider implementations: Antenna (legacy) and Kerv (current default). See [PCI-PAL Telephony](../explanation/pci-pal-telephony.md).
+**PCI-PAL** — A Payment Card Industry-compliant telephony payment provider used by HMCTS CTSCs. Handles card capture over the phone via an iframe in PayBubble. Two provider implementations exist in the codebase, Antenna and Kerv, but the telephony endpoint accepts `kerv` only — any other `telephony_system` value is rejected. See [PCI-PAL Telephony](../explanation/pci-pal-telephony.md).
 
 **RC reference** — A unique payment reference generated by `ccpay-payment-app`. Format: `RC-XXXX-XXXX-XXXX-XXXC` where the last digit is a Luhn check digit. Used universally across PayHub, PayBubble, CCD, and reconciliation reports. Refunds use `RF-` prefix. See [Overview](../explanation/overview.md).
 

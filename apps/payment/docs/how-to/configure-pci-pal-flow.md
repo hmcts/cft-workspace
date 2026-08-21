@@ -15,6 +15,15 @@ sources:
   - ccpay-payment-app:api-contract/src/main/java/uk/gov/hmcts/payment/api/contract/TelephonyCardPaymentsRequest.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/TelephonyCallbackDto.java
   - ccpay-payment-app:charts/payment-api/values.yaml
+  - ccpay-payment-app:api/src/main/resources/application-local.properties
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/SpringSecurityConfiguration.java
+  - ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/dto/TelephonyProviderLinkIdRequest.java
+  - ccpay-bubble:express/mvc/controller/PayhubController.js
+  - ccpay-bubble:config/custom-environment-variables.yaml
+  - cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml
+  - cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml
+  - cnp-flux-config:apps/fees-pay/ccpay-bubble-frontend/prod.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -53,16 +62,25 @@ sources_sha:
   "ccpay-payment-app:api-contract/src/main/java/uk/gov/hmcts/payment/api/contract/TelephonyCardPaymentsRequest.java": "cd90241f94938ecec08b8768ce5e2bb4fc4fa5ab"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/TelephonyCallbackDto.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:charts/payment-api/values.yaml": "f4fb59095aad65f13e8673472f64f4cdb246af7a"
+  "ccpay-payment-app:api/src/main/resources/application-local.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java": "109655a0103cf081d4da2680872c7f77351f6e16"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/SpringSecurityConfiguration.java": "e8033dfe3c25862046cd940eadb7522175cb4aba"
+  "ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/dto/TelephonyProviderLinkIdRequest.java": "f3b63715036f0e4f237e3dd50832209f60de88ad"
+  "ccpay-bubble:express/mvc/controller/PayhubController.js": "974c0d8611cdab912a2929dae44cd50c17e8bad5"
+  "ccpay-bubble:config/custom-environment-variables.yaml": "efbbb7d67f100b672667bcae1e12e542e5e1013d"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml": "b8d4f674f4f79c6505b4b4869ee3e96d0925ae3e"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "1cf7125b2300245f5e39de4e88d7a715f4c515a4"
+  "cnp-flux-config:apps/fees-pay/ccpay-bubble-frontend/prod.yaml": "fa5de470940abe2cf8b11f32f40baf0db27defec"
 ---
 
 ## TL;DR
 
 - PCI-PAL telephony payments are configured per jurisdiction via a `flow.id` property mapped to an OAuth-secured PCI-PAL provider (currently **Kerv** only).
 - Each new jurisdiction requires: a flow ID issued by PCI-PAL, OAuth credentials for the Kerv provider, and a code change to register the service type in `TelephonySystem.getFlowId()`.
-- **Kerv is the sole active provider.** The `validateDefaultTelephonySystem` method in `PaymentGroupController` rejects any value other than `"kerv"`. Antenna configuration remains in code but is disabled at runtime (`PaymentGroupController.java:619-629`).
+- **Kerv is the sole active provider.** The `validateDefaultTelephonySystem` method in `PaymentGroupController` rejects any value other than `"kerv"`. Antenna configuration remains in code but is unreachable at runtime (`PaymentGroupController.java:629-639`).
 - The OAuth token exchange POSTs `grant_type`, `tenantname`, `username`, `client_id`, `client_secret` to the provider's token URL (`PciPalPaymentService.java:116-132`). For Kerv, `username` is the obfuscated IDAM user ID of the logged-in CTSC staff member.
 - After authentication, a launch request sends the `flowId`, amount (in pence), callback/return URLs, and order ID to the provider's launch endpoint.
-- The API request body accepts an optional `telephony_system` field; if omitted it defaults to `"kerv"` (`TelephonyCardPaymentsRequest.java:55-56`).
+- The API request body accepts an optional `telephony_system` field (`TelephonyCardPaymentsRequest.java:55-56`); when it is absent or empty, `validateDefaultTelephonySystem` sets it to `"kerv"` (`PaymentGroupController.java:632-634`).
 
 ## Prerequisites
 
@@ -77,7 +95,7 @@ sources_sha:
 
 ### 1. Obtain a flow ID from PCI-PAL
 
-Contact the PCI-PAL provider (Antenna or Kerv) and request a new telephony flow for your jurisdiction. They will provision a flow and return a **flow ID** (a string identifier). You will also confirm:
+Contact the PCI-PAL provider and request a new telephony flow for the jurisdiction. They provision a flow and return a **flow ID** (a string identifier). Also confirm:
 
 - The **tenant name** for your organisation.
 - The **OAuth client ID** and **client secret** for your application.
@@ -85,17 +103,16 @@ Contact the PCI-PAL provider (Antenna or Kerv) and request a new telephony flow 
 
 ### 2. Choose the target provider
 
-Currently all new jurisdictions **must use Kerv**. The `validateDefaultTelephonySystem` method in `PaymentGroupController.java:619-629` rejects any telephony system value other than `"kerv"`.
+All new jurisdictions **must use Kerv**. The `validateDefaultTelephonySystem` method in `PaymentGroupController.java:629-639` rejects any telephony system value other than `"kerv"`, throwing `TelephonyServiceException` (HTTP 422).
 
-<!-- DIVERGENCE: Confluence "Kerv Telephony LLD" says default is "antenna" when telephony_system is missing, but PaymentGroupController.java:622-623 defaults to KervTelephonySystem.TELEPHONY_SYSTEM_NAME ("kerv") and line 626 rejects non-kerv. Source wins. -->
+<!-- DIVERGENCE: Confluence "Kerv Telephony LLD" says default is "antenna" when telephony_system is missing, but PaymentGroupController.java:632-634 defaults to KervTelephonySystem.TELEPHONY_SYSTEM_NAME ("kerv") and lines 636-637 reject non-kerv. Source wins. -->
 
-- `KervTelephonySystem` — configured with `PCI_PAL_KERV_*` environment variables; the only active system.
-- `AntennaTelephonySystem` — configured with `PCI_PAL_ANTENNA_*` environment variables; **disabled at runtime** (validation rejects "antenna"). Configuration still present for legacy/rollback purposes.
+- `KervTelephonySystem` — configured with `PCI_PAL_KERV_*` environment variables; the only reachable system.
+- `AntennaTelephonySystem` — configured with `PCI_PAL_ANTENNA_*` environment variables; unreachable, because validation rejects `"antenna"` before the bean is resolved. Configuration is still wired for both.
 
-Existing jurisdictions (both providers have config): Probate, Divorce, Specified Money Claims, Financial Remedy, Family Private Law, Immigration and Asylum Appeals.
+Both providers carry a full property set for the same jurisdictions: Probate, Divorce, Specified Money Claims, Financial Remedy, Family Private Law, Immigration and Asylum Appeals (`application.properties:41-55`, `:57-70`).
 
-The PCI-PAL staging environment uses tenant ID **1288** for Kerv (303 for Antenna).
-<!-- CONFLUENCE-ONLY: not verified in source -->
+PCI-PAL addresses each telephony system as a numbered session: the local-profile defaults launch and view Kerv sessions under `/session/1288/` and Antenna sessions under `/session/303/` on `pcipalstaging.cloud` (`application-local.properties:135-136`, `:150-151`). Deployed environments override the launch and view URLs from Key Vault.
 
 ### 3. Add the flow ID property
 
@@ -106,16 +123,18 @@ Add an environment variable for the new flow ID, following the naming convention
 pci-pal.kerv.<jurisdiction>.flow.id=${PCI_PAL_KERV_<JURISDICTION>_FLOW_ID:}
 ```
 
-For completeness (and future rollback capability), also add the Antenna equivalent in lines 40-54:
+Add the Antenna equivalent alongside it, in the Antenna block at `application.properties:41-55`:
 
 ```properties
-# Antenna (disabled but retained)
+# Antenna (retained, not reachable)
 pci-pal.antenna.<jurisdiction>.flow.id=${PCI_PAL_ANTENNA_<JURISDICTION>_FLOW_ID:}
 ```
 
-Existing flow IDs are configured for: probate, divorce, prl (Family Private Law), iac (Immigration and Asylum Appeals), and strategic (shared by Specified Money Claims and Financial Remedy).
+Flow-ID properties exist for `probate`, `divorce`, `prl` (Family Private Law), `iac` (Immigration and Asylum Appeals) and `strategic`, which `getFlowId` returns for both Specified Money Claims and Financial Remedy (`application.properties:51-55`, `:66-70`, `TelephonySystem.java:39-40`).
 
-Each flow ID is unique per provider per service. The strategic flow ID is shared between services that don't have a dedicated MID (Merchant ID).
+Each provider holds its own set of these properties, so a jurisdiction's Antenna flow ID and its Kerv flow ID are separate values.
+
+The strategic flow ID is shared between services that do not have a dedicated MID (Merchant ID).
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ### 4. Register the service type in TelephonySystem
@@ -144,7 +163,7 @@ To add a new jurisdiction:
 flowIdMap.put("<Your Service Type>", this.getNewServiceFlowId());
 ```
 
-The service type string must **exactly match** the `serviceDescription` returned by the Reference Data service (`rd-location-ref-api`) for the `case_type` passed in the request. This is looked up via `referenceDataService.getOrganisationalDetail(...)` in `PaymentGroupController.java:562`.
+The service type string must **exactly match** the `serviceDescription` returned by the Reference Data service (`rd-location-ref-api`) for the `case_type` passed in the request. This is looked up via `referenceDataService.getOrganisationalDetail(...)` in `PaymentGroupController.java:572` and passed straight to `getFlowId` (`PaymentGroupController.java:668-670`), so the mapping key is reference data's wording, not the case type.
 
 ### 5. Configure OAuth credentials in the environment
 
@@ -166,7 +185,7 @@ The corresponding environment variables follow the pattern `PCI_PAL_KERV_<PROPER
 
 The `grant_type` defaults to `client_credentials` (`pci-pal.antenna.grant.type` and `pci-pal.kerv.grant.type`) and is not typically stored as a secret.
 
-**Username handling:** For Kerv, the `username` parameter in the OAuth token exchange is the **obfuscated IDAM user ID** of the logged-in CTSC staff member (hashed via `Objects.hash(idamUserId)` in `PaymentGroupController.java:668`), not a static secret. This differs from Antenna, which used a static `pci-pal-antenna-user-name` secret.
+**Username handling:** For Kerv, the `username` parameter in the OAuth token exchange is the **obfuscated IDAM user ID** of the logged-in CTSC staff member — `getIdamUserId` resolves the `sub` claim and passes `String.valueOf(Objects.hash(sub))` (`PaymentGroupController.java:673-686`) — not a static secret. The Antenna branch of the same ternary uses the static `pci-pal.antenna.user.name` value injected into the controller (`PaymentGroupController.java:142-143`, `:600`), which the chart binds to the `pci-pal-antenna-user-name` Vault secret (`charts/payment-api/values.yaml:204-205`). There is no Kerv equivalent secret to create.
 
 If the provider-level credentials already exist, you only need to add the new `pci-pal-kerv-<jurisdiction>-flow-id` secret to Vault and the Helm chart.
 
@@ -178,12 +197,12 @@ The `PCI_PAL_CALLBACK_URL` is set in the Helm chart and follows this template (`
 https://cft-mtls-api-mgmt-appgw.{{ .Values.global.environment }}.platform.hmcts.net/telephony-api/telephony/callback
 ```
 
-For production, this resolves to:
+Production sets it explicitly in Flux, and the host carries the `prod` segment (`cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml:24`):
 ```
-https://cft-mtls-api-mgmt-appgw.platform.hmcts.net/telephony-api/telephony/callback
+https://cft-mtls-api-mgmt-appgw.prod.platform.hmcts.net/telephony-api/telephony/callback
 ```
 
-The callback endpoint (`POST /telephony/callback`) accepts `application/x-www-form-urlencoded` content and is secured via mTLS through the Azure API Management gateway (client certificate + `Ocp-Apim-Subscription-Key` header). It extracts `orderReference` and `transactionResult` from the callback (`TelephonyController.java:48-52`).
+The callback endpoint (`POST /telephony/callback`) accepts `application/x-www-form-urlencoded` content and reaches the API through the Azure API Management gateway over mTLS (client certificate + `Ocp-Apim-Subscription-Key` header). The path also sits in the service-only Spring Security filter chain (`SpringSecurityConfiguration.java:53-75`), so the request arriving at the pod must still carry a valid `ServiceAuthorization` S2S token; no user token is involved. The handler extracts `orderReference` and `transactionResult` from the callback (`TelephonyController.java:51-55`).
 
 The `transactionResult` field has four possible values: `SUCCESS`, `DECLINE`, `ERROR`, `CANCELLED`.
 
@@ -222,11 +241,11 @@ The full PCI-PAL interaction triggered by `POST /payment-groups/{payment-group-r
    
    Returns: `accessToken` and `refreshToken`.
 
-2. **Session launch** — `PciPalPaymentService.getTelephonyProviderLink()` POSTs JSON to the launch URL with `Authorization: Bearer <accessToken>`:
+2. **Session launch** — `PciPalPaymentService.getTelephonyProviderLink()` POSTs JSON to the launch URL with `Authorization: Bearer <accessToken>`. The request DTO carries no Jackson naming strategy, so the wire field names are camelCase exactly as declared (`TelephonyProviderLinkIdRequest.java:16-32`):
    ```json
    {
-     "FlowId": "<flowId>",
-     "InitialValues": {
+     "flowId": "<flowId>",
+     "initialValues": {
        "orderId": "RC-XXXX-XXXX-XXXX-XXXX",
        "amount": "10000",
        "currencyCode": "GBP",
@@ -257,11 +276,11 @@ The full PCI-PAL interaction triggered by `POST /payment-groups/{payment-group-r
 2. Confirm the API returns HTTP 201 with a response body containing `_links.next_url.href` following the pattern `{viewIdURL}{sessionId}/framed` (`PciPalPaymentService.java:97`).
 3. Confirm the initial payment status is `Initiated` in PayBubble.
 4. Complete a test payment in the PCI-PAL card-details flow and confirm the callback arrives at `POST /telephony/callback`, updating the payment status to `success` in the database.
-5. Check the application logs for errors:
-   - `PaymentException: "This telephony system does not support telephony calls for the service '<X>'"` — the `getFlowId()` mapping was not found for the service type.
-   - `PciPalConfigurationException` (HTTP 400 from PCI-PAL) — the flow ID is invalid or not configured on the PCI-PAL side. The PCI-PAL error message typically says `"flow identifier not found"`.
-   - `TelephonyServiceException: "Invalid telephony system name"` — the `telephony_system` field was set to something other than `"kerv"`.
-6. If using the DEMO environment, verify the callback URL resolves to `https://cft-mtls-api-mgmt-appgw.demo.platform.hmcts.net/telephony-api/telephony/callback`.
+5. Check the application logs for errors. Two different faults produce the identical message `This telephony system does not support telephony calls for the service '<X>'.`, so the HTTP status is the only discriminator:
+   - **HTTP 400** — `PaymentException` from `getFlowId()`: the service type has no entry in `flowIdMap` (`TelephonySystem.java:44-46`, handler at `PaymentGroupController.java:725-729`). Fix the mapping.
+   - **HTTP 412** — `PciPalConfigurationException`: the mapping resolved, but PCI-PAL answered the launch call with 400 (`PciPalPaymentService.java:99-104`, handler at `PaymentGroupController.java:743-747`). The flow ID is not configured on the PCI-PAL side. The PCI-PAL response body is not propagated to the caller; read it from the log line at `PciPalPaymentService.java:101-103`, which also logs the flow ID, launch URL and view URL actually used.
+   - **HTTP 422** — `TelephonyServiceException: "Invalid telephony system name"`: the `telephony_system` field was set to something other than `"kerv"` (`PaymentGroupController.java:636-637`, handler at `:737-741`).
+6. If using the DEMO environment, verify the callback URL resolves to `https://cft-mtls-api-mgmt-appgw.demo.platform.hmcts.net/telephony-api/telephony/callback` (`cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml:15`).
 
 ### Payment status lifecycle
 
@@ -276,12 +295,12 @@ The full PCI-PAL interaction triggered by `POST /payment-groups/{payment-group-r
 
 - Telephony payments must cover **all outstanding fees** for a case. Partial telephony payments are not permitted.
 <!-- CONFLUENCE-ONLY: not verified in source -->
-- Duplicate callback rejection: if a payment has already been marked as `success`, a subsequent callback for the same `orderReference` is rejected to prevent duplicate reconciliation entries sent to Liberata.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+  The API does not police this: `amount` is validated only for presence, positivity and at most two decimal places (`TelephonyCardPaymentsRequest.java:34-38`) and is never compared with the payment group's outstanding fee total.
+- A repeat callback for a payment already in `success` changes nothing. `updateTelephonyPaymentStatus` skips the status write, the Service Bus callback and the `telephony_callback` payload insert, and records a `DUPLICATE_STATUS_UPDATE` audit event instead (`PaymentServiceImpl.java:114-148`). The endpoint still answers `204`, so PCI-PAL cannot tell a duplicate from a first delivery — the audit event is the only trace.
 - Address Verification Service (AVS) is switched off/disabled on the PCI-PAL side. Billing address is not captured or validated.
 <!-- CONFLUENCE-ONLY: not verified in source -->
-- The LaunchDarkly feature flag `pci-pal-antenna-feature` historically controlled Antenna availability. A newer flag `pci-pal-telephony-selection` controls whether PayBubble displays the system-selection radio buttons (Antenna vs Trinity/Kerv).
-<!-- CONFLUENCE-ONLY: not verified in source -->
+- Whether PayBubble offers the system-selection radio buttons is decided by the `TELEPHONY_FEATURE` environment variable, bound to the `pci-pal.telephony-selection` config key (`ccpay-bubble:config/custom-environment-variables.yaml:14`) and served to the Angular app from `GET /pci-pal-telephony-selection/feature`. The buttons appear only when the resolved value is exactly `enabled`; any other value, including the unsubstituted placeholder, yields `false` (`ccpay-bubble:express/mvc/controller/PayhubController.js:52-67`). Production sets it to `enabled` (`cnp-flux-config:apps/fees-pay/ccpay-bubble-frontend/prod.yaml:25`), so the Antenna option is on screen in production even though the API answers `422` for it.
+<!-- DIVERGENCE: Confluence presents `pci-pal-telephony-selection` and `pci-pal-antenna-feature` as LaunchDarkly flags. Source: telephony selection is a node-config value driven by the TELEPHONY_FEATURE env var (ccpay-bubble:express/mvc/controller/PayhubController.js:52-67), not a LaunchDarkly flag; `pci-pal-antenna-feature` is stubbed only in ccpay-payment-app unit tests and is read by no production code. Source wins. -->
 
 ## Examples
 

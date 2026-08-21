@@ -15,6 +15,10 @@ sources:
   - ccpay-bulkscanning-app:infrastructure/template/cft-api-policy-oauth2.xml
   - ccpay-bulkscanning-app:infrastructure/cft-api-mgmt-oauth2.tf
   - ccpay-bulkscanning-app:src/main/resources/application.yaml
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/FeePayApportionServiceImpl.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/util/ServiceRequestUtil.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/mapper/PaymentGroupDtoMapper.java
+  - ccpay-payment-app:api-contract/src/main/java/uk/gov/hmcts/payment/api/contract/ReconciliationPaymentDto.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -53,6 +57,10 @@ sources_sha:
   "ccpay-bulkscanning-app:infrastructure/template/cft-api-policy-oauth2.xml": "3098c911c84f617a6537a933cb7b2fe10fcf46af"
   "ccpay-bulkscanning-app:infrastructure/cft-api-mgmt-oauth2.tf": "3098c911c84f617a6537a933cb7b2fe10fcf46af"
   "ccpay-bulkscanning-app:src/main/resources/application.yaml": "1b54d11d83d0faf661f1c591bf676db77d01ee9e"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/FeePayApportionServiceImpl.java": "445f3ac2c605bdd3fd2ff39aa1a6b7936e7b6634"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/util/ServiceRequestUtil.java": "f190c168e2485e79521c0b05f64c0551abd2b6d6"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/mapper/PaymentGroupDtoMapper.java": "5668566104d470baee1e3b1cd06671ecb24580d8"
+  "ccpay-payment-app:api-contract/src/main/java/uk/gov/hmcts/payment/api/contract/ReconciliationPaymentDto.java": "debc138712917d98fb29505e975426f81d5dc688"
 ---
 
 ## TL;DR
@@ -181,7 +189,7 @@ Key points about this mapping:
 
 ## Database schema
 
-The service owns a `bspayment` PostgreSQL schema with five Liquibase-managed tables:
+The service owns the `bspayment` PostgreSQL database (`application.yaml:55-56`) with five Liquibase-managed tables:
 
 | Table | Purpose | Key columns |
 |-------|---------|-------------|
@@ -218,6 +226,8 @@ The **OAuth2 flow** works as follows:
 4. APIM validates the Azure AD token (`validate-azure-ad-token` policy), strips the `Authorization` header, generates an S2S TOTP from named values (`ccpay-s2s-client-id`, `ccpay-s2s-client-secret`), and injects a `ServiceAuthorization` header for the backend microservice.
 
 This means the bulk-scanning service backend does **not** need Exela-specific auth logic -- it sees a normal S2S-authenticated request.
+
+The S2S lease is fetched per inbound call rather than cached: the policy computes a fresh TOTP and calls `{s2s_base_url}/lease` with `timeout="20"` and `ignore-error="false"` (`cft-api-policy-oauth2.xml:45-57`). An S2S outage therefore fails the Exela request at the gateway instead of reaching the backend unauthenticated, and every external bulk-scan call costs one extra hop to the S2S service.
 
 App registrations are managed in `hmcts/central-app-registration`. Secrets rotate every 18 months; the client secret is passed to XBP via Password Pusher. Key vault secrets:
 
@@ -259,15 +269,16 @@ The reconciliation flow between Exela, PayHub, and Liberata operates as follows:
 
 ## Payment allocation
 
-Once a bulk-scan payment is processed into `ccpay-payment-app`, it follows the same allocation rules as other payment channels:
+Once a bulk-scan payment is processed into `ccpay-payment-app`, it goes through the same auto-apportionment as every other payment channel:
 
-- Payments are allocated to outstanding fees on the case.
-- Fees are paid in chronological order.
-- Payments may be partial (underpayment) or exceed the total fee value (overpayment).
-- The `PaymentGroup` entity in PayHub calculates whether payments cover fees, resulting in: **Balanced**, **Overpayment** (triggers refund), or **Underpayment** (additional payment required).
+- Fees on the payment group are sorted by `date_created` and the payment is consumed oldest fee first (`FeePayApportionServiceImpl.java:88-92,154-177`).
+- Each allocation writes a `fee_pay_apportion` row stamped `apportion_type = AUTO` (`FeePayApportionServiceImpl.java:179-200`) and reduces the fee's `amount_due` by the apportioned amount (`FeePayApportionServiceImpl.java:44-77`).
+- Any amount left once every fee is covered is held as `call_surplus_amount` on the apportionment row (`FeePayApportionServiceImpl.java:130-143,234`) and is exposed as `over_payment` on the payment and fee DTOs (`PaymentGroupDtoMapper.java:151-165`).
+- The payment group's status is derived from fee total minus remissions minus successful payments, and is one of `Disputed`, `Paid`, `Partially paid` or `Not paid` (`ServiceRequestUtil.java:14-38`).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence (pages 1791351069, 1794557345) describes apportionment logic. This lives in ccpay-payment-app, not ccpay-bulkscanning-app. -->
+Overpayment has no status of its own. The `Paid` branch tests only that the pending total has reached zero or below (`ServiceRequestUtil.java:29-30`), so a case paid beyond its fee total reports as `Paid`; the excess is visible only in `over_payment` / `call_surplus_amount`. A caseworker chasing an overpaid bulk-scan cheque has to read the surplus field, not the status.
+
+<!-- DIVERGENCE: Confluence (pages 1791351069, 1794557345) describes a PaymentGroup calculation named CalculatePaymentMatchesAmountDue yielding Balanced / Overpayment / Underpayment. No such method exists in ccpay-payment-app; apportionment is FeePayApportionServiceImpl and the status values come from ServiceRequestUtil.getServiceRequestStatus() (Disputed / Paid / Partially paid / Not paid). Source wins. -->
 
 ## Data retention and PII
 
@@ -279,10 +290,10 @@ Once a bulk-scan payment is processed into `ccpay-payment-app`, it follows the s
 
 When the bulk-scan auto-case-creation feature is active, the payment pipeline is affected as follows:
 
-- Previously, all scanned applications created **exception records** in CCD; caseworkers manually created cases. Payment envelopes referenced the exception record number.
-- With auto-case-creation, Bulk Scanning creates/updates a case directly from the envelope. Exception records are only created when validation fails.
-- Impact on PayBubble: the `case_reference` field (previously mapped to exception record number) may be blank for auto-created cases. Unidentified payment journeys become largely obsolete.
-- Impact on Liberata: the `case_reference` attribute in the reconciliation API may not always be populated for scanned payments. The field is not mandatory.
+- Without auto-case-creation, a scanned application lands as an **exception record** in CCD and a caseworker creates the case by hand; the payment envelope carries the exception record number.
+- With auto-case-creation, Bulk Scanning creates or updates the case directly from the envelope, and exception records are raised only when validation fails.
+- Impact on PayBubble: an envelope can arrive with a CCD reference and no exception record. Both `envelope_case.ccd_reference` and `envelope_case.exception_record_reference` are declared `nullable: true` (`db.changelog-0.1.yaml:44-58`), so the schema accepts either, neither, or both.
+- Impact on Liberata: `case_reference` on the reconciliation payload carries no validation constraint and `ReconciliationPaymentDto` is annotated `@JsonInclude(NON_NULL)` (`ReconciliationPaymentDto.java:24-25,52`), so an absent case reference is omitted from the JSON entirely rather than sent as an empty string. A consumer that keys on the presence of the field will see it disappear, not blank out.
 - Orphaned payments (payment without application form) are handled offline by Exela and not sent to CCD.
 
 <!-- CONFLUENCE-ONLY: not verified in source -->

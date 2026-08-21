@@ -22,6 +22,44 @@ sources:
   - ccpay-scheduled-jobs:src/main/java/uk/gov/hmcts/payment/processors/CardCsvReportProcessor.java
   - ccpay-scheduled-jobs:src/main/java/uk/gov/hmcts/payment/JobProcessorRunner.java
   - ccpay-scheduled-jobs:src/main/java/uk/gov/hmcts/payment/processors/JobProcessorFactory.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentFeeLinkRepository.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestReportController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/PaymentsReportService.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/CardPaymentReportConfig.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/PbaCivilPaymentReportConfig.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/DuplicatePaymentReportConfig.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/email/EmailService.java
+  - ccpay-payment-app:api/build.gradle
+  - ccpay-payment-app:charts/payment-api/values.yaml
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/PayStatusToPayHubStatus.java
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-refdata.yaml
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.8.yaml
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/ReportController.java
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/enums/ReportType.java
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/utils/DateUtil.java
+  - ccpay-bubble:src/app/shared/components/phase-banner/phase-banner.component.ts
+  - ccpay-refunds-app:infrastructure/main.tf
+  - ccpay-refunds-app:infrastructure/variables.tf
+  - ccpay-refunds-app:infrastructure/cft-api-mgmt.tf
+  - cnp-flux-config:apps/fees-pay/card-payment-job/card-payment-job.yaml
+  - cnp-flux-config:apps/fees-pay/pba-payment-job/pba-payment-job.yaml
+  - cnp-flux-config:apps/fees-pay/finrem-payment-job/finrem-payment-job.yaml
+  - cnp-flux-config:apps/fees-pay/duplicate-payment-process/duplicate-payment-process.yaml
+  - cnp-flux-config:apps/fees-pay/duplicate-sr-job/duplicate-sr-job.yaml
+  - cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml
+  - cnp-flux-config:apps/fees-pay/refund-notifications-job/refund-notifications-job.yaml
+  - cnp-flux-config:apps/fees-pay/refund-notifications-job/demo.yaml
+  - cnp-flux-config:apps/fees-pay/dead-letter-queue-process/dead-letter-queue-process.yaml
+  - cnp-flux-config:apps/fees-pay/unprocessed-payment-update/unprocessed-payment-update.yaml
+  - cnp-flux-config:apps/fees-pay/unprocessed-payment-update/demo.yaml
+  - cnp-flux-config:apps/fees-pay/prod/00/kustomization.yaml
+  - cnp-flux-config:apps/fees-pay/prod/01/kustomization.yaml
+  - cnp-flux-config:apps/fees-pay/prod/base/kustomization.yaml
+  - cnp-flux-config:apps/fees-pay/demo/base/kustomization.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -77,6 +115,44 @@ sources_sha:
   "ccpay-scheduled-jobs:src/main/java/uk/gov/hmcts/payment/processors/CardCsvReportProcessor.java": "1abcb86ea185530e8568dd8e47fbb4d3ae415216"
   "ccpay-scheduled-jobs:src/main/java/uk/gov/hmcts/payment/JobProcessorRunner.java": "489893e76377cfd4c14692bd0d74406342acb889"
   "ccpay-scheduled-jobs:src/main/java/uk/gov/hmcts/payment/processors/JobProcessorFactory.java": "982232a59ab903a31dea701b29b9d4069e36553d"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentFeeLinkRepository.java": "37568f6eb2d36d81944e63227205df73044030b1"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestReportController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/PaymentsReportService.java": "5c28ea10564258d9c193bead87675b85afa50c21"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/CardPaymentReportConfig.java": "0c22461a0c596b004dc672887ba6ebf4fc4ebaea"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/PbaCivilPaymentReportConfig.java": "0c22461a0c596b004dc672887ba6ebf4fc4ebaea"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/DuplicatePaymentReportConfig.java": "0c22461a0c596b004dc672887ba6ebf4fc4ebaea"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/email/EmailService.java": "5c28ea10564258d9c193bead87675b85afa50c21"
+  "ccpay-payment-app:api/build.gradle": "480a914f67c49c122f302321d70278d4d20b381d"
+  "ccpay-payment-app:charts/payment-api/values.yaml": "f4fb59095aad65f13e8673472f64f4cdb246af7a"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java": "109655a0103cf081d4da2680872c7f77351f6e16"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/PayStatusToPayHubStatus.java": "1aec5909aac1e66f1cd19cbdd2aac2009c42aa68"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-refdata.yaml": "17f30d3afb0d93af7a34eac0e07cb5d6120c93ba"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml": "49aa8817f619e226e00c1f1010299dba05898908"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.8.yaml": "c0cb9c298edd78221ec9c47f0fc43e71f1df4e4a"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml": "1eecc96d51c2a425d51bc20682ab252806a62ff6"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/ReportController.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/enums/ReportType.java": "3cc18ee81ff0e74a0d5488b80d5c6489ebec64e7"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/utils/DateUtil.java": "62558bd0d8a37bf385fe6f236382c4eb341d309b"
+  "ccpay-bubble:src/app/shared/components/phase-banner/phase-banner.component.ts": "9b2ce31bba560111cfaca30c6adf8fe541de06cf"
+  "ccpay-refunds-app:infrastructure/main.tf": "9c1f60db6598dba461b9583daf0f3687df63ece9"
+  "ccpay-refunds-app:infrastructure/variables.tf": "d7063150a39b9a67d6b68ab5bafd490ba95c4f97"
+  "ccpay-refunds-app:infrastructure/cft-api-mgmt.tf": "439be09b8b5998916e6d6d79b7f247b71f1a35b9"
+  "cnp-flux-config:apps/fees-pay/card-payment-job/card-payment-job.yaml": "9878b54e2b187914e67c135fddb6e5200006aa17"
+  "cnp-flux-config:apps/fees-pay/pba-payment-job/pba-payment-job.yaml": "5632e1e8c45f3270060c58942c68c44b69045bc4"
+  "cnp-flux-config:apps/fees-pay/finrem-payment-job/finrem-payment-job.yaml": "5632e1e8c45f3270060c58942c68c44b69045bc4"
+  "cnp-flux-config:apps/fees-pay/duplicate-payment-process/duplicate-payment-process.yaml": "c036dc84ccfa2efa09312811fce29956ac9a96c5"
+  "cnp-flux-config:apps/fees-pay/duplicate-sr-job/duplicate-sr-job.yaml": "5632e1e8c45f3270060c58942c68c44b69045bc4"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "5632e1e8c45f3270060c58942c68c44b69045bc4"
+  "cnp-flux-config:apps/fees-pay/refund-notifications-job/refund-notifications-job.yaml": "295f6426772759c1bedd42dff4f81ac69bb4edf5"
+  "cnp-flux-config:apps/fees-pay/refund-notifications-job/demo.yaml": "295f6426772759c1bedd42dff4f81ac69bb4edf5"
+  "cnp-flux-config:apps/fees-pay/dead-letter-queue-process/dead-letter-queue-process.yaml": "295f6426772759c1bedd42dff4f81ac69bb4edf5"
+  "cnp-flux-config:apps/fees-pay/unprocessed-payment-update/unprocessed-payment-update.yaml": "96fd2884955cf83b11d026f5c7d9597112901770"
+  "cnp-flux-config:apps/fees-pay/unprocessed-payment-update/demo.yaml": "96fd2884955cf83b11d026f5c7d9597112901770"
+  "cnp-flux-config:apps/fees-pay/prod/00/kustomization.yaml": "962e96f31a35042f348afc76c0b4ccd12d748af6"
+  "cnp-flux-config:apps/fees-pay/prod/01/kustomization.yaml": "6752026ca69fe01217331320668d3cc700e70ccd"
+  "cnp-flux-config:apps/fees-pay/prod/base/kustomization.yaml": "d7a36dfdd0197fcc8367b37e74f63c57e5697652"
+  "cnp-flux-config:apps/fees-pay/demo/base/kustomization.yaml": "f02a3a9b659fe704216e517df5f1d77392cd09bc"
 ---
 
 # Reconciliation
@@ -109,8 +185,11 @@ Each payment is assigned a unique reference used for tracking and reconciliation
 
 Example: `RC-1234-5678-9012-3456`
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence "Payment Processing" states that if a payment attempt fails and another is initiated, the new payment should remain associated with the original Service Request. Creating additional Service Requests for the same payment requirement may lead to duplicate records. -->
+### Retrying after a failed payment
+
+A retry stays on the original service request. `POST /service-request/{reference}/card-payments` cancels any GOV.UK Pay session still in `created` state and less than 90 minutes old, then creates a fresh payment against the same `payment_fee_link` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java:221`, `:429-443`). If a successful GOV.UK Pay payment already exists on that service request, the caller is redirected to its return URL instead of getting a new payment (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java:212-218`).
+
+Raising a second service request for the same fee rather than retrying against the first one produces two `payment_fee_link` rows for one liability, and both land on the duplicate-service-request report: the query behind `POST /jobs/email-duplicate-sr-report` groups the day's fees by fee code, CCD case number and enterprise service name and returns every group occurring more than once (`ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentFeeLinkRepository.java:33-44`, `ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestReportController.java:40`).
 
 ## Liberata reconciliation endpoint
 
@@ -128,14 +207,14 @@ Both endpoints are classified as "external" in security configuration (`ccpay-pa
 
 ### Feature flags controlling reconciliation behaviour
 
-The reconciliation endpoint is gated by several feature flags (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java`):
+Two LaunchDarkly flags change what the reconciliation response contains. Both are read through `LaunchDarklyFeatureToggler` and default to `false` when LaunchDarkly is unreachable, so a flag outage yields unapportioned, unenriched payloads rather than an error:
 
-| Flag | Type | Effect |
-|---|---|---|
-| `payment-search` | FF4j | Master gate: if disabled, `/reconciliation-payments` returns an error |
-| `apportion-feature` | LaunchDarkly | When enabled, responses include apportioned fee amounts (allocated amount per fee) rather than raw fee amounts |
-| `bulk-scan-check` | FF4j | When enabled, includes Exela bulk-scan payments in the response; when disabled, they are filtered out |
-| `iac-supplementary-details-feature` | LaunchDarkly | When enabled and IAC payments are present, enriches the response with IAC supplementary details (returns HTTP 206 on partial success) |
+| Flag | Effect |
+|---|---|
+| `apportion-feature` | Responses carry apportioned fee amounts (apportionment amount plus call surplus) in place of the fee's calculated amount (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java:366`) |
+| `iac-supplementary-details-feature` | When any IAC payment is in the result set, the response is enriched with IAC supplementary details and returns HTTP 206 on partial retrieval (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java:215-230`) |
+
+Nothing gates access to the endpoint itself. The four `feature.*` properties in `application.properties:190-193` (`feature.check.liberata.account.for.all.services`, `feature.duplicate.payment.check`, `feature.case.reference.validation`, `feature.discontinued.fees`) are not bound to any component, so editing them changes no behaviour; the service uses no FF4j.
 
 ### Apportionment logic
 
@@ -219,7 +298,7 @@ GET https://cft-mtls-api-mgmt-appgw.platform.hmcts.net/payments-api/reconciliati
 
 ## Additional Liberata inbound endpoints
 
-Beyond reconciliation, the APIM gateway exposes several other endpoints that Liberata uses for payment failure management and refund processing. These are all annotated with `@PaymentExternalAPI` in source (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java:58-162`):
+Beyond reconciliation, the APIM gateway exposes several other endpoints that Liberata uses for payment failure management and refund processing. These are all annotated with `@PaymentExternalAPI` in source (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java:60-170`):
 
 | Endpoint | Method | Purpose |
 |---|---|---|
@@ -232,10 +311,12 @@ Beyond reconciliation, the APIM gateway exposes several other endpoints that Lib
 | `/refunds-api/refunds?start_date=...&end_date=...` | GET | Reconciliation of refunds (separate APIM product) |
 | `/feeRegister-api/fees-register/approvedFees` | GET | All approved fees from the fee register (separate APIM product) |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-The refunds and fee register endpoints are served through separate APIM products (`refunds` and `feeRegister` respectively) but share the same mTLS gateway at `cft-mtls-api-mgmt-appgw.platform.hmcts.net`.
+The refunds endpoint is a separate APIM product owned by a different repo: `ccpay-refunds-app` registers its own product named `refunds` on the same `cft-api-mgmt-<env>` instance, publishes it at base path `refunds-api`, and renders the same mTLS-thumbprint-plus-inline-S2S policy template from its own thumbprint list (`ccpay-refunds-app:infrastructure/variables.tf:74-77`, `ccpay-refunds-app:infrastructure/main.tf:12`, `ccpay-refunds-app:infrastructure/cft-api-mgmt.tf:9-51`). Changing the allowed thumbprints for reconciliation therefore does not change them for refunds — the two lists are maintained independently, in different repos.
 
-All payment-failure endpoints are gated by the `payment-status-update-flag` LaunchDarkly toggle -- when enabled, they return HTTP 503 (Service Unavailable).
+<!-- CONFLUENCE-ONLY: not verified in source -->
+The fee register endpoint is served through a further separate APIM product (`feeRegister`) sharing the same mTLS gateway at `cft-mtls-api-mgmt-appgw.platform.hmcts.net`. That product is declared by `fees-register-api`, which is not cloned in this workspace.
+
+The `payment-status-update-flag` LaunchDarkly toggle is a kill switch, not an enable switch: while it is on, the three `/payment-failures/*` write endpoints and the PATCH by failure reference return an empty HTTP 503 (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java:65-66`, `:164-165`), and `GET /payment-failures/failure-report` throws `LiberataServiceInaccessibleException` (`:203-204`). The same flag is read with inverted sense by the unprocessed-payment job at `:180` — turning the switch on silently stops that job doing any work rather than failing it, so Liberata failure notifications are rejected *and* the catch-up job stalls for as long as the flag stays on.
 
 ## Scheduled CSV reports
 
@@ -253,77 +334,94 @@ The `REPORT_NAME` environment variable determines which job runs (`ccpay-schedul
 
 ### Reconciliation-relevant jobs
 
-| Job name | CronJob name | Schedule | Endpoint called | What it does |
+| `REPORT_NAME` | HelmRelease | Schedule | Endpoint called | What it does |
 |---|---|---|---|---|
-| `card-csv-report` | `card-payment-job-job` | 2:30 AM daily | `POST /jobs/email-pay-reports?payment_method=CARD` | Generates and emails a CSV of all card payments |
-| `pba-csv-report` | `pba-payment-job-job` | 2:30 AM daily | `POST /jobs/email-pay-reports?payment_method=PBA&service_name=<X>` (x8 services) | One CSV per PBA service: Specified Money Claims, Divorce, Finrem, Probate, Family Public Law, Family Private Law, Damages, Immigration and Asylum Appeals |
-| `pba-finrem-weekly-csv-report` | `finrem-payment-job-job` | 2:30 AM Thursdays | `POST /jobs/email-pay-reports?payment_method=PBA&service_name=Finrem&start_date=<7d ago>` | Weekly Finrem PBA summary |
-| `bar-csv-report` | `bar-payment-job-job` | 2:30 AM daily | `POST /jobs/email-pay-reports?payment_method=...` | Bar (bulk-scan) payment report |
-| `duplicate-payment-process` | -- | -- | `POST /jobs/duplicate-payment-process?start_date=<yesterday>&end_date=<yesterday>` | Identifies and reports duplicate payments from the previous day |
-| `duplicate-sr-report` | -- | -- | `POST /jobs/email-duplicate-sr-report?date=<yesterday>` | Identifies duplicate service requests |
+| `card-csv-report` | `card-payment-job` | `30 2 * * *` | `POST /jobs/email-pay-reports?payment_method=CARD` | One CSV of card payments |
+| `pba-csv-report` | `pba-payment-job` | `30 2 * * *` | `POST /jobs/email-pay-reports?payment_method=PBA&service_name=<service>`, once per service | Nine sequential CSVs: Specified Money Claims, Divorce, Finrem, Probate, Family Public Law, Family Private Law, Damages, Immigration and Asylum Appeals, Mortgage and Landlord Possession Claims |
+| `pba-finrem-weekly-csv-report` | `finrem-payment-job` | `30 2 * * 4` | `POST /jobs/email-pay-reports?payment_method=PBA&service_name=Finrem&start_date=<7d ago>` | Weekly Finrem PBA summary |
+| `duplicate-payment-process` | `duplicate-payment-process` | `30 2 * * *` | `POST /jobs/duplicate-payment-process?start_date=<yesterday>&end_date=<yesterday>` | Reports potential duplicate payments from the previous day |
+| `duplicate-sr-report` | `duplicate-sr-job` | `30 2 * * *` | `POST /jobs/email-duplicate-sr-report?date=<yesterday>` | Reports duplicate service requests |
+
+Schedules and `REPORT_NAME` values come from the HelmReleases in `cnp-flux-config:apps/fees-pay/card-payment-job/card-payment-job.yaml:11-13`, `cnp-flux-config:apps/fees-pay/pba-payment-job/pba-payment-job.yaml:11-13`, `cnp-flux-config:apps/fees-pay/finrem-payment-job/finrem-payment-job.yaml:11-13`, `cnp-flux-config:apps/fees-pay/duplicate-payment-process/duplicate-payment-process.yaml:10-12` and `cnp-flux-config:apps/fees-pay/duplicate-sr-job/duplicate-sr-job.yaml:11-13`.
+
+The nine PBA service names are hard-coded in the job image (`ccpay-scheduled-jobs:src/main/java/uk/gov/hmcts/payment/processors/PbaCsvReportProcessor.java:19-30`), so adding a tenth PBA report needs a code change and a new image, not a flux value.
+
+The two duplicate-detection releases are declared only for demo (`cnp-flux-config:apps/fees-pay/demo/base/kustomization.yaml:32`, `:34`). Production cluster 00 carries the card, PBA, Finrem, status and refund-notification releases (`cnp-flux-config:apps/fees-pay/prod/00/kustomization.yaml:5-9`), the shared production base adds the dead-letter-queue and unprocessed-payment releases (`cnp-flux-config:apps/fees-pay/prod/base/kustomization.yaml:7-8`), and cluster 01 takes only that base (`cnp-flux-config:apps/fees-pay/prod/01/kustomization.yaml:3-4`) — so each report is emailed once per day rather than once per cluster.
 
 ### Non-report scheduled jobs
 
-| Job name | CronJob name | Schedule | What it does |
-|---|---|---|---|
-| `status-update` | `status-payment-job-job` | Every 30 minutes | Fetches card payments in `initiated` status and refreshes from GOV.UK Pay |
-| `refund-notifications` | `refund-notifications-job-job` | Every 30 minutes | Processes refund notification queue |
-| `dead-letter-queue` | `dead-letter-queue-process-job` | 2:30 AM daily | Reprocesses failed messages from the service bus dead letter queue |
-| `unprocessed-payment-update` | `unprocessed-payment-update-job` | 15 past the hour, Mon-Fri | Updates payment references for unprocessed payments |
+| `REPORT_NAME` | HelmRelease | Schedule | Endpoint called | What it does |
+|---|---|---|---|---|
+| `status-update` | `status-payment-job` | `*/30 * * * *` | `PATCH /jobs/card-payments-status-update` | Refreshes unfinished GOV.UK Pay payments |
+| `refund-notifications-job` | `refund-notifications-job` | `*/30 * * * *` | `PATCH /jobs/refund-notification-update` | Processes queued refund notifications |
+| `dead-letter-queue-process` | `dead-letter-queue-process` | `30 2 * * *` | `PATCH /jobs/dead-letter-queue-process` | Reprocesses failed messages from the service bus dead letter queue |
+| `unprocessed-payment-update` | `unprocessed-payment-update` | `*/2 * * * *` | `PATCH /jobs/unprocessed-payment-update` | Attaches payment references to unprocessed-payment failures |
+
+Schedules from `cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml:11-13`, `cnp-flux-config:apps/fees-pay/refund-notifications-job/refund-notifications-job.yaml:11-13`, `cnp-flux-config:apps/fees-pay/dead-letter-queue-process/dead-letter-queue-process.yaml:10-12` and `cnp-flux-config:apps/fees-pay/unprocessed-payment-update/unprocessed-payment-update.yaml:10-12`. Non-production overlays patch some of them: demo runs refund notifications every five minutes (`cnp-flux-config:apps/fees-pay/refund-notifications-job/demo.yaml:10`) and the unprocessed-payment job every fifteen minutes on weekdays only (`cnp-flux-config:apps/fees-pay/unprocessed-payment-update/demo.yaml:9`), so a timing problem reproduced in demo will not reproduce with production cadence.
+
+`refund-notifications-job` is the one `REPORT_NAME` dispatched against the refunds API base URL rather than the payment API, so it depends on `ccpay-refunds-app` being reachable, not `ccpay-payment-app`.
 
 ### CSV file naming and delivery
 
-Card payment reports use the naming convention:
+The attachment name is the report config's prefix followed by the generation timestamp formatted `yyyy-MM-dd-HH-mm-ss` and `.csv` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/PaymentsReportService.java:48`, `:137`):
+
 ```
-hmcts_card_payments_yyyy-mm-dd-hh-mm-ss.csv
+hmcts_card_payments_2026-08-20-02-30-04.csv
+hmcts_credit_account_payments_civil_2026-08-20-02-30-11.csv
+hmcts_potential_duplicate_payments_2026-08-20-02-30-19.csv
 ```
 
-PBA (credit account) reports use:
-```
-hmcts_credit_account_payments_yyyy-mm-dd-hh-mm-ss.csv
-```
+PBA prefixes carry a per-service suffix — `hmcts_credit_account_payments_civil_`, `_divorce_`, `_finrem_`, `_fpl_`, `_iac_`, `_pcs_`, `_prl_` and so on, one `PaymentReportConfig` implementation per service (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/CardPaymentReportConfig.java:22`, `ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/PbaCivilPaymentReportConfig.java:22`, `ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/DuplicatePaymentReportConfig.java:22`). The timestamp is the moment the CSV is built, not the reporting date, so two runs on the same day produce differently named files.
 
-Card payment CSV reports are sent to Liberata at `MiddleOffice.Developments@liberata.gse.gov.uk` plus internal HMCTS recipients. PBA reports are sent to service-specific distribution lists.
+Recipients are not held in the repo. Each report config binds `from`, `to`, `subject` and `message` from per-report properties (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/reports/config/CardPaymentReportConfig.java:24-33`), and every `*.payments.email.to` property is supplied by a Key Vault secret named `<report>-payments-email-to`, aliased onto the property name and mounted as a config tree at `/mnt/secrets/ccpay/` (`ccpay-payment-app:charts/payment-api/values.yaml:180-197`, `ccpay-payment-app:api/src/main/resources/application.properties:8`). `to` is bound as a `String[]`, so each secret holds a comma-separated distribution list. Changing who receives a reconciliation report is a Key Vault change, not a deployment; and because the property default is the literal `dummy`, a missing secret makes the send fail rather than silently emailing the wrong people.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-The report email implementation uses `spring-boot-starter-mail` with a retry policy (`@Retryable`, delay=100ms, maxDelay=500ms) for resilience against SMTP failures.
+Report emails go out through `spring-boot-starter-mail` (`ccpay-payment-app:api/build.gradle:135`). `EmailService.sendEmail` is annotated `@Retryable` for `EmailFailedException` with `@Backoff(delay = 100, maxDelay = 500)` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/email/EmailService.java:23-24`), so an SMTP blip is retried in-process within a second; a longer outage loses that run's report, because nothing persists the generated CSV.
 
 ### Card payment status synchronisation
 
-The `status-update` job (`PATCH /jobs/card-payments-status-update`) fetches all card payments in `initiated` status and calls GOV.UK Pay to refresh their state (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java:53-84`). This ensures the local payment table reflects the authoritative GOV.UK Pay status before reconciliation reports are generated.
+The `status-update` job (`PATCH /jobs/card-payments-status-update`) selects payments by exclusion rather than by an `initiated` status: every payment whose provider is GOV_PAY, whose status is **not** one of `success`, `failed`, `error` or `cancelled`, and which was created before a cut-off, ordered oldest first (`ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java:167-173`). Each reference is then re-read through `retrieveWithCallBack`, which fetches the authoritative GOV.UK Pay status and persists it (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java:56-87`). Because `pending` and `decline` are not in the exclusion list, payments in those states are re-queried on every run.
+
+The cut-off is `callback.payments.cutoff.time.in.minutes`, which the deployed chart sets to 2 (`ccpay-payment-app:charts/payment-api/values.yaml:39`, `ccpay-payment-app:api/src/main/resources/application.properties:204`). Payments younger than that are skipped, leaving GOV.UK Pay time to settle before the local record is overwritten. The batch holds one Service Bus connection open for its whole run (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java:65-67`, `:83-86`), so a payment status refreshed here also emits its service callback.
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
-The status check typically occurs within 15 minutes of a payment being initiated. The `status-payment-job-job` runs every 30 minutes to catch up on any payments still in initiated state.
+The status check typically occurs within 15 minutes of a payment being initiated.
 
 ## Bulk scan reconciliation
 
-For payments received via the bulk scan pipeline (Exela cash/cheque), additional reconciliation reports are available in PayBubble:
+For payments received via the bulk scan pipeline (Exela cash/cheque), `ccpay-bulkscanning-app` serves reconciliation reports that PayBubble downloads. `report_type` is bound to an enum with exactly two values, so `GET /report/download` and `GET /report/data` reject anything else with a 400 (`ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/enums/ReportType.java:3-6`, `ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/ReportController.java:53-59`):
 
-| Report | Description |
+| `report_type` | Description |
 |---|---|
-| Data Loss | Missing transactions where data received from only Exela or only Bulk Scan |
-| Unprocessed Transactions | Transaction records still unprocessed by staff |
-| Processed: Unallocated | Payments marked as "Unidentified" or "Transferred" (unsolicited requests) |
-| Shortfalls and Surplus | Requests with balance shortfall/surplus requiring further case management (refund approval, customer contact) |
+| `DATA_LOSS` | Missing transactions, where data arrived from only Exela or only bulk scan |
+| `UNPROCESSED` | Transaction records still unprocessed by staff |
+
+Unallocated and shortfall/surplus handling is a PayBubble case-transaction workflow rather than a downloadable report — `ccpay-bubble` routes `CONFIRMALLOCATION_SURPLUS` and `CONFIRMALLOCATION_SHORTFALL` as UI states (`ccpay-bubble:src/app/shared/components/phase-banner/phase-banner.component.ts:21`).
+
+The download filename is built from the enum name, the requested date range and the run time, as `<REPORT_TYPE>_ddMMyy_To_ddMMyy_RUN_ddMMyy_HHmmss.xls`, and returned in the `Content-Disposition` header (`ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/ReportController.java:75-80`, `ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/utils/DateUtil.java:29-36`). Dates in the name use a two-digit year in `ddMMyy` form, and the run time is formatted in the JVM's default zone.
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
-These reports follow the naming convention: `<Report_Name>_<FromDate>_To_<ToDate>_RUN_<RunDateTime>` (format: `Report_name_DDMMYY_To_DDMMYY_Run_DDMMYY_HHMMSS`). The reconciliation between Exela and HMCTS is performed once every 3 business days by a senior manager, comparing the control totals (BGC Number, Volume, Amount) sent by Exela against the payment details in PayHub.
+The reconciliation between Exela and HMCTS is performed once every 3 business days by a senior manager, comparing the control totals (BGC Number, Volume, Amount) sent by Exela against the payment details in PayHub.
 
 ## Payment status mapping
 
-Payment statuses from different systems are mapped to determine case progression:
+Stored statuses are the nine rows of the `payment_status` reference table — `created`, `success`, `failed`, `cancelled`, `error` seeded with the table (`ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-refdata.yaml:21-27`), then `submitted` (`:126-128`), `started` (`ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml:9-11`), `pending` (`ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.8.yaml:17-19`) and `decline` (`ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml:179`). Those names are collapsed to five external labels for reporting (`ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/PayStatusToPayHubStatus.java:7`):
 
-| CCD Status | PayHub | GOV.UK Pay | PCI Pal |
-|---|---|---|---|
-| Awaiting payment | Payment initiated | In Progress | Not received |
-| Case progression allowed | Success | Success | Success |
-| Case progression paused | Declined | Declined | Decline |
-| Case progression paused | Timed out | Timed out | Not received |
-| Case progression paused | Cancelled | Cancelled | Cancelled |
-| Case progression paused | Error | Error | Error |
+| Stored status | PayHub label |
+|---|---|
+| `created`, `started`, `submitted` | Initiated |
+| `success` | Success |
+| `failed`, `cancelled`, `error` | Failed |
+| `pending` | Pending |
+| `decline` | Declined |
+
+A cancelled payment and an errored payment are therefore indistinguishable in a reconciliation report: both read `Failed`, and only the stored status or the payment's status history tells them apart. There is no `Timed out` status anywhere in the reference data.
+
+For telephony payments the PCI-PAL `transactionResult` is lower-cased and looked up directly in `payment_status`, so a result value with no matching row aborts the callback rather than storing an unknown status, and a payment already in `success` is never overwritten (`ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java:114-123`).
+
+<!-- DIVERGENCE: Confluence "Payment Processing" (id: 1952812014) states that PBA payments have an additional status `Settled` indicating collection by direct debit. No such status exists: the `payment_status` reference table holds only created, started, pending, submitted, success, failed, decline, cancelled and error, per the Liquibase changelogs listed above, and ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/PayStatusToPayHubStatus.java:7 maps no value to Settled. Collection of a PBA payment is not represented as a payment status. Source wins. -->
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
-PBA payments have an additional status `Settled` indicating the payment has been collected through direct debit. Reconciliation issues such as jurisdiction errors, transaction mismatches, and missing/duplicate records result in an incident being raised by Liberata.
+Reconciliation issues such as jurisdiction errors, transaction mismatches, and missing/duplicate records result in an incident being raised by Liberata.
 
 ## Operational notes
 

@@ -20,7 +20,30 @@ sources:
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/AccountController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/mapper/PBAStatusErrorMapper.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/mapper/ServiceRequestDomainDataEntityMapper.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/mapper/PaymentDtoMapper.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/service/RefundRemissionEnableServiceImpl.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/LaunchDarklyFeatureToggler.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/PayStatusToPayHubStatus.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/TelephonySystem.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AntennaTelephonySystem.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/KervTelephonySystem.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/UserAwareDelegatingPaymentService.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/FeatureToggler.java
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-refdata.yaml
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.8.yaml
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml
   - ccpay-payment-app:settings.gradle
+  - cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml
+  - cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -73,7 +96,30 @@ sources_sha:
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/AccountController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/mapper/PBAStatusErrorMapper.java": "89b67ec9107bf106e0f07b0e31bf3bb996a30ba8"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/mapper/ServiceRequestDomainDataEntityMapper.java": "12ba331815bfe64352efdc106dfd650ce6b68daa"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/mapper/PaymentDtoMapper.java": "5b3f2699cf9bc81f927d28766a8731a16f9d58f9"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/service/RefundRemissionEnableServiceImpl.java": "65bcad2ffb092e534b051dbb0349914658506a57"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/LaunchDarklyFeatureToggler.java": "65bcad2ffb092e534b051dbb0349914658506a57"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/PayStatusToPayHubStatus.java": "1aec5909aac1e66f1cd19cbdd2aac2009c42aa68"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/TelephonySystem.java": "e73670ad6d187564188d1f828e551dc1554074a9"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AntennaTelephonySystem.java": "c144ef6b6c298b35f14cf2400b4d8fad4d57b3e7"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/KervTelephonySystem.java": "c144ef6b6c298b35f14cf2400b4d8fad4d57b3e7"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java": "109655a0103cf081d4da2680872c7f77351f6e16"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/UserAwareDelegatingPaymentService.java": "65bcad2ffb092e534b051dbb0349914658506a57"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/FeatureToggler.java": "3e9ece1186c812f47690ff5020d35b37f163cb63"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-refdata.yaml": "17f30d3afb0d93af7a34eac0e07cb5d6120c93ba"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml": "49aa8817f619e226e00c1f1010299dba05898908"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.8.yaml": "c0cb9c298edd78221ec9c47f0fc43e71f1df4e4a"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml": "1eecc96d51c2a425d51bc20682ab252806a62ff6"
   "ccpay-payment-app:settings.gradle": "7bafc8bc5e167ac022ea09d0d178dda6df95e09b"
+  "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "f660da02ae474a3048cbfa5da3fc4a646ecedd4b"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "5632e1e8c45f3270060c58942c68c44b69045bc4"
 ---
 
 ## TL;DR
@@ -156,14 +202,18 @@ Key implementation details:
 
 ### Telephony payments (PCI-PAL)
 
-For telephone-channel payments, PCI-PAL handles PCI-DSS-compliant card capture. Two providers exist:
+For telephone-channel payments, PCI-PAL handles PCI-DSS-compliant card capture. Two provider configurations are wired as Spring components, each supplying the same set of credentials and per-service flow IDs from its own property prefix:
 
-| Provider | Jurisdictions | Config prefix |
-|----------|--------------|---------------|
-| Antenna | Probate, Divorce, PRL, IAC, Specified Money Claims | `PCI_PAL_ANTENNA_*` |
-| Kerv | Default / other services | `PCI_PAL_KERV_*` |
+| Provider | System name | Property prefix | Environment prefix |
+|----------|-------------|-----------------|--------------------|
+| Antenna | `antenna` (`AntennaTelephonySystem:14`) | `pci-pal.antenna.*` | `PCI_PAL_ANTENNA_*` (`application.properties:42-55`) |
+| Kerv | `kerv` (`KervTelephonySystem:14`) | `pci-pal.kerv.*` | `PCI_PAL_KERV_*` (`application.properties:58-70`) |
 
-The flow: the call agent's application calls `PciPalPaymentService.getTelephonyProviderLink()` which obtains an OAuth token from the provider (`PciPalPaymentService:116-132`), then launches a PCI-PAL flow with a per-jurisdiction `flowId` (`TelephonySystem:35-48`). PCI-PAL redirects the agent into a framed card-capture page. On completion, PCI-PAL calls back to `POST /telephony/callback` with `orderReference` and `transactionResult` (`TelephonyController:47-53`).
+`POST /payment-groups/{payment-group-reference}/telephony-card-payments` accepts only Kerv. A missing or empty `telephonySystem` in the request body is defaulted to `kerv`, and any other value is rejected with a `TelephonyServiceException` (`PaymentGroupController:629-638`). The Antenna configuration is not reachable through that endpoint.
+
+Flow IDs are keyed by service type, not by provider. `TelephonySystem.getFlowId()` recognises `Probate`, `Divorce`, `Specified Money Claims`, `Financial Remedy`, `Family Private Law` and `Immigration and Asylum Appeals`, and throws a `PaymentException` for any other service type (`TelephonySystem:35-48`) — a service outside that set cannot take a telephony payment at all. `Specified Money Claims` and `Financial Remedy` both resolve to the `strategic` flow ID.
+
+The flow: the call agent's application obtains an OAuth token for the provider (`PciPalPaymentService:116`), then launches a PCI-PAL flow with the resolved `flowId` (`PciPalPaymentService:70-113`). PCI-PAL redirects the agent into a framed card-capture page. On completion, PCI-PAL calls back to `POST /telephony/callback` with `orderReference` and `transactionResult` (`TelephonyController:47-53`). The `transactionResult` is lower-cased and looked up directly against the `payment_status` table, so any value that is not a seeded status name fails the lookup (`PaymentServiceImpl:114-119`). A payment already in `success` is left untouched and the attempt is recorded as a `DUPLICATE_STATUS_UPDATE` audit event (`PaymentServiceImpl:139-147`).
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 **Business rule**: telephony payments must cover **all outstanding fees** for a case. Partial telephony payments are not permitted. This contrasts with card payments where partial payment scenarios can occur via separate service requests.
@@ -173,9 +223,11 @@ The flow: the call agent's application calls `PciPalPaymentService.getTelephonyP
 Professional users (solicitors) pay using their PBA account. The flow:
 
 1. Service team calls `POST /credit-account-payments` with the PBA number.
-2. Payment API calls Liberata's account validation endpoint (`GET ${liberata.api.account.url}/{pbaCode}`) to check the account is `ACTIVE` (`AccountServiceImpl:72-76`).
-3. If the account is `ON_HOLD` or `DELETED`, the payment is rejected with HTTP 412 or 410 respectively.
-4. If active and sufficient funds, the payment is created with status `success`.
+2. Payment API calls Liberata's account validation endpoint (`GET ${liberata.api.account.url}/{pbaCode}`) to check the account is `ACTIVE` (`AccountServiceImpl:72-76`). The default URL targets Liberata's v2 account API (`application.properties:81`).
+3. If the account is active with sufficient available balance, the payment is created with status `success`; otherwise it is created with status `failed` and a status-history error code — `CA-E0001` for insufficient funds, `CA-E0003` for on-hold, `CA-E0004` for deleted (`PBAStatusErrorMapper:23-56`).
+4. Every `failed` outcome returns the same HTTP 403 on this endpoint (`CreditAccountPaymentController:168-171`), so the caller has to read the error code out of the response body to tell insufficient funds from an unusable account. Account lookup failure returns 404 and an unreachable Liberata returns 504 (`CreditAccountPaymentController:149-155`).
+
+The distinct 410 (deleted) and 412 (on hold) statuses belong to the standalone account lookup `GET /accounts/{accountNumber}` (`AccountController:65-69`) and to the service-request PBA endpoint — see [Payment Lifecycle](payment-lifecycle.md#paying-against-a-service-request) for that mapping.
 
 Liberata integration uses OAuth2 password grant for token acquisition (`LiberataService:36-58`) and Resilience4j time-limiters (15s timeout, `application.properties:244-245`).
 
@@ -258,7 +310,7 @@ Two ASB topics carry payment events to consuming services:
 
 ### Publishing to the topic
 
-`CallbackServiceImpl` (`CallbackServiceImpl.java:46-89`) publishes to the callback topic when a payment reaches a terminal state. It selects the callback URL from one of two locations:
+`CallbackServiceImpl` (`CallbackServiceImpl.java:42-79`) publishes to the callback topic when a payment reaches a terminal state. It selects the callback URL from one of two locations:
 
 | Scenario | Callback URL source (DB column) |
 |----------|-------------------------------|
@@ -272,8 +324,10 @@ The `TopicClientProxy` (`TopicClientProxy.java:36-52`) handles publish-side retr
 
 ### Callback delivery and retry
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-A separate component (referred to as the "CCPAY Function Node" in Confluence) subscribes to the topic and delivers the payment status to the service endpoint via HTTP PUT. If the service does not return HTTP 200 or 201, the function node retries **30 minutes later** for up to **5 additional attempts**, after which delivery is abandoned.
+Delivery to the service endpoint is performed by a separate Azure Function, deployed as the `ccpay-callback-function` HelmRelease from the `ccpay/callback-function` image. It reads the `serviceCallbackPremiumSubscription` subscription on `ccpay-service-callback-topic`, is scaled by a KEDA `azure-servicebus` trigger on that subscription, and is configured with `DELAY_MESSAGE_MINUTES: 30` (`cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml:8-24`). A callback the service does not accept is therefore re-presented half an hour later, not immediately — a service that is down for a deployment window sees its callbacks arrive well after the payment completed.
+
+<!-- CONFLUENCE-ONLY: not verified in source. Confluence states the function retries for up to 5 additional attempts and then abandons delivery. The retry ceiling is a property of the ccpay-callback-function code, which is not among the cloned repos, and no max-delivery-count is set on the subscription in cnp-flux-config. -->
+The function delivers the payment status to the service's registered URL via HTTP PUT, and retries if the service does not return HTTP 200 or 201, for up to **5 additional attempts**, after which delivery is abandoned.
 
 ### Callback JSON response shape
 
@@ -341,47 +395,57 @@ Payment statuses represent the current state of a transaction. Different systems
 
 ### PayHub internal statuses
 
-These are the values stored in the `payment_status` table:
+The `payment_status` reference table is seeded by Liquibase with nine rows, and the seeded name is the value stored against a payment:
 
-| Status | DB value | Meaning |
-|--------|----------|---------|
-| Created | `created` | Payment initiated, awaiting provider response |
-| Success | `success` | Payment completed successfully |
-| Failed | `failed` | Payment rejected by provider |
-| Cancelled | `cancelled` | Payment cancelled by user or service |
-| Pending | `pending` | PBA payment accepted without a live Liberata check — today this means a PBA Config 1 service (`pba.config1.service.names`); under Real Time PBA it would also cover a payment awaiting the Liberata response |
-| Error | `error` | System error from provider |
+| DB value | Seeded description | Seeded by |
+|----------|--------------------|-----------|
+| `created` | Valid payment instructions entered and recorded successfully | `db.changelog-refdata.yaml:23` |
+| `success` | Valid payment details and user successfully made payment | `db.changelog-refdata.yaml:24` |
+| `failed` | Invalid payment details/unsuccessful payment | `db.changelog-refdata.yaml:25` |
+| `cancelled` | User cancels session | `db.changelog-refdata.yaml:26` |
+| `error` | Missing payment parameters | `db.changelog-refdata.yaml:27` |
+| `submitted` | Payment submitted | `db.changelog-refdata.yaml:128` |
+| `started` | Payment started and awaiting card details | `db.changelog-0.0.6.yaml:11` |
+| `pending` | Payment awaiting confirmation from external provider | `db.changelog-0.0.8.yaml:19` |
+| `decline` | Payment declined | `db.changelog-0.0.9.yaml:179` |
+
+`pending` is set on a PBA payment whose service appears in `pba.config1.service.names`; that branch skips the Liberata account check entirely (`CreditAccountPaymentController:158-162`).
 
 ### Cross-system status mapping
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- DIVERGENCE: Confluence's cross-system table lists "Timed out" as a PayHub status against a GOV.UK Pay "Timed Out". No such value exists in the payment_status reference data or in PayStatusToPayHubStatus, and the enum lookup has no fallback. Source wins. -->
 
-| CCD Status | PayHub | GOV.UK Pay | PCI Pal |
-|------------|--------|-----------|---------|
-| Awaiting payment | Created (initiated) | In Progress | Not received |
-| Case progression allowed | Success | Success | Success |
-| Case progression paused | Failed / Declined | Declined | Decline |
-| Case progression paused | Timed out | Timed Out | Not received |
-| Case progression paused | Cancelled | Cancelled | Cancelled |
-| Case progression paused | Error | Error | Error |
+A stored `payment_status` name and a GOV.UK Pay status name are both resolved through the same enum, `PayStatusToPayHubStatus`, to produce the `status` field returned to callers (`PayStatusToPayHubStatus:7`; `ServiceRequestDomainDataEntityMapper:86`; `PaymentDtoMapper:45`):
+
+| Stored / provider status | Reported status |
+|--------------------------|-----------------|
+| `created`, `started`, `submitted` | `Initiated` |
+| `success` | `Success` |
+| `failed`, `cancelled`, `error` | `Failed` |
+| `pending` | `Pending` |
+| `decline` | `Declined` |
+
+The lookup is `PayStatusToPayHubStatus.valueOf(status.toLowerCase())` with no default branch, so a provider status outside those nine names raises an `IllegalArgumentException` instead of mapping to a fallback — a new GOV.UK Pay state breaks the response mapping rather than degrading it.
 
 ### PBA-specific statuses
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+<!-- DIVERGENCE: Confluence lists a fourth PBA status, "Settled", described as payment collected through direct debit. No such status is seeded in payment_status and no PBA code path sets one; PBA payments only ever reach pending, success or failed. Source wins. -->
 
-| Status | Description |
-|--------|-------------|
-| Pending | PBA account entered, awaiting real-time verification |
-| Success | Payment authorised against the account |
-| Failed | Payment rejected (insufficient funds, inactive account) |
-| Settled | Payment collected through direct debit |
+A PBA payment lands in one of three states:
+
+| Status | Set when |
+|--------|----------|
+| `pending` | The requesting service is in `pba.config1.service.names`, so no Liberata check runs (`CreditAccountPaymentController:158-162`) |
+| `success` | Liberata reports the account `ACTIVE` with sufficient available balance (`PBAStatusErrorMapper:23-56`) |
+| `failed` | Liberata reports insufficient funds (`CA-E0001`), on hold (`CA-E0003`) or deleted (`CA-E0004`) (`PBAStatusErrorMapper:23-56`) |
 
 ### Payment Status Update Job
 
-A scheduled job (`PATCH /jobs/card-payments-status-update` in `MaintenanceJobsController`) polls GOV.UK Pay for outstanding card payments in `created` status and updates them if the provider has recorded a different outcome. This typically runs within 15 minutes of payment initiation.
+A scheduled job (`PATCH /jobs/card-payments-status-update` in `MaintenanceJobsController`) polls GOV.UK Pay for outstanding card payments and updates them if the provider has recorded a different outcome. In production it is a CronJob on `*/30 * * * *` — every thirty minutes (`cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml:11`).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-The job only processes online card payments -- telephony payments, disputed payments, and refunds are out of scope. If a service proactively fetches status via API before the job runs, the job will no longer recognise that payment as initiated and will skip it; the service must then handle the status itself.
+The candidate set is narrow. `listInitiatedStatusPaymentsReferences()` selects only payments whose provider is `GOV_PAY` and whose status is not already `success`, `failed`, `error` or `cancelled`, created earlier than `callback.payments.cutoff.time.in.minutes` ago (`PaymentServiceImpl:167-173`, `PaymentServiceImpl:62-63`). The property defaults to `0` in `application.properties:204`, so with no environment override there is no quiet period and a payment is eligible on the next run. PCI-PAL and PBA payments are excluded by the provider filter.
+
+Retrieving a payment's status through the API mutates it. `retrieve(String)` is `@Transactional` and calls `fillTransientDetails`, which sets `paymentStatus` on the managed entity from the GOV.UK Pay status (`UserAwareDelegatingPaymentService:493-506`), so the new status is flushed on commit. That overload also passes `shouldCallBack = false`, and the callback is only published when the flag is true (`UserAwareDelegatingPaymentService:415-417`, `UserAwareDelegatingPaymentService:393-397`). A service that polls its own payment before the job runs therefore moves it into a terminal status with no callback published, and the job then skips it because it no longer matches the query — the service owns the outcome from that point on.
 
 ## Data model (core entities)
 
@@ -408,13 +472,19 @@ IDAM roles used: `citizen`, `payments`, `pui-finance-manager`, `pui-case-manager
 
 ## Feature flags
 
-Two mechanisms coexist:
+Runtime toggling is LaunchDarkly only. The `FeatureToggler` interface exposes a single method, `getBooleanValue(key, defaultValue)` (`FeatureToggler.java:3-7`), and its one implementation delegates straight to the LaunchDarkly SDK's `boolVariation` (`LaunchDarklyFeatureToggler.java:24-34`). The flags read in `main` code are:
 
-<!-- REVIEW: FF4j flag name is wrong. The actual flag name is "payment-callback-service" (from CallbackService.FEATURE in model/src/main/java/uk/gov/hmcts/payment/api/service/CallbackService.java:8), not "service-callback". The FF4jConfiguration registers it via CallbackService.FEATURE constant. -->
-- **FF4j** — static/infrastructure flags configured in `application.properties` (e.g. `payment-cancel`, `service-callback`, `bulk-scan-check`).
-- **LaunchDarkly** — dynamic runtime flags (e.g. `apportion-feature`, `payment-status-update-flag`, `iac-supplementary-details-feature`).
+| Flag | Read by |
+|------|---------|
+| `apportion-feature` | `CardPaymentController:182`, `CreditAccountPaymentController:174`, `PaymentGroupController:102`, `ServiceRequestDomainServiceImpl:238` and others |
+| `payment-status-update-flag` | `PaymentStatusController:41` — gates every payment-status endpoint |
+| `iac-supplementary-details-feature` | `PaymentController:215` |
+| `prod-strategic-fix` | `PaymentGroupController:375`, `PaymentGroupController:447` |
+| `refund-remission-lagtime-feature` | `RefundRemissionEnableServiceImpl:59`, `RefundRemissionEnableServiceImpl:92` |
 
-Both are accessed through a unified `FeatureToggler` interface.
+Every call site supplies `false` as the default, so a LaunchDarkly outage or an unset key disables the feature rather than enabling it.
+
+Separately, `application.properties:190-193` holds four plain Spring booleans — `feature.check.liberata.account.for.all.services`, `feature.duplicate.payment.check`, `feature.case.reference.validation` and `feature.discontinued.fees`. These are build-time configuration injected with `@Value`, not runtime toggles.
 
 ## Reconciliation
 

@@ -12,6 +12,16 @@ sources:
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/SpringSecurityConfiguration.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/FeatureToggler.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/LaunchDarklyFeatureToggler.java
+  - cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml
+  - cnp-flux-config:apps/fees-pay/ccpay-callback-function/prod.yaml
+  - ccpay-bulkscanning-app:src/main/resources/application.yaml
+  - ccpay-bulkscanning-app:build.gradle
+  - ccpay-bulkscanning-app:src/main/resources/db/changelog/db.changelog-master.xml
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/IdempotencyServiceImpl.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java
@@ -64,6 +74,16 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/SpringSecurityConfiguration.java": "e8033dfe3c25862046cd940eadb7522175cb4aba"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/FeatureToggler.java": "3e9ece1186c812f47690ff5020d35b37f163cb63"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/LaunchDarklyFeatureToggler.java": "65bcad2ffb092e534b051dbb0349914658506a57"
+  "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "f660da02ae474a3048cbfa5da3fc4a646ecedd4b"
+  "cnp-flux-config:apps/fees-pay/ccpay-callback-function/prod.yaml": "7b22eb2f6fc3bfe636d2eeb4cbb0f7eb46f76bb5"
+  "ccpay-bulkscanning-app:src/main/resources/application.yaml": "1b54d11d83d0faf661f1c591bf676db77d01ee9e"
+  "ccpay-bulkscanning-app:build.gradle": "7ceabdac8ebbe8059abb847346b6d0d8868a82fd"
+  "ccpay-bulkscanning-app:src/main/resources/db/changelog/db.changelog-master.xml": "fd081cdd4f125504a975e2d58402c7bc8d08a932"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/IdempotencyServiceImpl.java": "7a5df2f161deebfb9cf3e7e0941bd0cdc21318de"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
@@ -83,7 +103,7 @@ sources_sha:
 - HMCTS Fees and Pay is a hub-and-spoke platform: `ccpay-payment-app` (port 8080) is the central gateway wrapping GOV.UK Pay, PCI-PAL telephony, and Liberata PBA; spokes handle refunds, notifications, bulk-scanning, and UI.
 - Nine repos: the hub (`ccpay-payment-app`), refunds API, notifications service, bulk-scanning intake, PayBubble staff UI, payment-outcome citizen page, an API gateway (Terraform-only), scheduled jobs (embedded JAR), and a CPO update listener.
 - Payment lifecycle: Fee Identification, Service Request Creation, Payment Initiation, Processing (via payment channel), Status Update, Apportionment (fees paid chronologically by creation date), then Case Progression via callback.
-- Inter-service messaging uses Azure Service Bus topics (`ccpay-service-callback-topic`, `ccpay-service-request-cpo-update-topic`) with `ccpay-functions-node` (Azure Function) forwarding callbacks to service endpoints; retries 5 times at 30-minute intervals.
+- Inter-service messaging uses Azure Service Bus topics (`ccpay-service-callback-topic`, `ccpay-service-request-cpo-update-topic`) with `ccpay-callback-function` (Azure Function) forwarding callbacks to service endpoints on a 30-minute redelivery interval.
 - Each Java service owns a dedicated PostgreSQL database with Liquibase-managed schema migrations.
 - No CCD dependency at runtime -- the platform records case references against payments but does not store or manage case data.
 
@@ -185,11 +205,10 @@ Module dependencies are declared in `ccpay-payment-app:settings.gradle:1-17`. Th
 
 The hub publishes to two ASB topics:
 
-<!-- REVIEW: FF4j flag name is wrong. The actual flag name is "payment-callback-service" (from CallbackService.FEATURE in model/src/main/java/uk/gov/hmcts/payment/api/service/CallbackService.java:8), not "service-callback". -->
-1. **`ccpay-service-callback-topic`** -- card/PBA payment status callbacks to consuming services (civil, ia, pcs, etc.). Published by `CallbackServiceImpl` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:46-89`), gated by FF4j flag `service-callback`. The `TopicClientProxy` handles message sending with up to 3 retries with exponential backoff (1s, 2s, 3s) before failing (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java:36-51`).
+1. **`ccpay-service-callback-topic`** -- card/PBA payment status callbacks to consuming services (civil, ia, pcs, etc.). Published by `CallbackServiceImpl` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:42-79`). No feature flag gates the publish; the method branches only on which callback URL is populated, and it cannot be switched off from the hub. `TopicClientProxy` makes up to 3 send attempts with a linear backoff of `1000ms * attempt`, so waits of 1s then 2s, and rethrows on the third failure (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java:17`, `:35-51`). `CallbackServiceImpl` catches that exception and only interrupts the thread (`:56-58`, `:75-77`), so a payment can reach a terminal status with its callback never published and nothing but a log line to show it.
 2. **`ccpay-service-request-cpo-update-topic`** -- service-request payment updates forwarded to the Case Payment Orders API. Published by `ServiceRequestDomainServiceImpl` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java:534-572`).
 
-The ASB subscription for the callback topic is `serviceCallbackPremiumSubscription` (`azure.servicebus.subscription-name`). Messages are consumed by `ccpay-functions-node`, an Azure Function (separate from the payment repos) that delivers the payment status payload to each service's registered callback URL.
+The ASB subscription for the callback topic is `serviceCallbackPremiumSubscription` (`azure.servicebus.subscription-name`). Messages are consumed by `ccpay-callback-function`, an Azure Function deployed from the `ccpay/callback-function` image and KEDA-scaled on the subscription backlog, which delivers the payment status payload to each service's registered callback URL (`cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml:9`, `:16-24`). Its redelivery interval is set from the environment as `DELAY_MESSAGE_MINUTES: 30` (`:13`).
 
 ## Payment lifecycle
 
@@ -237,12 +256,12 @@ Computed dynamically by `ServiceRequestUtil` based on fee totals, remission tota
 
 When a payment reaches a terminal state (success or failure), the platform publishes a callback message to `ccpay-service-callback-topic` on Azure Service Bus. The message flow is:
 
-1. **Publisher**: `CallbackServiceImpl` in `ccpay-payment-app` publishes a JSON message with the `serviceCallbackUrl` as a message property. It checks `payment.getServiceCallbackUrl()` first, then falls back to `paymentFeeLink.getCallBackUrl()` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:46-89`).
+1. **Publisher**: `CallbackServiceImpl` in `ccpay-payment-app` publishes a JSON message with the `serviceCallbackUrl` as a message property. It checks `payment.getServiceCallbackUrl()` first, then falls back to `paymentFeeLink.getCallBackUrl()` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:42-79`). The two branches send different bodies: the per-payment URL gets a `PaymentDto`, the service-request URL gets a `PaymentStatusDto`.
 2. **Transport**: Azure Service Bus topic `ccpay-service-callback-topic` with subscription `serviceCallbackPremiumSubscription`.
-3. **Consumer**: `ccpay-functions-node` (an Azure Function, not in the payment repos) reads messages from the subscription and sends HTTP PUT requests to the service's callback URL.
-4. **Retry**: If the service does not respond with a 2XX, the function retries up to 5 further times at 30-minute intervals before giving up. (Services commonly assume only 200 and 201 count as success; the Service Callback LLD is explicit that anything in `200 <= status < 300` is accepted.)
+3. **Consumer**: `ccpay-callback-function` (an Azure Function, not in the payment repos) reads messages from the subscription and sends HTTP PUT requests to the service's callback URL.
+4. **Retry**: If the service does not respond with a 2XX, the function redelivers on a 30-minute interval — `DELAY_MESSAGE_MINUTES: 30` (`cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml:13`) — up to 5 further times before giving up. (Services commonly assume only 200 and 201 count as success; the Service Callback LLD is explicit that anything in `200 <= status < 300` is accepted.)
 
-<!-- CONFLUENCE-ONLY: The ccpay-functions-node retry behaviour (5 retries at 30 min) is documented in Confluence "Service Callback LLD" but the function code is not in the payment product repos — not verified in source -->
+<!-- CONFLUENCE-ONLY: The ceiling of 5 further attempts is documented in Confluence "Service Callback LLD" but the function code is not in the payment product repos and no max_delivery_count is set on the subscription in cnp-flux-config — not verified in source -->
 
 ### Callback triggers
 
@@ -275,7 +294,7 @@ The callback JSON sent to consuming services follows this structure (`PaymentSta
 }
 ```
 
-The request is sent as a PUT with `ServiceAuthorization` header from the `payment_app` S2S microservice. Consuming services must include `payment_app` in their S2S authorised callers list.
+The request is sent as a PUT with a `ServiceAuthorization` header the function mints for itself as the `payment_app` microservice (`MICROSERVICE_PAYMENT_APP` in `cnp-flux-config:apps/fees-pay/ccpay-callback-function/prod.yaml:11-12`). Consuming services must therefore include `payment_app` in their S2S authorised callers list, and their callback handler must accept PUT.
 
 ## Payment channels and methods
 
@@ -284,11 +303,13 @@ The platform supports four payment channels, each with specific rules:
 | Channel | Provider | Users | Key rules |
 |---------|----------|-------|-----------|
 | Online card | GOV.UK Pay | Citizens, professionals | Redirect-based; async status via polling or callback |
-| Telephony | PCI-PAL (Antenna/Kerv) | Staff (CTSC) | Must cover all outstanding fees for a case; partial telephony payments not permitted |
+| Telephony | PCI-PAL Kerv | Staff (CTSC) | Must cover all outstanding fees for a case; partial telephony payments not permitted |
 | Payment by Account (PBA) | Liberata | Professional users | Credit account; v3 API is current for new integrations |
 | Bulk Scan | Exela pipeline | Offline (cash/cheque/postal order) | Processed operationally; allocated via same apportionment rules |
 
 <!-- CONFLUENCE-ONLY: Telephony rule "must cover all outstanding fees" and "partial telephony payments not permitted" documented in Confluence "Payment Methods" page — not verified in source -->
+
+`POST /payment-groups/{payment-group-reference}/telephony-card-payments` is the only endpoint that creates a telephony payment. It accepts `kerv` as the `telephony_system` and nothing else: a missing or empty value is defaulted to `kerv`, and any other value — including `antenna` — is rejected with HTTP 422 before any PCI-PAL call is made (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java:629-639`, `:737-741`). The Antenna credential set and per-jurisdiction flow IDs stay configured on the hub, but no request can route to them.
 
 ### Real-time PBA processing (in design)
 
@@ -388,14 +409,14 @@ A Spring Boot listener that subscribes to the `ccpay-service-request-cpo-update-
 
 ## Databases and Liquibase
 
-All Java services use PostgreSQL with Liquibase-managed schemas. No service uses Flyway.
+All Java services use PostgreSQL with Liquibase-managed schemas. `ccpay-bulkscanning-app` also carries `spring.flyway.enabled: true` (`ccpay-bulkscanning-app:src/main/resources/application.yaml:46`), but the only migration tooling on its classpath is `liquibase-core` (`ccpay-bulkscanning-app:build.gradle:25`, `:233`), so that property does nothing.
 
 | Service | Database name | Changelog master | Notable tables |
 |---------|--------------|------------------|----------------|
 | `ccpay-payment-app` | `payment` | `db.changelog-master.xml` (32 changesets, 0.0.1 -- 0.1.16) | `payment`, `payment_fee_link`, `fee`, `remission`, `fee_pay_apportion`, `status_history`, `idempotency_keys` |
 | `ccpay-refunds-app` | `refunds` | `db.changelog-master.yaml` (12 changesets, 0.1 -- 0.1.2) | `refunds`, `status_history`, `refund_reasons`, `refund_status`, `rejection_reasons`, `refund_fees` |
 | `ccpay-notifications-service` | `notifications` | `db.changelog-master.yaml` (7 changesets, 0.1 -- 0.7) | `notification`, `contact_details`, `service_contact`, `notification_refund_reasons` |
-| `ccpay-bulkscanning-app` | <!-- TODO: research note insufficient for bulk-scanning DB name --> | Liquibase | <!-- TODO --> |
+| `ccpay-bulkscanning-app` | `bspayment` | `db.changelog-master.xml` (includes 0.1 and 0.2) | `envelope`, `envelope_case`, `envelope_payment`, `payment_metadata`, `status_history` |
 
 Liquibase auto-runs on startup: `spring.liquibase.enabled=${SPRING_LIQUIBASE_ENABLED:true}` (`ccpay-payment-app:api/src/main/resources/application.properties:25`). The Jenkins pipeline for each service calls `enableDbMigration('ccpay')`.
 
@@ -407,7 +428,7 @@ All inbound API requests require:
 1. **IDAM JWT** (`Authorization` header) -- validated via `auth-checker-lib`
 2. **S2S JWT** (`ServiceAuthorization` header) -- validated against a per-service trusted-callers list
 
-The hub's S2S trusted callers list spans 24 CFT services (`trusted.s2s.service.names` in `ccpay-payment-app:api/src/main/resources/application.properties`):
+The hub's S2S trusted callers list spans 24 CFT services (`trusted.s2s.service.names` in `ccpay-payment-app:api/src/main/resources/application.properties:111`, overridable per environment via `TRUSTED_S2S_SERVICE_NAMES`):
 
 ```
 cmc, cmc_claim_store, probate_frontend, divorce_frontend, ccd_gw, api_gw,
@@ -417,26 +438,28 @@ prl_cos_api, refunds_api, civil_general_applications, notifications_service,
 nfdiv_case_api, ccpay_gw, pcs_api, pcs_frontend
 ```
 
-External-facing paths (S2S only, no user token) include `/payments`, `/payments/**`, `/card-payments/*/status`, `/telephony/callback`, and `/jobs/**`.
+A second filter chain covers the externally-facing paths with `AuthCheckerServiceOnlyFilter`, so those are authorised on the `ServiceAuthorization` header alone with no user token: `/payments`, `/payments1`, `/payments/**`, `/card-payments/*/status`, `/telephony/callback`, and `/jobs/**` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/SpringSecurityConfiguration.java:52-75`). Ahead of it an unauthenticated chain serves Swagger, `/health`, `/info` and the `/refdata/*` lookups (`:111-136`); everything else falls to the user-plus-service chain, where endpoints such as `POST /card-payments` are gated on IDAM authorities (`payments`, `citizen`) (`:78-108`). A scheduled job or a PCI-PAL callback therefore reaches the hub on an S2S token alone, while payment creation does not.
 
 ## Feature flags
 
-Two feature-flag mechanisms coexist:
+The hub has one runtime feature-flag mechanism: LaunchDarkly, behind a single-method `FeatureToggler` interface (`ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/FeatureToggler.java:5`) whose only implementation evaluates `ldClient.boolVariation(key, user, defaultValue)` (`ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/LaunchDarklyFeatureToggler.java:24-34`).
 
-| Mechanism | Use case | Examples |
-|-----------|----------|----------|
-<!-- REVIEW: FF4j flag for callback is "payment-callback-service" not "service-callback". See CallbackService.java:8 and FF4jConfiguration.java:59-63. -->
-| FF4j (static/infra) | Service-level feature gates | `payment-search`, `payment-cancel`, `bulk-scan-check`, `service-callback` |
-| LaunchDarkly (dynamic) | Runtime behaviour toggles | `apportion-feature`, `payment-status-update-flag`, `refunds-release` |
+| Flag | Default | What it gates |
+|------|---------|---------------|
+| `apportion-feature` | `false` | Whether a confirmed payment is apportioned across fees; read from every payment-creation path and several DTO mappers |
+| `prod-strategic-fix` | `false` | The strategic bulk-scan endpoints on `PaymentGroupController` (`:375`, `:447`) |
+| `payment-status-update-flag` | `false` | A kill switch, not an enable switch. Setting it true makes the payment-failure endpoints return 503 or raise `LiberataServiceInaccessibleException`, and skips the `/jobs/unprocessed-payment-update` run (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java:41`, `:65-67`, `:180-186`, `:203-205`) |
+| `iac-supplementary-details-feature` | `false` | IAC supplementary-details enrichment on payment retrieval |
+| `refund-remission-lagtime-feature` | `false` | The lag-time window before a refund or remission may be raised |
 
-Both are accessed through a common `FeatureToggler` interface.
+Every call site passes `false` as the default, so a LaunchDarkly outage or a typo in a key name resolves to `false` rather than failing. The blast radius differs by flag: `apportion-feature` and `prod-strategic-fix` falling to `false` silently stops apportionment and rejects the strategic bulk-scan endpoints, while `payment-status-update-flag` falling to `false` is the healthy state.
 
 ## See also
 
 - [Overview](overview.md) — what the platform does and who uses it
 - [Payment Lifecycle](payment-lifecycle.md) — detailed stage-by-stage payment flow with status transitions
 - [Reconciliation](reconciliation.md) — APIM gateway, Liberata integration, and scheduled CSV reports
-- [Payment Status Callbacks](../reference/payment-status-callbacks.md) — ASB topic schemas, `TopicClientProxy` retry, and `ccpay-functions-node` delivery
+- [Payment Status Callbacks](../reference/payment-status-callbacks.md) — ASB topic schemas, `TopicClientProxy` retry, and `ccpay-callback-function` delivery
 - [Reference: API Payments](../reference/api-payments.md) — full endpoint catalogue for `ccpay-payment-app`
 - [Glossary](../reference/glossary.md) — definitions for ASB, APIM, PayHub, PayBubble, W2P, and more
 
@@ -452,5 +475,5 @@ Both are accessed through a common `FeatureToggler` interface.
 | Apportionment | The rules that distribute a payment across multiple outstanding fees (chronological by `dateCreated`, earliest first) within a single Service Request boundary |
 | RC reference | Payment reference generated by the platform; format `RC-NNNN-NNNN-NNNN-NNNN` -- unique to every payment attempt |
 | W2P | Ways to Pay -- the standardised service-request-based integration pattern for new services |
-| ccpay-functions-node | Azure Function (not in payment repos) that subscribes to the callback ASB topic and delivers payment status updates to consuming services via HTTP PUT |
+| ccpay-callback-function | Azure Function (not in payment repos) that subscribes to the callback ASB topic and delivers payment status updates to consuming services via HTTP PUT |
 | Callback URL | The endpoint a consuming service registers when creating a Service Request; the platform sends payment status updates to this URL via ASB |

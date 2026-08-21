@@ -26,6 +26,16 @@ sources:
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentFailures.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/ReferenceUtil.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/TelephonySystem.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/AccountController.java
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-refdata.yaml
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.8.yaml
+  - ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml
+  - cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -83,6 +93,16 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentFailures.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java": "5c28ea10564258d9c193bead87675b85afa50c21"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/ReferenceUtil.java": "f200d99c269e2871d1dfdce27187cad4b02c2c73"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/TelephonySystem.java": "e73670ad6d187564188d1f828e551dc1554074a9"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java": "109655a0103cf081d4da2680872c7f77351f6e16"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/AccountController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-refdata.yaml": "17f30d3afb0d93af7a34eac0e07cb5d6120c93ba"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml": "49aa8817f619e226e00c1f1010299dba05898908"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.8.yaml": "c0cb9c298edd78221ec9c47f0fc43e71f1df4e4a"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml": "1eecc96d51c2a425d51bc20682ab252806a62ff6"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "5632e1e8c45f3270060c58942c68c44b69045bc4"
 ---
 
 ## TL;DR
@@ -90,10 +110,9 @@ sources_sha:
 - A payment in `ccpay-payment-app` transitions through: **Initiated** (created locally) -> **Success / Failed / Declined** (confirmed by the external provider) -> **Reconciled** (pulled by Liberata via `/reconciliation-payments`). Internal DB status `created` maps to display status `Initiated` via `PayStatusToPayHubStatus`.
 - Four payment channels: card payments via GOV.UK Pay, PBA (Pay By Account) via Liberata, telephony via PCI-PAL (Antenna or Kerv providers), and bulk scan (cash/cheque/postal order via Exela).
 - The **Service Request** model (`PaymentFeeLink`) groups fees, payments, and remissions into a single billable unit tied to a CCD case; its computed status is one of `Paid`, `Partially paid`, `Not paid`, or `Disputed` (calculated by `ServiceRequestUtil.getServiceRequestStatus()`).
-<!-- REVIEW: Payment references are NOT generated from a database sequence. They are generated from a UTC timestamp (millis/100) + 4 random digits + Luhn check digit. See model/src/main/java/uk/gov/hmcts/payment/api/util/ReferenceUtil.java:17-33. -->
-- Payment references follow the format `RC-XXXX-XXXX-XXXX-XXXX` (generated from a database sequence).
+- Payment references follow the format `RC-XXXX-XXXX-XXXX-XXXC`, assembled in application code from a UTC timestamp in tenths of a second, four `SecureRandom` digits and a Luhn check digit (`ReferenceUtil:17-33`) — there is no database sequence involved, so two instances generating in the same tenth of a second rely on the random suffix for uniqueness.
 - Payment failures (chargebacks, bounced cheques) are recorded in the `payment_failures` table and trigger service callbacks with dispute details.
-- A scheduled job (`PATCH /jobs/card-payments-status-update`) polls GOV.UK Pay for all `created`-status card payments to advance their status and publish callbacks.
+- A CronJob on `*/30 * * * *` calls `PATCH /jobs/card-payments-status-update`, which polls GOV.UK Pay for every `GOV_PAY` payment not already in a terminal status, advances it and publishes callbacks.
 
 ## High-level lifecycle stages
 
@@ -144,7 +163,7 @@ Key implementation details:
 - Amount is converted to pence via `movePointRight(2).intValue()` inside `GovPayDelegatingPaymentService:46-52`.
 - Each consuming service has its own GOV.UK Pay API key, resolved via `ServiceToTokenMap` which maps service names to `gov.pay.auth.key.<name>` config properties.
 - The GOV.UK Pay client is protected by Resilience4j circuit breakers (`@CircuitBreaker(name = "createCardPayment")`) — see `GovPayClient:55-66`.
-- The `payment-cancel` feature (FF4j flag) gates `POST /card-payments/{reference}/cancel`.
+- `POST /card-payments/{reference}/cancel` delegates straight to `delegatingPaymentService.cancel()` with no feature gate (`CardPaymentController:241-245`); a cancellation GOV.UK Pay refuses surfaces as HTTP 400 (`CardPaymentController:247-250`).
 - When the `apportion-feature` LaunchDarkly flag is enabled, `FeePayApportionService.processApportion()` runs after payment creation (`CardPaymentController:183`).
 
 ### PBA payments (Liberata)
@@ -165,17 +184,18 @@ sequenceDiagram
     alt Account ACTIVE and sufficient funds
         PayAPI-->>Caller: 201 Created, status=Success
     else Account ON_HOLD / DELETED / insufficient funds
-        PayAPI-->>Caller: 403 / 410 / 412, status=Failed
+        PayAPI-->>Caller: 403 Forbidden, status=Failed + error code
     end
 ```
 
 Key implementation details:
 
 - `POST /credit-account-payments` is handled by `CreditAccountPaymentController:117-186`.
-- Services listed in `pba.config1.service.names` bypass the Liberata balance check entirely; their payments are created with status `pending` (legacy flow). The property defaults to `dummy` (`application.properties:218`) and is read at `CreditAccountPaymentController.java:81,120`; the branch that sets `pending` without calling Liberata is at `CreditAccountPaymentController.java:157-160`, carrying a source comment marking it removable "once all Services are on-boarded to PBA Config 2".
+- Services listed in `pba.config1.service.names` bypass the Liberata balance check entirely; their payments are created with status `pending` (legacy flow). The property defaults to `dummy` (`application.properties:218`) and is split into a list at `CreditAccountPaymentController:81` and matched at `CreditAccountPaymentController:120`; the branch that sets `pending` without calling Liberata is at `CreditAccountPaymentController:158-162`, carrying a source comment marking it removable "once all Services are on-boarded to PBA Config 2".
 - The Liberata call uses OAuth2 password grant (`LiberataService:36-58`) and is wrapped with a Resilience4j `@CircuitBreaker` and `@TimeLimiter` (named `retrievePbaAccountTimeLimiter`) in `AccountServiceImpl.java`.
-- Liberata account statuses map to HTTP responses: `DELETED` -> 410, `ON_HOLD` -> 412, `NOT_FOUND` -> 404 (`AccountController:58-77`).
-- A duplicate payment check (`paymentValidator.checkDuplication()`) runs before the Liberata call (`CreditAccountPaymentController:161`).
+- On this endpoint every unusable-account outcome collapses to a single HTTP status: insufficient funds, on hold and deleted all produce a `failed` payment and HTTP 403, so the caller must read the `CA-E000x` code from the status history in the response body to tell them apart (`PBAStatusErrorMapper:23-56`; `CreditAccountPaymentController:168-171`). An account lookup that 4xx-es at Liberata gives 404 and an unreachable Liberata gives 504 (`CreditAccountPaymentController:149-155`).
+- The distinct account statuses are only surfaced as distinct HTTP codes by the standalone lookup `GET /accounts/{accountNumber}`: `DELETED` -> 410 and `ON_HOLD` -> 412 (`AccountController:65-69`), with `AccountNotFoundException` mapped to 404 by that controller's own handler (`AccountController:109-110`).
+- The duplicate payment check (`checkDuplication()`) runs *after* the Liberata call and after the status has been set, immediately before persistence (`CreditAccountPaymentController:164`) — a duplicate request still costs a Liberata round-trip.
 - **Real-time PBA processing (in design)**: the Real Time PBA Payments HLD describes moving PBA off the two-step "validate now, settle overnight" model. In the designed flow the RC reference is created immediately upon request (before the Liberata call), the payment is set to `Pending`, and the outcome is updated to `Success` or `Failed` from a single Liberata call that both validates the account and debits it. That removes the need for nightly reconciliation of PBA transactions, so real-time PBA payments would be excluded from `/reconciliation-payments`. The design also retires `POST /credit-account-payments` (see [Architecture](architecture.md#real-time-pba-processing-in-design) for the full picture, including the change of Liberata auth scheme and the IAC fail-closed behaviour).
 <!-- CONFLUENCE-ONLY: design-only. Verified absent from source at origin/master: LiberataService (model module) exposes only getAccessToken() over an OAuth2 password grant, there is no pbaPayment() method anywhere, and application.properties:81-90 still configures the v2 account-lookup URL. -->
 - A scheduled job would handle the failure mode where transactions remain stuck in `Pending` (e.g. due to network failure or Liberata timeout) by checking pending transactions and bringing them to an end state. No such job exists in source today.
@@ -183,7 +203,7 @@ Key implementation details:
 
 ### Telephony payments (PCI-PAL)
 
-Telephony payments use PCI-PAL's hosted payment page, launched in an iframe. Two providers are supported: **Antenna** (strategic — probate, divorce, PRL, IAC) and **Kerv**.
+Telephony payments use PCI-PAL's hosted payment page, launched in an iframe. Two provider configurations exist as Spring components — **Antenna** (`antenna`) and **Kerv** (`kerv`) — each reading credentials and flow IDs from its own property prefix. Only Kerv is reachable through `POST /payment-groups/{payment-group-reference}/telephony-card-payments`: a missing or empty `telephonySystem` defaults to `kerv` and any other value raises a `TelephonyServiceException` (`PaymentGroupController:629-638`).
 
 **Sequence:**
 
@@ -209,22 +229,24 @@ sequenceDiagram
 Key implementation details:
 
 - The callback arrives as `application/x-www-form-urlencoded` at `POST /telephony/callback` (`TelephonyController:47-53`).
-- Per-jurisdiction flow IDs are configured via environment variables for each provider (e.g. `PCI_PAL_ANTENNA_PROBATE_FLOW_ID`). `TelephonySystem.getFlowId(serviceType)` resolves the mapping (`TelephonySystem.java:35-48`).
-- The default telephony system is Kerv (`TelephonySystem.DEFAULT_SYSTEM_NAME = "kerv"` at `TelephonySystem.java:33`).
+- Flow IDs are keyed by service type, not by provider. `TelephonySystem.getFlowId(serviceType)` recognises only `Probate`, `Divorce`, `Specified Money Claims`, `Financial Remedy`, `Family Private Law` and `Immigration and Asylum Appeals`, and throws a `PaymentException` for anything else (`TelephonySystem:35-48`) — a service outside that set cannot take a telephony payment at all. `Specified Money Claims` and `Financial Remedy` share the `strategic` flow ID.
+- The default telephony system is Kerv (`TelephonySystem.DEFAULT_SYSTEM_NAME = "kerv"` at `TelephonySystem:33`).
+- The `transactionResult` from the callback is lower-cased and looked up directly against the `payment_status` table, so a value that is not a seeded status name fails the lookup (`PaymentServiceImpl:114-119`). A payment already in `success` is left alone and the attempt is recorded as a `DUPLICATE_STATUS_UPDATE` audit event (`PaymentServiceImpl:139-147`).
 - Amount conversion to pence happens inside `PciPalPaymentService.getTelephonyProviderLink()` (`PciPalPaymentService.java:70-113`).
 
 ### Bulk scan payments (Exela)
 
 Bulk scan handles offline payments (cash, cheques, postal orders). These arrive via the Exela scanning pipeline and are processed through `ccpay-bulkscanning-app`, which forwards them to `ccpay-payment-app`.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-The bulk scan payment channel does not involve user interaction with a payment provider. Payments are allocated to cases based on Document Control Numbers (DCNs) matched against payment records.
+The bulk scan channel involves no payment provider at all. `paymentProvider` is populated only if the request supplies an `externalProvider`, and the payment status comes straight out of the request body rather than from any provider response (`PaymentGroupController:400`). The Document Control Number is the identity that ties a scanned slip to a payment: it is stored on the payment record (`PaymentGroupController:405`) and is the key used both to reject a second record for the same slip (`PaymentGroupController:378-383`, `PaymentGroupController:450-455`) and to mark the slip processed back in `ccpay-bulkscanning-app` (`PaymentGroupController:515`, `PaymentGroupController:543`).
 
 Key implementation details:
 
 - `ccpay-bulkscanning-app` receives payment envelopes from the bulk-scan/Exela pipeline and posts them into `ccpay-payment-app` via its bulk-scanning REST API endpoint.
+- Four endpoints record bulk scan payments: `POST /payment-groups/{payment-group-reference}/bulk-scan-payments` and `POST /payment-groups/bulk-scan-payments` (`PaymentGroupController:250`, `PaymentGroupController:312`), plus the `-strategic` variants at `PaymentGroupController:368` and `PaymentGroupController:441`. The unsolicited variants generate their own payment-group reference.
+- Both strategic endpoints are wholly gated by the `prod-strategic-fix` LaunchDarkly flag (`PaymentGroupController:375`, `PaymentGroupController:447`). With the flag off they reject the request with `PaymentException("This feature is not available to use !!!")`, which the controller maps to HTTP 400 (`PaymentGroupController:429-431`, `PaymentGroupController:725-729`) — the DCN de-duplication lives inside the same gated block, so it is only in force when the flag is on.
+- After the payment is created, `allocateThePaymentAndMarkBulkScanPaymentAsProcessed` attaches the request's `PaymentAllocationDto` to the payment and PATCHes `/bulk-scan-payments/{dcn}/status/PROCESSED` on `ccpay-bulkscanning-app` with a freshly generated S2S token (`PaymentGroupController:495-544`). A failure on that call throws, so the whole record-payment request fails rather than leaving the slip un-marked.
 - The `BulkScanningReportController` in `ccpay-payment-app` exposes `GET /payment/bulkscan-data-report` for reporting on bulk scan payment data.
-- A LaunchDarkly flag `feature.bulk.scan.payments.check` gates bulk-scan validation logic.
 
 ## The Service Request model
 
@@ -265,7 +287,7 @@ Under the designed real-time PBA model these codes would arrive differently: Lib
 
 ### Status callbacks
 
-When a card payment status is retrieved (`GET /card-payments/{internal-reference}/status`), the service publishes the updated status to the `ccpay-service-callback-topic` (`ServiceRequestController:351`). The consuming service's callback URL is stored as `serviceCallbackUrl` on the payment record.
+When a card payment status is retrieved (`GET /card-payments/{internal-reference}/status`), the handler refreshes the payment from GOV.UK Pay and then publishes a `PaymentStatusDto` to the callback topic itself via `sendMessageToTopic` (`ServiceRequestController:351-358`). This endpoint requires the payment to have apportionment records: if `findByPaymentId` returns an empty list it throws `PaymentNotSuccessException`, which the controller maps to HTTP 400 with the message "Payment is not successful" (`ServiceRequestController:342-345`, `ServiceRequestController:365-369`) — a caller polling too early gets a 400 rather than an in-progress status.
 
 ## Case Payment Orders
 
@@ -281,16 +303,23 @@ The `case-payment-orders-client` module within `ccpay-payment-app` provides a Fe
 
 ### Payment statuses (persisted)
 
-The `payment_status` table holds these values (`PaymentStatus.java`):
+The `payment_status` table is seeded by Liquibase with nine rows:
 
-| DB status | Description |
-|-----------|-------------|
-| `created` | Payment record created locally; awaiting provider confirmation |
-| `success` | Provider confirmed payment completed |
-| `failed` | Provider rejected the payment |
-| `cancelled` | Payment cancelled by user or timeout |
-| `pending` | PBA payment recorded without a live Liberata check — today this means a PBA Config 1 service (`pba.config1.service.names`), awaiting offline reconciliation |
-| `error` | An error occurred during processing |
+| DB status | Seeded description | Seeded by |
+|-----------|--------------------|-----------|
+| `created` | Valid payment instructions entered and recorded successfully | `db.changelog-refdata.yaml:23` |
+| `success` | Valid payment details and user successfully made payment | `db.changelog-refdata.yaml:24` |
+| `failed` | Invalid payment details/unsuccessful payment | `db.changelog-refdata.yaml:25` |
+| `cancelled` | User cancels session | `db.changelog-refdata.yaml:26` |
+| `error` | Missing payment parameters | `db.changelog-refdata.yaml:27` |
+| `submitted` | Payment submitted | `db.changelog-refdata.yaml:128` |
+| `started` | Payment started and awaiting card details | `db.changelog-0.0.6.yaml:11` |
+| `pending` | Payment awaiting confirmation from external provider | `db.changelog-0.0.8.yaml:19` |
+| `decline` | Payment declined | `db.changelog-0.0.9.yaml:179` |
+
+`PaymentStatus.java:19-24` declares constants for six of them — `CREATED`, `SUCCESS`, `CANCELLED`, `PENDING`, `ERROR` and `FAILED`. `started`, `submitted` and `decline` exist only as reference-data rows and are reached by name lookup (for example `paymentStatusRepository.findByNameOrThrow(status)` on the telephony callback path, `PaymentServiceImpl:119`), so those three are only as safe as the Liquibase seed.
+
+`pending` is set on a PBA payment whose service is listed in `pba.config1.service.names`; that branch skips the Liberata check entirely and leaves the payment for offline reconciliation (`CreditAccountPaymentController:158-162`).
 
 ### Display status mapping (`PayStatusToPayHubStatus`)
 
@@ -336,7 +365,9 @@ The reconciliation process ensures that payment records in Fees & Payments match
 
 ## Scheduled status synchronisation
 
-The `PATCH /jobs/card-payments-status-update` endpoint (`MaintenanceJobsController:53-84`) is called by scheduled shell scripts to poll GOV.UK Pay for all payments still in `initiated` status. For each, it calls `delegatingPaymentService.retrieveWithCallBack()` which:
+The `PATCH /jobs/card-payments-status-update` endpoint (`MaintenanceJobsController:53-84`) is driven by a CronJob on `*/30 * * * *` in production (`cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml:11`). Its candidate set comes from `listInitiatedStatusPaymentsReferences()`, which selects payments whose provider is `GOV_PAY` and whose status is *not* already `success`, `failed`, `error` or `cancelled`, created more than `callback.payments.cutoff.time.in.minutes` ago (`PaymentServiceImpl:167-173`, `PaymentServiceImpl:62-63`). That property defaults to `0` (`application.properties:204`), so with no environment override there is no quiet period. The provider filter excludes PCI-PAL and PBA payments outright.
+
+For each reference, it calls `delegatingPaymentService.retrieveWithCallBack()` which:
 
 1. Retrieves the current state from GOV.UK Pay.
 2. Updates the local payment status.
@@ -401,8 +432,7 @@ Once cancelled, a Service Request will no longer accept further payment attempts
 | `ccpay-service-callback-topic` | Notifies service teams of payment status changes | `CallbackServiceImpl`, `ServiceRequestDomainServiceImpl` | Service teams (civil, ia, pcs, etc.) |
 | `ccpay-service-request-cpo-update-topic` | Triggers CPO creation/update | `ServiceRequestDomainServiceImpl` | `ccpay-service-request-cpo-update-service` |
 
-<!-- REVIEW: FF4j flag name is wrong. The actual flag name is "payment-callback-service" (from CallbackService.FEATURE in model/src/main/java/uk/gov/hmcts/payment/api/service/CallbackService.java:8), not "service-callback". -->
-`CallbackServiceImpl.callback()` (`CallbackServiceImpl.java:46-89`) is a `synchronized` method gated by the FF4j `service-callback` feature flag. It sends messages via `TopicClientProxy` with `serviceCallbackUrl` as a message property.
+`CallbackServiceImpl.callback()` (`CallbackServiceImpl.java:42-79`) is a `synchronized` method with no feature gate — publishing is unconditional once a callback URL is present. It sends messages via `TopicClientProxy` with `serviceCallbackUrl` as a message property. Serialisation or send failures are swallowed: the `catch` blocks only set the thread's interrupt flag and return, so a payment can reach a terminal status with its callback silently undelivered (`CallbackServiceImpl.java:56-58`, `CallbackServiceImpl.java:75-77`).
 
 The callback has two code paths depending on where the callback URL is stored:
 
@@ -448,9 +478,9 @@ Services integrating with Fees & Payments should handle these scenarios:
 - **Payment session expiry** — GOV.UK Pay payment links expire; the scheduled status update job will detect these and transition the payment to `Failed`.
 - **Failed redirects** — if the citizen does not complete the GOV.UK Pay journey, the payment stays in `created` status until the scheduled job picks it up.
 - **Declined payments** — the `decline` status from the provider maps to display status `Declined`, distinguishing it from hard failures.
-- **Payment status delays** — the scheduled job runs periodically (typically within ~15 minutes) to catch any missed status updates.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+- **Payment status delays** — the status-update CronJob runs every thirty minutes (`cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml:11`), so a service relying on the callback alone can wait that long for a missed status.
 - **Reconciliation discrepancies** — differences between payment provider records and PayHub records are investigated during the reconciliation process with the Middle Office supplier.
+<!-- CONFLUENCE-ONLY: not verified in source -->
 
 ## Examples
 
@@ -485,30 +515,43 @@ public enum PayStatusToPayHubStatus {
 // Source: apps/payment/ccpay-payment-app/api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java
 
 public synchronized void callback(PaymentFeeLink paymentFeeLink, Payment payment) {
-    if (!ff4j.check(CallbackService.FEATURE)) {
-        LOG.warn("Service callback feature is disabled");
-        return;
-    }
-
     if (null != payment.getServiceCallbackUrl()) {
         // Legacy path: full PaymentDto published; callback URL from payment record
-        PaymentDto dto = paymentDtoMapper.toResponseDto(paymentFeeLink, payment);
-        Message msg = new Message(objectMapper.writeValueAsString(dto));
-        msg.setProperties(Collections.singletonMap(
-            "serviceCallbackUrl", payment.getServiceCallbackUrl()));
-        topicClient.send(msg);
+        try {
+            PaymentDto dto = paymentDtoMapper.toResponseDto(paymentFeeLink, payment);
+            LOG.info("PaymentDto: {}", dto);
 
+            Message msg = new Message(objectMapper.writeValueAsString(dto));
+
+            msg.setContentType("application/json");
+            msg.setLabel("Service Callback Message");
+            msg.setProperties(Collections.singletonMap("serviceCallbackUrl", payment.getServiceCallbackUrl()));
+
+            topicClient.send(msg);
+
+        } catch (Exception e) {
+            Thread.currentThread().interrupt();
+        }
     } else if (null != paymentFeeLink.getCallBackUrl()) {
         // Ways2Pay path: lighter PaymentStatusDto published; callback URL from SR record
-        String serviceRequestStatus =
-            paymentGroupDtoMapper.toPaymentGroupDto(paymentFeeLink).getServiceRequestStatus();
-        PaymentStatusDto paymentStatusDto =
-            paymentDtoMapper.toPaymentStatusDto(paymentFeeLink.getPaymentReference(),
-                "", payment, serviceRequestStatus);
-        Message msg = new Message(objectMapper.writeValueAsString(paymentStatusDto));
-        msg.setProperties(Collections.singletonMap(
-            "serviceCallbackUrl", paymentFeeLink.getCallBackUrl()));
-        topicClient.send(msg);
+        try {
+            String serviceRequestStatus =
+                    paymentGroupDtoMapper.toPaymentGroupDto(paymentFeeLink).getServiceRequestStatus();
+            PaymentStatusDto paymentStatusDto =
+                    paymentDtoMapper.toPaymentStatusDto(paymentFeeLink.getPaymentReference(), "", payment,
+                            serviceRequestStatus);
+            LOG.info("PaymentStatusDto: {}", paymentStatusDto);
+            Message msg = new Message(objectMapper.writeValueAsString(paymentStatusDto));
+
+            msg.setContentType("application/json");
+            msg.setLabel("Service Callback Message");
+            msg.setProperties(Collections.singletonMap("serviceCallbackUrl", paymentFeeLink.getCallBackUrl()));
+
+            topicClient.send(msg);
+
+        } catch (Exception e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
 ```
@@ -519,5 +562,5 @@ public synchronized void callback(PaymentFeeLink paymentFeeLink, Payment payment
 - [GOV.UK Pay Integration](govuk-pay-integration.md) — multi-account key resolution, idempotency logic, and status-polling details
 - [PCI-PAL Telephony](pci-pal-telephony.md) — telephony payment lifecycle, Antenna vs Kerv providers, and callback handling
 - [Reconciliation](reconciliation.md) — how Liberata pulls data, APIM gateway auth, and scheduled CSV reports
-- [Payment Status Callbacks](../reference/payment-status-callbacks.md) — ASB topic schemas, dual callback paths, and `ccpay-functions-node` retry
+- [Payment Status Callbacks](../reference/payment-status-callbacks.md) — ASB topic schemas, dual callback paths, and `ccpay-callback-function` retry
 - [How-to: Troubleshoot Payment Status](../how-to/troubleshoot-payment-status.md) — diagnosing stuck payments, manual callback replay, and DLQ reprocessing

@@ -16,6 +16,12 @@ sources:
   - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/CaseReferenceRequest.java
   - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/utils/BulkScanningUtils.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java
+  - ccpay-bulkscanning-app:src/main/resources/db/changelog/db.changelog-0.1.yaml
+  - ccpay-bulkscanning-app:src/main/resources/application.yaml
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/FeePayApportionServiceImpl.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/util/ServiceRequestUtil.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/mapper/PaymentGroupDtoMapper.java
+  - ccpay-payment-app:api-contract/src/main/java/uk/gov/hmcts/payment/api/contract/ReconciliationPaymentDto.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -59,6 +65,12 @@ sources_sha:
   "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/CaseReferenceRequest.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
   "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/utils/BulkScanningUtils.java": "ee41159e2bc5e93c1184c27855c905a82b53ff86"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-bulkscanning-app:src/main/resources/db/changelog/db.changelog-0.1.yaml": "3cc18ee81ff0e74a0d5488b80d5c6489ebec64e7"
+  "ccpay-bulkscanning-app:src/main/resources/application.yaml": "1b54d11d83d0faf661f1c591bf676db77d01ee9e"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/FeePayApportionServiceImpl.java": "445f3ac2c605bdd3fd2ff39aa1a6b7936e7b6634"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/util/ServiceRequestUtil.java": "f190c168e2485e79521c0b05f64c0551abd2b6d6"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/mapper/PaymentGroupDtoMapper.java": "5668566104d470baee1e3b1cd06671ecb24580d8"
+  "ccpay-payment-app:api-contract/src/main/java/uk/gov/hmcts/payment/api/contract/ReconciliationPaymentDto.java": "debc138712917d98fb29505e975426f81d5dc688"
 ---
 
 ## TL;DR
@@ -153,7 +165,7 @@ not of the `accept-case-insensitive-enums` Jackson setting, which applies to the
 `bank_giro_credit_slip_number` is validated only for sign and length; the operational convention that BGC slip
 numbers start `96` is not enforced in source, so a slip number outside that range will be accepted.
 
-**Response**: 201 Created on success; 409 Conflict if metadata for the DCN already exists (`PaymentController:77`).
+**Response**: 201 Created on success; 409 Conflict if metadata for the DCN already exists (`PaymentController:79`).
 
 ### `PUT /bulk-scan-payments?exception_reference={ref}` — CaseReferenceRequest
 
@@ -254,8 +266,8 @@ lag check passes. See [Refunds API — lag period](api-refunds.md#lag-period) fo
 
 With auto-case creation, bulk scanning creates CCD cases directly from envelopes without caseworker involvement (exception records are only created when validation fails). This means:
 
-- The `exception_record_reference` in `envelope_case` may be blank for auto-created cases.
-- The `case_reference` attribute passed to the Liberata reconciliation API may be empty (the field is not mandatory).
+- `envelope_case.ccd_reference` and `envelope_case.exception_record_reference` are both declared `nullable: true` (`db.changelog-0.1.yaml:44-58`), so a row may carry a CCD reference with no exception record, an exception record with no CCD reference, or neither.
+- `case_reference` on the Liberata reconciliation payload carries no validation constraint, and `ReconciliationPaymentDto` is annotated `@JsonInclude(NON_NULL)` (`ReconciliationPaymentDto.java:24-25,52`) — an absent case reference is omitted from the JSON rather than serialised as an empty string, so a consumer must treat the key as optional rather than test it for emptiness.
 - Unidentified payments (no application/case reference) are handled offline by Exela and the business — they are not sent to CCD or PayBubble.
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
@@ -282,11 +294,12 @@ Once bulk-scan payments reach `COMPLETE` status, caseworkers allocate them to fe
 1. Caseworker searches for the CCD case in PayBubble.
 2. The system shows unallocated payments for that case.
 3. Caseworker selects "Allocate to new service request", selects the appropriate fee(s).
-4. Payment is allocated using the same apportionment rules applied to all payment channels:
-   - Payments allocated to outstanding fees in chronological order.
-   - Payments may be partial (underpayment) or exceed the total fee value (overpayment).
-   - The `PaymentGroup.CalculatePaymentMatchesAmountDue` method determines: overpayment (refund needed), underpayment (additional payment required), or balanced.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+4. Payment is allocated by the same auto-apportionment applied to all payment channels:
+   - Fees are sorted by `date_created` and the payment is consumed oldest fee first (`FeePayApportionServiceImpl.java:88-92,154-177`).
+   - Each allocation writes a `fee_pay_apportion` row stamped `apportion_type = AUTO` (`FeePayApportionServiceImpl.java:179-200`) and reduces the fee's `amount_due` (`FeePayApportionServiceImpl.java:44-77`).
+   - Payment left over once every fee is covered becomes `call_surplus_amount` on the apportionment row (`FeePayApportionServiceImpl.java:130-143,234`), surfaced as `over_payment` on the payment and fee DTOs (`PaymentGroupDtoMapper.java:151-165`).
+   - The resulting group status is `Disputed`, `Paid`, `Partially paid` or `Not paid` (`ServiceRequestUtil.java:14-38`). Because the `Paid` branch tests only that the pending total has reached zero or below (`ServiceRequestUtil.java:29-30`), an overpaid case reports `Paid` and the surplus shows up only in `over_payment`.
+<!-- DIVERGENCE: Confluence (pages 1791351069, 1794557345) attributes the allocation outcome to a PaymentGroup.CalculatePaymentMatchesAmountDue method returning Balanced / Overpayment / Underpayment. No such method exists in ccpay-payment-app; apportionment is FeePayApportionServiceImpl and the status values come from ServiceRequestUtil.getServiceRequestStatus(). Source wins. -->
 
 ## Report types
 
@@ -301,7 +314,7 @@ Both `/report/download` (XLS) and `/report/data` (JSON) accept `date_from`, `dat
 
 ## Database schema
 
-Database: `bspayment` (PostgreSQL). Migrations managed by Liquibase (not Flyway, despite a stale `spring.flyway.enabled: true` in `application.yaml:47`).
+Database: `bspayment` (PostgreSQL, `application.yaml:55-56`). Migrations managed by Liquibase (not Flyway, despite a stale `flyway.enabled: true` at `application.yaml:46`).
 
 | Table | Key columns | Purpose |
 |-------|-------------|---------|

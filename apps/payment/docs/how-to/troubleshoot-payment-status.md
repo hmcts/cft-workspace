@@ -16,6 +16,11 @@ sources:
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/mapper/PBAStatusErrorMapper.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java
   - ccpay-bubble:express/services/PayhubService.js
+  - ccpay-bubble:src/app/components/payment-history/payment-history.component.ts
+  - civil-service:src/main/java/uk/gov/hmcts/reform/civil/controllers/fees/ServiceRequestUpdateClaimIssuedCallbackController.java
+  - probate-back-office:src/main/java/uk/gov/hmcts/probate/controller/PaymentController.java
+  - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/controller/PaymentCallbackController.java
+  - cnp-flux-config:apps/fees-pay/ccpay-cpo-update-service/prod.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -59,6 +64,11 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/mapper/PBAStatusErrorMapper.java": "89b67ec9107bf106e0f07b0e31bf3bb996a30ba8"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-bubble:express/services/PayhubService.js": "cabdc9f68da7170c3a1db77f6374adefbf286c3b"
+  "ccpay-bubble:src/app/components/payment-history/payment-history.component.ts": "9b2ce31bba560111cfaca30c6adf8fe541de06cf"
+  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/controllers/fees/ServiceRequestUpdateClaimIssuedCallbackController.java": "caee8971ac541af666f32d046a873e986483404a"
+  "probate-back-office:src/main/java/uk/gov/hmcts/probate/controller/PaymentController.java": "1f45bf631f451881fa2c24da0622cc943bf504ac"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/controller/PaymentCallbackController.java": "5e750471ffa40d01398eb1308bfbbd8957903c40"
+  "cnp-flux-config:apps/fees-pay/ccpay-cpo-update-service/prod.yaml": "204f235858ef707acc00eb4ae24c6f72a9de6563"
 ---
 
 ## TL;DR
@@ -66,7 +76,7 @@ sources_sha:
 - A payment can appear stuck when its local DB status is `initiated` but GOV.UK Pay has already settled (success or failure) — the callback was missed or the status-update job has not run.
 - Use `GET /card-payments/{reference}/statuses` to fetch the current GOV.UK Pay state via ccpay-payment-app (does **not** trigger a callback). Use `GET /card-payments/{internal-reference}/status` if you also want to re-trigger the service callback.
 - The `PATCH /jobs/card-payments-status-update` endpoint bulk-reconciles all `initiated` card payments against GOV.UK Pay and publishes callbacks via Azure Service Bus topic `ccpay-service-callback-topic`.
-- The `ccpay-function-node` Azure Function consumes the Service Bus topic and POSTs callbacks to the service endpoint; it retries up to 6 times (every 30 minutes) before dead-lettering.
+- The `ccpay-callback-function` Azure Function consumes the Service Bus topic and sends each callback as a `PUT` to the service endpoint; it retries up to 6 times (every 30 minutes) before dead-lettering.
 - PBA payments stuck as `pending` may indicate a Liberata account-service timeout (Resilience4j `@TimeLimiter`) or PBA Config 1 (legacy mode that skips Liberata entirely).
 - For stuck callbacks, a manual replay via `PUT` to the service's callback URL (with S2S token from `payment_app`) is the operational fallback.
 
@@ -102,7 +112,7 @@ There are two status endpoints with important behavioural differences:
    - `finished` — boolean indicating terminal state
    - `payment_id` — the GOV.UK Pay external reference (same as `Payment.externalReference` in the DB)
 
-3. If the response shows `success` or `failed` but the service-team callback was not received, the issue is likely in the callback delivery chain: `ccpay-payment-app` -> `ccpay-service-callback-topic` (Azure Service Bus) -> `ccpay-function-node` (Azure Function) -> service endpoint.
+3. If the response shows `success` or `failed` but the service-team callback was not received, the issue is likely in the callback delivery chain: `ccpay-payment-app` -> `ccpay-service-callback-topic` (Azure Service Bus) -> `ccpay-callback-function` (Azure Function) -> service endpoint.
 
 ## Step 2: Check GOV.UK Pay directly (if needed)
 
@@ -161,7 +171,7 @@ Key indexes to note: `ix_pay_ccd_case_number` (on `ccd_case_number`) and `ix_pay
 
 3. PayBubble proxies all calls through its Express BFF to `ccpay-payment-app`. The key route is the wildcard `GET /api/payment-history/*` which maps to `payhubUrl/${path}` (`PayhubService.js:219`). The individual payment detail view is available at `/payments/{reference}` which calls `GET /api/payments/{id}` -> `payhubUrl/payments/{id}` (`PayhubService.js:146`).
 
-4. Check the LaunchDarkly flag `payment-status-update-fe` — if enabled (note: inverted logic in the UI — the flag being `true` means the feature is DISABLED), the status column may not refresh automatically.
+4. Check the LaunchDarkly flag `payment-status-update-fe`. The component negates the flag value when storing it — `getLDFeature('payment-status-update-fe').then((status) => { this.isPaymentStatusEnabled = !status; })` (`payment-history.component.ts:57-58`) — so turning the flag *on* is what disables the in-page payment-status feature, and the status column may then not refresh automatically. Read the flag state in LaunchDarkly before concluding the UI is broken.
 
 ## Step 5: Trigger the status-update job manually
 
@@ -172,7 +182,7 @@ PATCH /jobs/card-payments-status-update
 ServiceAuthorization: Bearer {s2s_token}
 ```
 
-This endpoint (`MaintenanceJobsController.java:54`) is S2S-only (no user token required). It:
+This endpoint (`MaintenanceJobsController.java:56`) is S2S-only (no user token required). It:
 - Fetches all payments with `initiated` status via `paymentService.listInitiatedStatusPaymentsReferences()`
 - Calls `delegatingPaymentService.retrieveWithCallBack()` for each, which queries GOV.UK Pay and updates the local DB
 - Publishes status callbacks to `ccpay-service-callback-topic` for any payments that have reached a terminal state
@@ -184,11 +194,21 @@ This endpoint (`MaintenanceJobsController.java:54`) is S2S-only (no user token r
 
 After the status-update job (or a PBA payment action) publishes to `ccpay-service-callback-topic`:
 
-1. The `ccpay-function-node` Azure Function picks up the message from the topic subscription.
-2. It reads the `serviceCallbackUrl` property from the message and POSTs the payment status JSON to that URL with `ServiceAuthorization` header (S2S token for `payment_app`).
+1. The `ccpay-callback-function` Azure Function picks up the message from the topic subscription.
+2. It reads the `serviceCallbackUrl` property from the message and sends the payment status JSON to that URL as a `PUT` with a `ServiceAuthorization` header (S2S token for `payment_app`).
 3. If the service responds with anything other than HTTP 2xx, the function retries up to **5 additional times** (6 total attempts), spaced **30 minutes apart**. Any status in the range `200 <= status < 300` counts as success — the Service Callback LLD calls this out explicitly because services often assume only 200 or 201 are accepted.
 4. After all retries are exhausted, the message is dead-lettered.
 <!-- CONFLUENCE-ONLY: The 6-attempt / 30-minute retry mechanic is documented in Confluence (Service Callback LLD, page 1958058001, and FAQ Service Support, page 1815114088) but the retry configuration lives in ccpay-function-node (not in ccpay-payment-app source). Not verified in source. Note that the LLD describes the status update as simply ending once retries are exhausted; it does not say the message is dead-lettered. The dead-letter claim in step 4 comes from the operational runbook (page 1791332488) and Step 7 below. -->
+
+The receiving handlers confirm the method and the auth model, and they do not agree on how they reject a bad token — which changes what a failed delivery looks like in logs:
+
+| Service | Handler | Response when the S2S token is rejected |
+| --- | --- | --- |
+| Civil | `PUT /service-request-update-claim-issued` (`ServiceRequestUpdateClaimIssuedCallbackController.java:29,34-50`) | `InternalServerErrorException` -- HTTP 500 |
+| Probate | `PUT /payment/gor-payment-request-update` (`PaymentController.java:43-62`) | HTTP 403 when the service is not on the allow-list, HTTP 401 on `InvalidTokenException` |
+| Divorce | `PUT /payment-update` (`PaymentCallbackController.java:36-49`) | No in-handler check; the handler returns `200 OK` once `handleCallback` completes, so rejection depends on framework-level filtering |
+
+Civil wraps its whole handler body in a `catch (Exception)` that rethrows as HTTP 500 (`:42-48`), so an authorisation failure and a genuine processing failure are indistinguishable from the sender's side, and both consume a delivery attempt. Probate registers a second callback path on the same controller, `PUT /payment/caveat-payment-request-update` (`PaymentController.java:65`), so a probate case stuck at the payment stage may be waiting on the caveat handler rather than the grant-of-representation one.
 
 ### Common reasons a callback fails to arrive
 
@@ -266,7 +286,7 @@ PATCH /jobs/dead-letter-queue-process
 ServiceAuthorization: Bearer {s2s_token}
 ```
 
-This endpoint (`ServiceRequestController.java:288`) reprocesses messages from:
+This endpoint (`ServiceRequestController.java:293`) reprocesses messages from:
 ```
 ccpay-service-request-cpo-update-topic/subscriptions/serviceRequestCpoUpdateSubscription/$deadletterqueue
 ```
@@ -277,11 +297,13 @@ The implementation (`ServiceRequestDomainServiceImpl.java:489-531`):
 3. Only reprocesses messages whose properties contain `503` (service unavailable) — other failures are discarded.
 4. Resubmits matching messages back to the main topic for re-delivery to the CPO update service.
 
-**Note**: This DLQ is specifically for the `ccpay-service-request-cpo-update-topic` (which feeds `ccpay-service-request-cpo-update-service`), **not** for the `ccpay-service-callback-topic` (which feeds `ccpay-function-node` for service callbacks). Dead-lettered service callbacks must be replayed manually — see Step 8.
+**Check the subscription name before relying on this job.** The sub-queue path is built with the subscription hard-coded as `serviceRequestCpoUpdateSubscription` (`ServiceRequestDomainServiceImpl.java:491`), while the CPO update service is deployed against `serviceRequestCpoUpdatePremiumSubscription` (`AMQP_SUBSCRIPTION` in `prod.yaml`). The job therefore drains a different subscription's dead-letter queue from the one the running consumer dead-letters into, so a message the consumer gave up on will not reappear after running it. Because the connection is `RECEIVEANDDELETE` (`ServiceRequestDomainServiceImpl.java:493`), whatever the job does pull is destroyed regardless of whether it matched the `503` filter — there is no second chance to inspect it.
+
+**Note**: This DLQ is specifically for the `ccpay-service-request-cpo-update-topic` (which feeds `ccpay-service-request-cpo-update-service`), **not** for the `ccpay-service-callback-topic` (which feeds `ccpay-callback-function` for service callbacks). Dead-lettered service callbacks must be replayed manually — see Step 8.
 
 ## Step 8: Manually replay a service callback
 
-If the `ccpay-function-node` exhausted all retries and dead-lettered the callback message, or if the service bus message was lost entirely, you can manually replay the callback by POSTing directly to the service's callback endpoint.
+If the `ccpay-callback-function` exhausted all retries and dead-lettered the callback message, or if the service bus message was lost entirely, you can manually replay the callback by sending a `PUT` directly to the service's callback endpoint — the receiving handlers accept `PUT` only.
 
 ### Gather the callback payload
 
@@ -334,7 +356,7 @@ curl --location --request PUT '{callback_url}' \
 
 The service should respond with HTTP 200. If successful, the case should progress from the payment stage in the Manage Case application.
 
-**To obtain a valid S2S token for `payment_app`**: Either generate one via the S2S API, or temporarily enable `SERVICE_LOGGING_ENABLED=true` in `ccpay-functions-node` config (via `cnp-flux-config`) and capture a recent S2S header from a successful callback log entry.
+**To obtain a valid S2S token for `payment_app`**: Either generate one via the S2S API, or temporarily enable `SERVICE_LOGGING_ENABLED=true` in `ccpay-callback-function` config (via `cnp-flux-config`) and capture a recent S2S header from a successful callback log entry.
 <!-- CONFLUENCE-ONLY: The manual replay procedure and S2S token capture method are from Confluence operational documentation. not verified in source -->
 
 ## Verify
@@ -444,7 +466,7 @@ private void send(TopicClient client, IMessage message)
 ## See also
 
 - [Payment Lifecycle](../explanation/payment-lifecycle.md) — status transitions, apportionment, and failure types
-- [Payment Status Callbacks](../reference/payment-status-callbacks.md) — ASB topics, `ccpay-functions-node` retry, and failure scenarios
+- [Payment Status Callbacks](../reference/payment-status-callbacks.md) — ASB topics, `ccpay-callback-function` retry, and failure scenarios
 - [GOV.UK Pay Integration](../explanation/govuk-pay-integration.md) — `GovPayClient` circuit breakers, status polling, and the 90-minute session window
 - [Reference: API Payments](../reference/api-payments.md) — status endpoints, job endpoints, and error code tables
-- [Glossary](../reference/glossary.md) — definitions for ccpay-functions-node, Service Request, PBA, ASB, PayBubble
+- [Glossary](../reference/glossary.md) — definitions for ccpay-callback-function, Service Request, PBA, ASB, PayBubble

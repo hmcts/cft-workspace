@@ -17,8 +17,21 @@ sources:
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/servicerequest/ServiceRequestDto.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/servicerequest/ServiceRequestPaymentDto.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/OnlineCardPaymentRequest.java
-  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/FF4jConfiguration.java
   - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/CallbackService.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/SpringSecurityConfiguration.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentStatusDto.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentReference.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/mapper/PaymentDtoMapper.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/TelephonySystem.java
+  - ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PciPalPaymentService.java
+  - cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml
+  - cnp-flux-config:apps/fees-pay/ccpay-payment-api/aat.yaml
+  - cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml
+  - cnp-flux-config:apps/fees-pay/ccpay-payment-api/ithc.yaml
+  - cnp-flux-config:apps/fees-pay/ccpay-payment-api/perftest.yaml
+  - cnp-flux-config:apps/fees-pay/ccpay-payment-api-int/demo.yaml
+  - cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -67,8 +80,21 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/servicerequest/ServiceRequestDto.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/servicerequest/ServiceRequestPaymentDto.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/OnlineCardPaymentRequest.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/FF4jConfiguration.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/CallbackService.java": "a4175ada85e256554b5aec7d53c72dc5a6fff0d2"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/SpringSecurityConfiguration.java": "e8033dfe3c25862046cd940eadb7522175cb4aba"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentStatusDto.java": "0cf6e7d5ce9bdb8418b6627d44867a1e83dc1981"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/PaymentReference.java": "d7a9437816824a5d44c10c5738180cba36b40501"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/mapper/PaymentDtoMapper.java": "5b3f2699cf9bc81f927d28766a8731a16f9d58f9"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/TelephonySystem.java": "e73670ad6d187564188d1f828e551dc1554074a9"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PciPalPaymentService.java": "cd90241f94938ecec08b8768ce5e2bb4fc4fa5ab"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml": "b8d4f674f4f79c6505b4b4869ee3e96d0925ae3e"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/aat.yaml": "aba3724191bdd2ac64022358054550f863f7e715"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "1cf7125b2300245f5e39de4e88d7a715f4c515a4"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/ithc.yaml": "591b78f6d26dcad9c668165177cb928c39c1cf9b"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/perftest.yaml": "05faca51b12c7e2b299c38f4d719819f2a044ee1"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api-int/demo.yaml": "05faca51b12c7e2b299c38f4d719819f2a044ee1"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "5632e1e8c45f3270060c58942c68c44b69045bc4"
 ---
 
 ## TL;DR
@@ -85,7 +111,7 @@ sources_sha:
 Before integrating, ensure you have:
 
 - An S2S microservice name registered with `service-auth-provider-api`.
-- Your S2S name added to the `trusted.s2s.service.names` list in `ccpay-payment-app` configuration (`api/src/main/resources/application.properties`).
+- Your S2S name added to the `trusted.s2s.service.names` list in `ccpay-payment-app` configuration (`application.properties:111`) and to the per-environment override in `cnp-flux-config`.
 - A GOV.UK Pay account and API key (for card payments) -- the key is configured as `gov.pay.auth.key.<your_service>` in the payment service's Helm chart.
 - Access to the Azure Service Bus namespace (for receiving callbacks).
 - Your service's Org/Service ID configured in Reference Data (the `hmcts_org_id` used in Service Request creation).
@@ -109,8 +135,10 @@ These dependencies come from the F&P onboarding process and are not modelled in 
 
 1. Raise a PR against `ccpay-payment-app` to add your S2S microservice name to the `trusted.s2s.service.names` property in `api/src/main/resources/application.properties`.
 2. Also add the same service name to the `TRUSTED_S2S_SERVICE_NAMES` variable in `charts/payment-api/values.yaml` and update the chart version in `Chart.yaml`.
-3. The current trusted list includes: `cmc`, `cmc_claim_store`, `probate_frontend`, `divorce_frontend`, `ccd_gw`, `api_gw`, `finrem_payment_service`, `ccpay_bubble`, `jui_webapp`, `xui_webapp`, `fpl_case_service`, `iac`, `probate_backend`, `civil_service`, `paymentoutcome_web`, `adoption_web`, `prl_cos_api`, `refunds_api`, `civil_general_applications`, `notifications_service`, `nfdiv_case_api`, `ccpay_gw`, `pcs_api`, `pcs_frontend`.
-4. Optionally, add the service name in `cnp-flux-config` for specific environments (this overrides the application-level list): `https://github.com/hmcts/cnp-flux-config/blob/master/apps/fees-pay/ccpay-payment-api/prod.yaml`.
+3. The application default list is `cmc`, `cmc_claim_store`, `probate_frontend`, `divorce_frontend`, `ccd_gw`, `api_gw`, `finrem_payment_service`, `ccpay_bubble`, `jui_webapp`, `xui_webapp`, `fpl_case_service`, `iac`, `probate_backend`, `civil_service`, `paymentoutcome_web`, `adoption_web`, `prl_cos_api`, `refunds_api`, `civil_general_applications`, `notifications_service`, `nfdiv_case_api`, `ccpay_gw`, `pcs_api`, `pcs_frontend` (`application.properties:111`).
+4. Add the service name to the environment's Flux configuration as well. `TRUSTED_S2S_SERVICE_NAMES` set in Flux replaces the application default outright rather than extending it, and every deployed environment sets its own list: AAT (`cnp-flux-config:apps/fees-pay/ccpay-payment-api/aat.yaml:21`), demo (`cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml:13`), ITHC (`cnp-flux-config:apps/fees-pay/ccpay-payment-api/ithc.yaml:15`), perftest (`cnp-flux-config:apps/fees-pay/ccpay-payment-api/perftest.yaml:27`) and production (`cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml:21`). The `application.properties` value therefore only takes effect locally and in preview. The lists are not in step with each other — `finrem_case_orchestration` is trusted in every deployed environment but absent from the application default, `pt_api` is trusted in every deployed environment except production, and of the deployed environments only ITHC trusts `notifications_service` while none trusts `pcs_frontend`. A caller that works in one environment can be rejected in the next one, so check each environment's list rather than the application default.
+
+   The separate integration deployment's list contains `civil_general_applicationsccpay_gw` where a comma is missing between two names (`cnp-flux-config:apps/fees-pay/ccpay-payment-api-int/demo.yaml:14`), so neither `civil_general_applications` nor `ccpay_gw` is trusted there.
 
 ## Step 2: Configure a GOV.UK Pay API key (card payments only)
 
@@ -277,8 +305,9 @@ ServiceAuthorization: Bearer <S2S_token>
 
 ### What happens if the user abandons payment
 
-If the user closes their browser during the GOV.UK Pay journey, your service will not receive a redirect. In this scenario, the F&P scheduled job (runs approximately every 15 minutes) queries GOV.UK Pay for updated statuses and publishes a callback to your service's registered callback URL via Azure Service Bus.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+If the user closes their browser during the GOV.UK Pay journey, no redirect reaches the service. In this scenario the F&P `status-payment-job` CronJob queries GOV.UK Pay for updated statuses and publishes a callback to the registered callback URL via Azure Service Bus. In production it runs on `*/30 * * * *` — every 30 minutes on the hour and half hour (`cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml:11`, `REPORT_NAME: status-update` at `:13`). A payment abandoned at the browser can therefore sit unresolved for up to half an hour.
+
+<!-- DIVERGENCE: Confluence says the status-update job runs approximately every 15 minutes. Source (cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml:11) sets schedule "*/30 * * * *" -- every 30 minutes. Source wins. -->
 
 ## Step 4a (legacy): Initiate a card payment -- legacy endpoint
 
@@ -369,10 +398,11 @@ PBA payments via the Service Request endpoint enforce idempotency. The `idempote
 
 Telephony payments are used for phone-based payments taken by staff via PayBubble. The integration involves launching a PCI-PAL session.
 
-1. Your service calls `PciPalPaymentService.getTelephonyProviderLink()` (usually via a frontend action in PayBubble) to get a PCI-PAL redirect URL.
-2. The payment amount is supplied in pounds; pence conversion happens internally (`PciPalPaymentService.java:70-113`).
-3. PCI-PAL posts back to `POST /telephony/callback` (form-urlencoded) when the transaction completes. This endpoint is S2S-only authenticated (`SpringSecurityConfiguration:54-62`).
-4. Supported service types for PCI-PAL flow IDs: `Probate`, `Divorce`, `Specified Money Claims`, `Financial Remedy`, `Family Private Law`, `Immigration and Asylum Appeals` (`TelephonySystem.java:35-48`). Contact the Fees & Pay team to add new service types.
+1. The caller (in practice PayBubble, on behalf of the staff member on the call) posts to `POST /payment-groups/{payment-group-reference}/telephony-card-payments` with `amount`, `ccd_case_number`, `case_type`, `currency` and `return_url`. The controller creates the payment record and then calls `PciPalPaymentService.getTelephonyProviderLink()` to obtain the PCI-PAL redirect URL (`PaymentGroupController.java:557-611`).
+2. The payment amount is supplied in pounds; pence conversion happens internally (`PciPalPaymentService.java:80`). The whole controller method is `@Transactional` (`PaymentGroupController.java:556`), so a failure launching the PCI-PAL session rolls the payment record back — a failed launch leaves no payment to look up afterwards.
+3. PCI-PAL posts back to `POST /telephony/callback` (form-urlencoded) when the transaction completes. That path sits in the service-only filter chain and is `.authenticated()`, so an S2S `ServiceAuthorization` token is required and no IDAM user token is (`SpringSecurityConfiguration.java:53-75`, matcher at `:60`, rule at `:70`).
+4. Supported service types for PCI-PAL flow IDs: `Probate`, `Divorce`, `Specified Money Claims`, `Financial Remedy`, `Family Private Law`, `Immigration and Asylum Appeals` (`TelephonySystem.java:35-48`). The service type is not taken from the request — it is the service description returned by Reference Data for the `case_type` (`PaymentGroupController.java:572`, `:580`, `:669`), so a case type mapped to any other service description fails with HTTP 400. Contact the Fees & Pay team to add new service types.
+5. The optional `telephony_system` field must be `kerv` or omitted; any other value, including `antenna`, is rejected with HTTP 422 (`PaymentGroupController.java:629-639`).
 
 ### Telephony onboarding process
 
@@ -401,30 +431,41 @@ The payment service publishes status updates to the Azure Service Bus topic `ccp
 
 1. Your service's registered callback URL (the `call_back_url` from the Service Request, or the `service-callback-url` header from a legacy card payment) determines the destination.
 2. The callback message is a JSON body containing either:
-   - `PaymentDto` -- when `payment.serviceCallbackUrl` is set (legacy card payments)
-   - `PaymentStatusDto` -- when `paymentFeeLink.callBackUrl` is set (Service Request flow)
-3. The message has a `serviceCallbackUrl` property in the Service Bus message properties indicating the delivery endpoint.
-4. The callback is published when:
-   - A card payment status changes (triggered by `GET /card-payments/{internal-reference}/status` or the scheduled status-update job)
-   - The `payment-callback-service` FF4j feature flag is enabled (`CallbackService.FEATURE`)
+   - `PaymentDto` -- when `payment.serviceCallbackUrl` is set (legacy card payments), `CallbackServiceImpl.java:42-58`
+   - `PaymentStatusDto` -- when `paymentFeeLink.callBackUrl` is set (Service Request flow), `:59-78`
 
-<!-- DIVERGENCE: Confluence references the feature flag name as "service-callback", but source (CallbackService.java:8) shows the actual feature flag name is "payment-callback-service". Source wins. -->
+   The two are mutually exclusive branches of one `if`/`else if`, so a payment carrying both a `service-callback-url` header and a Service Request `call_back_url` gets the legacy `PaymentDto` shape only.
+3. The message has a `serviceCallbackUrl` property in the Service Bus message properties indicating the delivery endpoint (`CallbackServiceImpl.java:52`, `:71`). Both branches catch every exception and only interrupt the current thread (`:56-58`, `:75-77`), so a failure to publish is not surfaced to the caller of the payment API and does not fail the payment.
+4. The callback is published whenever a card payment status changes — triggered by `GET /card-payments/{internal-reference}/status` or by the scheduled status-update job. Publishing is ungated: `CallbackServiceImpl.callback` branches only on which callback URL is populated and consults no feature toggle (`CallbackServiceImpl.java:42-79`). A `FEATURE` constant naming `payment-callback-service` is declared on the interface (`CallbackService.java:8`) but is read nowhere in the codebase, so there is no switch to turn callbacks off short of clearing the registered URL.
+
+<!-- DIVERGENCE: Confluence's "Service Callback LLD" describes callback publishing as gated by a feature flag it calls "service-callback". Source publishes unconditionally — no toggle is evaluated on the publish path, and the only flag-shaped identifier (CallbackService.FEATURE = "payment-callback-service") has no readers. Source wins. -->
 
 ### Callback payload (Service Request flow)
+
+`PaymentStatusDto` carries four top-level fields plus a nested `PaymentReference`, all snake_cased by `@JsonNaming(SnakeCaseStrategy.class)` and with nulls omitted by `@JsonInclude(NON_NULL)` (`PaymentStatusDto.java:16-38`, `PaymentReference.java:15-36`):
 
 ```json
 {
   "service_request_reference": "2024-1234567890",
+  "ccd_case_number": "1234567890123456",
+  "service_request_amount": 550.00,
   "service_request_status": "Paid",
   "payment": {
+    "payment_amount": 550.00,
     "payment_reference": "RC-1234-5678-9012-3456",
-    "date_created": "2024-01-15T10:30:00.000+0000",
-    "status": "success",
-    "payment_amount": 550.00
+    "payment_method": "card",
+    "case_reference": "REF-2024-001",
+    "account_number": ""
   }
 }
 ```
-<!-- CONFLUENCE-ONLY: not verified in source -->
+
+<!-- DIVERGENCE: Confluence shows the nested payment object containing date_created and status, and omits ccd_case_number and service_request_amount from the top level. Source (PaymentStatusDto.java:22-38, PaymentReference.java:20-36, PaymentDtoMapper.java:123-132 and :431-440) has no date_created or status field anywhere in this payload; the nested object is payment_amount, payment_reference, payment_method, case_reference, account_number. Source wins. -->
+
+Two details of the mapping matter to a consumer:
+
+- `service_request_amount` is populated from the individual payment's amount, not from the Service Request total (`PaymentDtoMapper.java:128`). For a partly-paid Service Request it does not report the outstanding or total balance.
+- `account_number` is passed as an empty string by the Service Request branch (`CallbackServiceImpl.java:64`), and an empty string survives `NON_NULL`, so the field is always present and always blank on this payload. Payment status is conveyed by `service_request_status`; there is no per-payment status field.
 
 ## Step 6: Query payment status
 
@@ -457,7 +498,7 @@ Services should account for the following scenarios:
 |---|---|
 | Duplicate payment requests | Use idempotency keys (PBA) or check existing SR status before creating new payments |
 | Payment session expiry | Handle redirect with expired status; allow user to retry against same Service Request |
-| Failed redirects / browser close | Rely on scheduled job (~15 min) and callback notification |
+| Failed redirects / browser close | Rely on the 30-minute `status-payment-job` and the callback notification |
 | Declined payments | Display error to user; allow retry against same Service Request |
 | PBA balance failures after initial success | Handle `PaymentStatusDto` callbacks with failed status |
 | Duplicate payment attempts (card) | Check response codes 425 (Too Many Requests) and 452 (Already Paid) |
@@ -534,7 +575,7 @@ public class OnlineCardPaymentRequest {
 
 - [Overview](../explanation/overview.md) — platform responsibilities, payment channels, and service request model
 - [GOV.UK Pay Integration](../explanation/govuk-pay-integration.md) — multi-account key resolution, idempotency, and 90-minute session window details
-- [Payment Status Callbacks](../reference/payment-status-callbacks.md) — ASB topic schemas, callback URL registration, and `ccpay-functions-node` retry
+- [Payment Status Callbacks](../reference/payment-status-callbacks.md) — ASB topic schemas, callback URL registration, and `ccpay-callback-function` retry
 - [Reference: API Payments](../reference/api-payments.md) — full endpoint catalogue with request/response shapes
 - [How-to: Troubleshoot Payment Status](troubleshoot-payment-status.md) — what to do when payments get stuck or callbacks are not received
 - [Glossary](../reference/glossary.md) — definitions for Service Request, W2P, PBA, S2S, RC reference
