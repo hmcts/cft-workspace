@@ -24,6 +24,8 @@ sources:
   - rd-location-ref-api:src/main/resources/db/migration/V1_32__backup_court_venue.sql
   - rd-location-ref-api:src/main/resources/db/migration/V1_33__clear_court_venue.sql
   - rd-location-ref-api:src/main/resources/db/migration/V1_35__recreate_reporting_views.sql
+  - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/LrdBuildingLocationServiceImpl.java
+  - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/RegionServiceImpl.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -76,6 +78,8 @@ sources_sha:
   "rd-location-ref-api:src/main/resources/db/migration/V1_32__backup_court_venue.sql": "16efd8d770cf916890957a0034343991176ac38b"
   "rd-location-ref-api:src/main/resources/db/migration/V1_33__clear_court_venue.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/resources/db/migration/V1_35__recreate_reporting_views.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/LrdBuildingLocationServiceImpl.java": "c965873446f897dc35563c6f856c9220b767bf54"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/RegionServiceImpl.java": "022faa40c68f02e2fe111e6f04fdb77ddb81c9ad"
 ---
 
 ## TL;DR
@@ -398,8 +402,9 @@ Based on production App Insights data (April 2026):
 - The LaunchDarkly feature flag `lrd_location_api` (`LocationRefConstants.LD_FLAG`) gates all endpoints — if toggled off, the API returns 403.
 - API calls must NOT be routed through the CCD App gateway; they must be direct service-to-service calls.
 - The IDAM scope for token generation is `openid` only (differs from other RD services).
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- The `ALL` special value works on `epimms_id` (building-locations and court-venues) and `regionId` (regions) — it bypasses status filtering and returns the full dataset.
+- The `ALL` special value works on `epimms_id` (building-locations and court-venues) and `regionId` (regions), is matched with `equalsIgnoreCase`, and short-circuits to an unfiltered `findAll()` — so it bypasses both the open-status filter and, for regions, the `api_enabled` filter (`rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/CourtVenueServiceImpl.java:233`, `rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/LrdBuildingLocationServiceImpl.java:129`, `rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/RegionServiceImpl.java:59`).
+- `ALL` also wins from inside a CSV list: if any element of `epimms_id=X,ALL,Y` or `regionId=1,all` is `ALL`, the whole request returns everything (`CourtVenueServiceImpl.java:240`, `LrdBuildingLocationServiceImpl.java:136`, `RegionServiceImpl.java:68`). A caller building the parameter by string concatenation can widen its own query by accident.
+- `ALL` is rejected, not honoured, when `epimms_id` is combined with `court_type_id` or `service_code` — that path throws `InvalidRequestException` for both the bare value and the in-list case (`CourtVenueServiceImpl.java:264`, `:271`).
 
 ## Service-level venue mapping (shipped) and V2 (design)
 

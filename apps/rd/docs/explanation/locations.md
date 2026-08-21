@@ -26,6 +26,20 @@ sources:
   - rd-location-ref-api:src/main/resources/db/migration/V1_35__recreate_reporting_views.sql
   - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/response/LrdCourtVenueResponse.java
   - rd-location-ref-api:src/main/resources/application.yaml
+  - rd-location-ref-api:src/main/resources/db/migration/V1_18__alter_tables_add_columns.sql
+  - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/BuildingLocationRepository.java
+  - rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/RegionServiceImpl.java
+  - rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/binder/BuildingLocation.java
+  - rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/constants/LrdDataLoadConstants.java
+  - rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/mapper/BuildingLocationMapper.java
+  - rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/mapper/CommonMapper.java
+  - rd-location-ref-data-load:src/main/resources/application-lrd-building-location-router.yaml
+  - rd-location-ref-data-load:src/main/resources/application-lrd-court-venue-router.yaml
+  - cnp-flux-config:apps/rd/rd-location-ref-api/aat.yaml
+  - cnp-flux-config:apps/rd/rd-location-ref-api/demo.yaml
+  - cnp-flux-config:apps/rd/rd-location-ref-api/ithc.yaml
+  - cnp-flux-config:apps/rd/rd-location-ref-api/perftest.yaml
+  - cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -77,6 +91,20 @@ sources_sha:
   "rd-location-ref-api:src/main/resources/db/migration/V1_35__recreate_reporting_views.sql": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/controllers/response/LrdCourtVenueResponse.java": "d2cbd131694a4e7335b94fc9f5b9d1c625b6aa66"
   "rd-location-ref-api:src/main/resources/application.yaml": "0348cf42d7f36f5959fa7b671eebd32282f7fcfa"
+  "rd-location-ref-api:src/main/resources/db/migration/V1_18__alter_tables_add_columns.sql": "56aedb49e531db8c84caf677125d77049c4c7bc5"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/BuildingLocationRepository.java": "c965873446f897dc35563c6f856c9220b767bf54"
+  "rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/RegionServiceImpl.java": "022faa40c68f02e2fe111e6f04fdb77ddb81c9ad"
+  "rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/binder/BuildingLocation.java": "2b5d0c86d48772d6128f87205acb5e16f9e1854a"
+  "rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/constants/LrdDataLoadConstants.java": "8c1fcc823ee063d1d3d05a2448b024e8c6760ee3"
+  "rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/mapper/BuildingLocationMapper.java": "3474a9b37e226d555dc81d9f128de4bbf04cdaff"
+  "rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/mapper/CommonMapper.java": "3474a9b37e226d555dc81d9f128de4bbf04cdaff"
+  "rd-location-ref-data-load:src/main/resources/application-lrd-building-location-router.yaml": "daee8f8057f6a07648309ad65b2eb72983f096ac"
+  "rd-location-ref-data-load:src/main/resources/application-lrd-court-venue-router.yaml": "ed34764b37e90ec5530555042569e81a138820e6"
+  "cnp-flux-config:apps/rd/rd-location-ref-api/aat.yaml": "7117c761a95fd2dbdff9d75e37e866aeec0bc0c2"
+  "cnp-flux-config:apps/rd/rd-location-ref-api/demo.yaml": "1cffc5950e44bf0c04530b6b35acb60b6762417c"
+  "cnp-flux-config:apps/rd/rd-location-ref-api/ithc.yaml": "977e9c8dc441f01e31d987b734738e72407464cd"
+  "cnp-flux-config:apps/rd/rd-location-ref-api/perftest.yaml": "e4be404e71cd2042b1d7912e6fdf1a0bb7200ce8"
+  "cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml": "2f4fb694e1ffd5eb7aa6cf667450c51f9cc459fb"
 ---
 
 ## TL;DR
@@ -167,7 +195,7 @@ The `courtStatus` field controls visibility: most repository queries hardcode a 
 
 ### Regions and clusters
 
-`Region` has a PK `regionId` (varchar 16), a `description`, `welshDescription`, and an `apiEnabled` boolean. The `apiEnabled` flag (`Region.java:47-57`) silently excludes regions from API responses when set to `false` — this means a region may exist as an FK target on venues/buildings but be invisible via the regions endpoint.
+`Region` has a PK `regionId` (varchar 16), a `description`, `welshDescription`, and an `apiEnabled` boolean. The `apiEnabled` flag (`Region.java:47-57`) excludes regions from the unfiltered regions listing when set to `false`, so a region can exist as an FK target on venues and buildings while being absent from `GET /regions`. It is not a hard visibility rule: only the no-parameter path applies `findByApiEnabled(true)`; asking for the region by ID or description returns it regardless (`rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/RegionServiceImpl.java:43-82`).
 
 `Cluster` is a secondary geographic grouping (e.g., "North West") below Region, with PK `cluster_id`, `clusterName`, and `welshClusterName`.
 
@@ -206,18 +234,21 @@ All endpoints live under `/refdata/location` and require S2S + IDAM authenticati
 
 | Endpoint | Params | Notes |
 |----------|--------|-------|
-| `GET /refdata/location/regions` | `regionId` or `region` (description) | Mutually exclusive; only returns regions where `apiEnabled=true` (`LrdApiController.java:222-234`) |
+| `GET /refdata/location/regions` | `regionId` or `region` (description) | Mutually exclusive (`LrdApiController.java:222-234`). `apiEnabled=true` is applied only on the no-parameter call; filtering by `regionId`, by description, or with `regionId=ALL` returns api-disabled regions too (`rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/service/impl/RegionServiceImpl.java:43-82`) |
 
 ## How consumers use LRD
 
 ### S2S authorised services
 
-LRD restricts access to a whitelist of S2S-authenticated services. The default list (from `application.yaml:95`) is `rd_location_ref_api, payment_app, rd_caseworker_ref_api, rd_judicial_api`. In production (via Flux config), the full list is:
+LRD restricts access to a whitelist of S2S-authenticated services. The baked-in default is only four entries — `rd_location_ref_api`, `payment_app`, `rd_caseworker_ref_api`, `rd_judicial_api` (`rd-location-ref-api:src/main/resources/application.yaml:95`) — so every real caller is added by the `LRD_S2S_AUTHORISED_SERVICES` environment variable in Flux, per environment.
 
-`rd_location_ref_api`, `payment_app`, `rd_caseworker_ref_api`, `rd_judicial_api`, `ccd_data`, `xui_webapp`, `prl_cos_api`, `sscs`, `sscs_bulkscan`, `adoption_web`, `civil_service`, `civil_general_applications`, `sptribs_case_api`, `fis_hmc_api`, `et_cos`, `iac`, `probate_backend`
+Production carries 20 entries (`cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml:11`):
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-Additional services in AAT/non-prod only: `pcs_api`, `civil_rtl_export`.
+`rd_location_ref_api`, `payment_app`, `rd_caseworker_ref_api`, `rd_judicial_api`, `ccd_data`, `xui_webapp`, `sscs`, `sscs_bulkscan`, `adoption_web`, `civil_service`, `prl_cos_api`, `fis_hmc_api`, `sptribs_case_api`, `iac`, `civil_general_applications`, `et_cos`, `probate_backend`, `finrem_case_orchestration`, `finrem_citizen_ui`, `pcs_api`
+
+Two callers are non-prod only, and they differ from each other: `pt_api` is on AAT, demo, ITHC and perftest but not production, while `civil_rtl_export` is on AAT and demo only (`cnp-flux-config:apps/rd/rd-location-ref-api/aat.yaml:28`, `cnp-flux-config:apps/rd/rd-location-ref-api/demo.yaml:11`, `cnp-flux-config:apps/rd/rd-location-ref-api/ithc.yaml:10`, `cnp-flux-config:apps/rd/rd-location-ref-api/perftest.yaml:14`). Because the lists are maintained independently per file, a caller working on AAT can still get 403 on ITHC or in production.
+
+<!-- DIVERGENCE: Confluence "LRD Endpoints - Roles and Pre-Requisites for Access" (id 1460537506) lists `pcs_api` as AAT/non-prod only. It is on the production allowlist (cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml:11). Source wins. -->
 
 ### ExUI (xui_webapp)
 
@@ -279,22 +310,28 @@ The upstream data source is the Master Reference Data (MRD) team, who provide ve
 | `Cluster.csv` | `cluster` | Static SQL insert scripts |
 | `CourtTypeServiceAssoc.csv` | `court_type_service_assoc` | Static SQL insert scripts |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-MRD timestamps use the format `dd-mm-yyyy hh:mm:ss` (UTC). Fields `mrdCreatedTime`, `mrdUpdatedTime`, and `mrdDeletedTime` track the upstream record lifecycle.
+Every ingested `BuildingLocation.csv` and `CourtVenue.csv` row carries `MRD_Created_Time`, `MRD_Updated_Time` and `MRD_Deleted_Time`, each validated against the regex `\d{2}-\d{2}-\d{4}\s\d{2}:\d{2}:\d{2}` — the `dd-MM-yyyy HH:mm:ss` format — with null permitted (`rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/constants/LrdDataLoadConstants.java:22-23`, `rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/binder/BuildingLocation.java:85-97`). A timestamp supplied in any other layout fails validation on that row rather than being coerced.
 
 ### Soft and hard deletes
 
-Locations are never physically deleted by the batch loader. Instead:
-- **Soft delete**: `buildingLocationStatus` set to `Close` (buildings) or `courtStatus` set to `Close` (venues). The record persists in the database but is filtered out by most API queries.
-- **Hard delete**: Requires a formal Change Request to manually remove the record from the database.
+The batch loader never deletes a building or a venue. Both routes are pure `INSERT ... ON CONFLICT DO UPDATE` — keyed on `epimms_id` for `building_location` and on `(epimms_id, service_code)` for `court_venue` — with no `DELETE` or `TRUNCATE` anywhere in either route (`rd-location-ref-data-load:src/main/resources/application-lrd-building-location-router.yaml`, `rd-location-ref-data-load:src/main/resources/application-lrd-court-venue-router.yaml`). A row dropped from the CSV therefore stays in the database indefinitely; withdrawing a location means changing its status, not removing it.
+
+Withdrawal works because the read queries filter positively on the open status rather than excluding a closed one:
+
+- Buildings: `where upper(loc.buildingLocationStatus) = 'OPEN'` (`rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/BuildingLocationRepository.java:29`, `:36`)
+- Venues: `where cv.courtStatus='Open'` (`rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/repository/CourtVenueRepository.java:18`, `:24`, `:37`, `:43`, `:53`, `:58`, `:83`)
+
+Any status value other than open hides the record, so `Close` is a convention rather than a checked constant. The venue comparison is case-sensitive while the building comparison is not, so a `CourtVenue.csv` row carrying `OPEN` or `open` loads successfully and then never appears in a venue response.
+
+A hard delete requires a formal Change Request to manually remove the record from the database.
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ### MRD field requirements vs source
 
-Confluence documents several BuildingLocation fields that MRD provides but which are **not present** in the current `BuildingLocation.java` entity: `Welsh_Building_Location_Name`, `Welsh_Address`, `UPRN`, `Latitude` (decimal 10,8), `Longitude` (decimal 11,8), and `MRD_Building_Location_ID`. These may exist in the database (loaded by the batch job) but are not exposed via the API entity.
+The six MRD-supplied BuildingLocation fields all exist end to end except at the API layer. `Welsh_Building_Location_Name`, `Welsh_Address`, `UPRN`, `Latitude`, `Longitude` and `MRD_Building_Location_ID` are positions 10-15 of the CSV binder (`rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/binder/BuildingLocation.java:66-82`), are mapped to columns by the loader (`rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/mapper/BuildingLocationMapper.java:33-37`, `rd-location-ref-data-load:src/main/java/uk/gov/hmcts/reform/locationrefdata/camel/mapper/CommonMapper.java:25-26`), and exist on `building_location` with exactly the declared types — `latitude DECIMAL(10,8)`, `longitude DECIMAL(11,8)` (`rd-location-ref-api:src/main/resources/db/migration/V1_18__alter_tables_add_columns.sql:12-17`).
 
-<!-- DIVERGENCE: Confluence (page 1552132135) lists Welsh_Building_Location_Name, Welsh_Address, UPRN, Latitude, Longitude, MRD_Building_Location_ID as "Existing" fields on BuildingLocation, but rd-location-ref-api:BuildingLocation.java has none of these. The JPA entity only maps: buildingLocationId, epimmsId, buildingLocationName, buildingLocationStatus, area, region, cluster, courtFinderUrl, postcode, address. Source wins for API-exposed fields; the batch loader may write additional columns not mapped to the entity. -->
+What they are not is readable. The JPA entity the API serialises from maps only `buildingLocationId`, `epimmsId`, `buildingLocationName`, `buildingLocationStatus`, `area`, `region`, `cluster`, `courtFinderUrl`, `postcode` and `address` (`rd-location-ref-api:src/main/java/uk/gov/hmcts/reform/lrdapi/domain/BuildingLocation.java`), so a consumer wanting a building's coordinates or Welsh name has to query the database directly — the data is loaded and current, just not exposed.
 
 ## Schema and migrations
 

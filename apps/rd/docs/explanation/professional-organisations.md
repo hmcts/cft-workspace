@@ -157,10 +157,12 @@ Key rules:
 2. **Activation** (`PENDING`/`REVIEW` to `ACTIVE`) registers the super user in IDAM, sets `dateApproved`, and bulk-accepts all pending PBAs with `statusMessage = "Auto approved by Admin"` (`OrganisationServiceImpl.java:657-660`).
 3. **Backward transitions** from `ACTIVE` to `PENDING` or `REVIEW` are forbidden (`OrganisationStatusValidatorImpl.java:46-52`).
 4. **Deleted orgs** cannot transition to any other state.
-5. **Deletion** is a hard delete (cascade), not a status change to `DELETED`. Deleting an `ACTIVE` org requires the super user to still be `PENDING` in IDAM and only one user associated with the organisation — if the super user is already active in IDAM, deletion fails with HTTP 400 (`OrganisationServiceImpl.java:929-938`).
-6. The `DELETE` endpoint is gated by `deleteOrganisationEnabled` (`${DELETE_ORG:false}`) — off by default.
+5. **Deletion** is a hard delete (cascade), not a status change to `DELETED`. Deleting an `ACTIVE` org is gated by two independent checks in `deleteUserProfile`, both returning HTTP 400 (`rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/service/impl/OrganisationServiceImpl.java:913-944`):
+   - The organisation must have exactly one user. `USER_COUNT` is the literal `1` (`rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/constants/ProfessionalApiConstants.java:56`), compared against `findByUserCountByOrganisationId`; anything else fails with "The organisation has more than one user" (`:58`).
+   - That single user must not be `ACTIVE` in IDAM, otherwise "The organisation admin is not in Pending state" (`:57`).
 
-<!-- CONFLUENCE-ONLY: PRD 4.0.0 release notes state that active org deletion requires "Super User is Pending and only one user associated with organisation" — the one-user constraint is documented in Confluence but not verified in source beyond the super-user-pending check -->
+   The ordering matters for operators: an org that has grown past its super user can never be deleted through the API, no matter what state that super user is in, because the user-count check runs first.
+6. The `DELETE` endpoint is gated by `deleteOrganisationEnabled` (`${DELETE_ORG:false}`) — off by default.
 
 ## User status lifecycle
 
@@ -190,7 +192,7 @@ Secured by the `prd-admin` IDAM role. Used by back-office tools (XUI Manage Orga
 | Delete org | `DELETE /{orgId}` | Feature-flagged off by default |
 | Invite user to org | `POST /{orgId}/users/` | Creates user profile in IDAM |
 | List org users | `GET /{orgId}/users` | `prd-aac-system` callers always get ACTIVE filter; supports `showDeleted`, `returnRoles`, `page`, `size` params |
-| Update MFA preference | `PUT /mfa` | Secured by `prd-admin`; LaunchDarkly flag `prd-mfa-flag` |
+| Update MFA preference | `PUT /{orgId}/mfa` | Secured by `prd-admin`; rejects non-`ACTIVE` orgs; LaunchDarkly flag `prd-mfa-flag` |
 | Review PBA status | `PUT /{orgId}/pba/status` | Supports partial success (200 with failures in body) |
 | Refresh users (S2S only) | `GET /users` | No bearer token; keyset pagination via `searchAfter` + `pageSize` |
 | Orgs by profile (S2S only) | `POST /getOrganisationsByProfile` | No bearer token; keyset pagination |
@@ -262,7 +264,7 @@ Key behaviours:
 
 - Default is `EMAIL` (set in `OrganisationMfaStatus.java:44`).
 - IDAM calls `GET /refdata/external/v1/organisations/mfa?user_id={userIdentifier}` to retrieve the MFA preference during login. This endpoint has no role restriction — any request with a valid S2S token can query it.
-- Admin can update via `PUT /refdata/internal/v1/organisations/mfa` (secured by `prd-admin`).
+- Admin can update via `PUT /refdata/internal/v1/organisations/{orgId}/mfa` (secured by `prd-admin`). The organisation ID is a path variable validated against `ORGANISATION_IDENTIFIER_FORMAT_REGEX`, and the handler throws `InvalidRequest(ORG_NOT_ACTIVE)` if the organisation is not `ACTIVE` — so MFA preference cannot be set on a `PENDING` org before it is approved (`rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/OrganisationInternalController.java:520-542`).
 - Feature-flagged behind LaunchDarkly flag `prd-mfa-flag` (`ProfessionalApiConstants.java:99`).
 
 <!-- CONFLUENCE-ONLY: IDAM integration page (1504222914) states byPassPrdCheck=true in all environments including prod, with prdEndpointUrl pointing to real API — implies MFA check is configurable per environment but may be bypassed. Not verified in PRD source. -->

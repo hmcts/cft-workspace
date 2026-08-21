@@ -66,8 +66,7 @@ sources_sha:
 - All route configuration is externalised to Spring profile YAMLs — Java code only wires tasklets to route names.
 - CSVs are consumed from the `rd-common-data` Azure Blob Storage container; after processing they are archived to `rd-common-data-archive`.
 - New data sets that map to `list_of_values` use upsert (`ON CONFLICT ... DO UPDATE`); dedicated tables (e.g. `flag_details`, `flag_service`) use truncate-and-reload with cascade.
-<!-- REVIEW: rd-commondata-dataload does NOT use ShedLock. Idempotency is via the dataload_schedular_audit table (checking if a record exists for today's date). See batch-loading.md and rd-commondata-dataload/src/main/resources/application-camel-routes-common.yaml:11. -->
-- The batch job runs once per day per cluster as a Kubernetes CronJob, using ShedLock to prevent concurrent runs.
+- The batch job runs once per day per cluster as a Kubernetes CronJob. There is no distributed lock: a run is skipped only if `dataload_schedular_audit` already holds a record for today's date (`rd-commondata-dataload:src/main/resources/application-camel-routes-common.yaml:11`), so two pods starting together can both proceed.
 - Case Flag files (`FlagDetails.csv` + `FlagService.csv`) must **always** be uploaded together due to FK cascade — uploading only one will delete the other's data.
 
 ## Prerequisites

@@ -17,6 +17,10 @@ sources:
   - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/servicebus/ElinkTopicPublisher.java
   - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/scheduler/ElinksApiJobScheduler.java
   - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/feign/ElinksFeignClient.java
+  - rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/controllers/CaseWorkerRefController.java
+  - rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/CaseWorkerServiceImpl.java
+  - rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/StaffRefDataServiceImpl.java
+  - rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -65,6 +69,10 @@ sources_sha:
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/servicebus/ElinkTopicPublisher.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/scheduler/ElinksApiJobScheduler.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/feign/ElinksFeignClient.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/controllers/CaseWorkerRefController.java": "e6a4e34c594d58dbc14722a30705d65bf784a2d9"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/CaseWorkerServiceImpl.java": "db94066701c5d0bb726b863388de328cd8025a60"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/StaffRefDataServiceImpl.java": "db94066701c5d0bb726b863388de328cd8025a60"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java": "3a7fd8f716cd339c00480b4763e3438b7b56c2d0"
 ---
 
 ## TL;DR
@@ -272,9 +280,13 @@ The CRD HLD defines three categories of caseworker users whose profiles are mana
 - **CTSC users** — contact centre users who use customer care platforms to support citizen queries via telephone or email
 - **Legal Advisors** — users with delegated judicial responsibilities, managed by the Legal Office (not Judicial Office)
 
-These profiles contain jurisdictional mapping and location markers used for XUI listing and work allocation optimisation. Source data comes from service managers who upload encrypted Excel files via a multipart HTTP POST through the Staff admin UI. A mandatory IDAM role `crd_caseworker` is added to every user provisioned through this process, enabling tracking of CRD-onboarded users.
-
 <!-- CONFLUENCE-ONLY: not verified in source -->
+
+These profiles contain jurisdictional mapping and location markers used for XUI listing and work allocation optimisation. Service managers upload the spreadsheet to `POST /refdata/case-worker/upload-file`, which consumes `multipart/form-data` and is `@Secured("cwd-admin")` (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/controllers/CaseWorkerRefController.java:89-94`).
+
+Every profile created by CRD gets the IDAM role `cwd-user` added unconditionally — on the spreadsheet path (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/CaseWorkerServiceImpl.java:813`) and on the Staff admin path (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/StaffRefDataServiceImpl.java:314`, `:926`). That role, not the CRD API, is what identifies a user as CRD-onboarded to downstream consumers, so removing it in IDAM detaches the user from CRD without deleting the profile.
+
+<!-- DIVERGENCE: Confluence "Caseworker Reference Data - High Level Design" (id 1391526853) names the mandatory IDAM role as `crd_caseworker`. Source adds `cwd-user` (`ROLE_CWD_USER`, rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java:128). Source wins. -->
 
 ## PRD: user deletion model
 

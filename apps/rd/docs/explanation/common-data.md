@@ -340,14 +340,15 @@ Both endpoints sit under `/refdata/commondata` and require:
 - `Authorization` header (IDAM bearer token — any valid IDAM role accepted)
 - `ServiceAuthorization` header (S2S token)
 
-The S2S allowlist is configured via `CRD_S2S_AUTHORISED_SERVICES`. The default in `application.yaml` is only `rd_commondata_api`, but the production Flux override (`cnp-flux-config/apps/rd/rd-commondata-api/prod.yaml`) expands this to:
+The S2S allowlist is configured via `CRD_S2S_AUTHORISED_SERVICES`. The default in `application.yaml` is only `rd_commondata_api` (`rd-commondata-api:src/main/resources/application.yaml:104`); the production value replaces it outright (`cnp-flux-config:apps/rd/rd-commondata-api/prod.yaml:13`):
 
 ```
 ccd_data, xui_webapp, sscs, sscs_bulkscan, cui_ra, prl_cos_api,
-civil_service, iac, sptribs_case_api, et_cos, probate_backend
+civil_service, iac, sptribs_case_api, et_cos, probate_backend,
+finrem_case_orchestration, finrem_citizen_ui
 ```
 
-Services not in this list must raise a change to the Flux config to gain access.
+Services not in this list must raise a change to the Flux config to gain access. The variable name is `CRD_`, the same name `rd-caseworker-ref-api` uses for its own allowlist — the two are separate values set in separate HelmRelease files, so changing one has no effect on the other.
 
 ### Error response format
 

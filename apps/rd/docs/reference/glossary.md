@@ -4,6 +4,10 @@ topic: overview
 diataxis: reference
 product: rd
 audience: both
+sources:
+  - rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java
+sources_sha:
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java": "3a7fd8f716cd339c00480b4763e3438b7b56c2d0"
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 ---
@@ -38,8 +42,7 @@ Alphabetical definitions of terms used across the RD documentation. Each entry l
 
 **CTSC** — Courts and Tribunals Service Centre; one of the caseworker user categories in CRD (contact centre users who handle citizen queries via phone/email). Also a `locationType` value in LRD. See [Caseworker Profiles](../explanation/caseworker-profiles.md).
 
-<!-- REVIEW: The mandatory IDAM role is "cwd-user" (hyphenated, lowercase), not "CWD_user". See rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java:128. -->
-**CWD_user** — Mandatory IDAM role added to every caseworker provisioned through CRD, used as a marker that the user was onboarded via the CRD pipeline. See [Caseworker Profiles](../explanation/caseworker-profiles.md).
+**cwd-user** — Mandatory IDAM role added to every caseworker provisioned through CRD, used as a marker that the user was onboarded via the CRD pipeline. Spelled hyphenated and lowercase in source, as `ROLE_CWD_USER` (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java:128`); the Confluence spelling `CWD_user` matches no IDAM role and will not grant access. See [Caseworker Profiles](../explanation/caseworker-profiles.md).
 
 **D-record** — A `list_of_values` row with `active='D'` indicating soft-deletion; physically removed from the database after each batch load run. See [Batch Loading](../explanation/batch-loading.md).
 

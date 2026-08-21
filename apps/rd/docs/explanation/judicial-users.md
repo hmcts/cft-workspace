@@ -20,6 +20,7 @@ sources:
   - rd-judicial-api:src/main/resources/db/migration/V1_7__insert_lrd_region_mapping.sql
   - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/util/RefDataElinksConstants.java
   - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/feign/ElinksFeignClient.java
+  - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -65,6 +66,7 @@ sources_sha:
   "rd-judicial-api:src/main/resources/db/migration/V1_7__insert_lrd_region_mapping.sql": "20c5ed8d1f646a213544c590a1951ec1f996780c"
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/util/RefDataElinksConstants.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/feign/ElinksFeignClient.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
 ---
 
 ## TL;DR
@@ -101,10 +103,11 @@ Several fields in the appointment table are not received directly from eLinks bu
 | `epimms_id` | Looked up from the `judicial_location_mapping` table by matching `base_location_id` |
 | `hmcts_region_id` | Derived from the `location` text field in the appointment (e.g. "London", "Midlands") using `hmcts_region_type` mapping. Values "Unknown", "Unassigned", or empty map to `0`. (`ElinksPeopleServiceImpl.java:779-784`) |
 
-The HMCTS region text-to-ID mapping:
+The seeded `hmcts_region_type` rows, which are the full set of region IDs an appointment can carry (`rd-judicial-api:src/main/resources/db/migration/V1_1__init_tables.sql:1342-1352`):
 
 | Location text | Region ID |
 |---------------|-----------|
+| default | 0 |
 | London | 1 |
 | Midlands | 2 |
 | North East | 3 |
@@ -112,8 +115,11 @@ The HMCTS region text-to-ID mapping:
 | South East | 5 |
 | South West | 6 |
 | Wales | 7 |
+| Northern Ireland | 10 |
 | Scotland | 11 |
 | National | 12 |
+
+IDs 8 and 9 are not seeded. The lookup itself goes through `jrd_lrd_region_mapping`, which maps eLinks location text to one of these IDs; text that has no row there yields no region ID and the appointment is rejected outright rather than stored with a null region (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/service/impl/ElinksPeopleServiceImpl.java:743-752`, `:778-784`).
 
 Additionally, `jo_base_location_id` stores the raw eLinks `base_location_id` value before the Tribunals/Courts derivation is applied.
 
@@ -215,7 +221,7 @@ Each eLinks endpoint is processed with specific update strategies:
 
 ### Excluded appointment types
 
-The following appointment types are excluded during ingestion and never loaded into JRD:
+An appointment whose `role_name` matches the `INVALID_ROLES` list is rejected during ingestion and never written to the `judicial_office_appointment` table (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/util/RefDataElinksConstants.java:167-169`):
 
 - CRTS TRIB - RS Admin User
 - MAGS - AC Admin User
@@ -227,7 +233,7 @@ The following appointment types are excluded during ingestion and never loaded i
 - Acting Senior Coroner
 - Initial Automated Record
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Rejection is per-appointment, not per-profile: the validator returns `false` for that one appointment, writes an audit exception row keyed on the appointment ID and personal code, and sets the run's partial-success flag (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/service/impl/ElinksPeopleServiceImpl.java:753-762`). The JOH profile still loads, so a judge whose only eLinks appointment carries an excluded role name appears in JRD with zero appointments — and the same validator rejects appointments whose base location or region text cannot be mapped, using the same mechanism (`ElinksPeopleServiceImpl.java:735-752`).
 
 ### Raw response storage
 
@@ -300,8 +306,7 @@ Matches case-insensitively against `knownAs`, `surname`, and `fullName` fields, 
 
 ### Content type
 
-<!-- REVIEW: The content type is wrong. Source (rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java:12) shows the actual value is "application/vnd.jrd.api+json;Version=2.0", not "application/vnd.uk.gov.hmcts.reform.juddata.v2+json;charset=UTF-8". -->
-Both endpoints use a versioned media type: `application/vnd.uk.gov.hmcts.reform.juddata.v2+json;charset=UTF-8`.
+Both endpoints declare the versioned media type `application/vnd.jrd.api+json;Version=2.0` (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java:12`) as `produces` only (`JrdElinkController.java:83`, `:127`) — no mapping in the eLinks controllers declares `consumes`. The vendor type therefore governs the response and content negotiation, not the request body, so a caller sends ordinary `application/json` but must accept the vendor type to avoid a 406.
 
 ## Database schema
 

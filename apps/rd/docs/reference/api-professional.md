@@ -20,6 +20,7 @@ sources:
   - rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/BulkCustomerDetailsInternalController.java
   - rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/domain/MFAStatus.java
   - rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/domain/UserConfiguredAccess.java
+  - rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/domain/OrganisationMfaStatus.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -67,6 +68,7 @@ sources_sha:
   : "2021f547d82578c6748fd13cdbb8d815576ba3a3"
   "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/domain/MFAStatus.java": "ebd17a7b3fdd44ea7b72f2707f30e5de82338df2"
   "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/domain/UserConfiguredAccess.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
+  "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/domain/OrganisationMfaStatus.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
 ---
 
 ## TL;DR
@@ -327,7 +329,7 @@ PRD stores an MFA preference per organisation. The default is `EMAIL`. Possible 
 
 Valid values: `EMAIL` (default), `NONE`, `PHONE`, `AUTHENTICATOR`.
 
-<!-- CONFLUENCE-ONLY: Confluence (page 1496587803) notes that MFA was designed so the whole org opts in/out together, not individual users. The CTSC admin can update via PUT internal call. Not verified in source beyond the org-level entity model. -->
+MFA has no per-user dimension. `organisation_mfa_status` is keyed solely on `ORGANISATION_ID`, which is both the `@Id` and a `@MapsId` one-to-one back to `Organisation` (`rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/domain/OrganisationMfaStatus.java:33-44`) — exactly one row per organisation, and no column identifying a user. An organisation opts in or out as a whole; there is no way to exempt one solicitor from their firm's setting. The `user_id` on the external `GET` is only a lookup key for finding the organisation, not a per-user selector.
 
 ## Bulk Customer endpoint
 

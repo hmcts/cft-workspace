@@ -20,6 +20,14 @@ sources:
   - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CaseFlagApiController.java
   - rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CrdApiController.java
   - rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/controllers/StaffRefDataController.java
+  - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java
+  - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/repository/ProfileRepository.java
+  - cnp-flux-config:apps/rd/rd-professional-api/prod.yaml
+  - cnp-flux-config:apps/rd/rd-judicial-api/prod.yaml
+  - cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml
+  - cnp-flux-config:apps/rd/rd-caseworker-ref-api/prod.yaml
+  - cnp-flux-config:apps/rd/rd-commondata-api/prod.yaml
+  - cnp-flux-config:apps/rd/rd-user-profile-api/prod.yaml
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -60,6 +68,14 @@ sources_sha:
   "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CaseFlagApiController.java": "713a8d70241032382965f812dcb7bb71e6b3a816"
   "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CrdApiController.java": "a1f480e957736aee6b3134630037b5613d091de8"
   "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/controllers/StaffRefDataController.java": "797ed17a96dc04579f100997ce7ad8ee5e6af8a6"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
+  "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/repository/ProfileRepository.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
+  "cnp-flux-config:apps/rd/rd-professional-api/prod.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
+  "cnp-flux-config:apps/rd/rd-judicial-api/prod.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
+  "cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml": "2f4fb694e1ffd5eb7aa6cf667450c51f9cc459fb"
+  "cnp-flux-config:apps/rd/rd-caseworker-ref-api/prod.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
+  "cnp-flux-config:apps/rd/rd-commondata-api/prod.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
+  "cnp-flux-config:apps/rd/rd-user-profile-api/prod.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
 ---
 
 ## TL;DR
@@ -160,12 +176,12 @@ Page through by setting `searchAfter` to the last `userIdentifier` from the prev
 
 ### Search by name (minimum 3 characters)
 
-<!-- REVIEW: Content-Type header value below is wrong. Should be "application/vnd.jrd.api+json;Version=2.0" per rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java:12. -->
 ```http
 POST /refdata/judicial/users/search
 Authorization: Bearer <any valid IDAM token>
 ServiceAuthorization: Bearer <s2s-token>
-Content-Type: application/vnd.uk.gov.hmcts.reform.juddata.v2+json;charset=UTF-8
+Content-Type: application/json
+Accept: application/vnd.jrd.api+json;Version=2.0
 
 {
   "searchString": "Smith",
@@ -178,12 +194,12 @@ No specific role required — any authenticated user can search.
 
 ### Refresh profiles (paginated, role-restricted)
 
-<!-- REVIEW: Content-Type header value below is wrong. Should be "application/vnd.jrd.api+json;Version=2.0" per rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java:12. -->
 ```http
 POST /refdata/judicial/users
 Authorization: Bearer <token with jrd-system-user or jrd-admin role>
 ServiceAuthorization: Bearer <s2s-token>
-Content-Type: application/vnd.uk.gov.hmcts.reform.juddata.v2+json;charset=UTF-8
+Content-Type: application/json
+Accept: application/vnd.jrd.api+json;Version=2.0
 page_size: 200
 page_number: 0
 sort_direction: ASC
@@ -346,31 +362,32 @@ Where `{categoryId}` is the lookup category key (e.g. `HearingChannel`, `Hearing
 
 - **Mutually exclusive params**: LRD endpoints enforce single-parameter queries — passing more than one filter returns HTTP 400.
 - **Boolean fields as strings**: LRD stores `is_hearing_location`, `is_case_management_location`, and `is_temporary_location` as `"Y"`/`"N"` strings, not booleans.
-<!-- REVIEW: The JRD content type is wrong. Source (rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java:12) shows the actual media type is "application/vnd.jrd.api+json;Version=2.0", not "application/vnd.uk.gov.hmcts.reform.juddata.v2+json;charset=UTF-8". -->
-- **Content-Type for JRD**: Both JRD endpoints expect `application/vnd.uk.gov.hmcts.reform.juddata.v2+json;charset=UTF-8`.
+- **JRD media type is a response type, not a request requirement**: `application/vnd.jrd.api+json;Version=2.0` (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java:12`) is declared as `produces` on the JRD mappings and never as `consumes` (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/controller/JrdElinkController.java:83`, `:127`). A `POST` with `Content-Type: application/json` is accepted; the reply comes back with the vendor type, so a client that only parses `application/json` responses has to be told to accept it.
 - **PRD organisation identifiers**: Always 7-char alphanumeric (e.g. `A1B2C3D`), not UUIDs. The internal UUID PK is never exposed externally.
 - **PRD external v2 requires high-level roles**: The `/refdata/external/v2/organisations` endpoint requires IDAM roles like `pui-organisation-manager`; normal case-working users cannot call it. To retrieve org details for the current user from a backend service, use the internal endpoint `/refdata/internal/v1/organisations/orgDetails/{userId}` with a `prd-admin` system-user token.
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- **JRD profiles without objectId excluded**: The refresh endpoint only returns profiles where `objectId` is non-null — profiles without an Azure AD object ID are filtered out.
+- **JRD profiles without objectId excluded**: `where (per.objectId != '' and per.objectId is not null)` is on all five refresh query variants — by object ID, by SIDAM ID, by personal code, by service code or ticket code, and by ticket code alone (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/repository/ProfileRepository.java:56`, `:69`, `:81`, `:95`, `:110`). No combination of request parameters will surface a profile whose object ID is blank, so a judge ingested from eLinks without one is present in the JRD database and absent from every refresh response.
 - **CRD requires `cwd-admin` or `staff-admin` role**: Most CRD query endpoints restrict access to users with these IDAM roles. The caseworker sync endpoint (`/users/sync`) is S2S-only for inter-service use.
-- **Common Data S2S allowlist is narrow**: The default dev allowlist is just `rd_commondata_api` — in production, the Flux config adds `xui_webapp`, `ccd_data`, `iac`, `sscs`, `civil_service`, `prl_cos_api`, `sptribs_case_api`, `et_cos`, and `cui_ra`.
-- **S2S allowlist is environment-specific**: The default development list (e.g. `rd_professional_api,xui_webapp,...`) is extended in production via environment variables like `${PRD_S2S_AUTHORISED_SERVICES}`.
+- **Common Data's baked-in allowlist is a single entry**: `${CRD_S2S_AUTHORISED_SERVICES:rd_commondata_api}` (`rd-commondata-api:src/main/resources/application.yaml:104`). Every other caller exists only in the deployed environment's override, and Common Data reuses the `CRD_` variable name that Caseworker Reference Data also uses — the two services set it to different values in their own HelmRelease files.
+- **S2S allowlist is environment-specific**: the value in `application.yaml` is only the fallback default (PRD 8 entries at `rd-professional-api:src/main/resources/application.yaml:114`, JRD 4 at `rd-judicial-api:src/main/resources/application.yaml:117`, CRD 5 at `rd-caseworker-ref-api:src/main/resources/application.yaml:113`). Because each environment's list is maintained in its own file, a caller that works in AAT can still get 403 in production.
 - **Venue-search regex validation**: The `search-string` parameter is validated against `^[A-Za-z0-9_@.,'&() -]{3,}$`. Strings with disallowed special characters (e.g. `#`, `%`, `*`) return 400 even if >= 3 chars.
 - **LaunchDarkly feature flags**: All RD APIs use LaunchDarkly. The LRD API's flag is `lrd_location_api`. New endpoints may be toggled off in production until consuming services are ready.
 
 ## S2S allowlists (production)
 
-The following are the **production** S2S allowlists from Flux config (these extend the default `application.yaml` development lists):
+Each service's production allowlist is the `*_S2S_AUTHORISED_SERVICES` value in its FluxCD HelmRelease overrides, which replaces the `application.yaml` default outright rather than adding to it:
 
-| API | Environment Variable | Production Services |
-|---|---|---|
-| PRD | `PRD_S2S_AUTHORISED_SERVICES` | `xui_webapp`, `finrem_payment_service`, `finrem_case_orchestration`, `fpl_case_service`, `prl_cos_api`, `iac`, `aac_manage_case_assignment`, `divorce_frontend`, `civil_service`, `civil_general_applications`, `probate_backend`, `nfdiv_case_api`, `payment_app`, `et_cos`, `rd_professional_api`, `rd_user_profile_api` |
-| JRD | `JRD_S2S_AUTHORISED_SERVICES` | `am_org_role_mapping_service`, `iac`, `xui_webapp`, `ccd_data`, `sscs`, `sscs_bulkscan`, `prl_cos_api`, `fis_hmc_api`, `fpl_case_service`, `civil_service`, `civil_general_applications`, `sptribs_case_api`, `et_cos`, `rd_judicial_api` |
-| LRD | `LRD_S2S_AUTHORISED_SERVICES` | `rd_location_ref_api`, `payment_app`, `rd_caseworker_ref_api`, `rd_judicial_api`, `ccd_data`, `xui_webapp`, `prl_cos_api`, `sscs`, `sscs_bulkscan`, `adoption_web`, `civil_service`, `civil_general_applications`, `sptribs_case_api`, `fis_hmc_api`, `et_cos`, `iac`, `probate_backend` |
-| CRD | `CRD_S2S_AUTHORISED_SERVICES` | `am_org_role_mapping_service`, `iac`, `xui_webapp`, `ccd_data`, `sscs`, `sscs_bulkscan`, `fpl_case_service`, `prl_cos_api`, `idam-user-profile-bridge`, `et_cos`, `rd_caseworker_ref_api`, `rd_profile_sync` |
-| Common Data | `CRD_S2S_AUTHORISED_SERVICES` | `iac`, `xui_webapp`, `ccd_data`, `sscs`, `sscs_bulkscan`, `prl_cos_api`, `civil_service`, `sptribs_case_api`, `et_cos`, `cui_ra` |
+| API | Environment Variable | Production Services | Source |
+|---|---|---|---|
+| PRD | `PRD_S2S_AUTHORISED_SERVICES` | `rd_professional_api`, `rd_user_profile_api`, `xui_webapp`, `finrem_payment_service`, `finrem_case_orchestration`, `finrem_citizen_ui`, `fpl_case_service`, `iac`, `aac_manage_case_assignment`, `divorce_frontend`, `civil_service`, `probate_backend`, `nfdiv_case_api`, `prl_cos_api`, `payment_app`, `et_cos`, `civil_general_applications` | `cnp-flux-config:apps/rd/rd-professional-api/prod.yaml:14` |
+| JRD | `JRD_S2S_AUTHORISED_SERVICES` | `rd_judicial_api`, `am_org_role_mapping_service`, `iac`, `xui_webapp`, `ccd_data`, `sscs`, `sscs_bulkscan`, `fis_hmc_api`, `prl_cos_api`, `civil_service`, `sptribs_case_api`, `fpl_case_service`, `civil_general_applications`, `et_cos`, `idam-user-profile-bridge`, `finrem_case_orchestration`, `finrem_citizen_ui` | `cnp-flux-config:apps/rd/rd-judicial-api/prod.yaml:14` |
+| LRD | `LRD_S2S_AUTHORISED_SERVICES` | `rd_location_ref_api`, `payment_app`, `rd_caseworker_ref_api`, `rd_judicial_api`, `ccd_data`, `xui_webapp`, `sscs`, `sscs_bulkscan`, `adoption_web`, `civil_service`, `prl_cos_api`, `fis_hmc_api`, `sptribs_case_api`, `iac`, `civil_general_applications`, `et_cos`, `probate_backend`, `finrem_case_orchestration`, `finrem_citizen_ui`, `pcs_api` | `cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml:11` |
+| CRD | `CRD_S2S_AUTHORISED_SERVICES` | `rd_caseworker_ref_api`, `am_org_role_mapping_service`, `iac`, `xui_webapp`, `ccd_data`, `sscs`, `sscs_bulkscan`, `prl_cos_api`, `fpl_case_service`, `idam-user-profile-bridge`, `et_cos`, `rd_profile_sync`, `probate_backend`, `finrem_case_orchestration`, `finrem_citizen_ui` | `cnp-flux-config:apps/rd/rd-caseworker-ref-api/prod.yaml:35` |
+| Common Data | `CRD_S2S_AUTHORISED_SERVICES` | `ccd_data`, `xui_webapp`, `sscs`, `sscs_bulkscan`, `cui_ra`, `prl_cos_api`, `civil_service`, `iac`, `sptribs_case_api`, `et_cos`, `probate_backend`, `finrem_case_orchestration`, `finrem_citizen_ui` | `cnp-flux-config:apps/rd/rd-commondata-api/prod.yaml:13` |
+| User Profile | `PRD_S2S_AUTHORISED_SERVICES` | `rd_professional_api`, `rd_user_profile_api`, `rd_profile_sync`, `rd_caseworker_ref_api`, `idam-user-profile-bridge`, `et_cos`, `finrem_case_orchestration`, `finrem_citizen_ui` | `cnp-flux-config:apps/rd/rd-user-profile-api/prod.yaml:19` |
 
-<!-- DIVERGENCE: Confluence (page 1487520358) lists pcs_api on the LRD allowlist for AAT/Demo/ITHC/PerfTest, but rd-location-ref-api:src/main/resources/application.yaml default list does not include it. It is added via Flux config for non-prod environments only. Source wins — pcs_api is not on the production allowlist. -->
+User Profile has the narrowest list and neither `xui_webapp` nor `ccd_data` is on it, so a front end that needs professional user details has to go through PRD rather than calling User Profile directly.
+
+<!-- DIVERGENCE: Confluence "Reference Data Artefacts - Data Model, Schema and Swagger links" (id 1487520358) lists `pcs_api` on the LRD allowlist for AAT/Demo/ITHC/PerfTest only. It is on the production allowlist (cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml:11). Source wins. -->
 
 ## Verify
 

@@ -18,6 +18,8 @@ sources:
   - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/util/RequestUtils.java
   - rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java
   - rd-judicial-api:src/main/resources/application.yaml
+  - rd-judicial-api:src/main/resources/db/migration/V1_1__init_tables.sql
+  - rd-judicial-api:src/main/resources/db/migration/V1_7__insert_lrd_region_mapping.sql
 status: needs-fix
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -59,6 +61,8 @@ sources_sha:
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/util/RequestUtils.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
   "rd-judicial-api:src/main/resources/application.yaml": "91db0edf4a57e5899d31861797cf690cc11b61af"
+  "rd-judicial-api:src/main/resources/db/migration/V1_1__init_tables.sql": "20c5ed8d1f646a213544c590a1951ec1f996780c"
+  "rd-judicial-api:src/main/resources/db/migration/V1_7__insert_lrd_region_mapping.sql": "20c5ed8d1f646a213544c590a1951ec1f996780c"
 ---
 
 ## TL;DR
@@ -122,22 +126,22 @@ The underlying JPQL query (`ProfileRepository.java:19-45`) joins profile to appo
 
 When `serviceCode` is provided, the service first looks up ticket codes from `judicial_service_code_mapping` for that service code, then passes them to the repository query. A configurable list of "search service codes" (`search.serviceCode` in application.yaml, default: `bfa1,bba3,aaa6,aaa7,aba5,aba3`) is also passed to the repository to control which service codes participate in location-based filtering.
 
-### Search scenarios (expected behaviour)
+### Search scenarios
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+| Condition | Result | Clause |
+|-----------|--------|--------|
+| Both service code and location provided (Courts) | 200 with matches for given location + service code | `lower(appt.epimmsId) = :locationCode` (`ProfileRepository.java:36-38`) |
+| Both service code and location provided (Tribunal) | 200 with empty list | Tribunal appointments carry no `epimms_id`, so the same clause matches nothing |
+| Authorisation AND appointment both expired | 200 with empty list | `appt.endDate >= CURRENT_DATE or appt.endDate is null` AND the same for `auth.endDate` (`:32-33`) |
+| Appointment valid but authorisation expired | 200 with empty list | both halves of that conjunction must hold |
+| Profile exists but no appointments or authorisations | 200 with matches (profile returned) | the joins are `LEFT JOIN FETCH` (`:24-29`), so absent rows leave `endDate` null, which the clause treats as unexpired |
+| `object_id` is null for the user | 200 with empty list | `per.objectId != '' and per.objectId is not null` (`:30`) |
+| Search string < 3 characters | 400 Bad Request | `@Pattern(regexp = "^[(a-zA-Z0-9 )\p{L}\p{N}'’-]{3,}")` on `searchString` (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/controller/request/UserSearchRequest.java:22-25`) |
+| Special characters other than apostrophe/hyphen | 400 Bad Request | same pattern; `serviceCode` and `location` are separately restricted to `[a-zA-Z0-9]+` (`:27-34`) |
+| Unauthorised user | 403 | |
+| Authentication failure | 401 | |
 
-| Condition | Result |
-|-----------|--------|
-| Both service code and location provided (Courts) | 200 with matches for given location + service code |
-| Both service code and location provided (Tribunal) | 200 with empty list |
-| Authorisation AND appointment both expired | 200 with empty list |
-| Appointment valid but authorisation expired | 200 with empty list |
-| Profile exists but no appointments or authorisations | 200 with matches (profile returned) |
-| `object_id` is null for the user | 200 with empty list |
-| Search string < 3 characters | 400 Bad Request |
-| Special characters other than apostrophe/hyphen | 400 Bad Request |
-| Unauthorised user | 403 |
-| Authentication failure | 401 |
+The `location` parameter is not always honoured. The location clause is `(:serviceCode in :searchServiceCode) or ((:locationCode is not null and lower(appt.epimmsId) = :locationCode) or :locationCode is null)` (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/repository/ProfileRepository.java:36-38`), so whenever the requested service code appears in `search.serviceCode` — default `bfa1,bba3,aaa6,aaa7,aba5,aba3` (`rd-judicial-api:src/main/resources/application.yaml:147`) — the whole location filter short-circuits to true and the supplied `location` is silently ignored. Callers on those six service codes get results from every venue regardless of what they asked for.
 
 ### Error responses
 
@@ -272,15 +276,17 @@ When `ccdServiceName` is provided, the refresh endpoint follows this logic (`Eli
 
 ### Location and region mapping
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-
 The refresh API populates CFT region and ePIMS IDs using two mapping tables:
-- **`jrd_lrd_region_mapping`** — translates Judicial Office region to CFT region
+- **`jrd_lrd_region_mapping`** — translates Judicial Office region to CFT region, seeded by `rd-judicial-api:src/main/resources/db/migration/V1_7__insert_lrd_region_mapping.sql`
 - **`judicial_location_mapping`** — translates base location to ePIMS ID
+
+Neither lookup happens at request time. Both are resolved during ingestion and stored on the appointment row; the refresh response simply reads `appt.getRegionId()`, `appt.getRegionType().getRegionDescEn()` and `appt.getEpimmsId()` (`rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/service/impl/ElinkUserServiceImpl.java:414-418`). A mapping added after a profile was loaded therefore has no effect until that profile is ingested again.
 
 For Tribunal base locations (e.g. 1030 "Immigration and Asylum First Tier"), ePIMS ID is null. For Court base locations (e.g. 1061 "Westminster Magistrates Court"), the ePIMS ID is populated from the mapping table.
 
-If the JO Region ID is '0', the CFT region is null.
+Region `0` is a real region, not an absent one: `cftRegionID` is `"0"` and `cftRegion` is `"default"`, the seeded description for that ID (`rd-judicial-api:src/main/resources/db/migration/V1_1__init_tables.sql:1342`). Consumers matching on a null region to detect unmapped appointments will not find them.
+
+<!-- DIVERGENCE: Confluence "Judicial Reference Data - eLinks Target to Source mapping" (id 1626289481) states that a JO Region ID of '0' yields a null CFT region. The refresh response builder passes the region through unconditionally (rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/service/impl/ElinkUserServiceImpl.java:417-418), giving cftRegionID "0" and cftRegion "default". Source wins. -->
 
 ## Deduplication
 
@@ -288,17 +294,23 @@ The refresh response groups profiles by `email_id` (`ElinkUserServiceImpl.java:2
 
 ## eLinks data source
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+JRD data originates from the eLinks judiciary middleware API (`${ELINKS_URL}`).
 
-JRD data originates from the eLinks judiciary middleware API (`${ELINKS_URL}`). Key characteristics:
+Behaviour inside JRD:
+
+- **Event publishing**: After each eLinks load, modified JOH SIDAM IDs are published to Azure Service Bus topic `rd-judicial-topic`, batched at `${JRD_DATA_PER_MESSAGE:50}` per message (`rd-judicial-api:src/main/resources/application.yaml:198`)
+- **Deletion policy**: Deleted JOH profiles are retained for `${Del_Joh_Profiles_Years:7}` years before hard deletion, and only when `${Del_Joh_Profiles:true}` is on (`rd-judicial-api:src/main/resources/application.yaml:153-154`)
+- **Leavers**: a leaver is deactivated on the run that observes the leaver record — `active_flag` goes to `false` and `last_working_date` is set from `left_on`. There is no grace period, so a JOH who leaves disappears from search and refresh results on the next scheduled load, taking any in-flight allocation with them.
+
+<!-- DIVERGENCE: Confluence "Judicial Reference Data - eLinks Load" (id 1838620475) specifies a 90-day leaver grace period in which the JOH stays active with appointment, authorisation and role end dates extended. No grace period exists in source — `grace` appears nowhere in rd-judicial-api, and the leaver step deactivates immediately. Source wins. -->
+
+Characteristics of eLinks itself:
 
 - **Primary key**: `personal_code` (unique per JOH in eLinks)
 - **Data freshness**: eLinks is populated by a nightly batch from the judicial HR system
 - **Uniqueness**: eLinks does NOT guarantee uniqueness of `object_id` or email address across records (duplicate JOH records are possible)
-<!-- REVIEW: The leaver grace period is NOT implemented in source code. ElinksApiJobScheduler.java and ElinksFeignClient.java show JRD still calls /leavers and /deleted endpoints separately and sets active_flag=false immediately. The 90-day grace period is a Confluence design target (page 1838620475), not current behaviour. See also judicial-users.md which explicitly states "This design is NOT yet implemented in source code." -->
-- **Leaver grace period**: When a JOH leaves, they remain active in JRD for a configurable grace period (currently 90 days) to allow completion of in-flight work. During this period, appointment/authorisation/role end dates are extended.
-- **Event publishing**: After each eLinks load, modified JOH SIDAM IDs are published to Azure Service Bus topic `rd-judicial-topic` (batch size configurable via `${JRD_DATA_PER_MESSAGE:50}`)
-- **Deletion policy**: Deleted JOH profiles are retained for `${Del_Joh_Profiles_Years:7}` years before hard deletion
+
+<!-- CONFLUENCE-ONLY: not verified in source -->
 
 ## Notable constraints
 
