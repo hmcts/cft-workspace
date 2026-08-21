@@ -21,6 +21,18 @@ sources:
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/ExclusiveTaskActionsController.java
+  - wa-task-management-api:src/main/resources/application.yaml
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/ConfigureTaskService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskEntityToReconfigureInputVariableDefMapper.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/ReconfigureInputVariableDefinition.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CaseConfigurationProviderService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskManagementService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/RoleAssignmentFilter.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/CancellationCaseEventHandler.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/WarningCaseEventHandler.java
 status: reviewed
 examples_extracted_from:
   - apps/wa/wa-task-configuration-template/src/main/resources/wa-task-initiation-wa-wacasetype.dmn
@@ -75,6 +87,20 @@ sources_sha:
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java": "1145b29f89b2e45601917fc0ec0c6b8801b783be"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java": "272fb0b4257fe638eeea7af521ae84738cec491a"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java": "b1d8bd7df29bb79a3f51aa85e5277be2e5bf0d6a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/ExclusiveTaskActionsController.java": "168f462c0af08458dfe4bcd8629946cb74b30a91"
+  "wa-task-management-api:src/main/resources/application.yaml": "308d2b86243c7d52027d413be51089facd576c82"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/ConfigureTaskService.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskEntityToReconfigureInputVariableDefMapper.java"
+  : "cb2500ea265d5b5869560c824f39b82340594e15"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/ReconfigureInputVariableDefinition.java"
+  : "e71b48c5a70d657bcca31f6c8ce0b1213f7eb686"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CaseConfigurationProviderService.java": "0464400520dda69b754e7ed2105eecfbbfcd100a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskManagementService.java": "0464400520dda69b754e7ed2105eecfbbfcd100a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java": "a6e0eb1659e9b67f5ef737edcd4340c33bac0421"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/RoleAssignmentFilter.java": "60770094dbb454b800079ebed9b18c0c6b2dd26c"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/CancellationCaseEventHandler.java": "81624296cc17947ff85c9b9075fc8d583cab5aeb"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/WarningCaseEventHandler.java": "98a029ce763a2f424be687a660ab099ad56ca753"
 ---
 
 ## TL;DR
@@ -239,38 +265,41 @@ The RULE ORDER hit policy means teams can define "base" rules with a blank `task
 
 #### Mandatory output attributes
 
-The following configuration DMN outputs are considered mandatory by `wa-task-management-api`. If absent during initiation, the task cannot complete configuration and remains in `UNCONFIGURED` state (invisible to users). Some have built-in defaults that prevent absence:
+"Mandatory" means three different things here, and only one of them is a hard failure.
 
-| Output attribute | Mandatory | Default | Notes |
-|-----------------|-----------|---------|-------|
-| `title` | Yes | Falls back to `task_name` from initiation DMN | |
-| `dueDate` | Yes | Current date + 2 days at 16:00 | Overridden by date calculation if `dueDate*` family present |
-| `priorityDate` | Yes | Falls back to `dueDate` | |
-| `majorPriority` | Yes | `5000` | Lower = higher priority |
-| `minorPriority` | Yes | `500` | Secondary sort within same major priority |
-| `roleCategory` | Yes | (none) | Must be configured |
-| `workType` | Yes | (none) | Must be configured |
-| `region` | Yes | (none) | Must match from `caseData.caseManagementLocation` |
-| `location` | Yes | (none) | Must match from `caseData.caseManagementLocation` |
-| `caseName` | Yes | (none) | Must be configured |
-| `caseManagementCategory` | Yes | (none) | |
+**Validated at the initiation endpoint.** `POST /task/{task-id}` checks a configurable list of attributes and returns 400 with a per-field violation if any is null or blank. The list is `config.initiationRequestRequiredFields`, defaulting to `name,taskType,caseId` (`application.yaml:22`), enforced by `validateInitiationRequestMap` (`ExclusiveTaskActionsController.java:88-102`). Nothing else is validated there.
 
-<!-- CONFLUENCE-ONLY: mandatory attribute list from "WA - Task Attribute Configuration Details" (page 1753707700). Individual field mandatory status not verified against initiation-blocking validation in source. -->
+**Defaulted in the mapper.** These cannot be absent from the task record because `CFTTaskMapper.mapToTaskResource` supplies a value:
+
+| Attribute | Behaviour when the DMN omits it | Source |
+|-----------|--------------------------------|--------|
+| `dueDate` | Mapping fails — `Objects.requireNonNull(dueDate, "DUE_DATE must not be null")` | `CFTTaskMapper.java:97` |
+| `priorityDate` | Falls back to `dueDate` | `CFTTaskMapper.java:98-100` |
+| `majorPriority` | `5000` — lower = higher priority | `CFTTaskMapper.java:114` |
+| `minorPriority` | `500` — secondary sort within the same major priority | `CFTTaskMapper.java:115` |
+
+`dueDate` is the only hard failure, and it is difficult to hit: when the configuration DMN emits no `dueDate` family, `DateTypeConfigurator` injects `DateCalculator.DEFAULT_ZONED_DATE_TIME` — now + 2 days at 16:00 (`DateCalculator.java:68`).
+
+**Required by convention only.** `title` (`CFTTaskMapper.java:111`), `roleCategory` (`:120`), `caseName` (`:125`), `region` (`:127`), `location` (`:129`), `caseManagementCategory` (`:135`) and `workType` (`:102`, via `extractWorkType`) are each read with a `null` default and stored as null if the DMN omits them. The task is still created and still leaves `UNCONFIGURED`. The cost is downstream: blank columns in XUI, no match for searches that filter on `workType`, and — for `region` — no match for any role assignment that carries a region, because the region predicate is a plain equality against the task's column (`RoleAssignmentFilter.java:358-366`). Note that `title` has no fallback to `name`; nothing in the service copies one into the other.
+
+<!-- DIVERGENCE: page 1753707700 lists eleven attributes as mandatory and says an absent one leaves the task UNCONFIGURED and invisible. In source only dueDate can fail the mapping; priorityDate, majorPriority and minorPriority are defaulted; the other seven are stored as null and configuration completes regardless. The attributes actually validated at the initiation endpoint — name, taskType, caseId — are not in the Confluence list. Source wins. -->
 
 #### Input field differences: initiation vs reconfiguration
 
-During **initiation**, all Camunda process/task variables are available as inputs (accessed via `taskAttributes.*`). During **reconfiguration**, the inputs come from the existing task record in the database, not from Camunda. Key differences:
+During **initiation**, `taskAttributes` is the flat map the caller posted to the initiation endpoint — the Camunda process variables published by `wa-case-event-handler` (`TaskManagementService.java:604`). During **reconfiguration** it is built from the existing task row instead: `ConfigureTaskService.reconfigureCFTTask` calls `cftTaskMapper.getTaskAttributes(taskResource)` (`ConfigureTaskService.java:35-41`), which MapStruct-maps the entity to a `ReconfigureInputVariableDefinition` and serialises that (`CFTTaskMapper.java:264-286`, `TaskEntityToReconfigureInputVariableDefMapper.java:15-20`). The DMN therefore sees a different shape:
 
 | Attribute | Initiation input path | Reconfiguration input path |
 |-----------|----------------------|---------------------------|
-| Task name | `taskAttributes.name` | `taskAttributes.name` |
-| Due date | `taskAttributes.dueDate` | `taskAttributes.dueDate` |
-| Work type | (not available) | `taskAttributes.workType` |
+| Task name | `taskAttributes.name` | `taskAttributes.name` (mapped from `taskName`) |
+| Due date | `taskAttributes.dueDate` | `taskAttributes.dueDate` (mapped from `dueDateTime`) |
+| Task state | `taskAttributes.taskState` | `taskAttributes.taskState` (mapped from `state`) |
+| Work type | (not available) | `taskAttributes.workType` (mapped from `workTypeResource.id`) |
 | Additional properties | `taskAttributes.<PROP_NAME>` | `taskAttributes.additionalProperties.<PROP_NAME>` |
-| Case management category | (not available) | `taskAttributes.caseManagementCategory` |
+| Case management category | (not available) | `taskAttributes.caseManagementCategory` (mapped from `caseCategory`) |
 
-This difference in `additionalProperties` access paths is a common source of DMN bugs during reconfiguration.
-<!-- CONFLUENCE-ONLY: input path differences sourced from "WA - Task Attribute Configuration Details" (page 1753707700), not verified in wa-task-management-api initiation/reconfiguration code paths -->
+The `additionalProperties` difference falls out of the same split. At initiation the platform collapses every `additionalProperties_*` DMN row into a single JSON `additionalProperties` value *after* evaluation, and only when the request is not a reconfiguration (`CaseConfigurationProviderService.java:160-183`) — so the DMN's own inputs stay flat. On reconfiguration the attribute is already a nested `Map<String, String>` on the task record, so it must be navigated. This is a common source of DMN bugs.
+
+Any field absent from `ReconfigureInputVariableDefinition` is simply not visible to the DMN on a reconfiguration pass — `CFTTaskMapper.java:264-282` carries a comment listing the entity fields deliberately left out (`assignmentExpiry`, `businessContext`, `executionTypeCode`, `taskRoleResources`, the reconfiguration timestamps, `terminationReason`, `taskSystem`).
 
 ### 3. Permissions DMN
 
@@ -309,7 +338,8 @@ Two critical rules apply to the permissions DMN configuration:
 
 1. **OWN and CLAIM must be on the same row** — if they are on separate rows for the same role, the task will not appear in the Available Tasks screen in XUI.
 2. **No spaces after commas** — permission values like `"Read, Own, Claim"` will break the permission model. Use `"Read,Own,Claim"` (note: `wa-workflow-api` has a `removeSpaces` post-processor that normalises this, but it only applies during DMN evaluation, not during task data migration).
-<!-- CONFLUENCE-ONLY: OWN+CLAIM same-row constraint from "Granular Task Permissions Onboarding" (page 1616388317), not verified in wa-task-management-api permission evaluation logic -->
+
+The first rule is a consequence of how the search query is built. An Available Tasks search resolves to the permission requirement `OWN AND CLAIM` (`CftQueryService.java:175-179`), and `buildRoleAssignmentConstraints` takes a **single** join to `task_roles` (`RoleAssignmentFilter.java:66`) and ANDs the role-assignment predicate with the permission predicate over that one join alias (`:76`). An `AND` requirement becomes `builder.and(isTrue(own), isTrue(claim))` on that alias (`:139-157`). Both flags must therefore be true on the *same* `task_roles` row — one row granting `Own` and a second granting `Claim` for the same role name does not satisfy them together, so the task is filtered out. The same single-join structure is why the row that grants the permissions must also be the row whose `role_name` matches the user's role assignment, and why the task's `region`, `location`, `jurisdiction` and security classification must satisfy that assignment's constraints (`buildMandatoryPredicates`, `:264-281`).
 
 ### 4. Cancellation DMN
 
@@ -493,14 +523,13 @@ Teams sometimes need to merge DMN rules into master without them taking effect i
 1. **Input column approach** — add an `isLiveFrom` input column with a FEEL expression: `now() > date and time("2021-12-01T10:00:00")`. Rows only match when the current time passes the go-live date.
 2. **Output column approach** — add a `liveFrom` output column containing an ISO-8601 date string. The consuming service filters out rows whose `liveFrom` date is in the future.
 
-Neither approach is formally standardised across all jurisdictions, but both are in use. The input column approach is self-contained within the DMN; the output column approach requires platform-side filtering logic.
-<!-- CONFLUENCE-ONLY: feature flag pattern from "WA Feature Flag DMN rules" (page 1525466902), not verified as implemented in wa-task-management-api or wa-case-event-handler -->
+Neither approach is formally standardised across all jurisdictions, and only the first works without extra code. The input column approach is self-contained within the DMN: Camunda evaluates the `isLiveFrom` expression like any other input, so a not-yet-live row simply does not match. The output column approach has no platform support — `liveFrom` appears nowhere in `wa-task-management-api`, `wa-case-event-handler` or `wa-task-monitor` at `origin/master`, so nothing in WA filters on it and the row takes effect immediately. Any service using that pattern has to do the filtering itself.
 
 ## Passing data from initiation to configuration via processCategories
 
 The `processCategories` output from the initiation DMN serves a dual purpose: it categorises the task (for cancellation/warning scoping) and provides a mechanism to **pass arbitrary identifiers** into the configuration DMN.
 
-When a task is initiated, each value in `processCategories` becomes a Camunda process variable with the prefix `__processCategory__`. The configuration DMN can then extract data encoded in these category strings using FEEL literal expressions.
+When a task is initiated, `wa-case-event-handler` splits the `processCategories` string on `,`, trims each element, and sets a Camunda process variable named `__processCategory__<category>` with the boolean value `true` (`InitiationCaseEventHandler.java:234-245`). The payload therefore rides in the variable *name*, not its value — which is what makes the pattern below possible. The configuration DMN extracts it with a FEEL literal expression over the `taskAttributes` keys.
 
 **Example — Query Management pattern** (from Civil service):
 
@@ -510,7 +539,8 @@ When a task is initiated, each value in `processCategories` becomes a Camunda pr
 4. The extracted ID is then used as an `additionalProperties_query_management_query_id` output, making it available to XUI.
 
 This pattern (pioneered by Private Law for order IDs, adopted by Civil for queries) allows tasks to carry references to specific case data items without requiring the task management platform to understand each service's domain model.
-<!-- CONFLUENCE-ONLY: processCategory mechanism detail from "Query Management Task Configuration Pattern" (page 1824134570), not verified in wa-task-management-api process variable handling -->
+
+The same `__processCategory__` variables are reused as Camunda **correlation keys** by the cancellation and warning handlers (`CancellationCaseEventHandler.java:187`, `WarningCaseEventHandler.java:211`, `:221`), which is how a cancellation DMN row's `processCategories` output scopes the action to a subset of a case's tasks. A category string carrying an embedded identifier is therefore also a correlation key, and will only match tasks initiated with that exact identifier.
 
 ## How jurisdiction teams onboard
 
@@ -538,10 +568,10 @@ Beyond DMN authoring, services must complete these steps:
 | CCD event fires but no task created | Case data missing fields required by initiation DMN inputs; or earlier failed event blocking the case | Verify all `additionalData` fields are published; check for unprocessable events |
 | Task visible in Camunda but not in XUI | Task remains in `UNCONFIGURED` state — configuration DMN failed | Check that `caseworker-wa-task-configuration` can access all referenced case data fields |
 | Task appears but data is wrong | Configuration DMN references case fields the WA role cannot access (returns null) | Add field grants to CCD definition for `caseworker-wa-task-configuration` |
-| User cannot see tasks in Available Tasks | Permission DMN has OWN and CLAIM on separate rows; or user's region doesn't match task region | Move OWN+CLAIM to same row; verify user role-assignment region matches task region |
-| Region mismatch | Region `1` (National) is **not** a superset — it's a specific region. For all-region access, role must have **no region ID** | Configure role assignment without region constraint |
+| User cannot see tasks in Available Tasks | Permission DMN has OWN and CLAIM on separate rows; or user's region doesn't match task region. Both flags are checked on one `task_roles` row (`RoleAssignmentFilter.java:66`, `:139-157`) | Move OWN+CLAIM to same row; verify user role-assignment region matches task region |
+| Region mismatch | Region `1` (National) is **not** a superset — it's a specific region. The predicate is a plain equality against the task's `region` column, and is omitted entirely when the assignment has no region (`RoleAssignmentFilter.java:358-366`), so all-region access means **no region ID** on the role | Configure role assignment without region constraint |
 | Task dates differ between Camunda and XUI | XUI uses the new date calculation engine; Camunda retains the legacy `workingDaysAllowed`-based date as a process variable | This is expected — the XUI date is authoritative |
-<!-- CONFLUENCE-ONLY: troubleshooting table assembled from "Onboarding Triage Guidance" (page 1672087665), symptoms not verified against specific source code error paths -->
+<!-- CONFLUENCE-ONLY: the first three rows and the Camunda-vs-XUI date row come from "Onboarding Triage Guidance" (page 1672087665) and have not been traced to specific source error paths. -->
 
 ## Examples
 
