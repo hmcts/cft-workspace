@@ -14,6 +14,20 @@ sources:
   - wa-task-configuration-template:src/main/resources/wa-task-allowed-days-wa-wacasetype.dmn
   - wa-task-configuration-template:camunda-deployment.sh
   - wa-task-configuration-template:src/test/java/uk/gov/hmcts/reform/wataskconfigurationtemplate/DmnDecisionTable.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/AdditionalDataContext.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/PublishableField.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java
+  - wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/initiation/InitiationTaskAttributesMapper.java
+  - wa-task-management-api:src/main/resources/application.yaml
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/utils/TaskMandatoryFieldsValidator.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskManagementService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/TaskReconfigurationTransactionHandler.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/ConfigureTaskService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/ReconfigureInputVariableDefinition.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/RoleAssignmentFilter.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java
 status: reviewed
 examples_extracted_from:
   - apps/wa/wa-task-configuration-template/src/main/resources/wa-task-initiation-wa-wacasetype.dmn
@@ -60,6 +74,22 @@ sources_sha:
   "wa-task-configuration-template:src/main/resources/wa-task-allowed-days-wa-wacasetype.dmn": "ad5c4d1f3f999a71df3e145d1b784637e15fe261"
   "wa-task-configuration-template:camunda-deployment.sh": "0a58de5ec9a536dc6f319f113a1ff203f6cb77dd"
   "wa-task-configuration-template:src/test/java/uk/gov/hmcts/reform/wataskconfigurationtemplate/DmnDecisionTable.java": "ecc46851eb4f10d3028af8b72b2557cb038e5c74"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/AdditionalDataContext.java": "9c7139a70732f6dca95acb412c36706fa9e79be8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/PublishableField.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
+  "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/initiation/InitiationTaskAttributesMapper.java": "ecc7f13167f071f537f826929f3e66323cdcfe47"
+  "wa-task-management-api:src/main/resources/application.yaml": "308d2b86243c7d52027d413be51089facd576c82"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/utils/TaskMandatoryFieldsValidator.java": "1d99034722b1261ca9e19f97571a035b04c649d1"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskManagementService.java": "0464400520dda69b754e7ed2105eecfbbfcd100a"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/TaskReconfigurationTransactionHandler.java"
+  : "41f980025a0ebc5f504b5ea94be93031881d036d"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/ConfigureTaskService.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java": "b1d8bd7df29bb79a3f51aa85e5277be2e5bf0d6a"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/ReconfigureInputVariableDefinition.java"
+  : "e71b48c5a70d657bcca31f6c8ce0b1213f7eb686"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java": "a6e0eb1659e9b67f5ef737edcd4340c33bac0421"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/RoleAssignmentFilter.java": "60770094dbb454b800079ebed9b18c0c6b2dd26c"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java": "272fb0b4257fe638eeea7af521ae84738cec491a"
 ---
 
 ## TL;DR
@@ -154,8 +184,9 @@ The initiation DMN has the following input columns (`wa-task-configuration-templ
 | `lastModifiedApplicationType` | Last modified application type | From `additionalData.Data.lastModifiedApplication.type` |
 | `lastModifiedApplicationDecision` | Last modified application decision | From `additionalData.Data.lastModifiedApplication.decision` |
 
-The `additionalData` object is populated from published CCD case data fields configured in your CCD definition's `CaseEventToFields` tab. Service teams can publish any case data they need for DMN rule conditions.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+`additionalData` carries only the fields your CCD definition explicitly publishes. `ccd-data-store-api` walks the event's `CaseEventToFields` rows and keeps a field when its `publish` flag is true; for a field whose display context is `COMPLEX` it descends into the `CaseEventToComplexTypes` rows and keeps each nested reference whose own `publish` flag is set, pulling the parent in automatically so the path resolves (`ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/AdditionalDataContext.java:55-90`). Setting `publishAs` on a field makes it appear under that alias, with the CCD field ID retained as `originalId` in the `Definition` block (`ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/PublishableField.java:104-113`).
+
+A DMN input that reads an unpublished field evaluates to null, so getting the field published is a prerequisite for any case-data rule condition — not a tuning step.
 
 Key points:
 
@@ -173,7 +204,7 @@ Key points:
   Or simply: `{"delayUntil": date and time(date(now()), time("18:00")), "delayUntilTime": time("16:00")}` to delay until a specific time of day.
 - To create multiple tasks from one event, add multiple rows with the same `eventId`/`postEventState` — the COLLECT hit policy fires all matching rules (`wa-task-configuration-template:src/main/resources/wa-task-initiation-wa-wacasetype.dmn:509-589`).
 - `processCategories` accepts comma-separated values for multiple categories, e.g. `"caseProgression,followUpOverdue"`.
-- You can output an `initialAssignee` column to pre-assign the task to a specific IDAM user at initiation time. The value is typically sourced from `additionalData.Data.<fieldName>`. The Task Management API will validate that the assignee has `OWN` or `EXECUTE` permissions before assigning; if validation fails, normal auto-assignment runs instead.
+- The initiation DMN has no assignee output. Nominating a specific IDAM user is done with the `assignee` attribute on the **configuration** DMN (step 3), which `wa-task-management-api` then puts through the auto-assignment match before it sticks (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:2030-2035`). See [BPMN Workflows](../explanation/bpmn-workflows.md) for the full path.
 
 ### 3. Add configuration rules
 
@@ -198,9 +229,14 @@ Common additional attributes to configure:
 - `assignee` — IDAM user ID to assign the task to (validated against role assignments before use)
 - `additionalProperties_<NAME>` — arbitrary additional attributes stored as JSON on the task record
 
-**Mandatory configuration attributes** (agreed with business; absence prevents task initiation or reconfiguration):
-`dueDate`, `title`, `priorityDate`, `majorPriority`, `minorPriority`, `roleCategory`, `workType`, `region`, `location`, `caseManagementCategory`, `caseName`. Most have built-in defaults (e.g. `dueDate` defaults to current date plus 2 days at 16:00, `majorPriority` to 5000).
-<!-- CONFLUENCE-ONLY: not verified in source -->
+**Mandatory task fields** — after configuration runs, `wa-task-management-api` checks a fixed list of task-record fields and rejects the task if any is null or blank. The same check guards initiation and reconfiguration (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/utils/TaskMandatoryFieldsValidator.java:61-88`, called from `TaskManagementService.java:901` and `TaskReconfigurationTransactionHandler.java:90`). The list lives in configuration, overridable per environment via `MANDATORY_TASK_FIELDS` (`wa-task-management-api:src/main/resources/application.yaml:21`):
+
+`taskName`, `taskId`, `taskType`, `dueDateTime`, `state`, `securityClassification`, `title`, `majorPriority`, `minorPriority`, `executionTypeCode`, `caseId`, `caseTypeId`, `caseCategory`, `caseName`, `jurisdiction`, `region`, `location`, `created`, `roleCategory`, `workTypeResource`.
+
+Those are task-record property names, so several DMN attributes are spelled differently from the field they satisfy — `dueDate` feeds `dueDateTime`, `workType` feeds `workTypeResource`, `caseManagementCategory` feeds `caseCategory`. `priorityDate` is not checked. `roleCategory` carries an extra rule: a non-blank value must be one of the `RoleCategory` constants (`TaskMandatoryFieldsValidator.java:71-75`).
+
+The failure splits by who owns the gap. `taskId`, `state`, `executionTypeCode`, `created`, `dueDateTime`, `majorPriority` and `minorPriority` raise `ValidationException`; every other field raises `ServiceMandatoryFieldValidationException`, which is the signal that a jurisdiction's DMN is missing a row (`TaskMandatoryFieldsValidator.java:30-31,81-87`). Only some of these fields have a fallback if the DMN stays silent — the defaults are tabulated in [BPMN Workflows](../explanation/bpmn-workflows.md), and `dueDate` is not among them.
+<!-- DIVERGENCE: Confluence "WA - Task Attribute Configuration Details" gives the mandatory set as dueDate, title, priorityDate, majorPriority, minorPriority, roleCategory, workType, region, location, caseManagementCategory and caseName, agreed with the business, and says most have built-in defaults including dueDate defaulting to today plus two days at 16:00. The enforced list is config.taskMandatoryFields: 20 task-record property names that exclude priorityDate and add taskName, taskId, taskType, state, securityClassification, executionTypeCode, caseId, caseTypeId, jurisdiction and created. dueDate has no default -- a missing one aborts the initiation before the validator runs. Source wins. -->
 
 **Date calculation attributes** — the configuration DMN outputs key-value pairs that the Task Management API's date calculation engine uses to compute `dueDate`, `priorityDate`, and `nextHearingDate`. These are **not** final date values — they are instructions. Key attributes (using `dueDate` prefix; same pattern applies to `priorityDate` and `nextHearingDate`):
 
@@ -215,8 +251,18 @@ Common additional attributes to configure:
 
 If the same key appears in multiple rules, the behaviour depends on the key: scalar values (like `dueDateSkipNonWorkingDays`) use the last occurrence; list values (like `dueDateNonWorkingCalendar`) are merged into a combined list (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:649-1346`).
 
-**Reconfiguration behaviour**: during reconfiguration, the input attributes come from the existing task record (not from Camunda). Camunda process variables are **not** available at reconfiguration time. Additionally, `additionalProperties` attributes are accessed differently: `taskAttributes.<NAME>` at initiation vs `taskAttributes.additionalProperties.<NAME>` at reconfiguration.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+**Reconfiguration behaviour**: at reconfiguration the `taskAttributes` map is built solely from the stored `TaskResource`, by mapping it to a `ReconfigureInputVariableDefinition` and serialising that (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/ConfigureTaskService.java:35-42`, `.../services/CFTTaskMapper.java:264-286`). No Camunda process variable is in scope, so a rule that reads one works at initiation and silently yields null on reconfiguration.
+
+The shape differs too. At initiation `taskAttributes` is the flat map built from the Camunda task and its process variables, keyed by the variable names verbatim (`wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/initiation/InitiationTaskAttributesMapper.java:34-63`), so a value the BPMN set as `roleAssignmentId` is at `taskAttributes.roleAssignmentId`. `ReconfigureInputVariableDefinition` holds `additionalProperties` as a nested map (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/ReconfigureInputVariableDefinition.java:49`), so on reconfiguration the same value is at `taskAttributes.additionalProperties.roleAssignmentId`. A rule that has to survive both therefore tries both paths, which is what the template's own specific-access rule does (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:378-380`):
+
+```
+if (taskAttributes != null and taskAttributes.roleAssignmentId != null)
+  then taskAttributes.roleAssignmentId
+else if (taskAttributes != null and taskAttributes.additionalProperties != null
+         and taskAttributes.additionalProperties.roleAssignmentId != null)
+  then taskAttributes.additionalProperties.roleAssignmentId
+else "roleAssignmentId"
+```
 
 Set `canReconfigure` to `true` for attributes that should be recalculated when a reconfiguration event fires (e.g. location, priority). Attributes with `canReconfigure=false` are set only at initial task creation (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:8-21`).
 
@@ -249,11 +295,12 @@ The `task-supervisor` catch-all rule (first rule in the table) applies to all ta
 
 **Important formatting rules:**
 
-- `Own` and `Claim` permissions **must** appear in the same row; otherwise the task will not appear in the "Available tasks" screen in XUI.
-- Do **not** include spaces after commas in the permission value string (e.g. `"Read,Own,Claim"` not `"Read, Own, Claim"`). Spaces will break the permission model.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+- `Own` and `Claim` **must** appear in the same row, because each DMN row becomes one `task_roles` record and the "Available tasks" search joins that table once, requiring both flags on the row it matched (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java:175-184`, `.../cft/query/RoleAssignmentFilter.java:60-77`). Splitting them across two rows for the same role hides the task from that screen.
+- Every token must be a recognised permission name, matched exactly and case-sensitively. An unknown token aborts the whole configuration with `IllegalArgumentException: Invalid Permission Type:<token>` (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java:402-407`).
+- Spaces after commas in the permission value are harmless — each token is trimmed before matching (`CFTTaskMapper.java:404`). The `authorisations` value gets no such treatment: it is split on commas and stored as-is, so a space there becomes part of the authorisation string (`CFTTaskMapper.java:409-412`).
+<!-- DIVERGENCE: Confluence "Granular Task Permissions Onboarding" instructs authors never to put spaces after commas in the permission value because spaces break the permission model. CFTTaskMapper applies String::trim to each token before resolving it, so "Read, Own, Claim" parses identically to "Read,Own,Claim". Source wins. -->
 
-Available permission flags: `Read`, `Own`, `Manage`, `Cancel`, `Assign`, `Unassign`, `Complete`, `CompleteOwn`, `CancelOwn`, `Claim`, `Unclaim`, `Execute`, `UnassignClaim`, `UnassignAssign`, `UnclaimAssign`.
+Available permission flags, from the `PermissionTypes` enum (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java:11-26`): `Read`, `Refer`, `Own`, `Manage`, `Execute`, `Cancel`, `Complete`, `CompleteOwn`, `CancelOwn`, `Claim`, `Unclaim`, `Assign`, `Unassign`, `UnclaimAssign`, `UnassignClaim`, `UnassignAssign`.
 
 ### 5. (Optional) Add cancellation and completion rules
 
@@ -296,10 +343,10 @@ If your jurisdiction uses a `wa-task-allowed-days-<jurisdiction>-<casetype>.dmn`
 
 Not all jurisdictions use this DMN. Check whether your jurisdiction's template includes one before adding rules.
 
-### 7. (Optional) Use feature flags for DMN rules
+### 7. (Optional) Date-guard a rule before it goes live
 
-To merge a rule into master without it taking effect immediately, add a date-based guard. The WA platform supports an output column pattern where rules can include a `liveFrom` ISO-8601 date string. The Task Management API filters out rules whose `liveFrom` date is in the future.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+No WA service filters DMN rows by date, so merging a rule to master makes it live at the next Camunda deployment. If you need a rule that is merged but dormant, guard it inside the rule itself: `wa-case-event-handler` supplies a `now` variable holding the current date in `ISO_LOCAL_DATE` form to every initiation DMN evaluation (`wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java:93,157`), so an input column with a FEEL expression over `now` can hold a rule back until a chosen date. The template ships no such column — you add it, and you own removing it.
+<!-- DIVERGENCE: Confluence "WA Feature Flag DMN rules" describes a liveFrom ISO-8601 output column that the Task Management API uses to filter out rules whose date has not yet arrived. The identifier liveFrom does not occur anywhere in wa-task-management-api, wa-workflow-api, wa-case-event-handler, wa-task-monitor, wa-task-configuration-template or wa-standalone-task-bpmn, and no code path filters DMN rows by date. Source wins. -->
 
 ### 8. Update the test harness
 

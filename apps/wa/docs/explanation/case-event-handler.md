@@ -25,6 +25,13 @@ sources:
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/DmnAndMessageNames.java
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/ccd/message/EventInformation.java
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/ccd/message/AdditionalData.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/util/AdditionalDataReader.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/DmnValue.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/jobservices/FindProblemMessageJob.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/config/features/FeatureFlag.java
+  - wa-case-event-handler:src/main/resources/application.yaml
+  - wa-task-configuration-template:src/main/resources/wa-task-initiation-wa-wacasetype.dmn
+  - wa-shared-infrastructure:alerts.tf
   - wa-case-event-handler:src/main/resources/db/migration/V20211129_940__RWA-940-add-wa-case-event-messages.sql
   - wa-case-event-handler:src/main/resources/db/migration/V20220105_1030__RWA-1030-add_indices.sql
 status: reviewed
@@ -82,6 +89,13 @@ sources_sha:
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/DmnAndMessageNames.java": "677e0581c9fad1f6109115c5eb3d8ed9e1232091"
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/ccd/message/EventInformation.java": "7653f0ee0b68297ed063453b65df3de728fb264b"
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/ccd/message/AdditionalData.java": "677e0581c9fad1f6109115c5eb3d8ed9e1232091"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/util/AdditionalDataReader.java": "81624296cc17947ff85c9b9075fc8d583cab5aeb"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/DmnValue.java": "54007f6ff8c7759dee0fa31a07d21b1bdf5c232d"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/jobservices/FindProblemMessageJob.java": "98a029ce763a2f424be687a660ab099ad56ca753"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/config/features/FeatureFlag.java": "54cc9244f1b81b12754d31902c86ee8d49fdd93d"
+  "wa-case-event-handler:src/main/resources/application.yaml": "89892a3b0e88b88688fb340d2029c4448d7cdc14"
+  "wa-task-configuration-template:src/main/resources/wa-task-initiation-wa-wacasetype.dmn": "0f8832e3017f8a0676e7ef179e8802c797241707"
+  "wa-shared-infrastructure:alerts.tf": "ab2b9e98f3b2bffe6c7f383bc6d9f22bfad57d42"
   "wa-case-event-handler:src/main/resources/db/migration/V20211129_940__RWA-940-add-wa-case-event-messages.sql": "f4d6c22630848f058cc8f48419a0af9b8de0caa1"
   "wa-case-event-handler:src/main/resources/db/migration/V20220105_1030__RWA-1030-add_indices.sql": "e3d115825285aadbd1f96dd1c8df7a8389a3b14c"
 ---
@@ -132,9 +146,17 @@ Key behaviours:
 
 - `JurisdictionId` and `CaseTypeId` are **lowercased on ingestion** (`EventInformation.java:55-56`) and used to construct DMN table keys (e.g. `wa-task-initiation-ia-asylum`).
 - `EventId`, `PreviousStateId`, and `NewStateId` are the primary DMN input columns for matching initiation/cancellation rules.
-- `AdditionalData.Data` fields are flattened into Camunda DMN variables. Simple types (text, boolean, date, number) become typed variables; complex and collection types become `json`-typed variables.
-- `AdditionalData.Definition` carries CCD type metadata enabling correct Camunda variable typing. Dates embedded in JSON structures remain strings (no native JSON date type), requiring DMN authors to handle conversion in FEEL expressions.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+- `AdditionalData` reaches the DMN as **one** variable. `InitiationCaseEventHandler` serialises the whole `{Data, Definition}` object to a `Map` with Jackson and sends it as a single `additionalData` entry with no declared Camunda type, alongside the `eventId`, `postEventState`, `now` and `directionDueDate` string variables (`InitiationCaseEventHandler.java:89-95,153-159`, `AdditionalDataReader.java:16-21`, `DmnValue.java:32-34`). Individual case fields never become separate process variables.
+- Splitting that map into per-column values is the DMN author's job, done in each input clause's FEEL `inputExpression` with a `camunda:inputVariable` name attached. Every level of the path needs a null guard, because navigating through a missing field aborts evaluation (`wa-task-configuration-template:src/main/resources/wa-task-initiation-wa-wacasetype.dmn:15-23`):
+
+```
+if(additionalData != null and additionalData.Data != null and additionalData.Data.appealType != null)
+then additionalData.Data.appealType
+else null
+```
+
+- `AdditionalData.Definition` travels inside the same map but no WA code reads it, so it drives nothing (`AdditionalData.java:31-33`). Values arrive as whatever Jackson produced from the message JSON — dates included — so any coercion belongs in the FEEL expression.
+<!-- DIVERGENCE: Confluence "Service Bus Integration with CCD events" describes AdditionalData.Data being flattened into individually typed Camunda variables (text/boolean/date/number typed, complex and collection types json-typed), with AdditionalData.Definition supplying the type metadata that drives that typing. The handler passes additionalData as one dmnMapValue whose type field is null, performs no field-level expansion, and never calls getDefinition(). Source wins. -->
 
 ## ASB session subscription
 
@@ -354,14 +376,12 @@ The `CLEAN_UP_MESSAGES` job (triggered by `wa-message-cron-service`) deletes mes
 
 ### Alerting
 
-An existing alert fires when messages remain unprocessed for longer than 2 hours. The `FIND_PROBLEM_MESSAGES` job (called by `wa-message-cron-service`) logs diagnostic information to Application Insights for:
+The `FIND_PROBLEM_MESSAGES` job (called by `wa-message-cron-service`) selects every message in `UNPROCESSABLE` state regardless of age, plus messages in `READY` state whose `event_timestamp` is older than `job.problem-message.message-time-limit` **minutes** — default 15, with no environment override (`CaseEventMessageRepository.java:68-86`, `application.yaml:166-168`). Rows with a null `event_timestamp` fall out of that comparison and are not reported here; `RESET_NULL_EVENT_TIMESTAMP_MESSAGES` is the job that deals with those.
 
-1. Messages in `UNPROCESSABLE` state (require manual intervention)
-2. Messages stuck in `READY` state beyond expected processing time
-3. Messages with null `case_id` or null `event_timestamp` blocking their case queue
+The job always logs a `FIND_PROBLEM_MESSAGES Retrieved problem messages` line, substituting `no records match the query` when nothing matched (`FindProblemMessageJob.java:44-51`). `tm-messages-find-problem-messages-slack-alert` keys off that trace but additionally requires the text `UNPROCESSABLE` or `READY`, which is what stops the clean runs from paging anyone. It queries a 60-minute window every 60 minutes and notifies `tm-support-<env>` on the first hit (`wa-shared-infrastructure:alerts.tf:84-103`). So the worst-case lag between a message going bad and someone hearing about it is the alert period, not the 15-minute detection threshold.
 
-LaunchDarkly feature flags (prefixed `wa-dlq-*`) gate incremental rollout of DLQ-related functionality.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+DLQ functionality is gated by a Spring property, not a feature-flag service: `azure.servicebus.enableASB-DLQ`, bound from `AZURE_SERVICE_BUS_DLQ_FEATURE_TOGGLE` and defaulting to `false` (`application.yaml:122`). LaunchDarkly is wired into the service, but its flag catalogue holds only the three `logs-azure-*` diagnostic-logging keys plus two test keys (`FeatureFlag.java:7-13`).
+<!-- DIVERGENCE: Confluence "WA Dead Letter Queue implementation key classes." describes LaunchDarkly flags prefixed wa-dlq-* gating incremental DLQ rollout, and an alert on messages unprocessed for longer than 2 hours. No wa-dlq-* key exists in the FeatureFlag enum, DLQ behaviour is toggled by the enableASB-DLQ Spring property, and the alert runs hourly against a 15-minute staleness threshold. Source wins. -->
 
 ### Local development
 

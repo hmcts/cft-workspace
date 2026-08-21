@@ -17,6 +17,9 @@ sources:
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/calendar/DateTypeIntervalData.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/ReconfigureInputVariableDefinition.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskEntityToReconfigureInputVariableDefMapper.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java
 status: reviewed
 examples_extracted_from:
   - apps/wa/wa-task-configuration-template/src/main/resources/wa-task-initiation-wa-wacasetype.dmn
@@ -67,6 +70,11 @@ sources_sha:
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java": "1145b29f89b2e45601917fc0ec0c6b8801b783be"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/calendar/DateTypeIntervalData.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/ReconfigureInputVariableDefinition.java"
+  : "e71b48c5a70d657bcca31f6c8ce0b1213f7eb686"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskEntityToReconfigureInputVariableDefMapper.java"
+  : "cb2500ea265d5b5869560c824f39b82340594e15"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java": "b1d8bd7df29bb79a3f51aa85e5277be2e5bf0d6a"
 ---
 
 ## TL;DR
@@ -416,13 +424,23 @@ export CAMUNDA_URL=https://<camunda-host>/engine-rest
 
 The script iterates all `*.dmn` and `*.bpmn` files under `src/main/resources/` and POSTs each to `${CAMUNDA_URL}/deployment/create` with your tenant ID.
 
-## Appendix: Internal fields (do not use)
+## Appendix: what a reconfiguration rule can read
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+A reconfiguration rule does not see the `TaskResource` row. It sees a fixed 28-field projection of it, `ReconfigureInputVariableDefinition`, serialised into `taskAttributes` (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/ReconfigureInputVariableDefinition.java:22-57`, built at `.../services/CFTTaskMapper.java:264-286`):
 
-The following attributes are internal to Task Management and **must not** be referenced in service team DMN rules: `lastUpdatedUser`, `taskName`, `dueDateTime`, `caseCategory`, `lastReconfigurationTime`, `reconfigureRequestTime`, `autoAssigned`, `state`, `indexed`, `lastUpdatedTimestamp`, `lastUpdatedAction`, `taskRoleResources`, `executionTypeCode`, `businessContext`, `terminationReason`, `assignmentExpiry`, `workTypeResource`.
+`taskId`, `name`, `taskType`, `dueDate`, `taskState`, `title`, `description`, `majorPriority`, `minorPriority`, `assignee`, `workType`, `roleCategory`, `hasWarnings`, `caseId`, `caseTypeId`, `caseName`, `caseManagementCategory`, `jurisdiction`, `region`, `regionName`, `location`, `locationName`, `created`, `additionalProperties`, `nextHearingId`, `nextHearingDate`, `priorityDate`, `terminationProcess`.
 
-Some have been renamed: `taskName` -> `name`, `dueDateTime` -> `dueDate`, `caseCategory` -> `caseManagementCategory`, `workTypeResource` -> `workType`.
+Anything else on the task record is simply absent: `securityClassification`, `notes`, `autoAssigned`, `assignmentExpiry`, `businessContext`, `executionTypeCode`, `taskRoleResources`, `taskSystem`, `terminationReason`, `indexed`, `reconfigureRequestTime`, `lastReconfigurationTime`, `lastUpdatedTimestamp`, `lastUpdatedUser` and `lastUpdatedAction`. A rule naming one of those gets null, with no error to tell you why.
+
+Five fields are renamed on the way in, so the database spelling is the wrong spelling for a rule (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskEntityToReconfigureInputVariableDefMapper.java:15-19`):
+
+| Task record | Reconfiguration rule |
+|---|---|
+| `taskName` | `name` |
+| `dueDateTime` | `dueDate` |
+| `state` | `taskState` |
+| `caseCategory` | `caseManagementCategory` |
+| `workTypeResource.id` | `workType` |
 
 ## Verify
 

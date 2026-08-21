@@ -15,6 +15,17 @@ sources:
   - wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/handler/WarningTaskWorkerHandler.java
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/DmnAndMessageNames.java
   - wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn
+  - wa-workflow-api:src/main/resources/application.yaml
+  - wa-standalone-task-bpmn:Jenkinsfile_CNP
+  - wa-standalone-task-bpmn:camunda-deployment.sh
+  - wa-task-configuration-template:Jenkinsfile_CNP
+  - wa-task-configuration-template:camunda-deployment.sh
+  - wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn
+  - wa-task-configuration-template:src/main/resources/wa-task-permissions-wa-wacasetype.dmn
+  - wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/CamundaVariableDefinition.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateCalculator.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java
 status: needs-fix
 last_reviewed: 2026-05-13T00:00:00Z
 examples_extracted_from:
@@ -53,6 +64,17 @@ sources_sha:
   "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/handler/WarningTaskWorkerHandler.java": "5bd734b0053592f47552289fb0169ec7c23eac28"
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/DmnAndMessageNames.java": "677e0581c9fad1f6109115c5eb3d8ed9e1232091"
   "wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn": "ef2e773a0dfbc538d1b0e7dab33fb6906c2b6510"
+  "wa-workflow-api:src/main/resources/application.yaml": "678f3ee768ea5d724a3a21643aac34eb59859ed0"
+  "wa-standalone-task-bpmn:Jenkinsfile_CNP": "b42cd068e293d2cdda5c67fd5a11b3d1258b28aa"
+  "wa-standalone-task-bpmn:camunda-deployment.sh": "3eb967ce19a71b9821506abfdd0166fc692e234a"
+  "wa-task-configuration-template:Jenkinsfile_CNP": "eb301aedd88b8103f48f58b953ff58c4cbac5333"
+  "wa-task-configuration-template:camunda-deployment.sh": "0a58de5ec9a536dc6f319f113a1ff203f6cb77dd"
+  "wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn": "510747dd6d79a189f498d51c500718bb30adf51c"
+  "wa-task-configuration-template:src/main/resources/wa-task-permissions-wa-wacasetype.dmn": "d93044190a89ac64e5b112dacb6df5c6af2273bd"
+  "wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn": "f256d9afd3ae0ee4420642d1a7648e271423f4a4"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/CamundaVariableDefinition.java": "b83f756ff73266f9ae6181f0427ae32e1f4a09e9"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateCalculator.java": "3f8bd2dd559caacad64b6c9c8286d0402dcee87a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java": "1145b29f89b2e45601917fc0ec0c6b8801b783be"
 ---
 
 ## TL;DR
@@ -67,7 +89,7 @@ sources_sha:
 
 ## Integration Prerequisites
 
-Any service wanting to integrate with the Workflow API must be whitelisted (added to the `WA_S2S_AUTHORIZED_SERVICES` config). The onboarding process:
+Any service wanting to integrate with the Workflow API must be whitelisted (added to the `WA_S2S_AUTHORIZED_SERVICES` config). The list defaults to `wa_workflow_api`, `wa_case_event_handler`, `camunda-bpm`, `xui_webapp` and `wa_task_management_api` (`wa-workflow-api:src/main/resources/application.yaml:84-85`); a caller presenting a valid S2S token for any other microservice name is rejected before any Camunda call is attempted. The onboarding process:
 
 1. Create a ticket on the Work Allocation team Jira board stating: team name, the endpoint needed, a brief reason, and the S2S microservice name (e.g. `xui_webapp`).
 2. Notify the WA dev team on Slack: `#wa-dev` (`https://hmcts-reform.slack.com/archives/C01LY6L40KT`).
@@ -232,9 +254,11 @@ The workflow API also supports creating Review Specific Access Request tasks wit
 - `reviewSpecificAccessRequestLegalOps`
 - `reviewSpecificAccessRequestAdmin`
 
-These require an additional process variable `roleAssignmentId` (String) containing the role assignment ID being reviewed. Due date is typically 2 working days; no delay is applied.
+All three appear in the template's configuration, permissions and completion tables (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:159,373`, `wa-task-configuration-template:src/main/resources/wa-task-permissions-wa-wacasetype.dmn:206`, `wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn:215,223`).
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+They require an additional process variable `roleAssignmentId` (String) holding the role assignment being reviewed. It is a first-class Camunda variable (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/CamundaVariableDefinition.java:56`), and the configuration DMN copies it into `additionalProperties_roleAssignmentId` with a FEEL expression that reads `taskAttributes.roleAssignmentId` first and `taskAttributes.additionalProperties.roleAssignmentId` second (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:373-380`) — the two-branch form is what makes the same rule work on both initiation and reconfiguration.
+
+Due date and delay for these task types come from the service's own DMN, not from the platform. Where a service configures no due-date attributes at all, `DUE_DATE` falls back to `DEFAULT_ZONED_DATE_TIME` — `LocalDateTime.now().plusDays(2).withHour(16).withMinute(0).withSecond(0)` (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateCalculator.java:68`, `wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java:11`). That is two **calendar** days, and because the constant is a static interface field it is evaluated once when the class initialises — the fallback is two days after the pod started, not two days after the task was created.
 
 ---
 
@@ -374,16 +398,17 @@ The workflow API itself does not deploy BPMN/DMN artefacts. These are deployed i
 
 | Artefact type | Repository | Deployment |
 |---------------|-----------|------------|
-| BPMN (Standalone Task Workflow) | `hmcts/wa-standalone-task-bpmn` | Own Jenkins pipeline, master branch deploys to all environments |
+| BPMN (Standalone Task Workflow) | `hmcts/wa-standalone-task-bpmn` | Own Jenkins pipeline (`withCamundaOnlyPipeline`), master synced to the `demo`, `perftest` and `ithc` branches |
+| DMN (platform template) | `hmcts/wa-task-configuration-template` | Same pipeline shape, master synced to `demo` and `perftest` |
 | DMN (per service team) | e.g. `hmcts/ia-task-configuration` | Service team's own pipeline; Continuous Deployment to AAT then Production |
+
+Both platform repos use `withCamundaOnlyPipeline(type, product, component, s2sServiceName, tenantId)` with `s2sServiceName = "wa_camunda_pipeline_upload"`, and call `syncBranchesWithMaster` to push master onto the per-environment branches (`wa-standalone-task-bpmn:Jenkinsfile_CNP`, `wa-task-configuration-template:Jenkinsfile_CNP`). The tenant argument differs: `wa-standalone-task-bpmn` passes `tenantId = null`, `wa-task-configuration-template` passes `tenantId = "wa"`. DMN evaluation is tenant-scoped (`/workflow/decision-definition/key/{key}/tenant-id/{tenant-id}/evaluate`), message correlation is not.
 
 **Deployment considerations**:
 
-- DMN tables **cannot be feature-flagged** like Java microservices. Once deployed, they are active immediately. Service teams must coordinate breaking changes carefully.
-- BPMN and DMN artefact versions use Camunda's default versioning: new versions are registered automatically on deployment; running process instances continue on the version they started with.
+- Deployment is unconditional and whole-repo. `camunda-deployment.sh` takes an S2S token, loops over every `*.bpmn` and `*.dmn` under `src/main/resources`, and POSTs each file to `${CAMUNDA_URL}/deployment/create` as multipart form data (`wa-standalone-task-bpmn:camunda-deployment.sh`, `wa-task-configuration-template:camunda-deployment.sh`). There is no per-table gate, no environment condition and no rollback step, and files that did not change are re-uploaded with the rest.
+- Camunda registers a new version of each deployed definition; process instances already running continue on the version they started with, so a BPMN change only affects processes started after it lands.
 - The contract between a BPMN and calling code is the message name (e.g. `createTaskMessage`) and the set of expected process variables. Breaking changes to message names or required variables must be coordinated across the case-event-handler and the BPMN.
-
-<!-- CONFLUENCE-ONLY: not verified in source -->
 
 ---
 

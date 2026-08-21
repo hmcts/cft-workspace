@@ -14,13 +14,27 @@ sources:
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/EventMessageReceiverService.java
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/jobs/JobName.java
+  - wa-case-event-handler:src/main/resources/application.yaml
+  - cnp-flux-config:apps/wa/wa-case-event-handler/prod.yaml
   - wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/controllers/MonitorTaskJobController.java
   - wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/initiation/InitiationJobService.java
   - wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/domain/taskmonitor/JobName.java
   - wa-shared-infrastructure:servicebus.tf
   - wa-shared-infrastructure:alerts.tf
+  - wa-shared-infrastructure:variables.tf
+  - wa-shared-infrastructure:prod.tfvars
   - wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn
   - wa-task-batch-service:charts/wa-task-batch-service/values.yaml
+  - cnp-flux-config:apps/wa/wa-task-batch-initiation/prod.yaml
+  - cnp-flux-config:apps/wa/wa-task-batch-termination/prod.yaml
+  - cnp-flux-config:apps/wa/wa-task-batch-reconfiguration/prod.yaml
+  - cnp-flux-config:apps/wa/wa-task-batch-initiation-failure/prod.yaml
+  - cnp-flux-config:apps/wa/wa-task-batch-termination-failure/prod.yaml
+  - cnp-flux-config:apps/wa/wa-task-batch-reconfiguration-failure/prod.yaml
+  - cnp-flux-config:apps/wa/wa-task-batch-update-search-index/prod.yaml
+  - cnp-flux-config:apps/wa/wa-messages-find-problem-messages/prod.yaml
+  - cnp-flux-config:apps/wa/wa-messages-set-processed-state-messages/prod.yaml
+  - cnp-flux-config:apps/wa/wa-messages-reset-problem-messages/prod.yaml
 status: reviewed
 confluence:
   - id: "1438947851"
@@ -50,13 +64,27 @@ sources_sha:
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/EventMessageReceiverService.java": "d630f9f54b41c5ccb098a43f38cc2228e6dd562b"
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/jobs/JobName.java": "8a20585fae570add4f4d6e451c7d92ebfa68f2c5"
+  "wa-case-event-handler:src/main/resources/application.yaml": "89892a3b0e88b88688fb340d2029c4448d7cdc14"
+  "cnp-flux-config:apps/wa/wa-case-event-handler/prod.yaml": "e04c623af22396fe98bfcf9c969e4fd12209ceda"
   "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/controllers/MonitorTaskJobController.java": "05035529b105f5cc2dcbe35bf709b80c7cbd5a76"
   "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/services/jobs/initiation/InitiationJobService.java": "9dd5aeeb7cee1e4b8999983a7c4187f6298d8631"
   "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/domain/taskmonitor/JobName.java": "05035529b105f5cc2dcbe35bf709b80c7cbd5a76"
   "wa-shared-infrastructure:servicebus.tf": "06c600b52119409478459b7cab9cf4712eaa15a3"
   "wa-shared-infrastructure:alerts.tf": "ab2b9e98f3b2bffe6c7f383bc6d9f22bfad57d42"
+  "wa-shared-infrastructure:variables.tf": "5906f2c6a49dc8acdd293da96b3c811a758d6dd0"
+  "wa-shared-infrastructure:prod.tfvars": "5906f2c6a49dc8acdd293da96b3c811a758d6dd0"
   "wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn": "ef2e773a0dfbc538d1b0e7dab33fb6906c2b6510"
   "wa-task-batch-service:charts/wa-task-batch-service/values.yaml": "6c46f90549d5dd1dcde835f15e43d6124d8f1a00"
+  "cnp-flux-config:apps/wa/wa-task-batch-initiation/prod.yaml": "5e04a1b2a4b280360e23bb192c24f72561e98067"
+  "cnp-flux-config:apps/wa/wa-task-batch-termination/prod.yaml": "8ce89a07a4a6cffcbf29b1bc05ca78d66393726d"
+  "cnp-flux-config:apps/wa/wa-task-batch-reconfiguration/prod.yaml": "8ce89a07a4a6cffcbf29b1bc05ca78d66393726d"
+  "cnp-flux-config:apps/wa/wa-task-batch-initiation-failure/prod.yaml": "5326926a7b206d07cf444b9c95d376b5fabed57c"
+  "cnp-flux-config:apps/wa/wa-task-batch-termination-failure/prod.yaml": "8ce89a07a4a6cffcbf29b1bc05ca78d66393726d"
+  "cnp-flux-config:apps/wa/wa-task-batch-reconfiguration-failure/prod.yaml": "8ce89a07a4a6cffcbf29b1bc05ca78d66393726d"
+  "cnp-flux-config:apps/wa/wa-task-batch-update-search-index/prod.yaml": "5326926a7b206d07cf444b9c95d376b5fabed57c"
+  "cnp-flux-config:apps/wa/wa-messages-find-problem-messages/prod.yaml": "8ce89a07a4a6cffcbf29b1bc05ca78d66393726d"
+  "cnp-flux-config:apps/wa/wa-messages-set-processed-state-messages/prod.yaml": "8ce89a07a4a6cffcbf29b1bc05ca78d66393726d"
+  "cnp-flux-config:apps/wa/wa-messages-reset-problem-messages/prod.yaml": "8ce89a07a4a6cffcbf29b1bc05ca78d66393726d"
 ---
 
 ## TL;DR
@@ -190,22 +218,24 @@ A shared Camunda BPMN/DMN engine (REST API at `/engine-rest`). Not owned by WA �
 
 Both run as Kubernetes CronJobs — authenticate via S2S, call a single HTTP endpoint, then exit. Default schedule is `*/5 * * * *` (every 5 minutes) per `wa-task-batch-service/charts/wa-task-batch-service/values.yaml`, but each job is deployed as a separate CronJob with its own schedule override in `cnp-flux-config`.
 
-**Deployed CronJob instances** (each has its own flux config path for schedule override):
+**Deployed CronJob instances.** Each is a separate flux `HelmRelease` directory under `cnp-flux-config:apps/wa/`, and each per-environment overlay sets both `spec.values.job.schedule` and the `JOB_NAME` environment variable the job passes to its target service. Production schedules:
 
-| CronJob | Flux config path |
-|---------|-----------------|
-| Task Initiation | `cnp-flux-config/apps/wa/wa-task-batch-initiation` |
-| Task Termination | `cnp-flux-config/apps/wa/wa-task-batch-termination` |
-| Task Reconfiguration | `cnp-flux-config/apps/wa/wa-task-batch-reconfiguration` |
-| Task Initiation Failure | `cnp-flux-config/apps/wa/wa-task-batch-initiation-failure` |
-| Task Termination Failure | `cnp-flux-config/apps/wa/wa-task-batch-termination-failure` |
-| Task Reconfiguration Failure | `cnp-flux-config/apps/wa/wa-task-batch-reconfiguration-failure` |
-| Update Search Index | `cnp-flux-config/apps/wa/wa-task-batch-update-search-index` |
-| Find Problem Messages | `cnp-flux-config/apps/wa/wa-messages-find-problem-messages` |
-| Set Processed State Messages | `cnp-flux-config/apps/wa/wa-messages-set-processed-state-messages` |
-| Reset Problem Messages | `cnp-flux-config/apps/wa/wa-messages-reset-problem-messages` |
+| Flux config directory | `JOB_NAME` | Prod schedule |
+|-----------------------|------------|---------------|
+| `wa-task-batch-initiation` | `INITIATION` | `*/2 * * * *` |
+| `wa-task-batch-termination` | `TERMINATION` | `*/2 * * * *` |
+| `wa-task-batch-reconfiguration` | `RECONFIGURATION` | `*/1 * * * *` |
+| `wa-task-batch-initiation-failure` | `TASK_INITIATION_FAILURES` | `*/5 * * * *` |
+| `wa-task-batch-termination-failure` | `TASK_TERMINATION_FAILURES` | `*/5 * * * *` |
+| `wa-task-batch-reconfiguration-failure` | `RECONFIGURATION_FAILURES` | `*/5 * * * *` |
+| `wa-task-batch-update-search-index` | `UPDATE_SEARCH_INDEX` | `*/5 * * * *` |
+| `wa-messages-find-problem-messages` | `FIND_PROBLEM_MESSAGES` | `*/15 * * * *` |
+| `wa-messages-set-processed-state-messages` | `SET_STATE_TO_PROCESSED_ON_MESSAGES` | `*/30 * * * *` |
+| `wa-messages-reset-problem-messages` | `RESET_PROBLEM_MESSAGES` | `*/15 9-17 * * *` |
 
-<!-- CONFLUENCE-ONLY: CronJob flux config paths from SOG (page 1484625928) — not verified in source -->
+Reconfiguration runs every minute and both initiation and termination every two, so a task that misses its callback is normally picked up within a couple of minutes; the failure-sweep jobs behind them run at five-minute intervals. `RESET_PROBLEM_MESSAGES` is the only job restricted to office hours — `*/15 9-17 * * *` gives it no coverage overnight or at weekends.
+
+`cnp-flux-config:apps/wa/` carries further job releases beyond the table above: `wa-case-event-handler-clean-up-messages`, `wa-messages-reset-timestamp-problem-messages`, `wa-task-batch-maintenance`, `wa-task-batch-maintenance-camunda-task-clean-up`, `wa-task-batch-replication-check`, and four `wa-task-batch-ad-hoc-*` releases (`create-tasks`, `delete-process-instances`, `pending-termination`, `update-case-data`).
 
 ## Databases
 
@@ -238,7 +268,9 @@ Key configuration properties on `wa-case-event-handler`:
 | `azure.servicebus.topic-name` | — | `ccd-case-events` |
 | `azure.servicebus.ccd-case-events-subscription-name` | — | WA subscription |
 | `azure.servicebus.threads` | `AZURE_SERVICE_BUS_CONCURRENT_SESSIONS` | `1` |
-| `azure.servicebus.enableASB-DLQ` | `AZURE_SERVICE_BUS_DLQ_FEATURE_TOGGLE` | `true` |
+| `azure.servicebus.enableASB-DLQ` | `AZURE_SERVICE_BUS_DLQ_FEATURE_TOGGLE` | `false` |
+
+The DLQ toggle is the one to read per environment rather than from the table: the in-repo default is `false` (`wa-case-event-handler:src/main/resources/application.yaml:122`) and production and AAT both set it to `true` (`cnp-flux-config:apps/wa/wa-case-event-handler/prod.yaml:19`). Since the property gates the whole ASB integration and not just DLQ handling, a local or test profile that leaves it unset consumes nothing at all.
 
 The subscription is **session-based** (`requires_session = true` in Terraform): each CCD case ID is a session, guaranteeing ordered delivery per case. The DLQ (dead-letter queue) is actively consumed and re-ingested with `from_dlq=true` metadata.
 
@@ -321,16 +353,21 @@ Service host URL pattern: `http://<service-name>-{env}.service.core-compute-{env
 
 ## Alerting
 
-Alerts are defined in `wa-shared-infrastructure/alerts.tf` and route to a support action group.
+Alerts are `cnp-module-metric-alert` instances defined in `wa-shared-infrastructure:alerts.tf`. Every one is an Application Insights log query with a `GreaterThan 0` threshold, so an alert fires on the presence of a log line rather than on a metric threshold. They route to three different action groups: `wa-support`, `tm-support-<env>`, and the `wa-action-group` module output.
 
-| Alert | Condition | Frequency |
-|-------|-----------|-----------|
-| DLQ message dead-lettered | Any message lands in DLQ | Every 5 min |
-| Task not initiated | Task unconfigured > threshold | Every 60 min (hourly alert) + daily summary |
-| Task unterminated | Task in pendingTermination > threshold | Every 60 min |
-| Reconfiguration failure | Reconfiguration not completed | Periodic |
-| Problem messages | CEH messages stuck in non-terminal state | Periodic |
-| Replication error | Primary/replica `cft_task_db` divergence | Periodic |
+| Terraform `alert_name` | Query matches | Frequency / window (min) | Action group | Enabled |
+|---|---|---|---|---|
+| `wa-dlq-alert` | traces or exceptions whose logger message contains `dead lettered` | 5 / 5 | `wa-support` | always |
+| `wa-camunda-task-uninitiated-slack-alert` | `TASK_INITIATION_FAILURES There are some uninitiated tasks`, filtered to tasks whose parsed `created` timestamp is within `ago(4h)` | 60 / 60 | `tm-support-<env>` | `enable-tm-slack-alert` |
+| `wa-camunda-task-uninitiated-alert-weekly` | the same log line, as a summary | 1440 / 1440 | `tm-support-<env>` | never — `enabled = false` |
+| `tm-camunda-task-unterminated-slack-alert` | `TASK_TERMINATION_FAILURES There are some unterminated tasks` | 60 / 60 | `tm-support-<env>` | `enable-tm-slack-alert` |
+| `tm-messages-find-problem-messages-slack-alert` | `FIND_PROBLEM_MESSAGES Retrieved problem messages` also containing `UNPROCESSABLE` or `READY` | 60 / 60 | `tm-support-<env>` | `enable-tm-slack-alert` |
+| `tm-api-task-reconfiguration-exception-slack-alert` | `Task Execute Reconfiguration Failed` | 60 / 60 | `tm-support-<env>` | `enable-tm-slack-alert` |
+| `tm-task-replication-problem-slack-alert` | `TASK_REPLICATION_ERROR: ` | 60 / 60 | `tm-support-<env>` | `enable-tm-slack-alert` |
+| `wa-task-management-api-task-deletion-failure-alert` | `Unable to delete all tasks for case id:` or `Deleted some UNTERMINATED tasks:` | 360 / 1440 | `wa-action-group` | `enable-wa-task-management-api-task-deletion-failure-alert` |
+| `wa-case-event-handler-message-readiness-check-failure-alert` | `Liveness check failed` or `Readiness check failed` | 180 / 1440 | `wa-action-group` | always |
+
+Both toggles default to `false` (`wa-shared-infrastructure:variables.tf:78,88`) and are set to `true` only in `prod.tfvars` (`wa-shared-infrastructure:prod.tfvars:2-3`), so in every non-production environment the five `enable-tm-slack-alert` alerts and the deletion-failure alert are not deployed at all. The uninitiated-task summary is disabled in all environments, leaving the hourly `ago(4h)` alert as the only initiation-failure notification. The 360/1440 and 180/1440 pairs re-notify on a window far longer than their evaluation period, so a single failure keeps alerting for up to a day.
 
 Support channel: `#tm-help` on Slack. Camunda Cockpit (production) at `https://camunda-bpm.platform.hmcts.net/` for process instance investigation.
 <!-- CONFLUENCE-ONLY: wa-support@hmcts.net email group mentioned in SOG — not verified in source -->

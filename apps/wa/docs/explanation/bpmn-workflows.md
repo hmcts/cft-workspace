@@ -18,6 +18,25 @@ sources:
   - wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/domain/taskmonitor/JobName.java
   - wa-task-monitor:src/main/resources/application.yaml
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/DueDateService.java
+  - wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn
+  - wa-task-configuration-template:src/main/resources/wa-task-permissions-wa-wacasetype.dmn
+  - wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn
+  - wa-task-management-api:src/main/resources/application.yaml
+  - wa-task-management-api:src/main/resources/db/migration/V1.0.3__init_tables.sql
+  - wa-task-management-api:src/main/resources/db/migration/V1.0.10__add_date_constraints.sql
+  - wa-task-management-api:src/main/resources/db/migration/V1.0.16__add_priority_date_set_min_max_priority_not_null_in_tasks.sql.sql
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/CamundaVariableDefinition.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateCalculator.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DueDateTimeCalculator.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/utils/TaskMandatoryFieldsValidator.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskManagementService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CaseConfigurationProviderService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/repository/TaskResourceRepository.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/exceptions/v2/DatabaseConflictException.java
 status: reviewed
 examples_extracted_from:
   - apps/wa/wa-standalone-task-bpmn/src/main/resources/wa-task-initiation-ia-asylum.bpmn
@@ -69,6 +88,31 @@ sources_sha:
   "wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmonitor/domain/taskmonitor/JobName.java": "05035529b105f5cc2dcbe35bf709b80c7cbd5a76"
   "wa-task-monitor:src/main/resources/application.yaml": "05035529b105f5cc2dcbe35bf709b80c7cbd5a76"
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/DueDateService.java": "6b8313c14916ddffd8faf7416835e6dbc864f735"
+  "wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn": "510747dd6d79a189f498d51c500718bb30adf51c"
+  "wa-task-configuration-template:src/main/resources/wa-task-permissions-wa-wacasetype.dmn": "d93044190a89ac64e5b112dacb6df5c6af2273bd"
+  "wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn": "f256d9afd3ae0ee4420642d1a7648e271423f4a4"
+  "wa-task-management-api:src/main/resources/application.yaml": "308d2b86243c7d52027d413be51089facd576c82"
+  "wa-task-management-api:src/main/resources/db/migration/V1.0.3__init_tables.sql": "69212e903c7dfc1015511dbda39ef8b17ae65cbd"
+  "wa-task-management-api:src/main/resources/db/migration/V1.0.10__add_date_constraints.sql": "0ae5f4d60a88c572875cf046367532e09815130b"
+  ? "wa-task-management-api:src/main/resources/db/migration/V1.0.16__add_priority_date_set_min_max_priority_not_null_in_tasks.sql.sql"
+  : "a106d75672fa514d1df32b817bb4271a2c54b129"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/CamundaVariableDefinition.java"
+  : "b83f756ff73266f9ae6181f0427ae32e1f4a09e9"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateCalculator.java": "3f8bd2dd559caacad64b6c9c8286d0402dcee87a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateType.java": "1145b29f89b2e45601917fc0ec0c6b8801b783be"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DueDateTimeCalculator.java"
+  : "8bd54a31ca918183ae342274768ffb66b1e5c7be"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/utils/TaskMandatoryFieldsValidator.java"
+  : "1d99034722b1261ca9e19f97571a035b04c649d1"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java": "b1d8bd7df29bb79a3f51aa85e5277be2e5bf0d6a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskManagementService.java": "0464400520dda69b754e7ed2105eecfbbfcd100a"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CaseConfigurationProviderService.java"
+  : "0464400520dda69b754e7ed2105eecfbbfcd100a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/repository/TaskResourceRepository.java": "4397166d28bd373ffed2cc6eb5f12bd2ce73d1fa"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/exceptions/v2/DatabaseConflictException.java"
+  : "0c8337199f98d0f12d790add4f2cc116bcdc1f78"
 ---
 
 ## TL;DR
@@ -140,13 +184,17 @@ If the `all: true` flag is set in `SendMessageRequest`, Camunda correlates to AL
 
 ### Date format for process variables
 
-The `delayUntil` and `dueDate` process variables use ISO date format `yyyy-MM-dd'T'HH:mm:ss` (e.g. `2021-08-04T23:59`). Camunda parses these as timer expressions. The `dueDateTime` time component can be specified separately in configuration DMN output (defaults to `16:00`).
-<!-- CONFLUENCE-ONLY: not verified in source -->
+`wa-case-event-handler` writes both `delayUntil` and `dueDate` with `DateTimeFormatter.ISO_LOCAL_DATE_TIME`, so they reach Camunda as `yyyy-MM-dd'T'HH:mm:ss` strings that the `processStartTimer` and `camunda:dueDate` expressions parse directly (`wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java:219,225`). Both keys are always written, so a process started from a case event never takes the `execution.hasVariable('delayUntil')` false branch — the timer fires immediately only because `delayUntil` equals the event time when no delay is configured.
+
+Both dates are pinned to 16:00 in the local zone. `DueDateService` walks forward the configured number of working days, skipping weekends and bank holidays, then calls `resetTo4PmTime`, which discards the original time component entirely (`wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/DueDateService.java:18-32,60-64`). The same 16:00 default appears on the `wa-task-management-api` side as `DateCalculator.DEFAULT_DATE_TIME` and in `DEFAULT_ZONED_DATE_TIME`, the fallback due date attached to `DateType.DUE_DATE` (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateCalculator.java:65,68`, `.../services/calendar/DateType.java:11`). A configuration DMN can override the time by emitting a `dueDateTime` field, which `DueDateTimeCalculator` applies on top of the calculated date (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DueDateTimeCalculator.java:34,44`).
 
 ### Review Specific Access Request tasks
 
-The `POST /workflow/message` endpoint also supports creating Review Specific Access Request tasks with three variants: `reviewSpecificAccessRequestJudiciary`, `reviewSpecificAccessRequestLegalOps`, `reviewSpecificAccessRequestAdmin`. These use an additional `roleAssignmentId` process variable and typically have no delay (`delayUntil` is today) with a 2-day due date.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Specific-access-request tasks are ordinary instances of the same generic process, distinguished only by `taskType`. Three variants appear across the template's DMN tables — `reviewSpecificAccessRequestJudiciary`, `reviewSpecificAccessRequestLegalOps` and `reviewSpecificAccessRequestAdmin` — matched in the configuration, permissions and completion tables (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:373`, `.../wa-task-permissions-wa-wacasetype.dmn:206`, `.../wa-task-completion-wa-wacasetype.dmn:223`).
+
+`roleAssignmentId` is a first-class Camunda variable (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/camunda/CamundaVariableDefinition.java:56`). The configuration table maps it onto the task as `additionalProperties_roleAssignmentId` using a two-branch FEEL expression that reads `taskAttributes.roleAssignmentId` first and `taskAttributes.additionalProperties.roleAssignmentId` second (`wa-task-configuration-wa-wacasetype.dmn:373-381`). The first branch matches an initiation request, where the value is still a top-level Camunda variable; the second matches reconfiguration, where it has already been folded into the task's `additional_properties`. One rule therefore serves both passes.
+
+These tasks carry no distinct delay or due-date treatment. They inherit the process-wide defaults: `camunda:dueDate="${dueDate != null ? dueDate : 'P2D'}"` on `processTask`, and `DateType.DUE_DATE`'s fallback of two calendar days at 16:00 if no configuration DMN supplies a date.
 
 ### Correlation pitfalls
 
@@ -174,7 +222,7 @@ All variables are passed in the `processVariables` map when correlating `createT
 | `taskType` | String | Task type identifier (often same as `taskId`) |
 | `name` | String | Display name; interpolated into user task via `${name}` |
 | `dueDate` | String (ISO datetime) | User task due date; expression defaults to `'P2D'` if null |
-| `delayUntil` | String (ISO datetime) | Controls `processStartTimer`; omit for immediate activation |
+| `delayUntil` | String (ISO datetime) | Controls `processStartTimer`. `wa-case-event-handler` always sets it, using the event time when no delay is configured; omitting it altogether makes the timer fall back to a past date |
 | `taskState` | String | Initial state (e.g. `"configured"`) |
 | `taskCategory` | String | Category (e.g. `"Case Progression"`) |
 | `location` | String | Location code (e.g. `"765324"`) |
@@ -276,54 +324,52 @@ The `JobName` enum (`wa-task-monitor:src/main/java/uk/gov/hmcts/reform/wataskmon
 
 ## Task configuration attributes and defaults
 
-When `wa-task-management-api` receives an initiation request, it evaluates the service team's Configuration DMN with all Camunda variables as inputs. Key mandatory output fields with their defaults:
+When `wa-task-management-api` receives an initiation request, it evaluates the service team's Configuration DMN with all Camunda variables as inputs, then validates the resulting task against `config.taskMandatoryFields` (`MANDATORY_TASK_FIELDS`). The default list is 20 `TaskResource` property names (`wa-task-management-api:src/main/resources/application.yaml:21`):
 
-| Attribute | Mandatory | Default | Notes |
-|---|---|---|---|
-| `title` | yes | Falls back to `task_name` | Display title shown to users |
-| `dueDate` | yes | Current date + 2 days | Can be overridden by date calculation rules |
-| `priorityDate` | yes | Set to `dueDate` | Used for prioritisation |
-| `majorPriority` | yes | 5000 | Coarse priority bucket |
-| `minorPriority` | yes | 500 | Fine priority within bucket |
-| `securityClassification` | yes | `PUBLIC` | |
-| `executionTypeCode` | yes | `MANUAL` | |
-| `taskSystem` | no | `SELF` | |
-| `workType` | yes | -- | Must be provided by DMN |
-| `roleCategory` | yes | -- | Must be provided by DMN |
-| `region` | yes | -- | Must be provided by DMN |
-| `location` | yes | -- | Must be provided by DMN |
-| `caseName` | yes | -- | Must be provided by DMN |
-| `caseManagementCategory` | yes | -- | Must be provided by DMN |
+`taskName`, `taskId`, `taskType`, `dueDateTime`, `state`, `securityClassification`, `title`, `majorPriority`, `minorPriority`, `executionTypeCode`, `caseId`, `caseTypeId`, `caseCategory`, `caseName`, `jurisdiction`, `region`, `location`, `created`, `roleCategory`, `workTypeResource`
 
-During reconfiguration, only fields with `canReconfigure=true` in the DMN output are updated. Camunda variables are **not** available during reconfiguration -- only the persisted task record attributes are passed as inputs to the DMN.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Note that `priorityDate` and `taskSystem` are absent from that list, so neither has to be supplied. A missing field fails initiation with one of two exceptions depending on who owns the gap: `taskId`, `state`, `executionTypeCode`, `created`, `dueDateTime`, `majorPriority` and `minorPriority` are platform-owned and raise `ValidationException`; anything else is the service team's to supply and raises `ServiceMandatoryFieldValidationException` (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/utils/TaskMandatoryFieldsValidator.java:30-31,81-87`). `roleCategory` gets an extra check — a value outside the `RoleCategory` enum is reported the same way as a missing one.
+
+The defaults themselves are applied earlier, when `CFTTaskMapper` turns Camunda variables into the skeleton `TaskResource` (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java:91-121`):
+
+| Attribute | Default when absent |
+|---|---|
+| `dueDate` | none — `Objects.requireNonNull` rejects the initiation outright |
+| `priorityDate` | copied from `dueDate` |
+| `created` | now |
+| `majorPriority` | 5000 |
+| `minorPriority` | 500 |
+| `state` | `UNCONFIGURED` regardless of what the DMN says |
+| `autoAssigned` | false |
+| `securityClassification`, `taskSystem`, `executionTypeCode`, `title` | null, which is what the mandatory-field validator then rejects |
+
+`major_priority` and `minor_priority` carry matching column defaults of 5000 and 500, so the two layers agree; `due_date_time` has no column default and is `NOT NULL` (`db/migration/V1.0.16__add_priority_date_set_min_max_priority_not_null_in_tasks.sql.sql:4-5`, `db/migration/V1.0.10__add_date_constraints.sql:1`, `db/migration/V1.0.3__init_tables.sql:16`). Fields named in `config.dmnConfigFieldsWithInternalDefaults` — `title` by default — are filled internally when the DMN leaves them out. An `executionTypeCode` the `ExecutionType` enum does not recognise raises `IllegalStateException` rather than falling back to `MANUAL` (`CFTTaskMapper.java:708-725`).
+
+Reconfiguration evaluates the same DMN against a different input set. `CFTTaskMapper.getTaskAttributes` builds the input map from the persisted `TaskResource` alone, projected through `ReconfigureInputVariableDefinition`; Camunda process variables are not read (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java:264-286`). Only responses whose `canReconfigure` output is explicitly `true` are written back, so a rule that omits the column is silently skipped on the reconfiguration pass (`CFTTaskMapper.java:160-168,599-604`).
 
 ## Concurrency and exactly-once initiation
 
-The `wa-task-management-api` guarantees exactly-once task initiation using PostgreSQL row-level locking on the `task_id` primary key in the `tasks` table:
+`wa-task-management-api` guarantees exactly-once task initiation with a bare `INSERT` on the `tasks` primary key, taken inside the request transaction before any other work happens (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskManagementService.java:601-611`):
 
-1. Insert a skeleton task record (not committed), acquiring a row-level lock.
-2. Subsequent threads attempting to insert the same `task_id` wait for the first transaction to commit or rollback.
-3. If the first transaction commits successfully, subsequent inserts hit a unique constraint violation and return a conflict response.
-4. If the first transaction rolls back (e.g. downstream failure), the next waiting thread can proceed.
+1. `extractDueDate` reads `dueDate` from the request attributes, rejecting the call with a constraint violation if it is absent — the row cannot be written without it.
+2. `insertAndLock` inserts `task_id`, `created`, `due_date_time` and `priority_date` only, which acquires the row lock as a side effect of the insert (`.../repository/TaskResourceRepository.java:104-121`).
+3. The rest of initiation — DMN evaluation, mandatory-field validation, auto-assignment, the Camunda state update — runs inside the same transaction and rolls the row back on any failure (`TaskManagementService.java:890-919`).
 
-The transaction may be held for up to ~90 seconds in worst case (calls to CCD, Camunda x2, and Role Assignment with retries). This is acceptable because row-level locks only affect concurrent requests for the same `task_id`, which is a small proportion of total traffic.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Two query hints on `insertAndLock` decide what a concurrent caller experiences. `javax.persistence.lock.timeout` is `0` and the statement timeout is 5 seconds, so a second request for the same `task_id` does not queue behind the first indefinitely — it fails, and `lockTaskId` converts the `DataAccessException` into a `DatabaseConflictException` (`TaskManagementService.java:921-929`). That exception maps to HTTP **503 Service Unavailable**, not 409 (`.../exceptions/v2/DatabaseConflictException.java`). A caller therefore cannot distinguish "this task already exists" from "the database is busy" at this layer; suppression of genuinely duplicate work happens earlier, at the BPMN's `idempotencyCheck` gate.
 
-## Initial assignee at initiation
+## Nominating an assignee at initiation
 
-Service teams can optionally specify an assignee at task initiation time via the `initialAssignee` DMN output variable. The flow:
+Service teams can nominate an assignee, but through the **configuration** DMN's `assignee` output, not an initiation-DMN variable:
 
-1. Service team CCD callback sets a field in case data containing the IDAM user ID.
-2. The field is published as additional data in CCD Case Event messages.
-3. `wa-case-event-handler` passes additional data to the Initiation DMN.
-4. The Initiation DMN outputs `initialAssignee` which becomes a Camunda process variable.
-5. During configuration, `wa-task-management-api` validates the proposed assignee has `OWN` or `EXECUTE` permissions via Role Assignment checks.
-6. If valid: the task is created in `assigned` state with the specified assignee.
-7. If invalid: falls back to the standard auto-assignment process.
+1. The configuration table emits a row whose output name is `assignee` and whose value is a single IDAM user ID (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:2030-2035`).
+2. `CaseConfigurationProviderService.normalizeAssigneeConfigurationResults` rejects a comma-separated value outright with `AssigneeConfigurationException` — HTTP 500, detail "Multiple assignee should be declared as separate rules." Where several rules each emit `assignee`, the **last** one wins and the earlier ones are discarded (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CaseConfigurationProviderService.java:102,197-225`).
+3. The nominated value lands on the skeleton task's `assignee` column, so `performAutoAssignment` sees it as a pre-existing assignee and calls `checkAssigneeIsStillValid` (`.../services/TaskAutoAssignmentService.java:84-112,152-158`).
+4. Validation is the auto-assignment check, not a plain permission check: the user's role assignments are matched against the task's `task_roles` rows ordered by `assignmentPriority`, ignoring any role with an empty `authorisations` list and requiring an overlap where authorisations are present (`TaskAutoAssignmentService.java:114-158`).
+5. A valid nominee keeps the task in `ASSIGNED`. An invalid one is cleared and normal auto-assignment runs, which sets `auto_assigned = true` on whatever it picks — so a nominated assignee is distinguishable from an auto-assigned one in the database.
 
-If no `initialAssignee` is provided, the existing auto-assignment process runs (matching users with appropriate case roles).
-<!-- CONFLUENCE-ONLY: not verified in source -->
+The reconfiguration path uses a different rule. `reAutoAssignCFTTask` re-validates the current assignee by querying the task with `OWN` and `EXECUTE` required, rather than by re-running the priority/authorisations match (`TaskAutoAssignmentService.java:52-82`).
+
+<!-- DIVERGENCE: Confluence "WA TM: Setting the Assignee for Task Initiation" describes an initialAssignee output on the Initiation DMN, carried as a Camunda process variable and validated against OWN or EXECUTE. No WA repo contains the identifier initialAssignee as a DMN column, BPMN expression or Camunda variable; the only occurrences are local variables in TaskAutoAssignmentService holding the previous assignee for audit. The mechanism that exists is the configuration DMN's assignee output, validated by the auto-assignment match. Source wins. -->
 
 ## Escalation and termination
 

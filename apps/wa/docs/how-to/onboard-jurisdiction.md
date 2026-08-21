@@ -18,6 +18,17 @@ sources:
   - wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn
   - wa-task-configuration-template:src/main/resources/wa-task-types-wa-wacasetype.dmn
   - wa-task-configuration-template:camunda-deployment.sh
+  - wa-task-management-api:charts/wa-task-management-api/values.yaml
+  - wa-task-monitor:charts/wa-task-monitor/values.yaml
+  - wa-task-monitor:src/main/resources/application.yaml
+  - wa-shared-infrastructure:servicebus.tf
+  - wa-shared-infrastructure:prod.tfvars
+  - wa-shared-infrastructure:aat.tfvars
+  - wa-ccd-definitions:definitions/appeal/json/AuthorisationCaseField.json
+  - wa-ccd-definitions:definitions/appeal/json/ComplexTypes.json
+  - wa-ccd-definitions:definitions/appeal/json/CaseField.json
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/CaseEventMessageService.java
+  - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/AdditionalDataContext.java
 status: reviewed
 examples_extracted_from:
   - apps/wa/wa-task-management-api/src/main/resources/application.yaml
@@ -62,6 +73,17 @@ sources_sha:
   "wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn": "f256d9afd3ae0ee4420642d1a7648e271423f4a4"
   "wa-task-configuration-template:src/main/resources/wa-task-types-wa-wacasetype.dmn": "ad5c4d1f3f999a71df3e145d1b784637e15fe261"
   "wa-task-configuration-template:camunda-deployment.sh": "0a58de5ec9a536dc6f319f113a1ff203f6cb77dd"
+  "wa-task-management-api:charts/wa-task-management-api/values.yaml": "2c1a4b4efa36ddddd2110db152330ec1aac3aa03"
+  "wa-task-monitor:charts/wa-task-monitor/values.yaml": "4560efac20eea439607f9a6e04abfe0b436a773e"
+  "wa-task-monitor:src/main/resources/application.yaml": "05035529b105f5cc2dcbe35bf709b80c7cbd5a76"
+  "wa-shared-infrastructure:servicebus.tf": "06c600b52119409478459b7cab9cf4712eaa15a3"
+  "wa-shared-infrastructure:prod.tfvars": "5906f2c6a49dc8acdd293da96b3c811a758d6dd0"
+  "wa-shared-infrastructure:aat.tfvars": "98e59f0635166193c0b4f278b5e2e9f6dea281fc"
+  "wa-ccd-definitions:definitions/appeal/json/AuthorisationCaseField.json": "6a655780a053100a33704ba29e03eb615e8f5e84"
+  "wa-ccd-definitions:definitions/appeal/json/ComplexTypes.json": "6a655780a053100a33704ba29e03eb615e8f5e84"
+  "wa-ccd-definitions:definitions/appeal/json/CaseField.json": "0f8b0b8f90b4ffb8ae6645f6c7107688d955a75a"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/CaseEventMessageService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/AdditionalDataContext.java": "9c7139a70732f6dca95acb412c36706fa9e79be8"
 ---
 
 ## TL;DR
@@ -76,7 +98,7 @@ sources_sha:
 ## Prerequisites
 
 - A CCD case type definition with events that should trigger tasks.
-- CCD events that trigger tasks must be configured with `Publish` or `PublishAs` in the case definition so they are published to the Azure Service Bus `ccd-case-events` topic.
+- CCD events that trigger tasks must carry `Publish: Y` on the CaseEvent tab, which is what makes CCD send them to the Azure Service Bus `ccd-case-events` topic. Per-field `Publish`/`PublishAs` on CaseEventToFields controls the `additionalData` payload of that message, not whether it is sent.
 - The `caseworker-wa-task-configuration` role must have read access to all CCD case fields referenced in your configuration DMN. Update your `AuthorisationCaseField` definitions accordingly.
 - Access to the shared Camunda cluster URL for your target environment.
 - An S2S service token whitelisted for Camunda deployment.
@@ -94,22 +116,27 @@ The defaults from `application.yaml` are:
 
 If your jurisdiction is already listed, confirm the case type is also present.
 
-**Azure Service Bus whitelisting**: The `wa-case-event-handler` listens on the `ccd-case-events` topic via a subscription with a SQL filter rule that restricts which jurisdictions' events are processed. You need a ticket raised with the WA team to add your jurisdiction to this subscription filter in each environment (AAT, then Production). Without this, events for your case type will not reach the Case Event Handler.
-<!-- CONFLUENCE-ONLY: ASB subscription filter whitelisting process not verified in source -->
+**Azure Service Bus whitelisting**: `wa-case-event-handler` reads the `ccd-case-events-<env>` topic through the `wa-ccd-case-events-sub-<env>` subscription in the `ccd-servicebus-<env>` namespace (resource group `ccd-shared-<env>`), created with `requires_session = true` and `lock_duration = "PT30S"`. Delivery is filtered by an `azurerm_servicebus_subscription_rule` named `wa-case-events-sub-rule-<env>` whose `SqlFilter` is `jurisdiction_id IN (${var.allowed_jurisdictions})` (`wa-shared-infrastructure:servicebus.tf:1-45`). Adding a jurisdiction means adding it to `allowed_jurisdictions` in that environment's tfvars — there is no runtime configuration for it.
+
+The comparison is a literal SQL `IN`, so every environment lists both casings of each jurisdiction id (`'ia', 'IA'`, `'st_cic','ST_CIC'`, …). Production carries `ia`, `civil`, `privatelaw`, `publiclaw`, `employment` and `ST_CIC` only (`wa-shared-infrastructure:prod.tfvars:1`), while AAT additionally carries `wa`, `sscs`, `DIVORCE` and `pcs` (`wa-shared-infrastructure:aat.tfvars:1`). A jurisdiction can therefore be present in `config.allowedJurisdictions` on `wa-task-management-api` and still receive no case events in production — `sscs` and `wa` are in that state.
+
+In `aat` the rule count flips: `case_events_sub_rule_instances_count` evaluates to `0` and the `message_context` resource creates `wa-message-context-sub-rule-aat` with the identical filter instead (`wa-shared-infrastructure:servicebus.tf:8-10,36-42`). Both resources read the same `allowed_jurisdictions` variable, so the tfvars edit is the same either way.
 
 ## Step 1b: Update CCD definition for WA access
 
 Before tasks can be configured, the WA system user must be able to read the case data fields referenced in your configuration DMN.
 
-1. Add `caseworker-wa-task-configuration` to your `AuthorisationCaseField` definitions with at minimum `R` (Read) permission on every field your configuration DMN references (e.g. location fields, case name, appeal type, hearing dates).
-2. Ensure any case fields used as inputs in the initiation DMN are included in the `Publish` configuration of the CCD event (`additionalData` payload). Only fields explicitly published by CCD are available to the DMN evaluation.
+1. Add `caseworker-wa-task-configuration` to your `AuthorisationCaseField` definitions with at minimum `R` (Read) permission on every field your configuration DMN references (e.g. location fields, case name, appeal type, hearing dates). The reference definitions grant that role `CRUD` on every field of `WaCaseType` (`wa-ccd-definitions:definitions/appeal/json/AuthorisationCaseField.json`).
+2. Publishing is controlled by two separate flags, and both matter:
+   - `Publish` on the **CaseEvent** tab. `ccd-data-store-api` only builds a Service Bus message for the event when this is true (`ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/CaseEventMessageService.java:41`). With `Publish: N` no message is sent, whatever the field configuration says.
+   - `Publish` (and optionally `PublishAs`, an alias for the published key) per row on the **CaseEventToFields** tab. `AdditionalDataContext.findPublishableFields` walks the event's fields and includes only those with `publish == true`; a field whose display context is `COMPLEX` is recursed into so nested subfields can be published individually (`ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/AdditionalDataContext.java:55-88`). A field absent from that set does not appear in `additionalData` and cannot be read by a DMN.
 3. Add the following standard case data fields if not already present:
-   - **`caseManagementLocation`** — a complex field containing `region` and `baseLocation` (court EPIMMS ID). Tasks derive their location from this field; without it, tasks cannot be correctly routed to users.
-   - **`caseManagementCategory`** — displayed in task lists and used for filtering. Map to a meaningful category for your service.
+   - **`caseManagementLocation`** — a complex field whose `region` and `baseLocation` (court EPIMMS ID) subfields the configuration DMN reads to set the task's region and location. Both reads are null-guarded and fall back to hard-coded values — region `"1"`, base location `"765324"`, staff location `"Taylor House"` (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:71,88,105`) — so a case type missing the field silently routes every task to the template's default court rather than failing.
+   - **`caseManagementCategory`** — read as `caseManagementCategory.value.code` and mapped to the display category shown in task lists (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:119-126`).
    - **`caseAccessCategory`** (optional) — used when access rules vary between subtypes within the same CCD case type.
-   - **`nextHearingDate`** (optional) — surfaced in task/case lists to allow prioritisation based on upcoming hearings.
+   - **`nextHearingDate`** (optional) — feeds the task's `nextHearingDate` and can act as the origin for due-date and priority-date calculation (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:465,530-533,1244-1247`).
 
-<!-- CONFLUENCE-ONLY: caseManagementLocation/caseManagementCategory requirement not verified in source -->
+   `WaCaseType` defines `caseManagementLocation` as a complex type with a single `baseLocation` element, plus `caseAccessCategory` and `nextHearingDate` as flat fields (`wa-ccd-definitions:definitions/appeal/json/ComplexTypes.json`, `wa-ccd-definitions:definitions/appeal/json/CaseField.json:43-50,93-100`).
 
 ## Step 2: Clone the task configuration template
 
@@ -293,7 +320,7 @@ Full WA functionality requires users to have correct role assignments. This is a
 1. **Organisational role mappings** — specify how staff/judicial reference data maps to role assignments. Provide requirements to the AM team; common patterns exist.
 2. **Case role validation rules** — define which users can grant/receive case roles on your case type. Raise with AM team.
 3. **Standard role names** — ensure your configuration includes permissions for standard roles: `task-supervisor`, `case-allocator`, `hmcts-judiciary`, `hmcts-legal-operations`, `hmcts-admin`, and the specific/challenged access variants.
-4. **WA system user** — the `wa-system-username` credential (stored in Key Vault) must be granted sufficient access to retrieve your case data from CCD. This user is used by `wa-task-management-api` and `wa-task-monitor` for task configuration and reconfiguration.
+4. **WA system user** — the `wa-system-username` Key Vault secret is mounted as `WA_SYSTEM_USERNAME` by both `wa-task-management-api` (`wa-task-management-api:charts/wa-task-management-api/values.yaml:17-18`, `wa-task-management-api:src/main/resources/application.yaml:75`) and `wa-task-monitor` (`wa-task-monitor:charts/wa-task-monitor/values.yaml:52-53`, `wa-task-monitor:src/main/resources/application.yaml:65`). That account must be able to read your case data from CCD; if it cannot, configuration and reconfiguration fail for every task on your case type.
 
 <!-- CONFLUENCE-ONLY: AM onboarding steps not verified in source -->
 

@@ -24,6 +24,11 @@ sources:
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/ReconfigurationCaseEventHandler.java
   - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/CancellationActions.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/WarningCaseEventHandler.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/response/CancellationEvaluateResponse.java
+  - wa-task-configuration-template:src/main/resources/wa-task-cancellation-wa-wacasetype.dmn
+  - wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java
 status: reviewed
 examples_extracted_from:
   - apps/wa/wa-task-management-api/src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/CFTTaskState.java
@@ -75,6 +80,12 @@ sources_sha:
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/ReconfigurationCaseEventHandler.java": "bbdda4d6b7cb5a3c0a32fd2b485c83f0f3654732"
   "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/CancellationActions.java": "419fb8ffac888514542dccb4dc86741827c16961"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/WarningCaseEventHandler.java": "98a029ce763a2f424be687a660ab099ad56ca753"
+  ? "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/response/CancellationEvaluateResponse.java"
+  : "2ae7941315b1da278dc2844a4ed899b30a836114"
+  "wa-task-configuration-template:src/main/resources/wa-task-cancellation-wa-wacasetype.dmn": "c3eae8d2e8f687e8a601a41496fca78df453e9e2"
+  "wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn": "f256d9afd3ae0ee4420642d1a7648e271423f4a4"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java": "a6e0eb1659e9b67f5ef737edcd4340c33bac0421"
 ---
 
 ## TL;DR
@@ -298,23 +309,29 @@ This ordering ensures cancellation completes before initiation proceeds, avoidin
 
 ### Cancellation DMN configuration
 
-Services configure event-driven cancellation using a DMN table with the following columns:
+Event-driven cancellation is a `COLLECT` decision table whose inputs are the variables `wa-case-event-handler` sends and whose outputs are deserialised by name onto `CancellationEvaluateResponse` (`wa-task-configuration-template:src/main/resources/wa-task-cancellation-wa-wacasetype.dmn:4-32`, `wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/domain/camunda/response/CancellationEvaluateResponse.java:16-25`):
 
-| Column | Description |
-|--------|-------------|
-| `FromState` | Regex matching the case state before the event (e.g. `State1\|State2`) |
-| `Event` | Regex matching the CCD event ID (e.g. `Event1\|Event2`) |
-| `ToState` | Regex matching the resulting case state (e.g. `.*` for any) |
-| `Action` | One of `Cancel`, `Warn`, or `Reconfigure` |
-| `Categories` | Comma-separated list of process categories (intersection/AND logic). Empty = all processes. |
+| Column label | Variable name | Description |
+|---|---|---|
+| From State | `fromState` | Case state before the event (`previousStateId`) |
+| Event | `event` | CCD event ID |
+| State | `state` | Case state after the event (`newStateId`) |
+| Action | `action` | `Cancel`, `Warn` or `Reconfigure`, matched case-insensitively against the `CancellationActions` enum |
+| Warning Code | `warningCode` | Warning code, read when `action` is `Warn` |
+| Warning Text | `warningText` | Warning message, read when `action` is `Warn` |
+| Process Categories Identifiers | `processCategories` | Comma-separated process categories; empty means every process for the case |
 
-**Process categories** are arbitrary flags applied to Camunda processes as process variables. Cancellation targets processes matching **all** listed categories (intersection, not union).
+Rules can also match on case data: the handler always sends `additionalData` as a map variable alongside the three state variables, and the template wires one input expression to it (`CancellationCaseEventHandler.java:92-105`).
+
+**Process categories** are Camunda process variables. Each entry in `processCategories` becomes its own correlation key of the form `__processCategory__<name>` set to boolean `true` (`CancellationCaseEventHandler.java:185-189`). Camunda message correlation requires *every* supplied key to match, which is what makes two listed categories an intersection rather than a union.
+
+A second, deprecated output named `TaskCategories` (capital `T`) exists for tables written before process categories. When `processCategories` comes back null the handler additionally sends a message correlating on a single `taskCategory` key; when it is non-null that message is null and is filtered out before sending (`CancellationCaseEventHandler.java:124-135,200-226`). Both outputs feed `__processCategory__` keys on the current-format message, so a table can populate either.
+
+Every cancellation message carries the process variable `cancellationProcess` = `CASE_EVENT_CANCELLATION` (`CancellationCaseEventHandler.java:170-171`), which is the value that later surfaces in the task's `termination_process` column.
 
 ### Warnings
 
-Warnings are applied via the same DMN table with `Action=Warn`. Additional columns `Code` and `Text` provide the warning content. Warnings are stored in the `task_notes` table with appropriate `note_type` and surfaced in the UI via the `has_warnings` flag on the task.
-
-<!-- CONFLUENCE-ONLY: warning DMN columns (Code, Text) and process-category variable naming convention not verified in source -->
+Warnings use the same table with `action` set to `Warn`; `warningCode` and `warningText` carry the content. `WarningCaseEventHandler` builds the same `__processCategory__<name>` correlation keys and passes the warning across as a single `warningsToAdd` process variable rather than as separate code and text variables (`WarningCaseEventHandler.java:199-226,287-296`). The BPMN's non-interrupting warning subprocess turns that into a note on each correlated task. Warnings are stored in the `task_notes` table with appropriate `note_type` and surfaced in the UI via the `has_warnings` flag on the task.
 
 ## Execution types
 
@@ -328,18 +345,13 @@ Each task has an `execution_type` that tells the UI how to launch and complete i
 
 <!-- DIVERGENCE: Confluence HLD says the code is "CASE_MANAGEMENT" but wa-task-management-api:src/main/java/.../cft/enums/ExecutionType.java shows "CASE_EVENT". Source wins. -->
 
-### Event completion mode
+### Completion mode
 
-For `CASE_EVENT` tasks, the `eventCompletionMode` attribute (set during configuration) controls how the UI handles completion when a user submits a CCD event that matches the task's configured `completionEvents`:
+For `CASE_EVENT` tasks, whether a completed CCD event also completes the task is decided by the completion DMN, not by an attribute on the task. The completion table's outputs are `taskType` and `completionMode`, and the template only ever emits `"Auto"` (`wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn`).
 
-| Mode | Behaviour |
-|------|-----------|
-| `auto` | Task completed automatically without prompt |
-| `defaultYes` | User prompted; default is to complete the task |
-| `defaultNo` | User prompted; default is not to complete |
-| `defaultNone` | User prompted; no default selection |
+`wa-task-management-api` reads only `taskType` from the evaluation result. `CftQueryService.extractTaskTypes` collects the `taskType` of every returned row, and `isTaskRequired` compares that count against the total row count — a table row that matches the event but leaves `taskType` empty is how a service says "this event does not require a task", which flips the `task_required_for_event` flag in the response (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java:121,141,201-217`). Nothing in main code reads `completionMode`, so a table that varies it changes nothing.
 
-<!-- CONFLUENCE-ONLY: eventCompletionMode behaviour described in HLD - Task Management v1.6 section 2.11; not verified as an enum in source -->
+<!-- DIVERGENCE: HLD - Task Management v1.6 section 2.11 describes an eventCompletionMode enum with values auto, defaultYes, defaultNo and defaultNone controlling whether the user is prompted. The completion DMN output is named completionMode, carries only "Auto" in the template, and is never read by wa-task-management-api main code. Source wins. -->
 
 ## Audit trail
 

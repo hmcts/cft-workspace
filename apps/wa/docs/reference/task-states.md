@@ -16,6 +16,19 @@ sources:
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/entity/TaskResource.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/TaskReconfigurationService.java
   - wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/MarkTaskReconfigurationService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/TaskReconfigurationTransactionHandler.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CaseConfigurationProviderService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/RoleAssignmentFilter.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/ccd/CcdEventProcessor.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/CancellationCaseEventHandler.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/WarningCaseEventHandler.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/ReconfigurationCaseEventHandler.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java
+  - wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn
 status: reviewed
 examples_extracted_from:
   - apps/wa/wa-task-management-api/src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/CFTTaskState.java
@@ -59,6 +72,21 @@ sources_sha:
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/entity/TaskResource.java": "393c141b62ac3e6271a8790997f40a1c253b0cbe"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/TaskReconfigurationService.java": "a6e0eb1659e9b67f5ef737edcd4340c33bac0421"
   "wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn": "ef2e773a0dfbc538d1b0e7dab33fb6906c2b6510"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/MarkTaskReconfigurationService.java"
+  : "74b174fcc9b459a1f7df70c7853c5690f9caa631"
+  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/TaskReconfigurationTransactionHandler.java"
+  : "41f980025a0ebc5f504b5ea94be93031881d036d"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CaseConfigurationProviderService.java": "0464400520dda69b754e7ed2105eecfbbfcd100a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CFTTaskMapper.java": "b1d8bd7df29bb79a3f51aa85e5277be2e5bf0d6a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/TaskAutoAssignmentService.java": "ed3251b249aa89394bbacdadf277672af62c2a9d"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java": "a6e0eb1659e9b67f5ef737edcd4340c33bac0421"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/RoleAssignmentFilter.java": "60770094dbb454b800079ebed9b18c0c6b2dd26c"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/ccd/CcdEventProcessor.java": "98a029ce763a2f424be687a660ab099ad56ca753"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/CancellationCaseEventHandler.java": "81624296cc17947ff85c9b9075fc8d583cab5aeb"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/WarningCaseEventHandler.java": "98a029ce763a2f424be687a660ab099ad56ca753"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/ReconfigurationCaseEventHandler.java": "bbdda4d6b7cb5a3c0a32fd2b485c83f0f3654732"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/handlers/InitiationCaseEventHandler.java": "43f8c5abc285ef6fc88d13875586e20a8fb3610f"
+  "wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn": "510747dd6d79a189f498d51c500718bb30adf51c"
 ---
 
 ## TL;DR
@@ -79,7 +107,7 @@ sources_sha:
 | `CONFIGURED` | `CNF` | Configuration DMN has been applied but task has not yet been released to a queue. | Yes | No |
 | `UNASSIGNED` | `U` | Task is available in the work queue; no user owns it. | Yes | Yes |
 | `ASSIGNED` | `A` | A user has claimed or been assigned the task. | Yes | Yes |
-| `PENDING_RECONFIGURATION` | `PR` | Bulk `MARK_TO_RECONFIGURE` operation has flagged the task for DMN re-evaluation. | Yes | No |
+| `PENDING_RECONFIGURATION` | `PR` | Present in the enum and the database type but never written; tasks awaiting DMN re-evaluation are flagged by `reconfigure_request_time` instead. | Yes | No |
 | `COMPLETED` | `C` | Task finished via user or case-event completion. | No | No |
 | `CANCELLED` | `CAN` | Task cancelled via user action or case-event cancellation. | No | No |
 | `TERMINATED` | `T` | Task terminated by the exclusive endpoint, or set during error-handling in `cancelTask` when Camunda cancellation fails. | No | No |
@@ -132,8 +160,8 @@ If the Camunda call fails, the CFT transaction rolls back, preserving atomicity.
 | `UNASSIGNED` / `ASSIGNED` | `CANCELLED` | Cancel (`POST /task/{id}/cancel`) | User with `CANCEL` or `CANCEL_OWN` permission (`TaskManagementService:396`) |
 | `UNASSIGNED` / `ASSIGNED` | `TERMINATED` | Terminate (`DELETE /task/{id}`) | Exclusive S2S clients only (`ExclusiveTaskActionsController:113`) |
 | `CANCELLED` _(error path)_ | `TERMINATED` | Camunda cancellation fails and no CFT state found in Camunda | System error-handling (`TaskManagementService:424`) |
-| Any active | `PENDING_RECONFIGURATION` | Bulk `MARK_TO_RECONFIGURE` operation (`POST /task/operation`) | Exclusive S2S clients only |
-| `PENDING_RECONFIGURATION` | `UNASSIGNED` / `ASSIGNED` | `EXECUTE_RECONFIGURE` operation applies DMN and restores previous assignment state | Exclusive S2S clients only |
+| `ASSIGNED` / `UNASSIGNED` | _(unchanged)_ | Bulk `MARK_TO_RECONFIGURE` operation (`POST /task/operation`) stamps `reconfigure_request_time` and clears `indexed` | Exclusive S2S clients only |
+| `ASSIGNED` / `UNASSIGNED` | `ASSIGNED` / `UNASSIGNED` | `EXECUTE_RECONFIGURE` operation re-applies the DMN; may unassign or re-assign if the assignee lost `Own`/`Execute` | Exclusive S2S clients only |
 
 ## Actions (audit labels)
 
@@ -206,40 +234,41 @@ Permissions are evaluated by `RoleAssignmentVerificationService` against `TaskRo
 
 ## Reconfiguration lifecycle
 
-When a CCD case event matches a `Reconfigure` rule in the service team's Cancellation DMN, the reconfiguration process is triggered. The event-processing sequence within `wa-case-event-handler` is strictly ordered:
+When a CCD case event matches a row with `Action = Reconfigure` in the service team's Cancellation DMN, `wa-case-event-handler` asks `wa-task-management-api` to flag that case's tasks for re-evaluation. Every message runs through the four handlers in a fixed order, each evaluating its DMN and acting on the results before the next one starts (`wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/ccd/CcdEventProcessor.java:79-84`):
 
-1. **Cancel** — matching cancel rules terminate tasks.
-2. **Warn** — matching warn rules add warning metadata to tasks.
-3. **Reconfigure** — matching reconfigure rules trigger task re-evaluation.
-4. **Initiate** — matching initiation rules create new tasks.
+1. **Cancel** — `@Order(1)`, matching cancel rules terminate tasks (`.../handlers/CancellationCaseEventHandler.java:34`).
+2. **Warn** — `@Order(2)`, matching warn rules add warning metadata to tasks (`.../handlers/WarningCaseEventHandler.java:34`).
+3. **Reconfigure** — `@Order(3)`, matching reconfigure rules flag tasks for re-evaluation (`.../handlers/ReconfigurationCaseEventHandler.java:33`).
+4. **Initiate** — `@Order(4)`, matching initiation rules create new tasks (`.../handlers/InitiationCaseEventHandler.java:47`).
 
 This ordering avoids reconfiguring tasks that are about to be cancelled, and avoids wasting effort on newly-created tasks that already reflect the latest case data.
 
-During reconfiguration:
+Flagging and applying are two separate operations, and only the first is scoped to the case:
 
-- Only active tasks for the case are reconfigured.
-- Only rows where `canReconfigure = true` in the Configuration DMN are re-applied. This allows attributes like `dueDate` to be set-once at initiation.
-- The Permissions DMN is re-evaluated, and auto-assignment re-validates the current assignee. If the assignee no longer holds the required `OWN` or `EXECUTE` permission, their assignment is removed and a new auto-assignment attempt is made.
-- The `Categories` column in the DMN is **not** supported for the `Reconfigure` action; a non-empty value logs an error.
+- `MARK_TO_RECONFIGURE` filters on `case_id` (`.../handlers/ReconfigurationCaseEventHandler.java:121-128`) and, of those tasks, touches only ones in `ASSIGNED` or `UNASSIGNED` state whose `reconfigure_request_time` is still null (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/operation/MarkTaskReconfigurationService.java:48-50`). Tasks in `UNCONFIGURED`, `CONFIGURED` or `PENDING_AUTO_ASSIGN` are passed over even though `isActive()` counts them as active. Flagging stamps `reconfigure_request_time` and sets `indexed = false`, dropping the task out of the search index until reconfiguration finishes (`MarkTaskReconfigurationService.java:92-93`).
+- `EXECUTE_RECONFIGURE`, fired by `wa-task-monitor`'s `RECONFIGURATION` job, ignores the case entirely and sweeps every `ASSIGNED`/`UNASSIGNED` task whose `reconfigure_request_time` is later than the cutoff in the request (`.../services/operation/TaskReconfigurationService.java:51-53`). Each task is handled in its own transaction under a pessimistic write lock; its current state is re-read and re-checked immediately before the write, then `reconfigure_request_time` is cleared, `last_reconfiguration_time` stamped, and `indexed` restored (`.../services/operation/TaskReconfigurationTransactionHandler.java:78-103`).
 
-<!-- CONFLUENCE-ONLY: Reconfiguration ordering and canReconfigure semantics from "Task Reconfiguration" page 1544031765. Not verified as a single code path in source but consistent with TaskReconfigurationService flow. -->
+Applying a reconfiguration does the following:
 
-## Initial assignee at initiation
+- Case data is re-fetched from CCD and both the Configuration and the Permissions DMN are re-evaluated (`.../services/CaseConfigurationProviderService.java:68,76-110`).
+- Only configuration rows where `canReconfigure = true` are written back, which is what keeps attributes like `dueDate` set-once at initiation (`.../services/CFTTaskMapper.java:160-168`). Permissions are not gated that way: the task's entire `TaskRoleResource` set is replaced from the Permissions DMN on every run (`CFTTaskMapper.java:176`).
+- The current assignee is re-checked for `Own` or `Execute`. If they hold neither, the assignment is removed and auto-assignment runs again (`.../services/TaskAutoAssignmentService.java:52-77`, requirement built with OR at `.../cft/query/CftQueryService.java:146-159`).
+- `Warning Code`, `Warning Text` and `Categories` on a `Reconfigure` row are all ignored, and all three produce the same single `log.warn` (`.../handlers/ReconfigurationCaseEventHandler.java:88-98`).
 
-Service teams can specify an assignee at task initiation via their CCD case data. The mechanism:
+No code path writes the `PENDING_RECONFIGURATION` state. What marks a task as awaiting reconfiguration is the `reconfigure_request_time` column; the enum value exists in `CFTTaskState` and in the `task_state_enum` database type, and is mapped to a display label by the replica reporting function, but is never stored.
+<!-- DIVERGENCE: Confluence "Task Reconfiguration" describes reconfiguration as a per-case operation over the case's active tasks that moves them into a PENDING_RECONFIGURATION state, and says a non-empty Categories column logs an error. Flagging is per-case but restricted to ASSIGNED/UNASSIGNED tasks with a null reconfigure_request_time; applying is a global sweep by reconfigure_request_time with no case filter; the state is never written; and the ignored-column message is a warning covering Warning Code and Warning Text as well. Source wins. -->
 
-1. A CCD callback writes an assignee IDAM ID into a case data field (e.g. `assigneeFromCaseData`).
-2. The Initiation DMN outputs an `initialAssignee` column containing that value.
-3. `wa-case-event-handler` passes `initialAssignee` to Camunda as a process variable when starting the standalone task BPMN.
-4. The BPMN sets the Camunda `assignee` task variable via a FEEL expression: `${initialAssignee != null ? initialAssignee : null}`.
-5. During initiation in `wa-task-management-api`, the Configuration DMN can output an `assignee` variable, which the system validates:
-   - The proposed assignee must have `OWN` or `EXECUTE` permission via their current AM role assignments.
-   - If valid: task is saved as `ASSIGNED` with that user.
-   - If invalid (no matching role assignments or no `OWN`/`EXECUTE`): falls back to standard auto-assignment. The task may end up assigned to a different user, or `UNASSIGNED`.
+## Nominating an assignee at initiation
 
-During reconfiguration, the same `assignee` DMN output can override an existing assignment. If the DMN explicitly returns `null`/empty for a reconfigurable `assignee`, the existing assignment is removed and auto-assignment runs.
+Service teams can nominate an assignee from case data, but the mechanism is an `assignee` attribute on the **Configuration** DMN rather than anything on the Initiation DMN (`wa-task-configuration-template:src/main/resources/wa-task-configuration-wa-wacasetype.dmn:2030-2035`).
 
-<!-- CONFLUENCE-ONLY: initialAssignee flow from "WA TM: Setting the Assignee for Task Initiation" page 1824134416. The FEEL expression and validation logic are described in the design doc but implementation status not verified in current source. -->
+1. A configuration rule returns `assignee` holding the nominee's IDAM ID. A value containing a comma is rejected outright with `AssigneeConfigurationException`, and when several rules return `assignee` only the last one survives (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/CaseConfigurationProviderService.java:102,197-225`).
+2. The nominee is written onto the skeleton task and then put through the ordinary auto-assignment check rather than assigned outright (`.../services/TaskAutoAssignmentService.java:84-112`).
+3. Passing that check means the nominee holds a role assignment whose role name matches one of the task's `TaskRoleResource` rows and — where that row lists authorisations — holds one of them (`TaskAutoAssignmentService.java:152-158,178-227`). It is not a test for `Own` or `Execute`.
+4. A nominee who passes gets the task, saved as `ASSIGNED`. One who fails is cleared, after which auto-assignment picks the highest-priority matching role holder, so the task ends up `ASSIGNED` to a different user or `UNASSIGNED` (`TaskAutoAssignmentService.java:100-108,114-150`).
+
+The reconfiguration path uses a different and stricter check on the assignee already in place: they must still hold `Own` or `Execute`, or they are unassigned and auto-assignment runs again (`TaskAutoAssignmentService.java:52-77`).
+<!-- DIVERGENCE: Confluence "WA TM: Setting the Assignee for Task Initiation" describes an initialAssignee output on the Initiation DMN, carried to Camunda as a process variable, applied to the Camunda assignee task variable by a FEEL expression, and validated against OWN or EXECUTE. The identifier initialAssignee appears nowhere in the WA repos as a DMN column, BPMN expression or Camunda variable, the nomination is a Configuration DMN attribute, and the initiation-time check is role-name and authorisation matching rather than a permission test. Source wins. -->
 
 ## Termination failure scenarios
 
@@ -284,10 +313,9 @@ The permission types available for task role configuration are defined in `Permi
 | `UnassignAssign` | `unassignAssign` | Reassign from one user to another |
 
 **DMN configuration rules**:
-- `OWN` and `CLAIM` permissions **must** appear in the same DMN row for a task to be visible in the "Available tasks" screen in ExUI.
-- No spaces after commas in permission value lists — the parser splits on exact comma boundaries and trailing spaces break matching.
-
-<!-- CONFLUENCE-ONLY: DMN configuration rules (OWN+CLAIM same row, no spaces after commas) from "Granular Task Permissions Onboarding" page 1616388317. Business rule not enforced in source code validation but required for correct runtime behaviour. -->
+- `Own` and `Claim` **must** appear in the same DMN row for a task to show up in the "Available tasks" screen in ExUI. The available-tasks search builds a single ANDed requirement for the pair (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java:175-184`) and the predicate is applied to one joined `TaskRoleResource` row, so the two flags spread across two rows satisfy neither (`.../cft/query/RoleAssignmentFilter.java:60-77`).
+- Permission names are matched case-sensitively against the enum's exact values, and an unrecognised token fails the whole configuration with `IllegalArgumentException: Invalid Permission Type:<token>` (`.../services/CFTTaskMapper.java:402-407`, `.../auth/permission/entities/PermissionTypes.java:38-42`). Spaces around the commas are harmless, because each token is trimmed before the lookup (`CFTTaskMapper.java:404`). The neighbouring `Authorisations` column is not trimmed, so a space there does become part of the authorisation value and will stop it matching (`CFTTaskMapper.java:409-412`).
+<!-- DIVERGENCE: Confluence "Granular Task Permissions Onboarding" says permission value lists must have no spaces after commas because trailing spaces break matching. Permission tokens are trimmed before being resolved, so spaces are tolerated there; it is the Authorisations column that is split without trimming. Source wins. -->
 
 ## Examples
 

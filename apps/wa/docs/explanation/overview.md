@@ -17,6 +17,19 @@ sources:
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/ExecutionType.java
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/role/entities/enums/RoleCategory.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateCalculator.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/PublicHolidaysCollection.java
+  - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/calendar/BankHolidays.java
+  - wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/calendar/CalendarUriValidator.java
+  - wa-case-event-handler:src/main/resources/application.yaml
+  - wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn
+  - wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn
+  - rpx-xui-webapp:src/work-allocation/work-allocation-feature.routes.ts
+  - rpx-xui-webapp:src/app/guards/task-supervisor.guard.ts
+  - rpx-xui-webapp:src/app/guards/case-allocator.guard.ts
+  - rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts
+  - rpx-xui-webapp:src/role-access/role-access.routes.ts
 status: reviewed
 confluence:
   - id: "1393623746"
@@ -57,6 +70,19 @@ sources_sha:
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java": "272fb0b4257fe638eeea7af521ae84738cec491a"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/ExecutionType.java": "f921a91fb70607cfce81911ee599f2a5e786dfd3"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/role/entities/enums/RoleCategory.java": "325feb909e70c2475aea55e548ad0b1e7bd05ee6"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java": "a6e0eb1659e9b67f5ef737edcd4340c33bac0421"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateCalculator.java": "3f8bd2dd559caacad64b6c9c8286d0402dcee87a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/PublicHolidaysCollection.java": "c1730770b45ec997ecb1b608b60dbdca7814fb01"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/calendar/BankHolidays.java": "71b4bd80834d28bad71bb62431fb4cca339ed4bb"
+  "wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/calendar/CalendarUriValidator.java": "a09f252a143fee6c3eaac110c7c3bfc2d7ed38a1"
+  "wa-case-event-handler:src/main/resources/application.yaml": "89892a3b0e88b88688fb340d2029c4448d7cdc14"
+  "wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn": "f256d9afd3ae0ee4420642d1a7648e271423f4a4"
+  "wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn": "ef2e773a0dfbc538d1b0e7dab33fb6906c2b6510"
+  "rpx-xui-webapp:src/work-allocation/work-allocation-feature.routes.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:src/app/guards/task-supervisor.guard.ts": "8577c8c217f3e58ec34ce4efde89c468268befb7"
+  "rpx-xui-webapp:src/app/guards/case-allocator.guard.ts": "8577c8c217f3e58ec34ce4efde89c468268befb7"
+  "rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:src/role-access/role-access.routes.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
 ---
 
 ## TL;DR
@@ -244,7 +270,9 @@ Each task has an execution type (`ExecutionType.java`) that determines how the U
 Tasks can be completed through three mechanisms:
 
 1. **UI-based (automatic)** — When a user submits a CCD event that is configured to complete the task, XUI identifies the task at event start, assigns it to the user if needed, and completes it after successful event submission. The order (submit event, then complete task) is deliberate: if the event fails, the task remains open; if task completion fails, the user can recover via manual completion.
-<!-- CONFLUENCE-ONLY: Completion modes (auto, defaultYes, defaultNo, defaultNone) described in HLD for configuring whether to prompt user. not verified in source -->
+
+   The completion DMN emits two outputs per rule, `taskType` and `completionMode`, and every populated rule in the template sets `completionMode` to `Auto` (`wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn`). `wa-task-management-api` reads only `taskType`: `searchForCompletableTasks` evaluates the table, extracts the task types, and reports the event as needing no task when the row count exceeds the task-type count — that is, when one rule matched with empty outputs (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java:121,141,210-217`). A single empty-output row in the completion table is therefore how a service says "this event completes no task".
+<!-- DIVERGENCE: The HLD describes an eventCompletionMode enum with values auto, defaultYes, defaultNo and defaultNone controlling whether the user is prompted. The completion DMN output is named completionMode, carries only "Auto" in the template, and is never read by wa-task-management-api main code. Source wins. -->
 
 2. **Manual** — User or supervisor explicitly marks the task as complete in the task management UI. Available for all tasks as a fallback.
 
@@ -299,9 +327,9 @@ Work Allocation surfaces in several XUI screens:
 | **My Work > My Cases** | Cases where user has an allocated case role | All WA users |
 | **My Work > My Access** | Cases with active specific/challenged access grants | All WA users |
 | **All Work** | Supervisor view: all tasks and case allocations for a team | Users with `task-supervisor` role |
-| **Roles and Access** | Case-level tab showing allocated roles and allowing case allocation | Users with `case-allocator` role |
+| **Roles and access** | Case-level tab showing allocated roles and allowing case allocation | Users with `case-allocator` role |
 
-<!-- CONFLUENCE-ONLY: XUI screen breakdown from WA Service Glossary. not verified in source -->
+The `my-work` route has children `list` (My tasks), `available` (Available tasks), `my-cases` and `my-access`; `all-work` has `tasks` and `cases` and carries `TaskSupervisorGuard` (`rpx-xui-webapp:src/work-allocation/work-allocation-feature.routes.ts:34-108`). `TaskSupervisorGuard` and `CaseAllocatorGuard` both delegate to `canActivateForRole`, testing for `task-supervisor` and `case-allocator` respectively (`rpx-xui-webapp:src/app/guards/task-supervisor.guard.ts`, `rpx-xui-webapp:src/app/guards/case-allocator.guard.ts`). `Tasks` and `Roles and access` are prepended to the case viewer's tab list with `show_condition: null` (`rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts:35-47`), while the allocate, reallocate and remove journeys reached from that tab each carry `CaseAllocatorGuard` (`rpx-xui-webapp:src/role-access/role-access.routes.ts:62-86`) — a user without `case-allocator` sees the allocations but cannot change them.
 
 ## Reliability mechanisms
 
@@ -322,13 +350,16 @@ The database query for the next processable message ensures strict per-case even
 
 Tasks (and more complex workflows) can be configured with a `delayUntil` process variable that postpones the start of the process. This supports scenarios where a check is needed after a time limit — for example, verifying that a party has provided a response within a deadline, and creating a task for a caseworker to action if they haven't.
 
-A delay timer is the first step in the standalone task workflow. During the delay period, the task can be cancelled by other case events (configured via the cancellation DMN). This is a common pattern: "create task X after N days unless event Y happens first".
-<!-- CONFLUENCE-ONLY: Delayed task detail from HLD v1.6 section 2.5.6. not verified in source -->
+In the standalone task workflow the delay timer is the third step. The message start event runs the `idempotencyCheck` external task, an `isDuplicate?` gateway drops repeats, and only then does the `processStartTimer` catch event hold the process until `${execution.hasVariable('delayUntil') ? delayUntil : '2000-01-01T00:00:00'}` (`wa-standalone-task-bpmn:src/main/resources/wa-task-initiation-ia-asylum.bpmn`). With no `delayUntil` variable that date is in the past, so the user task is created straight away. During the delay the process instance exists but the task does not, and the `cancelTasks` event subprocess can cancel it from another case event (configured via the cancellation DMN) — which is how "create task X after N days unless event Y happens first" avoids ever writing a row to `cft_task_db`.
+<!-- DIVERGENCE: HLD v1.6 section 2.5.6 describes the delay timer as the first step of the standalone task workflow. In the BPMN the idempotency check and the duplicate gateway both precede it. Source wins. -->
 
 ## Date calculation and court calendars
 
-WA calculates task due dates and `delayUntil` dates using working days. Services can configure custom non-working days (e.g. court-specific Christmas closures) by providing an HTTP endpoint returning a JSON list in the GOV.UK Bank Holiday format. The URL is configured in the service's DMN tables. Services wanting only standard UK bank holidays can use the government bank holiday API directly.
-<!-- CONFLUENCE-ONLY: Court specific calendars feature from Feature Overview. not verified in source -->
+WA calculates task due dates and `delayUntil` dates using working days. The default calendar is `https://www.gov.uk/bank-holidays/england-and-wales.json` (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/DateCalculator.java:64`), and a service overrides it by setting a `*NonWorkingCalendar` attribute in its DMN to a comma-separated list of URIs.
+
+Each URI must return a GOV.UK bank-holiday document — a `division` string plus an `events` array of `{ date, working_day }` objects (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/domain/calendar/BankHolidays.java`). `PublicHolidaysCollection.getPublicHolidays` walks the list in order, adding dates whose `working_day` is `false` and **removing** dates whose `working_day` is `true` (`wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/services/calendar/PublicHolidaysCollection.java`). A court-specific calendar can therefore both close extra days and re-open a national bank holiday, and list order decides which wins. A URI that cannot be fetched raises `CalendarResourceNotFoundException` and one returning non-JSON raises `CalendarResourceInvalidException`, either of which fails the date calculation rather than falling back to the default calendar.
+
+Calendars used for `delayUntil` are additionally restricted: `wa-case-event-handler` validates every `delayUntilNonWorkingCalendar` URI against the `calendar.allowed-prefixes` property, defaulting to `https://www.gov.uk/bank-holidays/` and `https://raw.githubusercontent.com/hmcts/`, and rejects anything else with `InvalidRequestParametersException` (`wa-case-event-handler:src/main/java/uk/gov/hmcts/reform/wacaseeventhandler/services/calendar/CalendarUriValidator.java`, `wa-case-event-handler:src/main/resources/application.yaml`). A bespoke calendar for delay calculation has to be published under the HMCTS GitHub organisation, not on an arbitrary service endpoint.
 
 ## Onboarding a service team
 
