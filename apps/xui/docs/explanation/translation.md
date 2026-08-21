@@ -15,6 +15,12 @@ sources:
   - rpx-xui-webapp:src/app/components/phase-banner/phase-banner.component.html
   - rpx-xui-webapp:api/proxy.config.ts
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/welsh-translated-markdown/welsh-translated-markdown.directive.ts
+  - rpx-xui-webapp:src/app/app.module.ts
+  - rpx-xui-webapp:src/hearings/containers/cancel-hearing/cancel-hearing.component.html
+  - ccd-admin-web:config/default.yaml
+  - ccd-admin-web:src/main/routes/welshDictionary.ts
+  - ccd-admin-web:src/main/routes/manageWelshDictionary.ts
+  - ccd-admin-web:src/main/service/manage-welsh-dictionary-service.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -53,6 +59,12 @@ sources_sha:
   "rpx-xui-webapp:src/app/components/hmcts-global-footer/hmcts-global-footer.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/app/components/phase-banner/phase-banner.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
+  "rpx-xui-webapp:src/app/app.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/hearings/containers/cancel-hearing/cancel-hearing.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "ccd-admin-web:config/default.yaml": "c525b01236acf627fad50d63d7125ce30dfc0dab"
+  "ccd-admin-web:src/main/routes/welshDictionary.ts": "67b9ce88f5962216d876311dd9bb1c153f41739e"
+  "ccd-admin-web:src/main/routes/manageWelshDictionary.ts": "e7a36d67e5443ffb0b2cc96628f7c34b538596f4"
+  "ccd-admin-web:src/main/service/manage-welsh-dictionary-service.ts": "27db450b37774bd316e8425ce1edfdfcf0d13e75"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/welsh-translated-markdown/welsh-translated-markdown.directive.ts"
   : "0c69822a961db385bf2f3947d2f172791553aaa5"
 ---
@@ -94,11 +106,36 @@ A **Welsh advisory banner** is shown when the user switches to Welsh, informing 
 | Privacy / Cookies policy | EXUI |
 | Error messages | `ccd-case-ui-toolkit` |
 | Banners (advisory) | EXUI |
-
 <!-- CONFLUENCE-ONLY: not verified in source -->
-### Currently out of scope for Welsh
 
-Work Allocation, Hearings (including JOH view), Global Search, Case Access Management, internal HMCTS staff users, Judicial Office Holder users, Fee & Pay / payment components, and Evidence / document management are not yet covered by Welsh translation. Manage Organisations and Approve Organisation are on the roadmap (Welsh 2).
+### Coverage in Manage Cases
+
+Within `rpx-xui-webapp` the pipe's reach is uneven, and the split is visible from where `rpxTranslate` appears in component templates:
+
+| Area | `rpxTranslate` in templates |
+|------|-----------------------------|
+| Hearings (`src/hearings`) | Extensive — the most heavily translated area of the app |
+| Shared shell, headers, footers, banners (`src/app`) | Extensive |
+| Notice of Change (`src/noc`) | Extensive |
+| Case list, case details, case creation (`src/cases`) | Present, alongside toolkit-rendered content |
+| Work Allocation (`src/work`) | None |
+| Global Search (`src/search`) | None |
+| Case Access Management (`src/role-access`) | None |
+| Judicial booking (`src/booking`) | None |
+| Refunds (`src/refunds`) | None |
+| Staff administration (`src/staff`) | None |
+| Query management (`src/query-management`) | None |
+
+The areas with none render in English whatever the language cookie says, because nothing in them asks for a translation in the first place — switching the UI to Welsh has no effect on those screens.
+
+Hearings is translated throughout, including the cancellation flow, hearing actuals, case flags, party details, listing information, and the summary and confirmation screens (`rpx-xui-webapp:src/hearings/containers/cancel-hearing/cancel-hearing.component.html:7`, `:13`, `:18`).
+
+<!-- DIVERGENCE: Confluence "Welsh Language" lists Hearings (including the JOH view) among the areas
+     not covered by Welsh translation. src/hearings is the most heavily translated area of
+     rpx-xui-webapp, with rpxTranslate applied across roughly forty non-test component templates.
+     Source wins. -->
+
+Manage Organisations and Approve Organisation are separate applications; their coverage is not governed by anything in `rpx-xui-webapp`.
 
 ## The Angular pipe: `rpxTranslate`
 
@@ -261,23 +298,29 @@ This pattern is used for content objects that carry both languages inline (e.g. 
 
 ## Translation management workflow
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-Welsh translations are managed through `ccd-admin-web`:
+Welsh translations are managed through `ccd-admin-web`, which implements both halves of the round trip against `ts-translation-service`'s `/dictionary` endpoint (`ccd-admin-web:config/default.yaml:46`).
 
 1. Untranslated English phrases are stored in `ts-translation-service` when first requested.
-2. Admin users with appropriate roles can export the current translation dictionary as a **CSV file** from `ccd-admin-web`.
-3. The CSV is sent to the **Welsh Language Unit (WLU)** for professional translation.
-4. The completed CSV is uploaded back through `ccd-admin-web`, updating the dictionary.
+2. `GET /dictionary` fetches the dictionary and flattens it to CSV in the browser response — one row per phrase, columns `phrase,translation,yesOrNo,yes,no`, with commas, quotes and newlines wrapped and doubled (`ccd-admin-web:src/main/routes/welshDictionary.ts:25-63`). The download is prefixed with the UTF-8 BOM twice, because browsers strip the first one and Excel needs one to survive (`:30-31`).
+3. The CSV goes to the Welsh Language Unit for translation.
+4. The completed CSV is uploaded back through `POST /manageWelshDictionary`. `multer` accepts a single in-memory file, rejects anything not matching `\.csv$`, and caps it at 8 MB (`ccd-admin-web:src/main/routes/manageWelshDictionary.ts:9-18`). The rows are parsed headerless and reassembled into a `{"translations": {...}}` body sent as `PUT /dictionary` (`ccd-admin-web:src/main/service/manage-welsh-dictionary-service.ts:28-58`).
 5. Once uploaded, subsequent requests for those phrases return the Welsh translation.
+
+Two distinct permissions gate this, both read from `adminWebAuthorization`: export requires `canManageWelshTranslation` (`ccd-admin-web:src/main/routes/welshDictionary.ts:12`, `:26`), while upload accepts either `canLoadWelshTranslation` or `canManageWelshTranslation` (`ccd-admin-web:src/main/routes/manageWelshDictionary.ts:63-64`, `:81-82`). A user can therefore be authorised to load a translated CSV without being able to export the dictionary in the first place.
+
+Because the upload is headerless and positional, a CSV whose columns have been reordered — by a spreadsheet round trip, for instance — is accepted and written straight into the dictionary: column 1 becomes the phrase, column 2 its translation, and columns 3 to 5 the yes/no variants (`ccd-admin-web:src/main/service/manage-welsh-dictionary-service.ts:15-26`, `:32`).
 
 CCD definition text (field labels, hints, event names) is the primary source of translatable phrases for case-type-specific content. Static UI text (headers, footers, error messages) is baked into the Angular templates and sent for translation via the same pipe mechanism.
 
 ## Performance considerations
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-- Each use of `rpxTranslate` creates an observable per phrase. On large pages with many translated strings, this can be performance-heavy due to the number of active subscriptions and change-detection cycles.
-- The `shouldTranslate` guard prevents sending non-translatable content (pure numbers, placeholders, already-in-progress phrases) to the API, reducing unnecessary requests.
-- The debounce window (300ms) batches phrases from a single change-detection cycle into one HTTP POST, but rapid page transitions can still generate multiple batches.
+The pipe is declared `pure: false` (`rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translate.pipe.ts:8`), so `transform` runs on every change-detection cycle for every translated string on the page. On each of those calls `getTranslation$` returns a freshly constructed Observable — `getTranslatedData(phrase).pipe(map(...))` (`rpx-xui-translation:projects/rpx-xui-translation/src/lib/rpx-translation.service.ts:59-63`) — and the pipe hands it to an internal `AsyncPipe` (`rpx-translate.pipe.ts:18`, `:32`), which compares by object identity. A new object each cycle means `AsyncPipe` tears down its subscription and resubscribes every cycle, for every translated phrase. This is the dominant cost of the pipe on dense pages, and it grows with the number of translated strings rather than with the number of distinct phrases.
+
+The underlying phrase data is shared, not duplicated: `translate()` keeps one `BehaviorSubject` per distinct phrase in `this.phrases` and re-serves the same observable from `this.observables` on subsequent lookups (`rpx-translation.service.ts:110-113`, `:90-96`).
+
+`shouldTranslate` suppresses requests that could never usefully be translated: anything with no alphabetic character (so pure numbers and punctuation), anything already carrying the `[Translation in progress]` marker, and strings that are nothing but a `${placeholder}` (`rpx-translation.service.ts:141-156`).
+
+The 300ms debounce (`rpx-translation.config.ts:17`, set explicitly again at `rpx-xui-webapp:src/app/app.module.ts:86`) is a trailing window, not a per-cycle batch. Each newly queued phrase unsubscribes the pending timer and starts a fresh one (`rpx-translation.service.ts:185-189`), so the POST is only sent once 300ms elapse with no new phrase arriving. A page that keeps discovering phrases — through progressive rendering or a slow-arriving CCD payload — keeps pushing the request out, and every phrase shows `[Translation in progress]` in the meantime (`:127-131`).
 
 ## Operational constraints
 

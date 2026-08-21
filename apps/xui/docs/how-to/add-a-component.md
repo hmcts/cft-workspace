@@ -16,6 +16,9 @@ sources:
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-read.component.ts
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write-journey.component.ts
   - ccd-case-ui-toolkit:.github/workflows/npmpublish.yml
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/markdown/markdown-component.module.ts
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/journey/multipage-component-state.service.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -59,6 +62,9 @@ sources_sha:
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write-journey.component.ts"
   : "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
   "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "3ea421b1e4974dd0a14a2d259ecbe3073f561896"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/markdown/markdown-component.module.ts": "315741f6698ef3b7d46e49e27742eefae21d0e24"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/journey/multipage-component-state.service.ts": "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
 ---
 
 ## TL;DR
@@ -151,8 +157,23 @@ Add the component to the appropriate NgModule's `declarations` and `exports` arr
 export class PaletteModule {}
 ```
 
-For complex multi-module components (e.g. Case File View), create a dedicated NgModule within your component directory. Import that module into `palette.module.ts`. Use the ngRx store pattern (actions, effects, selectors) if the component has multiple interacting sub-components that share state.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Multi-page features follow the same route. Case File View, Linked Cases and Query Management each
+declare every one of their sub-components directly in `palette.module.ts` (`:234-240`, `:260-266`,
+`:269`) and register their feature services in that module's `providers` array (`:375-378`). The
+only palette sub-directory with its own NgModule is `markdown`
+(`.../palette/markdown/markdown-component.module.ts`, imported at `palette.module.ts:325`), and it
+exists to wrap a third-party dependency rather than to encapsulate a feature.
+
+State shared between the sub-components of a journey goes through an injected service, not a store:
+`MultipageComponentStateService`
+(`.../src/lib/shared/services/journey/multipage-component-state.service.ts`) for journey position,
+and feature services such as `LinkedCasesService` and `QueryManagementService` for the working data.
+
+<!-- DIVERGENCE: Confluence "Expert UI - Low Level Design - Case File View" describes Case File View
+     as a dedicated NgModule using the ngRx store pattern (actions, effects, selectors). Case File
+     View has no NgModule of its own, and the library declares no ngRx feature state anywhere:
+     @ngrx/store and @ngrx/effects are peer dependencies only, and the library source contains no
+     StoreModule.forFeature, createReducer or createEffect call. Source wins. -->
 
 ## 4. Register in PaletteService
 
@@ -263,7 +284,7 @@ yarn test
 yarn build:library
 ```
 
-This invokes `ng build ccd-case-ui-toolkit-lib` which runs ng-packagr, producing output in `dist/ccd-case-ui-toolkit/` with FESM2022, UMD, and ESM bundles plus type definitions (`angular.json:113-130`).
+This invokes `ng build ccd-case-ui-toolkit-lib`, whose builder is `@angular-devkit/build-angular:ng-packagr` driven by `projects/ccd-case-ui-toolkit/ng-package.json` (`angular.json:113-130`). Output lands in `dist/ccd-case-ui-toolkit/` (`ng-package.json:3`) — bundle formats are whatever the pinned `ng-packagr` emits, so read them from the build output rather than assuming.
 
 ## 8. Publish a new version
 
@@ -319,7 +340,7 @@ In each consuming app (`rpx-xui-webapp`, `rpx-xui-manage-organisations`, `rpx-xu
 ```json
 {
   "dependencies": {
-    "@hmcts/ccd-case-ui-toolkit": "7.3.99"
+    "@hmcts/ccd-case-ui-toolkit": "<the version you just published>"
   }
 }
 ```

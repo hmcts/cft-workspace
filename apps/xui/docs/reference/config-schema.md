@@ -13,6 +13,13 @@ sources:
   - rpx-xui-webapp:api/auth/index.ts
   - rpx-xui-webapp:api/proxy.config.ts
   - rpx-xui-webapp:api/lib/middleware/proxy.ts
+  - rpx-xui-webapp:src/app/app.constants.ts
+  - rpx-xui-webapp:src/app/app-utils.ts
+  - rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts
+  - rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts
+  - rpx-xui-webapp:src/app/components/media-viewer-wrapper/media-viewer-wrapper.component.ts
+  - rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts
+  - rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -54,6 +61,13 @@ sources_sha:
   "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
+  "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
+  "rpx-xui-webapp:src/app/app-utils.ts": "eed279a4dd5502643063241d86c2911799acac38"
+  "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "eed279a4dd5502643063241d86c2911799acac38"
+  "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "bd8ca70c5a5bc5d087d05798e351d9c013d4ecf8"
+  "rpx-xui-webapp:src/app/components/media-viewer-wrapper/media-viewer-wrapper.component.ts": "8577c8c217f3e58ec34ce4efde89c468268befb7"
+  "rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts": "46113db85da141a989d239a95168a3588512ca88"
 ---
 
 ## TL;DR
@@ -162,8 +176,16 @@ These string-valued settings control which jurisdictions/services are enabled fo
 | `HRS` | `HRS` |
 | `PCS` | `AAA3` |
 
-When onboarding a new service for Work Allocation, the entry must be added here and the corresponding LaunchDarkly flags (`workallocation-service-user-roles`, `wa-service-config`, `wa-landing-page-roles`) must be updated to include the new jurisdiction's roles.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Onboarding a new service for Work Allocation needs the jurisdiction added in three places, all of them checked in:
+
+- `serviceRefDataMapping` above, so RD lookups resolve for the new service codes.
+- `waSupportedJurisdictions` (`WA_SUPPORTED_JURISDICTIONS`), served to the SPA via `/wa-supported-jurisdiction` and checked before the WA tabs are shown on a case (`rpx-xui-webapp:src/app/app-utils.ts:163-167`).
+- The WA service config compiled into the bundle at `rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts` — one `{caseTypes, releaseVersion, serviceName}` entry per environment variant (test, prod, demo), selected at runtime by `getWaServiceConfig(deploymentEnv)` (`:246-254`). The tabs only render when the matched entry's `releaseVersion` parses to 2 or higher (`rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts:87-97`).
+
+The third of those is a TypeScript constant, not a flag, so enabling Work Allocation for a jurisdiction requires a code change, build and deploy — it cannot be switched on at runtime.
+
+Which user roles see WA features is also code, not configuration: `getUserRoleNames` matches the user's IDAM roles against the `JUDICIAL_ROLE_LIST`, `ADMIN_ROLE_LIST`, `CTSC_ROLE_LIST` and `LEGAL_OPS_ROLE_LIST` constants (`rpx-xui-webapp:src/app/app.constants.ts:218-236`, `rpx-xui-webapp:src/app/app-utils.ts:228-243`), and `pui-case-manager` is excluded outright.
+<!-- DIVERGENCE: Confluence "Work Allocation Service Onboarding Configuration" says onboarding requires updating the LaunchDarkly flags `workallocation-service-user-roles`, `wa-service-config` and `wa-landing-page-roles`. In source `workallocation-service-user-roles` does not appear in any XUI repo; `wa-service-config` is not read from LaunchDarkly at all — `getWAServiceConfig()` returns the compiled `LaunchDarklyDefaultsConstants` value (rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts:253-255); only `wa-landing-page-roles` is a live flag. Source wins. -->
 
 ## Feature flags
 
@@ -319,20 +341,35 @@ The Angular SPA never embeds the LD key in its bundle. At bootstrap, `src/main.t
 
 **Client-side LD flag keys used in Angular:**
 
-| Flag key | Usage |
-|----------|-------|
-| `mc-cookie-banner-enabled` | Show cookie consent banner |
-| `icp-enabled` / `icp-jurisdictions` | In-Court Presentation feature |
-| `enable-service-specific-multi-followups` | Multi-followup task UI |
-| `mc-cdam-exclusion-list` | CDAM secure-mode exclusions |
-| `mc-service-messages-dates` | Service messages display |
-| `feature-global-search` | Route guard for global search |
-| `feature-refunds` | Route guard for refunds module |
-| `wa-landing-page-roles` | Work Allocation landing page roles |
-| `workallocation-service-user-roles` | Controls which user roles see WA features (role list) |
-| `wa-service-config` | JSON array of `{ caseTypes, releaseVersion, serviceName }` per WA-enabled jurisdiction |
+| Flag key | Fallback | Usage |
+|----------|----------|-------|
+| `mc-cookie-banner-enabled` | — | Show cookie consent banner (`src/app/containers/app/app.component.ts:114`) |
+| `icp-jurisdictions` | `[]` | Jurisdictions where In-Court Presentation is offered (`src/app/components/media-viewer-wrapper/media-viewer-wrapper.component.ts:79`) |
+| `icp-enabled` | `false` | Fetched into the toolkit config (`src/app/services/ccd-config/ccd-case.config.ts:42`) |
+| `enable-redact-search` | — | Redaction search in the media viewer (`src/app/components/media-viewer-wrapper/media-viewer-wrapper.component.ts:81`) |
+| `enable-service-specific-multi-followups` | `['foo']` | Multi-followup task UI |
+| `mc-cdam-exclusion-list` | `documentSecureModeCaseTypeExclusions` from config | CDAM secure-mode exclusions |
+| `mc-service-messages-dates` | `AppConstants.DEFAULT_SERVICE_MESSAGE` | Service messages banner |
+| `feature-global-search` | `true` | `FeatureToggleGuard` on the `/search` route |
+| `feature-refunds` | `true` | `FeatureToggleGuard` on the `/refunds` route |
+| `wa-landing-page-roles` | `null` | Which role gets which landing page (`src/app/components/routing/application-routing.component.ts:38`) |
+| `remove-user-from-case-mc` | `false` | Remove-user-from-case action in the case-share flow |
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+Five of these are set up together in `ccd-case.config.ts`, gated on `InitialisationSyncService`:
+all five subscriptions must register before the config reports initialisation complete, and if the
+sync service reports failure only the service-message flag is set up and every other value stays at
+its default (`rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts:39-70`).
+
+Two of these keys do less than their names suggest. `icp-enabled` is fetched but the media-viewer
+wrapper hardcodes its own `icpEnabled$` to `true`, so `icp-jurisdictions` is the real gate — and
+because an empty jurisdiction list falls through to that hardcoded `true`, clearing the list turns
+ICP on everywhere rather than off (`rpx-xui-webapp:src/app/components/media-viewer-wrapper/media-viewer-wrapper.component.ts:79-99`). `feature-global-search` and `feature-refunds` guard the
+routes through LaunchDarkly with a default of `true` (`rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts:28-34`), but the menu items that link to
+those routes are filtered against the static `AppConstants.MENU_FLAGS` map where both are
+hardcoded `true` (`rpx-xui-webapp:src/app/app.constants.ts:194-199`). Turning either flag off in
+LaunchDarkly therefore leaves the nav link visible and redirects the user to `/` when they click it.
+
+<!-- DIVERGENCE: Confluence "Approach to moving away from Launch Darkly" lists `workallocation-service-user-roles` and `wa-service-config` as client-side LaunchDarkly flags. Neither is one in source: `workallocation-service-user-roles` appears nowhere in the XUI repos, and `wa-service-config` names a compiled-in constant rather than a flag lookup. Source wins. -->
 
 ## Proxy routes
 

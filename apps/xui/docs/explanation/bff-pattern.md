@@ -25,6 +25,10 @@ sources:
   - rpx-xui-node-lib:src/common/util/csp.ts
   - rpx-xui-webapp:api/workAllocation/routes.ts
   - rpx-xui-webapp:api/lib/log4jui.ts
+  - rpx-xui-webapp:api/health/index.ts
+  - rpx-xui-node-lib:src/auth/auth.constants.ts
+  - rpx-xui-node-lib:src/auth/s2s/s2s.constants.ts
+  - rpx-xui-node-lib:src/session/session.constants.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -76,6 +80,10 @@ sources_sha:
   "rpx-xui-node-lib:src/common/util/csp.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
   "rpx-xui-webapp:api/workAllocation/routes.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-webapp:api/lib/log4jui.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
+  "rpx-xui-webapp:api/health/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-node-lib:src/auth/auth.constants.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
+  "rpx-xui-node-lib:src/auth/s2s/s2s.constants.ts": "0993296a3baa5b90ed461bde7d412b90cba08dd4"
+  "rpx-xui-node-lib:src/session/session.constants.ts": "d97c29086eaa37ae5db5e9b14e3267cadbc8bd3e"
 ---
 
 ## TL;DR
@@ -207,13 +215,20 @@ The library handles the race condition of multiple load-balanced instances shari
 
 #### Event callbacks
 
-The library emits lifecycle events that consuming BFFs can subscribe to:
+The library is an `EventEmitter`, and each middleware layer declares the events it emits via `getEvents()`. There are three sets:
 
-- `sessionCreate(sessionId)` — fired when a session is created (before authentication completes)
-- `verify(sessionId)` — fired during authentication to allow role/access checks
-- `setTTL(sessionId)` — fired after authentication to allow the BFF to configure session expiry
-- `sessionTimeout(sessionId)` — fired before session timeout; session can be extended by calling `renewSession()`
-<!-- CONFLUENCE-ONLY: not verified in source -->
+- Auth (`rpx-xui-node-lib:src/auth/auth.constants.ts:2-8`) — `auth.authenticate.success`, `auth.authenticate.failure`, `auth.authenticate.accessDenied`, plus `auth.serializeUser` / `auth.deserializeUser`, which are emitted from the Passport serialisation hooks and hand the BFF the `done` callback so it can substitute what goes into the session (`strategy.class.ts:633`, `:640`).
+- S2S (`rpx-xui-node-lib:src/auth/s2s/s2s.constants.ts:2-5`) — `s2s.authenticate.success`, `s2s.authenticate.failure`.
+- Session store (`rpx-xui-node-lib:src/session/session.constants.ts:2-5`) — `redisStore.ClientReady`, `redisStore.ClientError`.
+
+Manage Cases subscribes to the three auth events (`rpx-xui-webapp:api/auth/index.ts:104-106`) to set the IDAM cookies on success, log failures, and raise an AppInsights event when a user is denied for having no matching role; and to both Redis events (`rpx-xui-webapp:api/health/index.ts:80`, `:93`) to pass the client to the cache layer and add a `redis` health check.
+
+Subscription order is load-bearing. `proxyEvents` forwards an event only if `this.listenerCount(event)` is already non-zero at the moment the middleware layer is configured (`rpx-xui-node-lib:src/common/models/xuiNode.class.ts:102-109`), and that happens inside `xuiNode.configure()`. An `xuiNode.on(...)` registered after `configure()` resolves is never wired to the emitting middleware and fires silently. Manage Cases stays on the right side of this: the auth listeners are registered at module scope, and `health.addReformHealthCheck(app)` runs at `api/application.ts:123`, both before `getXuiNodeMiddleware()` calls `configure()` at `:125`.
+
+<!-- DIVERGENCE: Confluence "Expert UI Low Level Design - Session Management Library" describes
+     lifecycle callbacks sessionCreate(sessionId), verify(sessionId), setTTL(sessionId) and
+     sessionTimeout(sessionId), the last extendable by calling renewSession(). None of those event
+     names, and no renewSession method, exist in rpx-xui-node-lib. Source wins. -->
 
 ### OIDC flow
 
@@ -304,10 +319,19 @@ The proxy layer's security posture relies on a combination of server-side auth i
 
 ### Auth header injection
 
-All proxied requests pass through `authInterceptor` before reaching `http-proxy-middleware`. The BFF generates `Authorization` and `ServiceAuthorization` headers server-side from the user's session and the S2S token cache. Client-supplied `Authorization` or `ServiceAuthorization` headers from the browser are **not stripped** — however, the server-side middleware overwrites them before forwarding. If a client supplies fake auth headers without a valid session cookie, the request is rejected at the session-validation stage.
+All proxied requests pass through `authInterceptor` before reaching `http-proxy-middleware`. The BFF generates `Authorization` and `ServiceAuthorization` headers server-side from the user's session and the S2S token cache. `setHeaders` is mounted on the node-lib router (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:626`), which `application.ts` installs at `:126` — before `initProxy(app)` at `:129` — so it applies to proxied traffic as well as to the local `/api` routers.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- Confluence "Proxy Configuration on Manage Case" states that client-supplied Authorization headers can alter behaviour (e.g. cause 401 when combined with valid session cookie), though they cannot enable privilege escalation. -->
+Two things follow from how it is written (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:471-485`):
+
+- Nothing is stripped. `setHeaders` only assigns; it never deletes a header the browser sent. A client-supplied `Authorization` or `ServiceAuthorization` survives onto the outbound request object alongside the server-generated value.
+- Header injection is conditional on the session. `Authorization` and `user-roles` are set only when `req.session.passport.user` exists (`:474-480`). There is no server-side value to shadow a forged one when the session is absent — but such a request never gets that far, because `authenticate` returns `401 Unauthorized` for any request without `req.session.passport.user.userinfo` (`:460-462`), and it guards both the `/api` tree and every proxy.
+
+Privilege escalation therefore is not available through header forgery: a token the BFF did not mint is only ever accompanied by, not substituted for, the session-derived one.
+
+<!-- CONFLUENCE-ONLY: the "Proxy Configuration on Manage Case" page reports that a client-supplied
+     Authorization header sent together with a valid session cookie can still change the outcome of
+     a call (observed as a 401 from the downstream service). That is downstream response behaviour
+     and is not verified in source. -->
 
 ### Subtree proxying risk
 
@@ -321,13 +345,7 @@ The downstream services (CCD API Gateway, CDAM, Payments, etc.) enforce their ow
 
 ### Known route duplication
 
-`api/routes.ts` currently mounts several sub-routers twice due to apparent copy-paste:
-
-- `/am` — `accessManagementRouter` registered at lines 50 and 54
-- `/role-access` — `roleAccessRouter` registered at lines 52 and 56
-- `/locations` — `locationsRouter` registered at lines 58 and 66
-
-This causes duplicate middleware execution for matching requests. It is a known issue flagged for cleanup.
+`api/routes.ts` mounts `locationsRouter` on `/locations` twice, at `rpx-xui-webapp:api/routes.ts:54` and again at `:63`. Express registers both layers but the first one handles every matching request, so the second mount is unreachable — middleware or route changes made only to the later registration have no effect.
 
 ## Technical debt: dual proxy abstractions
 

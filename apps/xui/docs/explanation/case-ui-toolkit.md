@@ -21,11 +21,27 @@ sources:
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/condition.peg.ts
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts
   - ccd-case-ui-toolkit:.github/workflows/npmpublish.yml
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.html
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.scss
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read-label.html
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read-label.scss
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/grey-bar.scss
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/grey-bar.service.ts
+  - rpx-xui-webapp:src/cases/containers/query-management-container/query-management-container.component.ts
+  - rpx-xui-webapp:src/cases/query-management.routes.ts
+  - rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts
+  - rpx-xui-webapp:src/app/providers/providers.module.ts
+  - rpx-xui-webapp:src/cases/cases.module.ts
+  - rpx-xui-webapp:package.json
+  - civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn
+  - civil-wa-task-configuration:src/main/resources/wa-task-configuration-civil-civil.dmn
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
   - apps/xui/ccd-case-ui-toolkit/projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts
-  - apps/xui/rpx-xui-webapp/src/app/app.module.ts
+  - apps/xui/rpx-xui-webapp/src/app/providers/providers.module.ts
+  - apps/xui/rpx-xui-webapp/src/cases/cases.module.ts
 confluence:
   - id: "1682837411"
     title: "ccd-case-ui-toolkit Release Process"
@@ -75,6 +91,21 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/condition.peg.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "3ea421b1e4974dd0a14a2d259ecbe3073f561896"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.html": "7f1b0d12f0af5a80788e266558817af09930cd4f"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.scss": "4fda645087ccabf7c77b2902b1106efc9ed9415b"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read-label.html": "5dbc31c8259c5f503b00b65476552b726b6dfd1c"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read-label.scss": "ab6c774c2b357f90f532b560df8718e7c33329dd"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/grey-bar.scss": "c44c1c06e6248d153cc5a890dd18655da49d583f"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/grey-bar.service.ts": "7f1b0d12f0af5a80788e266558817af09930cd4f"
+  "rpx-xui-webapp:src/cases/containers/query-management-container/query-management-container.component.ts": "4c290566eb9e4a07cc0de81a61022daa12092814"
+  "rpx-xui-webapp:src/cases/query-management.routes.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "eed279a4dd5502643063241d86c2911799acac38"
+  "rpx-xui-webapp:src/app/providers/providers.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/cases/cases.module.ts": "496d74f0b1a66c9aae6e057558642f2f447e59d9"
+  "rpx-xui-webapp:package.json": "f2114b5f76f0eed12eb4c370c65157fe4aebaecb"
+  "civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn": "7b8e953f91f63dad2f50124a634989bd472d22b2"
+  "civil-wa-task-configuration:src/main/resources/wa-task-configuration-civil-civil.dmn": "2a3ab1dec2ad1bbd323512eecf40646f4d3244cf"
 ---
 
 ## TL;DR
@@ -117,9 +148,9 @@ CaseCreateComponent
 
 **Wizard initialisation**: `CaseCreateComponent.ngOnInit()` fetches the event trigger via `CasesService.getEventTrigger()` from `GET /internal/case-types/{ctid}/event-triggers/{etid}`, then mounts `<ccd-case-edit>` with `submit`/`validate`/`saveDraft` callbacks (`case-create.component.ts:40-86`).
 
-**Page navigation**: `CaseEditComponent.ngOnInit()` calls `WizardFactoryService.create(eventTrigger)` which wraps `eventTrigger.wizard_pages` in a `Wizard` instance sorted by `order`, creates a root `FormGroup` with keys `data` (field values) and `event` (id, summary, description) (`case-edit.component.ts:120-138`). The `next(currentPageId)` method purges hidden fields, evaluates `canShowPredicate` to find the next visible page, and navigates via Angular router (`case-edit.component.ts:187-219`).
+**Page navigation**: `CaseEditComponent.ngOnInit()` calls `WizardFactoryService.create(eventTrigger)` which wraps `eventTrigger.wizard_pages` in a `Wizard` instance sorted by `order`, creates a root `FormGroup` with keys `data` (field values) and `event` (id, summary, description) (`case-edit.component.ts:121-138`). The `next(currentPageId)` method purges hidden fields, evaluates `canShowPredicate` to find the next visible page, and navigates via Angular router (`case-edit.component.ts:188-220`).
 
-**Submission**: `CaseEditComponent.submitForm()` checks session storage for a Work Allocation task. If found, triggers the event-completion FSM (`EventCompletionStateMachineService` from `@edium/fsm`). Otherwise, calls `caseSubmit()` directly (`case-edit.component.ts:260-311`). Before submission, the toolkit runs cleanup passes: sanitise dynamic lists, remove null labels, remove empty documents/collections, strip `FlagLauncher`/`ComponentLauncher` fields (`case-edit.component.ts:322-346`).
+**Submission**: `CaseEditComponent.submitForm()` checks session storage for a Work Allocation task. If found, triggers the event-completion FSM (`EventCompletionStateMachineService` from `@edium/fsm`). Otherwise, calls `caseSubmit()` directly (`case-edit.component.ts:261-309`). Before submission, `generateCaseEventData()` runs cleanup passes: sanitise dynamic lists, remove null labels, remove empty documents/collections, strip `FlagLauncher`/`ComponentLauncher` fields, then delete fields that no page in the journey validated (`case-edit.component.ts:319-360`).
 
 **Important DI constraint**: `CaseEditPageComponent` injects `CaseEditComponent` directly (not via `@Input`). Both must exist in the same router outlet subtree for Angular DI resolution to work.
 
@@ -129,7 +160,7 @@ The palette is the system that renders individual CCD fields. It supports approx
 
 ### Dispatch mechanism
 
-`FieldWriteComponent` (`ccd-field-write`) and `FieldReadComponent` (`ccd-field-read`) are universal host components. On init, each asks `PaletteService.getFieldComponentClass(caseField, isWrite)`, which is a `switch` on `caseField.field_type.type`, then dynamically creates the returned component via `ComponentFactoryResolver` (`field-write.component.ts:37-62`).
+`FieldWriteComponent` (`ccd-field-write`) and `FieldReadComponent` (`ccd-field-read`) are universal host components. On init, each asks `PaletteService.getFieldComponentClass(caseField, isWrite)`, which is a `switch` on `caseField.field_type.type`, then dynamically creates the returned component via `ComponentFactoryResolver` (`field-write.component.ts:38-61`).
 
 ### Supported field types
 
@@ -159,7 +190,7 @@ the text will not clear it.
 
 ### ComponentLauncher extensibility
 
-The `ComponentLauncher` field type uses `display_context_parameter` with `#ARGUMENT(...)` to select a sub-component. The `PaletteService.getComponentLauncherComponent()` method extracts the argument value, filters out standard `DisplayContextParameter` values (`READ`, `CREATE`, `UPDATE`), and looks up the remainder in `componentLauncherRegistry` (`palette.service.ts:134-150`).
+The `ComponentLauncher` field type uses `display_context_parameter` with `#ARGUMENT(...)` to select a sub-component. The `PaletteService.getComponentLauncherComponent()` method extracts the argument value, filters out standard `DisplayContextParameter` values (`READ`, `CREATE`, `UPDATE`), and looks up the remainder in `componentLauncherRegistry` (`palette.service.ts:138-154`, registry at `:61-65`).
 
 The registry maps:
 
@@ -169,20 +200,21 @@ The registry maps:
 | `LinkedCases` | `WriteLinkedCasesFieldComponent` | `ReadLinkedCasesFieldComponent` | Manages its own internal multi-step flow (intro, add/remove links, custom CYA) |
 | `QueryManagement` | `ReadQueryManagementFieldComponent` | `ReadQueryManagementFieldComponent` | Read component used for both modes; manages query raise/respond flow internally |
 
-If the `#ARGUMENT(...)` value does not match any registry key, `UnsupportedFieldComponent` is returned (silent fallback).
+If the `#ARGUMENT(...)` value does not match any registry key, `UnsupportedFieldComponent` is returned (silent fallback). Omitting `#ARGUMENT(...)` altogether does not fall back: the extraction indexes the regex match without a null guard (`palette.service.ts:141`), so a `ComponentLauncher` field whose `display_context_parameter` is missing or carries no `#ARGUMENT(...)` throws a `TypeError` while the field is being created rather than rendering nothing.
 
 **CCD definition pattern for ComponentLauncher**: Services define a field of type `ComponentLauncher` on a tab or event. The `display_context_parameter` in `CaseEventToFields` or `ComplexTypes` must include `#ARGUMENT(<ComponentName>)`. The argument can be combined with standard display context parameters comma-separated (e.g. `#ARGUMENT(LinkedCases,CREATE)`); the standard entries are stripped and only the custom component name is used for registry lookup.
 
 **Linked Cases flow**: The linking component uses component validity to signal to the wizard when the user may proceed. Services configure two events ("Add Case Link", "Remove Case Link") each with their own ComponentLauncher field. Case link data is stored in a `caseLinks` collection of `CaseLink` base types on the case payload.
 
-**Query Management flow**: Services onboard by defining a "Queries" tab with a `componentLauncher` field using `#ARGUMENT(QueryManagement)`, plus `CaseQueriesCollection` fields per party role. Qualifying questions are stored in LaunchDarkly and configurable per service without code deploys. The component integrates with Work Allocation to create tasks on `queryManagementRaiseQuery` events.
-<!-- CONFLUENCE-ONLY: Query Management qualifying questions in LaunchDarkly and WA task URL pattern (/query/<case_ref>/<query_id>) not verified in source -->
+**Query Management flow**: Services onboard by defining a "Queries" tab with a `componentLauncher` field using `#ARGUMENT(QueryManagement)`, plus `CaseQueriesCollection` fields per party role. The qualifying questions offered when a user raises a query are held in the LaunchDarkly flag `qm-qualifying-questions` and read by the host app, not by the toolkit: `rpx-xui-webapp` treats the flag value as a map of case type ID to question list and matches the current case type with both sides upper-cased, so a service can add or reword its questions without a deploy (`rpx-xui-webapp:src/cases/containers/query-management-container/query-management-container.component.ts:45`, `:421-469`). Each question supplies a `url`, and the literal `${[CASE_REFERENCE]}` inside it is substituted with the case reference — a flag payload that hard-codes a reference instead sends every user to the same case.
+
+Work Allocation task creation is service-side configuration rather than toolkit behaviour. The case type's `wa-task-initiation` table fires on the `queryManagementRaiseQuery` event, and its `wa-task-configuration` table builds the task description as a markdown link to `/query-management/query/<case reference>/3/<query id>` (`civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn:53322`, `civil-wa-task-configuration:src/main/resources/wa-task-configuration-civil-civil.dmn:3619`). The matching route is `query/:cid/:qid/:dataid` under the `query-management` path (`rpx-xui-webapp:src/cases/query-management.routes.ts:8-26`), so the `3` is not a query ID: it is the fixed `qid` value that puts the container into respond mode, alongside `1` for the qualifying-question detail page, `raiseAQuery` for a new query and `4` for a follow-up (`rpx-xui-webapp:src/cases/containers/query-management-container/query-management-container.component.ts:49-53`, `:398-408`). A task link that omits or changes that segment opens a different journey on the same case.
 
 ### Notable behaviours
 
-- Unknown field types fall through to `UnsupportedFieldComponent` which renders nothing silently -- fields do not throw (`palette.service.ts:65-132`).
-- `Complex` type has a nested switch on `field_type.id` to distinguish `AddressGlobalUK`/`AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser` from generic complex rendering (`palette.service.ts:65-132`).
-- `FieldReadComponent` defers dynamic component creation with `Promise.resolve(null).then(...)` to allow label interpolation to complete first; the field container is empty during the synchronous render pass (`field-read.component.ts:34-66`).
+- Unknown field types fall through to `UnsupportedFieldComponent` which renders nothing silently -- fields do not throw (`palette.service.ts:133-134`).
+- `Complex` type has a nested switch on `field_type.id` to distinguish `AddressGlobalUK`/`AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser` from generic complex rendering (`palette.service.ts:99-114`).
+- `FieldReadComponent` defers dynamic component creation with `Promise.resolve(null).then(...)` to allow label interpolation to complete first; the field container is empty during the synchronous render pass (`field-read.component.ts:33-42`).
 - `AddressGlobal` appears in `FieldTypeEnum` but is NOT handled in the `PaletteService` switch -- it falls through to `UnsupportedFieldComponent`. Only `AddressGlobalUK`/`AddressUK` are routed to `WriteAddressFieldComponent` via the Complex branch.
 
 ## How case-type definitions drive the UI
@@ -201,7 +233,7 @@ The toolkit does not define case types. It receives definitions from the CCD dat
 
 ### Trigger initialisation flow
 
-When `CasesService.getEventTrigger()` fetches a trigger, `initialiseEventTrigger()` (`cases.service.ts:292-301`):
+When `CasesService.getEventTrigger()` fetches a trigger, `initialiseEventTrigger()` (`cases.service.ts:296-306`):
 
 1. Ensures `wizard_pages` is defined.
 2. Parses each page's `show_condition` into a `ShowCondition` instance.
@@ -227,15 +259,19 @@ The current implementation uses a form-level directive `ccdConditionalShowForm` 
 4. Disables hidden controls (so they don't contribute to form validation state) and re-enables shown ones, both with `emitEvent: false` to avoid re-triggering.
 5. Uses `debounceTime(100)` on `formGroup.valueChanges` to batch evaluations while the user is typing.
 
-The `hidden` property keeps the element in the DOM (unlike `*ngIf`) for efficiency when toggling. A `GreyBarService` renders a vertical grey bar beside fields that were initially hidden but are now shown, providing a visual cue that content has appeared.
+The `hidden` property keeps the element in the DOM (unlike `*ngIf`) for efficiency when toggling. It is bound to the `[hidden]` attribute of the wrapper `div` that both field hosts render (`field-write.component.html:1`, `field-read-label.html:1`), so a hidden field is `display: none` — out of the tab order and out of the accessibility tree — on top of having its control disabled by the directive.
+
+The vertical grey bar is a class on that same wrapper: `grey-bar` indents the field and draws a 5px left border in the GOV.UK border colour, suppressed when the field is in an error state (`grey-bar.scss:24-26`), and both field stylesheets import it (`field-write.component.scss:1`, `field-read-label.scss:32`). The class is bound as `canHaveGreyBar && !caseField.hiddenCannotChange`, where `canHaveGreyBar` is set for any field carrying a `show_condition` — for write fields, any non-`Collection` field (`field-write.component.ts:60`). The bar therefore marks fields whose visibility is condition-driven, not only fields that have just appeared. It is a border with no ARIA role, label or text alternative, so it conveys nothing to a screen reader; anything the user must be told about content appearing belongs in the field's own label or hint text.
+
+`GreyBarService` tracks which fields toggled to show and can add a `show-condition-grey-bar` class (`grey-bar.service.ts:18-52`), but no library code calls any of its methods and the published package carries no stylesheet for that class — `CaseEditComponent` provides the service (`case-edit.component.ts:36`) and the class name appears only in the service, its unit tests and the Storybook stylesheet.
 
 Fields with `display_context === 'HIDDEN'` are unconditionally hidden regardless of show conditions. The `hiddenCannotChange` flag is computed to suppress the grey bar when the show condition depends only on `HIDDEN`/`READONLY` fields (i.e. the user cannot toggle it).
 
-<!-- CONFLUENCE-ONLY: Grey bar service visual behaviour and accessibility requirements (screen reader hiding, tab order maintenance) described in Confluence design doc but not verified as tested in source -->
+<!-- DIVERGENCE: Confluence "Expert UI Low Level Design - Case UI Toolkit Field Conditional Show" attributes the grey bar to GreyBarService and sets out accessibility requirements around it (screen-reader hiding, tab-order maintenance). In source the bar is a CSS class bound in the two field-host templates, GreyBarService has no callers in library code, and the only screen-reader and tab-order behaviour comes from the [hidden] attribute plus control disabling — there is no ARIA or tabindex handling. Source wins. -->
 
 ### Data cleanup on submit
 
-Fields with `retain_hidden_value = true` that are currently hidden have their form value replaced with the original `formatted_value` before submit (`case-edit.component.ts:399-440`). Fields with `retain_hidden_value = false` (the default) are purged entirely.
+Fields with `retain_hidden_value = true` that are currently hidden have their form value replaced with the original `formatted_value` before submit (`case-edit.component.ts:409-454`). Fields with `retain_hidden_value = false` (the default) are purged entirely.
 
 ## Publishing and versioning
 
@@ -247,10 +283,10 @@ The library is built with ng-packagr:
 yarn build:library
   -> ng build ccd-case-ui-toolkit-lib
   -> ng-packagr produces dist/ccd-case-ui-toolkit/
-     (FESM2022, UMD, ESM bundles, index.d.ts, package.json)
+     (bundles, type declarations and a generated package.json)
 ```
 
-Configuration: `projects/ccd-case-ui-toolkit/ng-package.json` sets `entryFile: "src/public-api.ts"` and `dest: "../../dist/ccd-case-ui-toolkit"` (`ng-package.json:1-10`).
+Configuration: `projects/ccd-case-ui-toolkit/ng-package.json` sets `entryFile: "src/public-api.ts"` and `dest: "../../dist/ccd-case-ui-toolkit"` (`ng-package.json:1-10`). Which bundle formats land there is decided by the pinned `ng-packagr`, so read them from the build output rather than assuming.
 
 ### npm package
 
@@ -294,13 +330,17 @@ Consuming apps must:
 
 1. Install `@hmcts/ccd-case-ui-toolkit` as a dependency, pinned to an exact patch version. The three apps are routinely on slightly different pins — `rpx-xui-webapp` usually leads, since toolkit changes are validated there first. Check each app's `package.json` for the version actually in use.
 2. Import the needed NgModules (`CaseEditorModule`, `PaletteModule`, `CaseViewerModule`).
-3. Provide `AbstractAppConfig` via Angular DI, implementing all abstract methods that return backend URLs (`getApiUrl()`, `getCaseDataUrl()`, `getDocumentManagementUrl()`, `getWorkAllocationApiUrl()`, `getCaseFlagsRefdataApiUrl()`, etc.) (`app.config.ts:27-120`).
+3. Provide `AbstractAppConfig` via Angular DI, implementing every abstract method that returns a backend URL (`getApiUrl()`, `getCaseDataUrl()`, `getDocumentManagementUrl()`, `getWorkAllocationApiUrl()`, `getCaseFlagsRefdataApiUrl()`, and the rest). In `rpx-xui-webapp` the implementation is `AppConfig` (`rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts:24`), which reads a config payload fetched at bootstrap and overlays LaunchDarkly values on top of it.
+
+   The registration pattern matters: `AppConfig` itself is provided once by `ProvidersModule.forRoot()` (`rpx-xui-webapp:src/app/providers/providers.module.ts:20`), and each lazy feature module that pulls in toolkit modules then aliases the token with `{ provide: AbstractAppConfig, useExisting: AppConfig }` (`rpx-xui-webapp:src/cases/cases.module.ts:126-129`, and the same three lines in `hearings.module.ts`, `noc.module.ts` and `role-access.module.ts`). `useExisting` is what keeps every lazy chunk on the one instance; `useClass` in a lazy module would give that chunk its own `AppConfig` with its own uninitialised LaunchDarkly state.
 
 Version pinning is exact (not caret/tilde) because SRT validates a specific version before release. Updates require a dedicated PR to bump the toolkit version in each consuming app.
 
 ### Peer dependencies
 
-Angular 20 (`^20.3.18`) and NgRx 17 are peer dependencies. The library also bundles `@hmcts/media-viewer`, `@hmcts/ccpay-web-component`, `rpx-xui-translation`, and `@edium/fsm` as regular dependencies -- consuming apps do not need to install these separately.
+`projects/ccd-case-ui-toolkit/package.json` is the manifest ng-packagr publishes, and it declares **only** peer dependencies — no runtime `dependencies` block at all. The peers cover the Angular 20 framework packages and NgRx 20, plus `rxjs`, `moment`, `underscore`, `ngx-chips`, `ngx-editor`, `ngx-markdown`, `ngx-pagination`, the ProseMirror packages and `rpx-xui-translation`. `@angular/cdk` and `@angular/material` are peers on their own earlier major lines (17 and 16), not on 20, so a consuming app has to satisfy both generations at once (`projects/ccd-case-ui-toolkit/package.json:4-37`).
+
+`@hmcts/media-viewer`, `@hmcts/ccpay-web-component` and `@edium/fsm` are not declared by the published package in any form, even though library code imports them. Consuming apps install them directly and choose their own versions — `rpx-xui-webapp` lists all three in its own `dependencies` (`rpx-xui-webapp:package.json:117-121`) — which means a version skew between the app and what the toolkit was built against surfaces as a runtime error, not an install-time conflict.
 
 ## Local development with the toolkit
 
@@ -399,19 +439,37 @@ export class PaletteService {
 The toolkit resolves all backend URLs through Angular DI. Consuming apps must provide a concrete `AbstractAppConfig`:
 
 ```typescript
-// Source: apps/xui/rpx-xui-webapp/src/app/app.module.ts (pattern)
+// Source: apps/xui/rpx-xui-webapp/src/app/providers/providers.module.ts
+// The concrete AppConfig is provided once, at the root.
+
+export class ProvidersModule {
+  public static forRoot(): ModuleWithProviders<RouterModule> {
+    return {
+      ngModule: ProvidersModule,
+      providers: [AuthService, AppConfigService, AppConfig, AuthService],
+    };
+  }
+}
+```
+
+```typescript
+// Source: apps/xui/rpx-xui-webapp/src/cases/cases.module.ts
+// Each lazy feature module that imports toolkit modules aliases the token to that
+// one instance. The same three lines appear in hearings, noc and role-access.
 
 @NgModule({
   imports: [
-    // Import the module groups you need — CaseEditorModule for wizard, PaletteModule for fields
-    // CaseEditorModule, PaletteModule, CaseViewerModule are all exported from @hmcts/ccd-case-ui-toolkit
+    // CaseEditorModule for the wizard, PaletteModule for fields, CaseViewerModule for the
+    // case view — all exported from @hmcts/ccd-case-ui-toolkit
   ],
   providers: [
-    // AbstractAppConfig must be provided; the toolkit calls getApiUrl(), getCaseDataUrl(), etc.
-    { provide: AbstractAppConfig, useClass: AppConfig },
+    {
+      provide: AbstractAppConfig,
+      useExisting: AppConfig,
+    },
   ],
 })
-export class AppModule {}
+export class CasesModule {}
 ```
 
 ## See also

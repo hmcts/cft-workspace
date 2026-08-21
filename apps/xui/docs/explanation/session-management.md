@@ -19,6 +19,9 @@ sources:
   - rpx-xui-webapp:api/user/index.ts
   - rpx-xui-webapp:src/app/containers/app/app.component.ts
   - rpx-xui-webapp:config/default.json
+  - rpx-xui-webapp:api/application.ts
+  - rpx-xui-webapp:src/app/app.module.ts
+  - rpx-xui-node-lib:src/common/util/contentSecurityPolicy.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -67,6 +70,9 @@ sources_sha:
   "rpx-xui-webapp:api/user/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-webapp:src/app/containers/app/app.component.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:src/app/app.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-node-lib:src/common/util/contentSecurityPolicy.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
 ---
 
 ## TL;DR
@@ -103,19 +109,21 @@ sequenceDiagram
 
 The BFF is the OIDC relying party. It calls `xuiNode.configure({ session: {...}, auth: { oidc: {...}, s2s: {...} } })` at startup (`rpx-xui-webapp:api/auth/index.ts`). The `XuiNode` class enforces load order: session middleware is always mounted before auth (`rpx-xui-node-lib:src/common/models/xuiNode.class.ts:15`).
 
-After successful OIDC token exchange, the `verifyLogin` method checks the user's roles against `allowRolesRegex` (configured as `loginRoleMatcher` in `config/default.json`, defaulting to `"caseworker"`). If no role matches the regex, the user is immediately logged out -- this prevents non-caseworker users from accessing Manage Cases (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:510`).
+After successful OIDC token exchange, the `verifyLogin` method checks the user's roles against `allowRolesRegex` (configured as `loginRoleMatcher` in `config/default.json`, defaulting to `"caseworker"`). If no role matches, the middleware emits `AUTHENTICATE_ACCESS_DENIED` and then calls `accessDenied`, which logs the user out (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:531-542`). Note the order in `verifyLogin`: `req.logIn(user, ...)` has already succeeded before the role check runs (`:525`), so the session is created and then torn down rather than never created.
+
+There is a second ordering trap in the same method. When no listener is registered for `AUTHENTICATE_SUCCESS`, `verifyLogin` redirects to `/` itself instead of emitting (`:544-552`), so the BFF's cookie-setting `successCallback` never runs. Manage Cases avoids it only because `xuiNode.on(AUTH.EVENT.AUTHENTICATE_SUCCESS, successCallback)` is registered at module load (`rpx-xui-webapp:api/auth/index.ts:104`).
 
 Key configuration:
 
 | Parameter | Value | Source |
 |---|---|---|
-| Client ID | `xuiwebapp` | `config/default.json:82` |
-| Discovery endpoint | `${SERVICES_IDAM_LOGIN_URL}/o/.well-known/openid-configuration` | `api/auth/index.ts:104` |
+| Client ID | `xuiwebapp` | `config/default.json:81` |
+| Discovery endpoint | `${SERVICES_IDAM_LOGIN_URL}/o/.well-known/openid-configuration` | `api/auth/index.ts:144` |
 | Callback URL | `/oauth2/callback` | `config/default.json:84` |
-| Token auth method | `client_secret_post` | `api/auth/index.ts` |
-| SSO logout URL | `${idamWebUrl}/o/endSession` | `api/auth/index.ts` |
+| Token auth method | `client_secret_post` | `api/auth/index.ts:151` |
+| SSO logout URL | `${idamWebUrl}/o/endSession` | `api/auth/index.ts:154` |
 
-On successful authentication, the `AUTHENTICATE_SUCCESS` event fires. The BFF's `successCallback` sets two cookies (`__auth__` for the access token, `__userid__` for the user ID) and redirects to `/` (`rpx-xui-webapp:api/auth/index.ts:38-53`).
+On successful authentication, the `AUTHENTICATE_SUCCESS` event fires. The BFF's `successCallback` sets two cookies (`__auth__` for the access token, `__userid__` for the user ID), both `sameSite: 'strict'` and `httpOnly: true`, with `secure` driven by `FEATURE_SECURE_COOKIE_ENABLED`, then redirects to `/` unless the call is a silent token refresh, in which case it falls through to `next()` (`rpx-xui-webapp:api/auth/index.ts:53-70`).
 
 ## Token exchange and S2S
 
@@ -307,20 +315,20 @@ LaunchDarkly does not directly gate the timeout-notification mechanism itself. T
 
 3. **Initialisation coordination**: `InitialisationSyncService` ensures LD is initialised before CCD toolkit configuration proceeds. This prevents race conditions where session-dependent config (like timeout values derived from user roles) might be consumed before LD has resolved.
 
-4. **CSP allowlisting**: `connect-src` explicitly allows `*.launchdarkly.com` for the streaming connection that delivers real-time flag updates (`rpx-xui-node-lib:src/common/util/contentSecurityPolicy.ts:29`).
+4. **CSP allowlisting**: `connectSrc` explicitly allows `*.launchdarkly.com` for the streaming connection that delivers real-time flag updates (`rpx-xui-node-lib:src/common/util/contentSecurityPolicy.ts:7`).
 
 5. **Reliability concern**: LaunchDarkly is initialised during login using user roles and role assignments as context for segment-based toggling. If LaunchDarkly is unavailable (vendor outage or network misconfiguration such as DWP's Zscaler blocking LD domains), Expert UI can fail to render. The team's stated direction (Aug 2025 KT) is to migrate most flags to static config in code and retain LD only for limited high-value use cases.
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ## CSRF protection
 
-The session management library enables CSRF protection by default (`useCSRF: true`). The implementation uses `@dr.pogodin/csurf` middleware (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:559-577`):
+The session management library enables CSRF protection by default (`useCSRF: true` — `rpx-xui-node-lib:src/auth/models/strategy.class.ts:40`). The implementation uses `@dr.pogodin/csurf` middleware (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:586-604`):
 
-1. On every response, a `XSRF-TOKEN` cookie is set with `sameSite: 'strict'` and `secure: true`.
-2. On incoming requests, the CSRF token is extracted from (in priority order): `req.body._csrf`, `req.query._csrf`, `csrf-token` header, `xsrf-token` header, `x-csrf-token` header, `x-xsrf-token` header, or the `XSRF-TOKEN` cookie.
+1. On every response, a `XSRF-TOKEN` cookie is set with `sameSite: 'strict'` and `secure: true` (`:594-600`).
+2. On incoming requests, the CSRF token is extracted from (in priority order): `req.body._csrf`, `req.query._csrf`, `csrf-token` header, `xsrf-token` header, `x-csrf-token` header, `x-xsrf-token` header, or the `XSRF-TOKEN` cookie (`:612-622`).
 3. Angular's `HttpClient` automatically reads the `XSRF-TOKEN` cookie and sends it back as the `X-XSRF-TOKEN` header on mutating requests.
 
-This protects all POST/PUT/DELETE endpoints against cross-site request forgery.
+Manage Cases mounts a second, independent `csrf()` of its own at `rpx-xui-webapp:api/application.ts:138-142`, configured for cookie-based storage under the same `XSRF-TOKEN` key and with `ignoreMethods: ['GET']`. Both layers therefore validate the same token; because that mount sits after `initProxy`, only locally-handled routes reach it.
 
 ## Expired login link handling
 
@@ -330,12 +338,14 @@ When an OIDC callback arrives with a mismatched or missing `state` parameter (e.
 
 Logout (`GET /auth/logout`) performs a multi-step teardown:
 
-1. DELETEs access and refresh tokens against `logoutURL/session/<token>` using Basic auth (Base64-encoded `clientID:clientSecret`) (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:217-271`).
-2. Calls `req.logout()` (Passport session teardown).
-3. Destroys the Express session (removes from Redis).
-4. Redirects the browser to `ssoLogoutURL?post_logout_redirect_uri=<host>` for OIDC RP-initiated logout at IDAM.
+1. DELETEs the access token and then the refresh token against `logoutURL/session/<token>` using Basic auth (Base64-encoded `clientID:clientSecret`) (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:229-240`).
+2. Calls `req.logout({ keepSessionInfo: false })` (Passport session teardown) (`:243`).
+3. Destroys the Express session, which removes it from Redis (`:248`, `:284-294`).
+4. Redirects the browser to `ssoLogoutURL?post_logout_redirect_uri=<protocol>://<host>` for OIDC RP-initiated logout at IDAM (`:254-266`).
 
-If the `noredirect` query parameter is present on the logout request, a `200` JSON response `{ message: "You have been logged out!" }` is returned instead of redirecting -- this supports programmatic logout from API clients.
+If the `noredirect` query parameter is present on the logout request, a `200` JSON response `{ message: "You have been logged out!" }` is returned instead of redirecting (`:250-252`).
+
+The two token deletions are awaited before Passport teardown, and the whole body sits inside one `try` whose `catch` responds `res.status(401).redirect('/')` (`:271-274`). If IDAM is unreachable, or if the session has no `tokenset` to destructure (`:227`), the local session is never destroyed and the user is bounced to `/` still logged in.
 
 ## Design rationale and history
 

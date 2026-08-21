@@ -12,6 +12,8 @@ sources:
   - rpx-xui-webapp:src/app/app.routes.ts
   - rpx-xui-webapp:api/activityTracker/index.ts
   - rpx-xui-webapp:config/custom-environment-variables.json
+  - rpx-xui-webapp:api/lib/middleware/proxy.ts
+  - rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -52,6 +54,8 @@ sources_sha:
   "rpx-xui-webapp:src/app/app.routes.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
   "rpx-xui-webapp:api/activityTracker/index.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
+  "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "bd8ca70c5a5bc5d087d05798e351d9c013d4ecf8"
 ---
 
 ## TL;DR
@@ -144,15 +148,14 @@ All downstream calls carry `Authorization` (user bearer token) and `ServiceAutho
 
 The BFF uses **prefix-based subtree proxying** via `http-proxy-middleware` (the `applyProxy()` function in `api/lib/middleware/proxy.ts`). Key characteristics:
 
-- Proxies are registered **before** `bodyParser` middleware (line 114 of `api/application.ts`), so request bodies pass through unmodified.
+- Proxies are registered **before** `bodyParser` middleware (`rpx-xui-webapp:api/application.ts:128-132`), so request bodies pass through unmodified — and unparsed, so nothing in the BFF inspects or validates a proxied payload. Only the routes that opt into `bodyParser` in their `applyProxy` config (`/documents`, `/documentsv2`, `/data/internal/searchCases`) see a parsed body at all, and those parse it to run their own request/response handlers rather than to validate it.
 - Authentication middleware (`@hmcts/rpx-xui-node-lib`) runs before the proxy layer and **generates** the `Authorization` and `ServiceAuthorization` headers server-side. Client-supplied auth headers cannot escalate privileges -- if a client sends conflicting headers, the downstream service rejects them with 401.
 - Routes under `/workallocation`, `/api`, `/am`, and `/external` are **not** proxy subtrees -- they are handled by local Express routers with explicit route definitions. Unknown sub-paths under these prefixes fall through to the SPA catch-all (serving `index.html`).
-- CSRF protection is applied via `@dr.pogodin/csurf` middleware with a cookie-based double-submit token (`XSRF-TOKEN`), applied after the proxy registration but before the SPA catch-all.
+- CSRF protection is applied via `@dr.pogodin/csurf` middleware with a cookie-based double-submit token (`XSRF-TOKEN`), applied after the proxy registration but before the SPA catch-all (`rpx-xui-webapp:api/application.ts:138-142`). Because it is mounted after `initProxy`, proxied requests never reach it.
+- No HTTP method is constrained at the proxy boundary. `applyProxy` mounts each proxy with `app.use`, which matches every method, and none of the entries in `api/proxy.config.ts` narrows that (`rpx-xui-webapp:api/lib/middleware/proxy.ts:119-120`). Method-level and endpoint-level enforcement is left entirely to the downstream service.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-<!-- The Confluence "Proxy Configuration on Manage Case" page notes that HTTP methods are not
-     constrained at the proxy boundary and payload validation is inconsistent, relying on
-     downstream services for enforcement. This is a known hardening area (EXUI backlog). -->
+<!-- CONFLUENCE-ONLY: the "Proxy Configuration on Manage Case" page describes the resulting
+     hardening work as sitting on the EXUI backlog. Backlog state is not verified in source. -->
 
 ## User types and access
 
@@ -183,7 +186,7 @@ Any CFT service with a live CCD definition loaded into `ccd-definition-store-api
 3. **Testing**: Deploy the CCD definition to AAT and run functional/regression tests against the AAT ExUI instance.
 4. **Roll-out**: Onboard users -- solicitors via self-registration in Manage Organisations, staff via staff admin in Manage Cases, judges via SSO.
 
-For services wanting **Work Allocation** in ExUI, additional configuration is needed: the LaunchDarkly flag `workallocation-service-user-roles` must include the service's top-level role, and Work Allocation-specific CCD config must be in place.
+For services wanting **Work Allocation** in ExUI, additional configuration is needed, and it is a code change rather than a flag: the jurisdiction has to be added to `waSupportedJurisdictions`, to `serviceRefDataMapping`, and to the compiled-in WA service config in `rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts`. See [Config Schema](../reference/config-schema.md#service-to-reference-data-mapping) for the full list. Work Allocation-specific CCD config must also be in place.
 
 For services wanting **Hearings Management**, onboarding requires a jurisdiction-specific hearing API and inclusion in the `HEARINGS_JURISDICTIONS` env var (default: `SSCS,PRIVATELAW,CIVIL,IA`; overrideable per environment).
 

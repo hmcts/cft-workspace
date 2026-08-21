@@ -14,6 +14,13 @@ sources:
   - rpx-xui-webapp:api/lib/proxy.ts
   - rpx-xui-webapp:api/lib/http/index.ts
   - rpx-xui-webapp:api/workAllocation/routes.ts
+  - rpx-xui-webapp:api/hearings/services.index.ts
+  - rpx-xui-webapp:api/hearings/models/serviceHearingValues.model.ts
+  - rpx-xui-webapp:api/noc/index.ts
+  - rpx-xui-webapp:api/noc/models/noCQuestion.interface.ts
+  - rpx-xui-webapp:api/noc/errorCodeConverter.ts
+  - rpx-xui-webapp:src/noc/store/effects/noc.effects.ts
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeResponse.java
   - rpx-xui-manage-organisations:config/default.json
   - rpx-xui-manage-organisations:api/configuration/references.ts
 status: reviewed
@@ -50,6 +57,13 @@ sources_sha:
   "rpx-xui-webapp:api/lib/proxy.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
   "rpx-xui-webapp:api/lib/http/index.ts": "55079aab2a3d290fb54432007a9ee7c73183e447"
   "rpx-xui-webapp:api/workAllocation/routes.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/hearings/services.index.ts": "e4f7e5a99239c9a585927332382aa87dae93b797"
+  "rpx-xui-webapp:api/hearings/models/serviceHearingValues.model.ts": "e4f7e5a99239c9a585927332382aa87dae93b797"
+  "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:api/noc/models/noCQuestion.interface.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:api/noc/errorCodeConverter.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/noc/store/effects/noc.effects.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeResponse.java": "dfa7debe58dc4710124070b6a29448dfda6fce67"
   "rpx-xui-manage-organisations:config/default.json": "c6ee3703d3f06e69afd20dc3065b8deaf3649727"
   "rpx-xui-manage-organisations:api/configuration/references.ts": "60a1f791b7e62dafaf70493b60f2d548dbc6a417"
 ---
@@ -71,8 +85,7 @@ The BFF exposes two distinct patterns for downstream communication (`rpx-xui-web
 
 Implemented via `applyProxy()` using `http-proxy-middleware`. These mount on a URL prefix and forward all matching requests (any path suffix, any HTTP method) to the configured downstream target. Authentication middleware runs first and attaches server-generated auth headers.
 
-**Security note:** The proxy configuration is permissive by design — it relies on downstream services for endpoint-level enforcement. An authenticated user can technically reach any endpoint on the proxied backend by manipulating the path suffix. Non-GET methods are also forwarded unless blocked downstream.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+**Security note:** `applyProxy` finishes with `app.use(config.source, [authInterceptor, ...config.middlewares], proxyMiddleware)` (`rpx-xui-webapp:api/lib/middleware/proxy.ts:119-120`). That is a bare prefix mount: no HTTP-method restriction and no per-path allowlist. The only narrowing available is `http-proxy-middleware`'s `pathFilter`, wired to the optional `filter` config key (`rpx-xui-webapp:api/lib/middleware/proxy.ts:84`), and exactly one route sets it — the `/print` + `/data` proxy excludes `/data/internal/searchCases` so the search-specific proxy mounted before it keeps that path (`rpx-xui-webapp:api/proxy.config.ts:77`). Consequently any authenticated session can reach any path under a proxied prefix with any method, and endpoint-level authorisation is entirely the downstream service's responsibility.
 
 | Proxy source | Downstream target | Risk level |
 |---|---|---|
@@ -119,8 +132,8 @@ These routes are handled locally by Express controllers that make targeted Axios
 | `/wa-supported-jurisdiction` | `api/waSupportedJurisdictions/` | Config-driven |
 | `/user` | `api/user/` | IDAM API |
 
-**Known issue:** The API root router (`api/routes.ts`) has duplicate route mounts: `/am` is mounted twice (lines 50, 54), `/role-access` twice (lines 52, 56), and `/locations` twice (lines 58, 67). This can cause duplicate middleware execution.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+**Known issue:** The API root router mounts `/locations` twice — `router.use('/locations', locationsRouter)` appears at both `rpx-xui-webapp:api/routes.ts:54` and `rpx-xui-webapp:api/routes.ts:63`. Express keeps both, so the second mount is dead: every `/locations` request is answered by the first, and any middleware added to the second is never reached.
+<!-- DIVERGENCE: Confluence "RPX XUI Webapp Node API Quality Review and Recommendations" lists three duplicated mounts — `/am` (lines 50, 54), `/role-access` (52, 56) and `/locations` (58, 67). Source has `/am` and `/role-access` mounted once each (api/routes.ts:50, :52); only `/locations` is duplicated, at :54 and :63. Source wins. -->
 
 ## Manage Cases (rpx-xui-webapp)
 
@@ -164,12 +177,15 @@ Work Allocation routes are handled locally by Express routing (`api/workAllocati
 
 Hearing jurisdiction activation is controlled by `services.hearings.hearingsJurisdictions` (default: `SSCS,PRIVATELAW,CIVIL,IA`). Employment is configured but **not** in the default activation list. When `services.hearings.enableHearingDataSourceHeaders` is `true`, the BFF forwards `Data-Store-Url`, `Role-Assignment-Url`, and `hmctsDeploymentId` headers to hearing APIs (`rpx-xui-webapp:api/lib/proxy.ts:49-57`).
 
-Each hearing-enabled jurisdiction must implement two endpoints consumed by ExUI:
-- `POST /serviceHearingValues` — returns case/party/hearing data in a standard `ServiceHearingValuesModel` JSON shape
+Each hearing-enabled jurisdiction must implement two endpoints, both reached by `POST` against the jurisdiction's configured `serviceApi` base (`rpx-xui-webapp:api/hearings/services.index.ts:25`, `:74`):
+- `POST /serviceHearingValues` — returns case/party/hearing data in the `ServiceHearingValuesModel` JSON shape
 - `POST /serviceLinkedCases` — returns linked cases for hearing-linking operations
 
-The `ServiceHearingValuesModel` includes: `hmctsServiceID`, `hmctsInternalCaseName`, `publicCaseName`, `caseCategories`, `autoListFlag`, `hearingType`, `duration`, `parties`, `caseFlags`, `screenFlow`, `hearingChannels`, and more. The `screenFlow` property controls which pages appear in the hearing request wizard (services can omit screens or add conditional navigation).
-<!-- CONFLUENCE-ONLY: not verified in source -->
+`ServiceHearingValuesModel` declares `caseId`, `hmctsServiceID`, `hmctsInternalCaseName`, `publicCaseName`, `caseAdditionalSecurityFlag`, `caseCategories`, `caseDeepLink`, `caserestrictedFlag`, `externalCaseReference`, `caseManagementLocationCode`, `caseSLAStartDate`, `autoListFlag`, `hearingType`, `hearingWindow`, `duration`, `hearingPriorityType`, `numberOfPhysicalAttendees`, `hearingInWelshFlag`, `hearingLocations`, `facilitiesRequired`, `listingComments`, `hearingRequester`, `privateHearingRequiredFlag`, `caseInterpreterRequiredFlag`, `panelRequirements`, `leadJudgeContractType`, `judiciary`, `hearingIsLinkedFlag`, `parties`, `caseFlags`, `screenFlow`, `vocabulary`, `hearingChannels` and `hearingLevelParticipantAttendance` (`rpx-xui-webapp:api/hearings/models/serviceHearingValues.model.ts:11-49`).
+
+`screenFlow` controls which pages appear in the hearing request wizard. A jurisdiction can omit it: the BFF substitutes ExUI's `DEFAULT_SCREEN_FLOW` when the response has no `screenFlow`, so a service that ships a malformed or empty `screenFlow` array gets that array rather than the default (`rpx-xui-webapp:api/hearings/services.index.ts:32-37`).
+
+Two other server-side fixups apply to every `serviceHearingValues` response. `caseId` is overwritten with the `caseReference` from the request body, so whatever the jurisdiction returns in that field is discarded. Party flags are normalised: services disagree on the casing of the party identifier, so `partyID` is copied into `partyId` when present (`rpx-xui-webapp:api/hearings/services.index.ts:46-65`).
 
 Each jurisdiction also specifies `caseTypes` in config — used to match which service API to call for a given case:
 - SSCS: `Benefit`
@@ -277,14 +293,16 @@ When `PREVIEW_DEPLOYMENT_ID` env var is set, **all** Axios calls (via the shared
 
 ## Notice of Change integration
 
-The BFF's `/noc` routes (`api/noc/index.ts`) call the AAC Case Assignment service for three operations:
-<!-- CONFLUENCE-ONLY: not verified in source -->
+The BFF's `/noc` routes drive three operations (`rpx-xui-webapp:api/noc/index.ts`):
 
-1. **Get NocQuestions** — input: `caseReference`; returns `[{questionId, label, type}]`
-2. **ValidateNoCQuestion** — input: `caseReference`, `answers: [{questionId, answer}]`; returns matched events with `actionDescription`
-3. **Put NocEvent** — input: `caseReference`, `answers`, optional `requestReason` (<=1024 chars), `actionDescription`; returns `resultType: AUTO_APPROVED | MANUAL_APPROVAL | AUTO_REJECTED`
+1. **Get NoC questions** — `GET {base}/noc/noc-questions?case_id=<id>`, the case ID taken from the `caseId` query string. Returns `{questions: [...]}` where each question carries `case_type_id`, `order`, `question_text`, `answer_field_type`, `display_context_parameter`, `challenge_question_id`, `answer_field` and `question_id` (`rpx-xui-webapp:api/noc/models/noCQuestion.interface.ts`).
+2. **Verify answers** — `POST {base}/noc/verify-noc-answers` with the browser's body forwarded unchanged.
+3. **Submit the request** — `POST {base}/noc/noc-requests`, again forwarding the body. The response's `approval_status` is the only field the SPA reads: `PENDING` routes to the "pending" success page and anything else to the "approved" one (`rpx-xui-webapp:src/noc/store/effects/noc.effects.ts:66-71`). AAC's enum is `PENDING | APPROVED | REJECTED` (`aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeResponse.java`).
 
-Error responses include: "Not a valid case reference", "NoC in progress", "You already have access to the case", "Answers match more than one party on the case", "Another NoC request has been actioned" (race condition handling).
+`{base}` is not always AAC. Step 1 always goes to `services.ccd.caseAssignmentApi`, and the `case_type_id` from the first question is cached in the Express session under `nocCaseTypesByCaseId`. Steps 2 and 3 then look that case type up in `decentralisedCaseTypeConfig`, matching the longest configured prefix case-insensitively, and use its `nocBaseUrl` if one is set — so a decentralised case type takes verification and submission away from AAC while question-fetching stays behind (`rpx-xui-webapp:api/noc/index.ts:63-121`). The lookup depends on the session entry, so a submission that arrives without the preceding question fetch on the same session falls back to AAC regardless of configuration.
+
+Errors come back from the downstream as free-text messages, and the BFF derives a stable code from the message before passing it on — `case-not-found`, `case-id-invalid`, `noc-in-progress`, `answers-not-identify-litigant`, `answers-not-matched-any-litigant`, `multiple-noc-requests-on-case`, `multiple-noc-requests-on-user`, `has-represented`, `no-org-policy`, `insufficient-privileges` and others, defaulting to `generic-error` (`rpx-xui-webapp:api/noc/errorCodeConverter.ts`). Because the mapping is substring matching on the message text, a wording change downstream silently degrades every affected error to `generic-error`.
+<!-- DIVERGENCE: Confluence "Notice of Change - Case Access API Specification" describes the operations as taking a `caseReference` input, returning questions shaped `{questionId, label, type}`, accepting an optional `requestReason` capped at 1024 characters plus an `actionDescription`, and returning `resultType: AUTO_APPROVED | MANUAL_APPROVAL | AUTO_REJECTED`. Source uses `case_id`, the `NoCQuestion` shape above, no `requestReason`/`actionDescription` handling in the BFF, and `approval_status: PENDING | APPROVED | REJECTED`. Source wins. -->
 
 ## Known configuration quirks
 
@@ -293,8 +311,8 @@ Error responses include: "Not a valid case reference", "NoC in progress", "You a
 - `services.prd.locationApi` defaults to a **demo** URL (`rd-location-ref-api-demo`) in `rpx-xui-webapp:config/default.json:68`. A separate `services.locationref.api` (pointing to prod) is used for the proxy route.
 - Manage Organisations references `ccd-data-store-api` in config (`services.ccdDataApi`) but does not call it directly — all CCD-related queries route through the AAC proxy path.
 - `services.hearings.employment.serviceApi` is configured but Employment is **not** in the default `hearingsJurisdictions` activation list (`SSCS,PRIVATELAW,CIVIL,IA`).
-- The API root router has duplicate route mounts (`/am`, `/role-access`, `/locations` each mounted twice) which can cause duplicate middleware execution in certain edge cases.
-- Work Allocation routes use `router.use` for action-specific endpoints instead of explicit HTTP method handlers (`get`/`post`/`put`/`delete`), allowing unintended methods to reach handlers.
+- The API root router mounts `/locations` twice (`rpx-xui-webapp:api/routes.ts:54`, `:63`), leaving the second mount unreachable.
+- Work Allocation routes use `router.use` for action-specific endpoints instead of explicit HTTP method handlers (`get`/`post`/`put`/`delete`), allowing unintended methods to reach handlers (`rpx-xui-webapp:api/workAllocation/routes.ts:39-71`).
 
 ## See also
 

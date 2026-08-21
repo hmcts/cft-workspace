@@ -20,6 +20,8 @@ sources:
   - rpx-xui-webapp:src/app/app.constants.ts
   - rpx-xui-webapp:src/app/shared/services/environment.service.ts
   - rpx-xui-webapp:src/app/directives/feature-toggle/feature-toggle.directive.ts
+  - rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts
+  - rpx-xui-webapp:package.json
   - rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/launch-darkly.service.ts
   - rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.service.ts
   - rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts
@@ -81,6 +83,8 @@ sources_sha:
   "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
   "rpx-xui-webapp:src/app/shared/services/environment.service.ts": "6c90fbc6b38434ad2f933356651b41f6ec813c64"
   "rpx-xui-webapp:src/app/directives/feature-toggle/feature-toggle.directive.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:package.json": "f2114b5f76f0eed12eb4c370c65157fe4aebaecb"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/launch-darkly.service.ts": "25f44bb18010b28961e6ac3d51ba9142178a558f"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.service.ts": "6532e170c4c925fca8df630bc87efc2becfdbab0"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts": "46113db85da141a989d239a95168a3588512ca88"
@@ -314,9 +318,9 @@ Some flags return arrays of jurisdiction identifiers from LaunchDarkly:
 
 This pattern allows jurisdiction-scoped features to be toggled per-environment or per-user-segment without code deployment.
 
-### Default fallbacks (WA service configuration)
+### Compiled-in WA service configuration
 
-`LaunchDarklyDefaultsConstants.getWaServiceConfig(env)` provides environment-specific WA service configuration as a fallback when LD has not yet initialised or is unreachable. The environment is determined by `EnvironmentService.getDeploymentEnv()`, which inspects `window.location.hostname`:
+WA service configuration is not a flag. `LaunchDarklyDefaultsConstants.getWaServiceConfig(env)` returns one of three TypeScript constants, and it is the only source the SPA has: `AppConfig.getWAServiceConfig()` returns it unconditionally (`rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts:253-255`), and the case-viewer container wraps it in `of(...)` rather than subscribing to LaunchDarkly (`rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts:77`). Which constant is used is determined by `EnvironmentService.getDeploymentEnv()`, which inspects `window.location.hostname`:
 
 | Hostname pattern | Environment |
 |---|---|
@@ -329,13 +333,14 @@ This pattern allows jurisdiction-scoped features to be toggled per-environment o
 | `localhost` | `LOCAL` |
 | Default (unrecognised) | `PROD` |
 
-The WA default configs define case-type-to-service mappings (e.g. `Asylum`/`Bail` -> `IA`, `CIVIL`/`GENERALAPPLICATION` -> `CIVIL`). PROD defaults are more conservative than TEST/DEMO defaults. The DEMO environment includes a special QM-aware config with additional case types like `CaseViewCallbackMessages2`.
+Those eight environments collapse onto only three constants: `PROD` selects `WASERVICECONFIGPROD`, `DEMO` selects `WASERVICECONFIGTESTQM`, and every other value — `AAT`, `PERFTEST`, `ITHC`, `PREVIEW`, `LOCAL` — falls through to `WASERVICECONFIGTEST` (`rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts:246-254`). Each defines case-type-to-service mappings (`Asylum`/`Bail` -> `IA`, `CIVIL`/`GENERALAPPLICATION` -> `CIVIL`, and so on), and the DEMO constant carries QM-only case types such as `CaseViewCallbackMessages2` (`:225`).
 
-PCS shows how far apart those sets can drift. `WASERVICECONFIGTEST` lists both `PCS` and
-`PCS-staging`, `WASERVICECONFIGTESTQM` lists `PCS`, and `WASERVICECONFIGPROD` has no PCS entry at
-all. The practical effect is that PCS has no WA fallback in production: if LD is slow or
-unreachable there, PCS gets no WA service config, while the same failure in AAT or DEMO is masked
-by the defaults. When adding a service, check which of the three blocks you actually edited.
+The three blocks are maintained by hand and do diverge. `WASERVICECONFIGTEST` lists both `PCS` and
+`PCS-staging` (`:79-83`), `WASERVICECONFIGTESTQM` lists `PCS` (`:232-235`), and
+`WASERVICECONFIGPROD` has no PCS entry at all. Since the constant is the only input,
+`isWAEnabled` finds no matching service for a PCS case in production and Work Allocation is off
+there while working in AAT and DEMO — and no flag change can turn it on. Adding a service to Work
+Allocation means editing all three blocks.
 
 ## Race conditions and initialisation ordering
 
@@ -377,9 +382,9 @@ The proposed migration path:
 - **Long-term**: Replace LD with **Azure App Configuration** for flags that still need runtime toggling without redeployment. A Node-lib wrapper using Azure Pub/Sub would push config updates to the frontend.
 - **Abstraction layer**: The `FeatureToggleService` abstract class in `@hmcts/rpx-xui-common-lib` already provides the indirection needed — only `LaunchDarklyService` would need to be replaced with an Azure App Configuration implementation.
 
-As of this writing, **no Azure App Configuration code has been written** — the existing codebase still uses LD exclusively for all client-side flags.
-
 <!-- CONFLUENCE-ONLY: not verified in source -->
+
+None of that has reached the code. No XUI repo — `rpx-xui-webapp`, `rpx-xui-common-lib`, `rpx-xui-node-lib`, `rpx-xui-manage-organisations` or `rpx-xui-approve-org` — declares an Azure App Configuration dependency or references its client, and `rpx-xui-webapp:package.json` still pins `launchdarkly-js-client-sdk` (exact pin — read it from the manifest). Every client-side flag is evaluated by LaunchDarkly.
 
 ## Examples
 

@@ -19,6 +19,9 @@ sources:
   - rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts
   - rpx-xui-node-lib:src/auth/s2s/s2s.class.ts
   - rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts
+  - rpx-xui-webapp:api/health/index.ts
+  - rpx-xui-webapp:api/lib/proxy.ts
+  - rpx-xui-node-lib:src/auth/models/strategy.class.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -62,6 +65,9 @@ sources_sha:
   "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "e30a86772d25ac208bf938e78ef2c7308c9cdd3a"
   "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/session/models/redisSessionStore.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
+  "rpx-xui-webapp:api/health/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/lib/proxy.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
+  "rpx-xui-node-lib:src/auth/models/strategy.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
 ---
 
 ## TL;DR
@@ -80,16 +86,20 @@ Every XUI deployed application (Manage Cases, Manage Organisations, Approve Orga
 1. **Angular SPA** — the static bundle served from the Express process at the root path.
 2. **Express BFF** — the Node process listening on port 3000 (env `PORT`), which serves the SPA assets, handles authentication, and proxies all API calls to downstream platform services.
 
-The BFF is built via `createApp()` (`api/application.ts:53`). Middleware is registered in a strict order:
+The BFF is built via `createApp()` (`api/application.ts:70`). Middleware is registered in a strict order:
 
-1. Helmet + CSP (when `FEATURE_HELMET_ENABLED=true`) — `api/application.ts:57-93`
-2. `cookieParser(SESSION_SECRET)` — `api/application.ts:95`
-3. `getXuiNodeMiddleware()` (OIDC session + S2S) — `api/application.ts:110-111`
-4. `initProxy(app)` (http-proxy-middleware rules) — `api/application.ts:113-114`, **before** body-parser to allow raw stream proxying
-5. `bodyParser.json({limit:'5mb'})` + URL-encoded — `api/application.ts:116-117`
-6. API routers (`/am`, `/api`, `/external`, `/workallocation`)
-7. CSRF middleware
-8. Static file serving + SPA catch-all
+1. Helmet + CSP, `X-Robots-Tag`, `Cache-Control` and `Permissions-Policy` headers (when `FEATURE_HELMET_ENABLED=true`) — `api/application.ts:74-108`
+2. `cookieParser(SESSION_SECRET)` — `api/application.ts:110-111`
+3. `compression()` (when `FEATURE_COMPRESSION_ENABLED=true`) — `api/application.ts:113-115`
+4. `health.addReformHealthCheck(app)` — `api/application.ts:123`
+5. `getXuiNodeMiddleware()` (OIDC session + S2S) — `api/application.ts:125-126`
+6. `initProxy(app)` (http-proxy-middleware rules) — `api/application.ts:129`, **before** body-parser to allow raw stream proxying
+7. `bodyParser.json({limit:'5mb'})` + URL-encoded — `api/application.ts:131-132`
+8. API routers: `/am`, `/api`, `/external`, `/workallocation` — `api/application.ts:134-137`
+9. CSRF middleware — `api/application.ts:138-142`
+10. Static file serving + SPA catch-all — `api/application.ts:150`
+
+Steps 4 and 5 are in that order for a reason: the Redis health check is registered from a `redisStore.ClientReady` listener, and node-lib only forwards events that already have a listener when `configure()` runs.
 
 The SPA bootstraps by fetching `GET /external/config/ui` (unauthenticated) to obtain runtime configuration including the LaunchDarkly client ID, then loads user details from `GET /api/user/details` after authentication.
 
@@ -129,14 +139,17 @@ sequenceDiagram
 
 | Setting | Value | Source |
 |---------|-------|--------|
-| IDAM client ID | `xuiwebapp` | `config/default.json:82` |
+| IDAM client ID | `xuiwebapp` | `config/default.json:81` |
 | S2S microservice name | `xui_webapp` | `config/default.json:116` |
-| Discovery endpoint | `${SERVICES_IDAM_LOGIN_URL}/o/.well-known/openid-configuration` | `api/auth/index.ts:104` |
-| Token auth method | `client_secret_post` | `api/auth/index.ts` |
+| Discovery endpoint | `${SERVICES_IDAM_LOGIN_URL}/o/.well-known/openid-configuration` | `api/auth/index.ts:144` |
+| Token auth method | `client_secret_post` | `api/auth/index.ts:151` |
+| OAuth2 scopes requested | `openid profile roles manage-user create-user search-user` | `api/auth/index.ts:132`, `:149` |
 | OAuth2 callback path | `/oauth2/callback` | `config/default.json:84` |
-| SSO logout URL | `${idamWebUrl}/o/endSession` | `api/auth/index.ts` |
+| SSO logout URL | `${idamWebUrl}/o/endSession` | `api/auth/index.ts:154` |
 
-The node-lib's OIDC middleware (`openid.class.ts:138-143`) performs discovery at startup via `openid-client`'s `Issuer.discover()`. If IDAM is unreachable, an `idamCheck` at startup calls `process.exit(1)` (`api/application.ts:144`).
+The `xuiwebapp` client requests the IDAM user-administration scopes (`manage-user`, `create-user`, `search-user`) alongside the sign-in scopes, so the access token minted for an ExUI session carries them too.
+
+The node-lib's OIDC middleware (`openid.class.ts:138-143`) performs discovery at startup via `openid-client`'s `Issuer.discover()`. A separate `idamCheck` promise runs at startup (`api/application.ts:159`).
 
 ### S2S token caching
 
@@ -237,12 +250,18 @@ All proxy routes are prefix-based subtree proxies — any path suffix under the 
 
 ### Header injection
 
-The `setHeaders` function (`api/lib/proxy.ts`) attaches to every outbound request:
+Two different pieces of code go by the name `setHeaders`.
 
-- `Authorization: Bearer <user-access-token>` — forwarded from the incoming request
-- `ServiceAuthorization: Bearer <s2s-token>` — injected by node-lib S2S middleware
-- `user-roles` — forwarded if present on the incoming request
-- `Data-Store-Url`, `Role-Assignment-Url`, `hmctsDeploymentId` — conditionally forwarded when `enableHearingDataSourceHeaders=true`
+`rpx-xui-node-lib:src/auth/models/strategy.class.ts:471-485` mutates the incoming request. It is mounted on the node-lib router (`:626`), which `application.ts` installs before `initProxy`, so it applies to proxied and locally-handled traffic alike. When the session holds a passport user it sets `user-roles` from the session's IDAM roles and `Authorization` to `Bearer <session access token>` (`:478-479`).
+
+`rpx-xui-webapp:api/lib/proxy.ts:19-63` is a pure function that builds an allowlisted header object for the CCD-Gateway Axios helpers defined alongside it (`:65`, `:80`, `:95`). It copies through only:
+
+- `Authorization` — read from the capitalised key, which is the one node-lib set (`:37-39`)
+- `ServiceAuthorization` (`:45-47`)
+- `user-roles`, `content-type`, `accept`, `experimental`
+- `Data-Store-Url`, `Role-Assignment-Url` and `hmctsDeploymentId`, only when `services.hearings.enableHearingDataSourceHeaders` is the string `"true"` (`:17`, `:49-59`)
+
+The last of those has a wiring quirk worth knowing when debugging preview deployments: `hmctsDeploymentId` is guarded on `Role-Assignment-Url` being present and is read from `Hmcts-Deployment-Id` (`:57-58`), so a request that supplies a deployment id without a role-assignment override loses it.
 
 ### Dual proxy pattern
 
@@ -258,9 +277,13 @@ The proxy layer is permissive by design: it uses prefix-based subtree forwarding
 - **Path pivoting** — an authenticated user can reach any endpoint on a proxied service by altering the URL suffix (the downstream service must enforce its own access control).
 - **HTTP method freedom** — the proxy does not restrict methods. A DELETE to `/data/internal/anything` is forwarded to CCD API Gateway; the downstream returns 404/405/500 as appropriate.
 - **No payload validation at proxy boundary** — structurally invalid JSON payloads are forwarded; downstream services handle validation.
-- **Inbound auth headers** — client-supplied `Authorization`/`ServiceAuthorization` headers are *not* stripped. However, the `authInterceptor` overwrites them with server-generated values, so privilege escalation is not possible. If both client headers and session cookies are supplied, the server-generated headers take precedence.
+- **Inbound auth headers** — client-supplied `Authorization`/`ServiceAuthorization` headers are *not* stripped anywhere in the chain. `setHeaders` assigns a session-derived `Authorization` on top of whatever arrived (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:471-485`) but deletes nothing, and it assigns only when the session holds a passport user. A request without one never reaches a proxy: `authenticate` answers `401 Unauthorized` whenever `req.session.passport.user.userinfo` is missing (`:460-462`). Privilege escalation through header forgery is therefore not available — a forged token is accompanied by, never substituted for, the session-derived one.
 
-<!-- CONFLUENCE-ONLY: The "Proxy Configuration on Manage Case" Confluence page documents proposed hardening work (per-prefix path allowlists, HTTP method restrictions, stripping inbound auth headers). As of this writing, these are proposals rather than implemented features. not verified in source -->
+None of the three obvious mitigations is present. There is no per-prefix path allowlist: `applyProxy` ends in a bare `app.use(config.source, ...)` (`rpx-xui-webapp:api/lib/middleware/proxy.ts:119-120`), and the one narrowing mechanism available — `http-proxy-middleware`'s `pathFilter`, wired to the optional `filter` config key at `:84` — is used by a single route, where the `/print` + `/data` proxy excludes `/data/internal/searchCases` so the search-specific proxy mounted ahead of it keeps that path (`rpx-xui-webapp:api/proxy.config.ts:77`). No entry restricts HTTP methods, and no middleware removes an inbound auth header.
+
+<!-- CONFLUENCE-ONLY: the "Proxy Configuration on Manage Case" page puts per-prefix path allowlists,
+     HTTP method restrictions and stripping of inbound auth headers forward as hardening work.
+     Their status as planned work is not verified in source. -->
 
 **Locally-handled routes** (not proxy surfaces): `/workallocation/*`, `/am/*`, `/api/*`, `/external/*` — these are served by Express routers that make server-side Axios calls with full request parsing.
 
@@ -334,9 +357,13 @@ Secrets are mounted from the `rpx` Key Vault at `/mnt/secrets/rpx` via `@hmcts/p
 
 ### Monitoring and health checks
 
-ExUI does not expose its own health endpoints. Instead, the Helm chart's liveness/readiness probes consume downstream service health endpoints (CCD Data Store, CCD Gateway, DM Store, EM Annotation, S2S, WA Task Management, AM Role Assignment, etc.). Application monitoring uses App Insights and Dynatrace.
+The BFF exposes health endpoints of its own via `@hmcts/nodejs-healthcheck` (`rpx-xui-webapp:api/health/index.ts:98`), but what they report is almost entirely downstream state: `checkServiceHealth` appends `/health` to a configured service URL with a 6-second deadline (`:27-31`), and the unconditional set covers CCD Gateway, CCD Data Store, DocAssembly, both document APIs, IDAM web and API, and S2S (`:50-61`).
 
-<!-- CONFLUENCE-ONLY: Confluence "Service Operations Guide" states ExUI holds no persistent data of its own. Confirmed by architecture — sessions are in Redis, case data in CCD, documents in DM Store. not verified in source -->
+The rest are conditional. Work Allocation task management, caseworker reference data, role assignment and judicial reference data are only registered when `FEATURE_WORKALLOCATION_ENABLED` is on (`:63-68`); Terms and Conditions only when `FEATURE_TERMS_AND_CONDITIONS_ENABLED` is on (`:71-78`); and the `redis` check is added from inside the `redisStore.ClientReady` handler, so it exists only once Redis has connected at least once (`:79-92`). A pod can therefore report healthy while a service it genuinely depends on is down, whenever that service's feature flag is off.
+
+Application monitoring uses App Insights and Dynatrace.
+
+ExUI persists nothing of its own. `infrastructure/main.tf` provisions an Azure Cache for Redis instance (`rpx-xui-webapp:infrastructure/main.tf:36-51`), Application Insights, a resource group and Key Vault secrets — there is no database module in the stack. Session state lives in that Redis cache, case data in CCD, and documents in DM Store behind CDAM, so nothing but the session survives a pod restart.
 
 ### Shuttering
 
