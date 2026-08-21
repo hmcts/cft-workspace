@@ -26,10 +26,11 @@ you freeze wrong text as fresh.
 
 Two things make a local run disagree with CI, both of which understate drift:
 
-- **A stale clone.** Unpinned citations resolve against the repo's default ref,
-  falling back to `HEAD`. If your clone hasn't been fetched for months, `HEAD`
-  is months old and a file deleted upstream still resolves. Run `scripts/sync`
-  first.
+- **A stale clone.** Unpinned citations resolve against the repo's default ref
+  (`origin/HEAD`, else `origin/master`/`origin/main`) and nothing else — not the
+  checked-out branch, so a clone parked on a feature branch is fine. But that
+  ref is only as current as your last fetch: against a month-old `origin/master`,
+  a file deleted upstream last week still resolves. Run `scripts/sync` first.
 - **A shallow clone.** `git log -1 -- <path>` needs history. In a shallow clone
   it returns the tip commit for *every* path, so a page can look fresh (or get
   `--record`ed to a meaningless SHA) with no signal that anything is wrong.

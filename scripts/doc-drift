@@ -160,6 +160,13 @@ default_ref_for() {
 # Unpinned citations resolve against the repo's DEFAULT branch, not the working
 # tree: clones are routinely parked on unrelated feature branches, and a
 # checked-out branch predating the cited file would otherwise report it broken.
+#
+# That resolution is exclusive — there is deliberately no HEAD fallback. A path
+# absent from the default branch is broken even when the local checkout still
+# carries it: the alternative reports a SHA reachable only in this working copy,
+# which reads as "fresh" here and breaks for everyone else, and which `--record`
+# would then pin into the page's sources_sha:. Cite `<slug>@<branch>:<path>` for
+# a file that genuinely lives only on an unmerged branch.
 citation_current_sha() {
     local repo_root="$1"
     local -a refs=()
@@ -169,8 +176,14 @@ citation_current_sha() {
     else
         local def
         def=$(default_ref_for "$repo_root" || true)
-        [[ -n "$def" ]] && refs=("$def")
-        refs+=(HEAD)
+        if [[ -n "$def" ]]; then
+            refs=("$def")
+        else
+            # Neither origin/HEAD nor origin/master|main resolves — a clone with
+            # no remote at all. The checked-out branch is the only ref there is,
+            # so use it rather than calling every citation in the repo broken.
+            refs=(HEAD)
+        fi
     fi
 
     local ref
