@@ -278,7 +278,7 @@ hearings — having first had its 38 RA flag codes added at the MRD level. Court
 internal users, so they call without `available-external-flag=Y` and still see everything.
 <!-- CONFLUENCE-ONLY: PRL's specific exclusions and the "38 flagcodes" count come from pages 1712767862 and 1682839538 (v27). -->
 
-<!-- DIVERGENCE: An earlier draft of this page said a service excludes a flag by "not listing it in its FlagService override". That is backwards. Omitting a flag code from the service's rows is exactly what makes the XXXX default apply to it (CaseFlagRepository.java:33-36) — the flag stays visible. Exclusion requires an explicit service row with available_externally = FALSE. Source wins. -->
+> **Omitting a flag code does not exclude it.** Leaving a code out of the service's rows is what makes the `XXXX` default apply to it (`CaseFlagRepository.java:33-36`), so the flag stays visible externally. Exclusion needs an explicit service row with `available_externally = FALSE`.
 
 ### Changing reference data
 
@@ -419,11 +419,9 @@ event.submittedCallback((payload, caseDetails) ->
     caseFlagsWaService.setUpWaTaskForCaseFlagsEventHandler(authorisation, callbackRequest));
 ```
 
-> **Asynchronous task creation.** `setUpWaTaskForCaseFlagsEventHandler` only publishes a Spring application event. The actual CCD `CREATE_WA_TASK_FOR_CTSC_CASE_FLAGS` event is fired by `CaseFlagsEventHandler.triggerDummyEventForCaseFlags` running on `@Async`. **Don't expect `isCaseFlagsTaskCreated` to be `Yes` synchronously after the callback returns** — it's set on the next case data update.
+> **Asynchronous task creation.** `setUpWaTaskForCaseFlagsEventHandler` only publishes a Spring application event. The actual CCD `CREATE_WA_TASK_FOR_CTSC_CASE_FLAGS` event is fired by `CaseFlagsEventHandler.triggerDummyEventForCaseFlags` running on `@Async`. **Don't expect `isCaseFlagsTaskCreated` to be `Yes` synchronously after the callback returns** — it's set on the next case data update, by `CaseFlagsEventHandler.java:39`. Note that `checkCaseFlagsToCreateTask` is not the setter for `Yes`; it only sets the flag back to **No**, when a case transitions from having requested flags to having none (`CaseFlagsWaService.java:93-105`).
 
 > **WA task not created for draft applications.** When a support request is submitted as part of a draft application (before case creation), no WA task is raised. The RA flags are instead reviewed as part of the "Check Application" task. Only flags submitted or edited **after case creation** trigger the `CREATE_WA_TASK_FOR_CTSC_CASE_FLAGS` flow. <!-- CONFLUENCE-ONLY: draft-application WA suppression from PRL requirements (page 1712767862). -->
-
-<!-- DIVERGENCE: An earlier draft of this page said "checkCaseFlagsToCreateTask sets isCaseFlagsTaskCreated = Yes when a task is raised." That's wrong. Source (`CaseFlagsWaService.java:93-105`) shows it sets the flag to **No** when transitioning from "had requested flags" to "no requested flags". The `Yes` setter lives in `CaseFlagsEventHandler.java:39`. Source wins. -->
 
 ### 6. Configure the caseworker review event
 

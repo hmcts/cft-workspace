@@ -303,7 +303,7 @@ The letters mean slightly different things depending on which `Authorisation*` t
 | `U` | modify cases of this type | modify this field's data | **no impact** | modify cases in this state |
 | `D` | delete (not yet implemented) | delete (not yet implemented) | delete (not yet implemented) | delete (not yet implemented) |
 
-<!-- CONFLUENCE-ONLY: per-scope CRUD semantics from CCD Definition Glossary RCCD/207804327. The "no impact" for U on events and "not yet implemented" for D on all scopes are runtime-behaviour claims that the parser-level source code does not contradict — `AuthorisationParser.java` parses all four flags identically; the differential semantics live in data-store enforcement, which we have not traced. -->
+<!-- CONFLUENCE-ONLY: per-scope CRUD semantics from CCD Definition Glossary RCCD/207804327. The "no impact" for U on events and "not yet implemented" for D on all scopes are runtime-behaviour claims that the parser-level source code does not contradict — `AuthorisationParser.java` parses all four flags identically; the differential semantics live in data-store enforcement, which is outside this page's cited sources. -->
 
 ---
 

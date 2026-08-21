@@ -175,7 +175,7 @@ Five values are promoted from the JSON body to **JMS string properties** so cons
 | `event_id` | `EventId` | filtering |
 | `JMSXGroupID` | `CaseId` | **session-based per-case FIFO ordering** |
 
-<!-- DIVERGENCE: Confluence "Work Allocation Phase 2 Scope of Delivery" (RCCD 1460561625) and the data store both use camelCase for the *JSON body* keys, but an earlier draft of this page listed the JMS *property* names as camelCase (`JurisdictionId` etc.). MessageProperties.java:4-8 shows the JMS properties are snake_case (`jurisdiction_id`, `case_type_id`, `case_id`, `event_id`); only `JMSXGroupID` keeps its conventional name. The Phase 2 change log records this rename ("from camelCase to snake_case"). Source wins. -->
+<!-- DIVERGENCE: Confluence "Work Allocation Phase 2 Scope of Delivery" (RCCD 1460561625) and the data store both use camelCase for the *JSON body* keys, but the JMS *property* names are snake_case. MessageProperties.java:4-8 shows the JMS properties are snake_case (`jurisdiction_id`, `case_type_id`, `case_id`, `event_id`); only `JMSXGroupID` keeps its conventional name. The Phase 2 change log records this rename ("from camelCase to snake_case"). Source wins. -->
 
 `JMSXGroupID` and `case_id` both read the JSON `CaseId` but write to different JMS properties. `JMSXGroupID` is what makes Azure Service Bus route all messages for a given case to the same session, giving session-aware consumers ordered, per-case delivery.
 

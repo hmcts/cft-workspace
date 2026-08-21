@@ -311,8 +311,6 @@ POST audit/accessRequest
 }
 ```
 
-<!-- DIVERGENCE: this section previously carried a CONFLUENCE-ONLY marker saying the specific-access-approver-* role names and the CTSC sub-category were "not modelled in the AAC or data-store source — verify in the actual AMRAS configuration when implementing". AMRAS is cloned in this workspace (apps/am/am-role-assignment-service) and all four names, the approver/requested pairing, and the jurisdiction allow-list are in specific-access-global.drl at origin/master. They are not AAC or data-store concerns because approval is enforced by AMRAS's drools rules, not by either of those services. Source wins. -->
-
 ## Access metadata (`access_granted`, `access_process`)
 
 CCD computes two transient metadata fields on every read/search/start-event response (V2 internal APIs only) so that ExUI can decide whether to prompt the user for access:

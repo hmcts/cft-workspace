@@ -103,8 +103,7 @@ The COR is a temporary holding place. AAC and approver users see it; ordinary us
 }
 ```
 
-`CaseRoleId` is a `DynamicList`, not a plain string. `ApplyNoCDecisionService` reads the selected role via JSON path `/CaseRoleId/value/code` (`ApplyNoCDecisionService.java:103`). After the decision is applied, **all** COR fields are nullified to mark the request complete (`ApplyNoCDecisionService.java`, also confirmed in the API spec response example).
-<!-- DIVERGENCE: Earlier draft said only CaseRoleId is nullified. The Apply NoC Decision spec (Confluence ACA-1457312216) and the controller's example response show every COR field reset to null. Source confirms — Source wins. -->
+`CaseRoleId` is a `DynamicList`, not a plain string. `ApplyNoCDecisionService` reads the selected role via JSON path `/CaseRoleId/value/code` (`ApplyNoCDecisionService.java:103`). After the decision is applied, **all** COR fields are nullified to mark the request complete — not just `CaseRoleId` (`ApplyNoCDecisionService.java`, also confirmed in the API spec response example).
 
 ### COR field reference
 
@@ -198,7 +197,8 @@ All NoC endpoints are under `@RequestMapping("/noc")` (`NoticeOfChangeController
 | MCA-07 | `/noc/apply-decision` | POST | about-to-start on NoC Approval / Rejection event | Applies approved NoC — assigns incoming org roles, removes outgoing org roles. Returns HTTP 200 even on soft errors; check `response.errors[]`. |
 
 `/noc/apply-decision` always returns HTTP 200 — this is the CCD callback contract. Errors appear in the `errors[]` array of the response body (`NoticeOfChangeController.java:361-367`).
-<!-- DIVERGENCE: Earlier draft labelled apply-decision as a 'submitted' callback. Confluence spec (ACA-1457312216) and nfdiv's SystemApplyNoticeOfChange.aboutToStart() — which calls /noc/apply-decision from inside the about-to-start handler — both confirm it is invoked during AboutToStart processing of the NoC Decision event. Source wins. -->
+
+It runs as an **about-to-start** callback, not a submitted one: nfdiv calls it from inside `SystemApplyNoticeOfChange.aboutToStart()`, so the decision is applied during AboutToStart processing of the NoC Decision event.
 
 ### Endpoint roles in the lifecycle
 

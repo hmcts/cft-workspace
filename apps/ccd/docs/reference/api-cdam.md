@@ -16,6 +16,11 @@ sources:
   - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/advice/ErrorResponse.java
   - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/advice/CaseDocumentControllerAdvice.java
   - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/GeneratedHashCodeResponse.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/service/impl/DocumentManagementServiceImpl.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/client/dmstore/DocumentStoreClient.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/ApplicationParams.java
+  - ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/util/ApplicationUtils.java
+  - ccd-case-document-am-api:src/main/resources/application.yaml
 status: confluence-augmented
 confluence:
   - id: "1456373814"
@@ -65,6 +70,14 @@ sources_sha:
   : "ffcde0d9598de941886406b0933faab07523d58f"
   ? "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/model/GeneratedHashCodeResponse.java"
   : "d54aae25a8de4bcfc1c8c49c2542522f0b14180c"
+  ? "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/service/impl/DocumentManagementServiceImpl.java"
+  : "cf06c5f0618c9dc1bcdc5c636d899ae2500ef2af"
+  ? "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/client/dmstore/DocumentStoreClient.java"
+  : "d742391c5b190ec96fce266f6568866505c12b82"
+  "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/ApplicationParams.java": "db0396da539218528933c0482046bab08a5ef58e"
+  ? "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/util/ApplicationUtils.java"
+  : "d54aae25a8de4bcfc1c8c49c2542522f0b14180c"
+  "ccd-case-document-am-api:src/main/resources/application.yaml": "116d99f942a127dd17a3f08d8f3622e7006dc5cc"
 ---
 
 # API: CDAM (Case Document Access Management)
@@ -72,8 +85,8 @@ sources_sha:
 ## TL;DR
 
 - CDAM (`ccd-case-document-am-api`) is the document storage gateway — it controls upload, access tokens, and retrieval of case documents via six REST endpoints.
-- Documents uploaded via CDAM are stored immediately (before the CCD event completes) with a short TTL; the TTL is removed when the event successfully attaches documents.
-- Hash tokens (SHA-256 + vault secret) prevent URL-swapping attacks; CCD data-store validates and strips them before persisting case data.
+- Documents uploaded via CDAM are stored immediately (before the CCD event completes) with a TTL — **1 day by default**, not minutes; the TTL is cleared when the event successfully attaches documents.
+- Hash tokens (SHA-256, salted with the S2S TOTP secret) prevent URL-swapping attacks; CCD data-store validates and strips them before persisting case data. A token is **not stable across the attach boundary** — the caseId is part of the digest input once known.
 - Auth: S2S (`ServiceAuthorization`) + `service_config.json` whitelisting on all CDAM calls; user JWT (`Authorization`) additionally required for download.
 - Callers must be listed in `CASE_DOCUMENT_S2S_AUTHORISED_SERVICES` (flux config) and ExUI must enable CDAM via LaunchDarkly per case type.
 - In local dev (cftlib), CDAM runs in-process on `http://localhost:4455`.
@@ -89,7 +102,7 @@ The following endpoints are exposed by `ccd-case-document-am-api` itself (port 4
 | `GET` | `/cases/documents/{documentId}/token` | Generate hash token for a document | S2S (bulk_scan only) |
 | `GET` | `/cases/documents/{documentId}` | Retrieve document metadata | S2S + User R permission |
 | `GET` | `/cases/documents/{documentId}/binary` | Download document binary | S2S + User R permission |
-| `PATCH` | `/cases/documents/{documentId}` | Update document metadata | S2S (by microservice ID) |
+| `PATCH` | `/cases/documents/{documentId}` | Set the document's TTL — nothing else; body is `UpdateTtlRequest` (`CaseDocumentAmController.java:261-285`) | S2S (by microservice ID) |
 | `DELETE` | `/cases/documents/{documentId}` | Delete document | S2S (by microservice ID) |
 
 All seven rows are confirmed against `CaseDocumentAmController` at `origin/master` — the mappings
@@ -151,11 +164,26 @@ Accepts multipart form data with the document binary and metadata headers (`juri
 The upload flow:
 
 1. ExUI/service sends document + metadata to CDAM.
-2. CDAM persists to doc-store with a short TTL (configurable, default ~10 minutes).
-3. CDAM generates a hash token using SHA-256 over `(caseTypeId, jurisdictionId, documentId)` + a secret key from the CCD vault.
-4. Returns the `StoredDocumentHalResource` envelope extended with `hashToken`.
+2. CDAM forwards to dm-store, **setting the TTL itself** on the multipart body: `ttl` = now + `documentTtlInDays` (`DocumentStoreClient.java:284`, `:295-298`; the streaming variant does the same at `:401`).
+3. CDAM hashes each returned document and attaches a `hashToken` (`DocumentManagementServiceImpl.java:274-281`, `:307-330`).
+4. Returns the dm-store document envelope extended with `hashToken`.
 
-<!-- CONFLUENCE-ONLY: upload endpoint flow detail from LLD page 1456373800 — CDAM source not in workspace -->
+### What the hash token is actually over
+
+`ApplicationUtils.generateHashCode()` is SHA-256 — note the comment above it in source says SHA-512, which is wrong; the `MessageDigest.getInstance` argument is `"SHA-256"` (`ApplicationUtils.java:15-18`).
+
+The salt is **not** a dedicated document-hash secret: it is the S2S TOTP secret, injected as `@Value("${idam.s2s-auth.totp_secret}")` (`ApplicationParams.java:22-23`). Rotating the S2S TOTP secret therefore invalidates every previously issued hash token.
+
+The digest input is a bare concatenation, and it has two forms (`DocumentManagementServiceImpl.java:211-223`):
+
+| When | Input |
+|---|---|
+| No case id yet (upload) | `salt` + `documentId` + `jurisdictionId` + `caseTypeId` |
+| Case id known (token endpoint) | `salt` + `documentId` + `caseId` + `jurisdictionId` + `caseTypeId` |
+
+So **a document's hash token is not stable across its lifetime** — the value issued at upload is not the value the token endpoint returns once the document has a case id. Treat a hash token as a single-use credential for one attach or one download, not as an identifier to cache. At upload the document id is recovered by taking the last 36 characters of the dm-store self href rather than from a field (`:322-328`).
+
+<!-- DIVERGENCE: LLD page 1456373800 describes the hash as being over (caseTypeId, jurisdictionId, documentId) with a generic CCD vault key. Source order is documentId → (caseId) → jurisdictionId → caseTypeId, the key is specifically idam.s2s-auth.totp_secret, and the LLD omits the caseId variant that makes the token unstable across attach. Source wins. -->
 
 ## CCD data-store endpoints (document-related)
 
@@ -259,12 +287,14 @@ Three flags in data-store govern CDAM integration behaviour. All three must be e
 
 ## TTL (Time-To-Live) mechanism
 
-Documents uploaded via CDAM initially have a short TTL (configurable, approximately 10 minutes). This means:
+Documents uploaded via CDAM initially carry a TTL. **The default is 1 day, not minutes** — `documentTtlInDays: ${DOCUMENT_TTL_IN_DAYS:1}` (`application.yaml:81`, read via `ApplicationParams.java:19-20`). Deployments can shorten it with `DOCUMENT_TTL_IN_DAYS`, but the unit is whole days, so a sub-day TTL is not expressible without a code change.
 
-- If the CCD event completes successfully, CDAM removes the TTL when `PATCH /cases/documents/attachToCase` succeeds — the document becomes permanent.
-- If the CCD event fails or is abandoned, the document auto-deletes from doc-store after TTL expiry — no orphaned documents.
+CDAM sets the value on the upload itself rather than relying on a dm-store default: `getEffectiveTTL()` returns `now + documentTtlInDays` and is added to the multipart body as `ttl` (`DocumentStoreClient.java:284`, `:295-298`, and `:401` for the streaming path).
 
-<!-- CONFLUENCE-ONLY: TTL detail from LLD page 1456373800 — CDAM source not in workspace -->
+- If the CCD event completes successfully, CDAM clears the TTL when `PATCH /cases/documents/attachToCase` succeeds — the document becomes permanent. The clear is explicit, not an omission: CDAM sends a `null` TTL via a named constant, `private static final Date NULL_TTL = null`, in the `UpdateDocumentsCommand` it issues to dm-store (`DocumentManagementServiceImpl.java:56`, `:118-119`, `:168`).
+- If the CCD event fails or is abandoned, the document auto-deletes from doc-store after TTL expiry — no orphaned documents. With the default that window is a day, so a failed event leaves the binary retrievable-by-id in dm-store for materially longer than the LLD implies.
+
+<!-- DIVERGENCE: LLD page 1456373800 gives the TTL as "approximately 10 minutes". Source default is 1 day (DOCUMENT_TTL_IN_DAYS:1). Source wins. -->
 
 ## MOVING_CASE_TYPES
 

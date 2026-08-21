@@ -527,8 +527,6 @@ State transitions allowed by the standard XUI component:
 - `Inactive` is terminal for the dropdown (greyed out)
 - An external user can only move `Active` -> `Inactive` and must supply a `flagUpdateComment`.
 
-<!-- DIVERGENCE: Earlier draft TL;DR claimed `"Requested"` was the only magic string, and a later draft credited the four-value vocabulary to the HLD alone. Both are superseded now that ccd-case-ui-toolkit is in the workspace: the vocabulary is source, at case-flag-status.enum.ts:1-6, and it is exactly Requested / Active / Inactive / Not approved. What remains true is that no *CCD* component polices it — FlagDetail.java:69 types status as a plain String — so the strings are a contract between your callbacks and the XUI enum, and drift on either side fails silently. Source wins throughout. -->
-
 The status history is held in the audit trail of each `FlagDetail` `ListValue` (each item has a stable `id`), and `FlagDetail.dateTimeModified` is updated whenever the flag changes (`FlagDetail.java:51-57`).
 
 ## Step 6 - Add a service-specific review layer (optional)

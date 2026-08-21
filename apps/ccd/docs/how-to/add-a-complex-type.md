@@ -233,7 +233,7 @@ To include only specific sub-fields on a page (or reorder them) the SDK exposes 
 
 Behind the scenes this records `DisplayContext = COMPLEX` on the `CaseEventToFields` row for the parent and emits one `EventToComplexTypes` row per chosen sub-field. The `FieldDisplayOrder` on each `EventToComplexTypes` row controls the order the sub-fields render in for **this event** (overriding the class-declared order).
 
-<!-- DIVERGENCE: an earlier draft of this how-to suggested `.mandatory(CaseData::getContactAddress, "contactAddress.postCode")` to add an individual sub-field on a page. There is no such overload on FieldCollection.FieldCollectionBuilder — see libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java:76-262. The dot-path string overload exists on **tabs** only (Tab.java:56). Use `.complex(getter).optional(SubType::getField).done()` for event pages. Source wins. -->
+> **Dot-paths do not work on event pages.** `.mandatory(CaseData::getContactAddress, "contactAddress.postCode")` will not compile — there is no such overload on `FieldCollection.FieldCollectionBuilder` (`FieldCollection.java:76-262`). The dot-path string overload exists on **tabs** only (`Tab.java:56`). On an event page, nest instead: `.complex(getter).optional(SubType::getField).done()`.
 
 > Confluence: when you switch a complex field to per-element rendering on the page, **omitting** an element from `EventToComplexTypes` causes CCD to send it to ExUI with `displayContext: HIDDEN` — the sub-field is invisible on the wizard. The SDK's `.complex(...)` builder is what generates the explicit per-element `EventToComplexTypes` rows.
 

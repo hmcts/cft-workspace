@@ -114,8 +114,6 @@ wa-case-event-handler                                            [apps/wa/wa-cas
         └─ warn (raise)   →  Camunda message
 ```
 
-<!-- DIVERGENCE: Earlier draft said the data-store "publishes a message to the WA message-handler" directly. Source code (ccd-data-store-api/.../CaseEventMessageService.java + MessageQueueCandidateEntity) shows it writes to a `message_queue_candidates` outbox table — delivery to ASB is handled by a separate component, and the consumer is `wa-case-event-handler` (not "wa-message-handler"). Source wins. -->
-
 ### The `Publish` flag in CCD definitions
 
 For services using raw JSON definitions (e.g. SSCS), the flag is set per event in the `CaseEvent` sheet:
@@ -246,8 +244,6 @@ The authoritative permission vocabulary is the `PermissionTypes` enum
 `@Transient`** and therefore never persisted (`TaskRoleResource.java:57-58`). Treat `Refer` in a
 permissions DMN as decorative until you have confirmed the behaviour you expect from it.
 
-<!-- DIVERGENCE: An earlier draft of this page enumerated 15 permissions and omitted `Refer`. PermissionTypes.java:12 defines REFER("Refer", "refer"), so a DMN using it parses; it is the persistence that drops it. The same draft cited the enum by GitHub URL — wa-task-management-api is cloned at apps/wa/wa-task-management-api, so it is now cited as source. -->
-
 ### Where task permissions actually live
 
 Two things are easy to conflate. The permissions DMN is **not** consulted when a user opens
@@ -328,8 +324,6 @@ Work Allocation task visibility is governed by **AM role assignments evaluated t
 3. Filters / authorises the response based on that union.
 
 Service teams do not need to write role-assignment code; they just declare the role types their tasks use inside the permissions DMN. Organisational role assignments are produced upstream by `am-role-assignment-service` from Judicial Reference Data (JRD) and Staff Reference Data (SRD).
-
-<!-- DIVERGENCE: Earlier draft said claiming/assignment grants a "specific-access-* role on the case for the duration of the task". Confluence 1958285910 (v108) describes `specific-access-*` roles as products of the user-driven specific-access-request flow, and source agrees: they are created by drools rules in am-role-assignment-service (specific-access-global.drl:29-62 for the request, :117-140 for grant/deny), keyed on process == "specific-access", not by anything in wa-task-management-api. Source wins. -->
 
 Requesting and approving case access is a role-assignment concern rather than a WA one, and it
 touches WA only in that services configure `reviewSpecificAccessRequest<Category>` tasks so the

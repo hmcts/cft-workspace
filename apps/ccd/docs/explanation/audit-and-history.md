@@ -157,7 +157,7 @@ An event can flag one document as a `SignificantItem`. The value comes from the 
 
 The `case_event_significant_items` table has columns `id`, `type`, `description`, `url`, and `case_event_id`. The `SignificantItemType` enum currently only has one value: `DOCUMENT` (`SignificantItemType.java`).
 
-<!-- DIVERGENCE: an earlier draft of this page described the SignificantItem as "a document or URL"; the source enum has only DOCUMENT today, even though the column is called `url`. Source wins — there is currently no URL-only significant-item type, only documents whose location is stored in the `url` column. -->
+Despite the `url` column, there is no URL-only significant-item type — every significant item is a document, and `url` holds where that document lives.
 
 XUI surfaces significant items as prominent links in the history view.
 

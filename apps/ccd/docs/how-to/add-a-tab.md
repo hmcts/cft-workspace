@@ -133,8 +133,6 @@ When you specify multiple roles, the emitted JSON contains a separate tab record
 
 The runtime model exposes the role on each tab via `CaseTypeTab.getRole()` (`CaseTypeTab.java:69–75`).
 
-<!-- DIVERGENCE: An earlier draft said "Tabs themselves have no role restriction." Source disagrees: Tab.forRoles in libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Tab.java:71 and the per-role iteration in CaseTypeTabGenerator.java:38-49 emit a CaseTypeTab record per role, populating the UserRole column. Source wins. -->
-
 ### 4. Control field-level visibility via field access
 
 Tab role mapping (step 3) is a coarse filter; finer-grained visibility is governed by `@CCD(access = {...})` on each field. A role that lacks `READ` permission on a field will not see that field in the tab, even if the tab itself is mapped to that role.
@@ -220,8 +218,6 @@ The SDK writes one file per tab into `<output>/CaseTypeTab/<tabDisplayOrder>_<ta
 ## Caseworker vs citizen visibility
 
 The SDK's `tab()` builder hard-codes `Channel: "CaseWorker"` on every row it writes (`CaseTypeTabGenerator.java:93`). This means tabs declared via `tab()` are scoped to the caseworker UI. Citizen-channel tabs are configured separately by the service team (typically by hand-authored JSON or a separate generator) and are not produced by `tab()`.
-
-<!-- DIVERGENCE: An earlier draft implied citizens see the same tabs as caseworkers, with visibility purely a function of field-level access. Source contradicts: Channel is hard-coded to "CaseWorker" at CaseTypeTabGenerator.java:93, so the tab metadata emitted by tab() applies to the caseworker channel only. Citizens see tabs configured for Channel="Citizen" (defined elsewhere). Source wins. -->
 
 Within the caseworker channel, what each role actually sees follows this hierarchy:
 

@@ -3,6 +3,15 @@ topic: stitching
 audience: both
 sources:
   - libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java
+  - em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/rest/DocumentTaskResource.java
+  - em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/config/BatchConfiguration.java
+  - em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/service/impl/DmStoreDownloaderImpl.java
+  - em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/service/impl/DmStoreUploaderImpl.java
+  - em-stitching-api:src/main/resources/application.yaml
+  - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdStitchBundleCallbackController.java
+  - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/NewBundleController.java
+  - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdCloneBundleController.java
+  - em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/StitchingCompleteCallbackController.java
 status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
@@ -30,6 +39,23 @@ diataxis: explanation
 product: ccd
 sources_sha:
   "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java": "013ed140d477b8ef8ea079619d0b6e0a96d89fa2"
+  ? "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/rest/DocumentTaskResource.java"
+  : "b947f251eaf22b670a2701193fd2bbd3cadb5ec1"
+  ? "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/config/BatchConfiguration.java"
+  : "305d667570e24bd9d0b98f5a48c5be1c3563f259"
+  ? "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/service/impl/DmStoreDownloaderImpl.java"
+  : "0fcf36d48857753416d60e626744567e9df3170a"
+  ? "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/service/impl/DmStoreUploaderImpl.java"
+  : "0fcf36d48857753416d60e626744567e9df3170a"
+  "em-stitching-api:src/main/resources/application.yaml": "b4fa29544c90897df72b4f8376efe1600cc4c154"
+  ? "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdStitchBundleCallbackController.java"
+  : "5bc8c4fda1c1b561846b3d960398f7fc86700ac5"
+  ? "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/NewBundleController.java"
+  : "76f50f2a1fff38d4500c39030ff043f132ff9f59"
+  ? "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdCloneBundleController.java"
+  : "5bc8c4fda1c1b561846b3d960398f7fc86700ac5"
+  ? "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/StitchingCompleteCallbackController.java"
+  : "6c1a512c71e548439d96afbe0645b3521685081a"
 ---
 
 # Stitching
@@ -53,7 +79,7 @@ Stitching is **not** a CCD platform feature. The CCD codebase (data-store, defin
          ▼
    em-ccd-orchestrator ────► em-stitching-api (Spring Batch)
          │                          │
-         │                          │  GET /documents/{id}/binary
+         │                          │  GET /documents/{id} → follow _links.binary
          │                          ▼
          │                       dm-store
          │                          │
@@ -64,12 +90,34 @@ Stitching is **not** a CCD platform feature. The CCD codebase (data-store, defin
    service-api writes Document reference to CCD case data
 ```
 
-<!-- CONFLUENCE-ONLY: pipeline shape (Spring Batch job, dm-store interaction) sourced from RCCD/Docstore-Doc Stitching Interaction page; em-stitching-api / em-ccd-orchestrator repos are not cloned in this workspace so endpoint paths are not source-verified. -->
-
 ### The two services
 
 - **em-ccd-orchestrator** — orchestrates callbacks from CCD relating to management and stitching of bundles. Exposes the bundle/stitching control plane.
 - **em-stitching-api** — headless service that executes the actual stitching as a Spring Batch job; exposes a `DocumentTasks` resource.
+
+### Stitching is not triggered by the request that asks for it
+
+`POST /api/document-tasks` only inserts a `DocumentTask` row in state `NEW` and returns 201 (`DocumentTaskResource.java:70`, `:75-76`). The work is picked up out-of-band by a Spring Batch job on a fixed-delay tick — `DOCUMENT_TASK_MILLISECONDS`, **default 6000 ms** (`BatchConfiguration.java:108`, `application.yaml:43`) — which reads `taskState = 'NEW'` in chunks of 5, oldest first, under a `PESSIMISTIC_WRITE` lock (`BatchConfiguration.java:196-201`, `:246-248`). A ShedLock annotation keyed on `task.env` (`:109`) means only one pod runs the job at a time, so the tick does not scale out with replica count.
+
+Two consequences worth designing around:
+
+- **There is a floor on latency.** Even a trivial single-page stitch cannot complete faster than the next tick, so sub-second stitching is not available at any bundle size.
+- **Tasks are gated on build number.** The reader filters `t.version <= buildInfo.getBuildNumber()` (`:198`). A task created by a newer deployment is invisible to older pods still running — which is what makes the queue safe to drain across a rolling deploy, but also means a task can sit in `NEW` indefinitely if the build that created it is rolled back.
+
+Callback dispatch is a **separate** batch job, not part of the stitch: `processDocumentCallbackJob` reads tasks in `DONE`/`FAILED` whose callback is still `NEW`, ordered by `lastModifiedDate`, page size 5 (`:211-223`, `:262-267`). A stitch can therefore be complete in dm-store before the calling service has been told.
+
+### What the pipeline does to dm-store
+
+On the way in, the downloader fetches each document's metadata and follows `_links.binary.href` rather than constructing a binary path itself (`DmStoreDownloaderImpl.java:79-85`). On the way out there are two distinct paths (`DmStoreUploaderImpl.java:52-57`):
+
+| Bundle state | Call |
+| --- | --- |
+| No `stitchedDocumentURI` yet | `POST {dm-store}/documents`, multipart `files` (`:78-83`) |
+| Already stitched once | `POST` to the existing `stitchedDocumentURI` — a dm-store new-version upload, multipart `file` (singular) (`:132-137`) |
+
+Note the form field name changes between the two (`files` vs `file`), and that a re-stitch **replaces the document version in place** rather than creating a new document — so the CCD field's `document_url` stays valid across re-stitches.
+
+<!-- DIVERGENCE: the RCCD "Docstore-Doc Stitching Interaction" page shows the stitched upload as an unclassified POST /documents. Source hard-codes classification=PUBLIC on the multipart body (DmStoreUploaderImpl.java:66) irrespective of the classification of the source documents being bundled. Source wins. -->
 
 ## When services use stitching
 
@@ -96,28 +144,32 @@ The calling service workflow:
 
 ## API endpoints
 
-These are observed in production traffic logs (Application Insights, July–Oct 2022). The em-ccd-orchestrator and em-stitching-api repos are not cloned in this workspace, so paths below are from Confluence Swagger references rather than source.
+Every path below is verified against the two repos' controllers at `origin/master`. The traffic figures are from production Application Insights, July–Oct 2022, and are the only part of this section not source-derived.
 
 ### em-ccd-orchestrator
 
-| Endpoint | Purpose | Sync? |
-| --- | --- | --- |
-| `POST /api/stitch-ccd-bundles` | Create and stitch a CCD bundle. | Sync |
-| `POST /api/async-stitch-ccd-bundles` | Create and stitch a CCD bundle. | Async |
-| `POST /api/new-bundle` | Create a bundle; response does **not** include the stitched document URL. | Async |
-| `POST /api/clone-ccd-bundles` | Clone an existing bundle. | — |
-| `POST /api/stitching-complete-callback/{caseId}/{triggerId}/{bundleId}` | Internal callback used by the stitching pipeline to update the stitched document details and stitched status against the case in CCD. | — |
+| Endpoint | Purpose | Sync? | Source |
+| --- | --- | --- | --- |
+| `POST /api/stitch-ccd-bundles` | Create and stitch a CCD bundle. | Sync | `CcdStitchBundleCallbackController.java:37` |
+| `POST /api/async-stitch-ccd-bundles` | Create and stitch a CCD bundle. | Async | `CcdStitchBundleCallbackController.java:58` |
+| `POST /api/new-bundle` | Create a bundle; response does **not** include the stitched document URL — it is written back to the bundle in CCD asynchronously by the stitching API. | Async | `NewBundleController.java:32-37` |
+| `POST /api/clone-ccd-bundles` | Clone an existing bundle. | — | `CcdCloneBundleController.java:33` |
+| `POST /api/stitching-complete-callback/{caseId}/{triggerId}/{bundleId}` | Internal callback used by the stitching pipeline to update the stitched document details and stitched status against the case in CCD. Body is a `DocumentTaskDTO`. | — | `StitchingCompleteCallbackController.java:52-54`, `:78-83` |
+
+All five take the IDAM bearer and S2S tokens as `authorization` / `serviceauthorization` headers, both marked `required = true`, and all document `403 Access Denied`.
 
 Observed prod peak loads (per hour): `stitch-ccd-bundles` 367, `new-bundle` 149, `stitching-complete-callback` 287. The async variants (`async-stitch-ccd-bundles`, `clone-ccd-bundles`) had zero observed traffic.
 
 ### em-stitching-api
 
-| Endpoint | Purpose |
-| --- | --- |
-| `POST /api/document-tasks` | Create a document task (a stitch job). |
-| `GET /api/document-tasks/{id}` | Get an existing document task — used to poll for completion. |
+Both are under a class-level `@RequestMapping("/api")` (`DocumentTaskResource.java:42`).
 
-<!-- CONFLUENCE-ONLY: endpoint paths and workload metrics from RQA Workload Model pages (data is from 2022); not verified against em-stitching-api or em-ccd-orchestrator source. -->
+| Endpoint | Purpose | Success | Source |
+| --- | --- | --- | --- |
+| `POST /api/document-tasks` | Create a document task (a stitch job). Enqueues only — see above. | 201 | `DocumentTaskResource.java:64-76` |
+| `GET /api/document-tasks/{id}` | Get an existing document task — used to poll for completion. | 200 | `DocumentTaskResource.java:129-147` |
+
+<!-- CONFLUENCE-ONLY: the workload metrics in this section (peak loads, page counts) come from the RQA Workload Model pages and are from 2022; there is no source equivalent. -->
 
 ## Data shape
 

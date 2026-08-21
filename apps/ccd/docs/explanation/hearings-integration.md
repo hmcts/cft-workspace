@@ -165,7 +165,7 @@ The role names are the constants in `AccessControlServiceImpl` — `hearing-mana
 assignments for the hearing's case, so a service integrating with HMC needs those roles
 granted through Role Assignment, not just an S2S allow-list entry.
 
-<!-- DIVERGENCE: an earlier draft of this page (and the Possessions onboarding table on Confluence 1825037149) listed the surface as four resources — `/hearing` taking all four verbs, `/hearings` GET-only, `/partiesNotified` and `/unNotifiedHearings`. Three of those are wrong against source: `/hearing` is `/hearing/{id}` for GET/PUT/DELETE, `/hearings` is `/hearings/{ccdCaseRef}` for the single-case read and also accepts POST for the multi-case read, and `/partiesNotified` and `/unNotifiedHearings` are `{id}`- and `{hmctsServiceCode}`-scoped respectively. The verb *semantics* in the Confluence table (POST create, PUT update, DELETE cancel, GET pull) are correct. Source wins. -->
+<!-- DIVERGENCE: the Possessions onboarding table on Confluence 1825037149 lists the surface as four unparameterised resources — `/hearing` taking all four verbs, `/hearings` GET-only, `/partiesNotified` and `/unNotifiedHearings`. Against source: `/hearing` is `/hearing/{id}` for GET/PUT/DELETE, `/hearings` is `/hearings/{ccdCaseRef}` for the single-case read and also accepts POST for the multi-case read, and `/partiesNotified` and `/unNotifiedHearings` are `{id}`- and `{hmctsServiceCode}`-scoped respectively. The verb semantics in the Confluence table (POST create, PUT update, DELETE cancel, GET pull) match source. Source wins. -->
 
 Three shapes here catch integrators out:
 
@@ -218,8 +218,6 @@ Change detection then decides whether each hearing needs a fresh notice. `requir
 - HMC returns hearing times in UTC and civil runs them through `convertFromUTC` before comparing (`HmcDataUtils.java:135-140`), so a service that compares raw HMC timestamps against locally-stored local times will see spurious changes every summer
 
 Separately, `hasAlreadyNotifiedResponse()` guards against re-notifying: it compares the request version and the response-received timestamp against what was last recorded (`HmcDataUtils.java:98-114`) — the same two values that `PUT /partiesNotified/{id}` requires as query parameters.
-
-<!-- DIVERGENCE: an earlier draft of this page described the civil poll as running "from a Camunda scheduler" and named the change-detection method `HmcDataUtils.hearingDataChanged()` checking "number of days, location EPIMS ID, and start/end times". Neither name exists at origin/master: the scheduler is a Spring @Scheduled task (AutomatedHearingNoticeScheduler) and the methods are requiresNewHearingNotice()/hearingScheduleChangedSinceLastNotification(), and the field compared is hearingVenueId on the day schedule. The substance of the check was right. Source wins. -->
 
 ## Configuration checklist
 

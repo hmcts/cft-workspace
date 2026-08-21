@@ -438,7 +438,7 @@ enum:
 | `"1"` | `APPROVED` |
 | `"2"` | `REJECTED` |
 
-<!-- DIVERGENCE: Earlier draft labelled `0` as "pending". The SDK enum `ChangeOrganisationApprovalStatus.java` (libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ChangeOrganisationApprovalStatus.java:11-17) names it `NOT_CONSIDERED`. The states are functionally equivalent — the request hasn't been actioned — but the constant name is `NOT_CONSIDERED`, not `PENDING`. Source wins. -->
+There is no `PENDING` constant. The not-yet-actioned state is `NOT_CONSIDERED` (`ChangeOrganisationApprovalStatus.java:11-17`); prose elsewhere that calls this state "pending" is describing it, not naming it.
 
 <!-- DIVERGENCE: Confluence "CCD Supported Field Types" lists the timestamp field as `ApprovalRejectionTimeStamp` (capital S in "Stamp"). The SDK serialises it as `ApprovalRejectionTimestamp` (lowercase s) (ChangeOrganisationRequest.java:52). Source wins; the JSON key is `ApprovalRejectionTimestamp`. -->
 
