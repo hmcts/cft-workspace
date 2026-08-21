@@ -15,6 +15,15 @@ sources:
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/util/FileNameHelper.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/model/in/RecipientsValidator.java
   - send-letter-service:src/main/resources/application.yaml
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/ResponseExceptionHandler.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/FtpConfigProperties.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java
+  - send-letter-service:charts/rpe-send-letter-service/values.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml
 status: reviewed
 last_reviewed: "2026-05-13T12:00:00Z"
 examples_extracted_from:
@@ -60,6 +69,15 @@ sources_sha:
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/util/FileNameHelper.java": "d5a03ebeda0f0ec72338d4a46b861766e0cc66e4"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/model/in/RecipientsValidator.java": "fafc1d84527b0687a12d30952ea72bba8474aeaa"
   "send-letter-service:src/main/resources/application.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java": "cd01b8cca8df1d5afd7c786701493045172a0eb8"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/ResponseExceptionHandler.java": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/FtpConfigProperties.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java": "523d1f48bf4ca1a73880d32b060a821831ea9a9a"
+  "send-letter-service:charts/rpe-send-letter-service/values.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml": "40aead8406c136c315b5fd7b8c52be6ab8d94514"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml": "1b458db65004dbaa087d5b36329c05aefa0c8669"
 ---
 
 ## TL;DR
@@ -79,7 +97,7 @@ sources_sha:
 | Static API key | `/letters/{id}/mark-*`, `/tasks/*` | `Authorization: Bearer <key>` | `ActionController`/`TaskController` inline check against `actions.api-key` config |
 | None | `GET /letters/{id}`, `GET /letters/{id}/extended-status`, `GET /letters/v2/{id}` | -- | Unauthenticated (UUID is the secret) |
 
-The S2S token identifies the calling service name. That name is used to look up the SFTP folder mapping in `ftp.service-folders` configuration. If no mapping exists for the service, the letter status transitions to `Skipped`.
+The S2S token identifies the calling service name. That name is used to look up the SFTP folder mapping in `ftp.service-folders` configuration. If no enabled mapping exists for the service, `POST /letters` returns **403** with the body `Service not configured` and nothing is persisted (`LetterService.java:144-148`, `ResponseExceptionHandler.java:211-215`). The folder configuration is therefore the effective authorisation list, not S2S registration alone.
 
 Spring Security is explicitly excluded from the build (`build.gradle` excludes `spring-boot-starter-security`). The GET status endpoints rely on UUID unpredictability rather than token authentication.
 
@@ -151,6 +169,16 @@ Submits one or more PDF documents for printing and posting. Returns a `letter_id
 
 **Deduplication**: If a `Created` letter with a matching checksum already exists, the existing letter's UUID is returned instead of inserting a new record (`LetterService.java:151-162`).
 
+**Error responses**:
+
+| Status | Condition | Body | Source |
+|---|---|---|---|
+| 400 | Bean-validation failure, including a missing or empty `recipients` list | -- | `ResponseEntityExceptionHandler` default |
+| 400 | PDF could not be read | `Invalid pdf` | `ResponseExceptionHandler.java:164-167` |
+| 401 | Missing or invalid `ServiceAuthorization` header | -- | `ResponseExceptionHandler.java:105-108`, `:199-202` |
+| 403 | Calling service has no enabled `ftp.service-folders` entry | `Service not configured` | `LetterService.java:144-148`, `ResponseExceptionHandler.java:211-215` |
+| 409 | Unique-index collision on `(checksum, status)` | `Duplicate request` | `ResponseExceptionHandler.java:235-238` |
+
 ### GET /letters/{id}
 
 Returns the current status of a letter.
@@ -197,13 +225,13 @@ Returns status including the `copies` JSON field (per-document copy counts).
 | `Uploaded` | Successfully uploaded to provider SFTP | `Created` -> `Uploaded` (by `UploadLettersTask`) |
 | `Posted` | Provider confirmed physical posting via CSV report | `Uploaded` -> `Posted` (by `MarkLettersPostedService`) |
 | `Aborted` | Manually aborted via admin endpoint | Any -> `Aborted` |
-| `Skipped` | No SFTP folder mapping found for the calling service | `Created` -> `Skipped` |
+| `Skipped` | Folder mapping absent when `UploadLettersTask` reached the letter | `Created` -> `Skipped` |
 | `FailedToUpload` | Non-IO exception during SFTP upload | `Created` -> `FailedToUpload` |
 | `PostedLocally` | Manually marked via admin endpoint | Any -> `PostedLocally` |
 | `NotSent` | Manually marked via admin endpoint | Any -> `NotSent` |
 | `NoReportAborted` | Letter `Uploaded` > 7 days with no provider report | `Uploaded` -> `NoReportAborted` |
 
-Callers typically see `Created`, `Uploaded`, `Posted`, `Aborted`, `Skipped`. The remaining statuses are internal/administrative.
+Callers typically see `Created`, `Uploaded`, `Posted`, `Aborted`. The remaining statuses are internal or administrative. `Skipped` is close to unreachable: submission already requires a folder mapping, so it only occurs when the mapping is removed between creation and upload (`UploadLettersTask.java:143-165`).
 
 ## Request field semantics
 
@@ -217,7 +245,9 @@ The `type` field is a Xerox document type identifier agreed during service onboa
 - Any envelope inserts
 - Print-queue routing within Xerox
 
-The send-letter-service itself has no knowledge of what these types mean -- it passes the value through to the generated filename and thence to Xerox. New type values require coordination with Xerox (approximately 6-week lead time for new work).
+The service applies no validation to `type` beyond `@NotEmpty`. It strips underscores from the value, concatenates it into the upload filename, and reads it nowhere else (`FileNameHelper.java:100-117`). A wrong or misspelled type is accepted and uploaded, and surfaces only at the print provider's end.
+
+New type values require coordination with Xerox (approximately 6-week lead time for new work).
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ### `additional_data`
@@ -260,7 +290,7 @@ Each onboarded service has an entry in `ftp.service-folders` (application.yaml) 
 | S2S service name | SFTP folder |
 |---|---|
 | `cmc_claim_store` | `CMC` |
-| `civil_service` | `CMC` (feature-flagged via `CIVIL_SERVICE_ENABLED`) |
+| `civil_service` | `CMC` (gated on `CIVIL_SERVICE_ENABLED`; `false` in `application.yaml:146`, `true` in every deployed environment) |
 | `civil_general_applications` | `CMC` |
 | `nfdiv_case_api` | `NFDIVORCE` |
 | `divorce_frontend` | `DIVORCE` |
@@ -273,7 +303,7 @@ Each onboarded service has an entry in `ftp.service-folders` (application.yaml) 
 | `pcs_api` | `PCS` |
 | `send_letter_tests` | `BULKPRINT` |
 
-If a service name has no mapping, the letter status transitions to `Skipped`.
+An entry with `enabled: false` is dropped when the properties bind -- `setServiceFolders` filters on `isEnabled()` before building the map (`FtpConfigProperties.java:157-162`) -- so a disabled service is indistinguishable from an absent one and its submissions are rejected with 403.
 
 ## Encryption
 
@@ -285,6 +315,8 @@ PGP encryption of uploaded zip files is configurable:
 | `encryption.publicKey` | `ENCRYPTION_PUBLIC_KEY` | (empty) | Xerox's PGP public key for encryption |
 
 When enabled, the file extension changes from `.zip` to `.pgp` and the content is encrypted using `PgpEncryptionUtil.encryptFile()` with the configured public key.
+
+The `application.yaml` default is not what deployments use. The Helm chart sets `ENCRYPTION_ENABLED: "true"` (`charts/rpe-send-letter-service/values.yaml:54`) and each non-production overlay sets it back to `false`, so production uploads `.pgp` and AAT, demo, ITHC and perftest upload `.zip`.
 
 ## Admin endpoints
 
@@ -310,7 +342,7 @@ Also protected by the static API key.
 
 Source: `TaskController.java:57-109`
 
-Note: `POST /tasks/process-reports` is the only mechanism that triggers provider report processing — there is no `@Scheduled` trigger for this operation.
+`POST /tasks/process-reports` is the only mechanism that triggers provider report processing; the service carries no `@Scheduled` trigger for it. In production the call is made by a separate Kubernetes CronJob, `bp-cron-trigger-daily-processing`, on the hour from 11:00 to 16:00 Monday to Friday, and `bp-cron-trigger-daily-checks` calls `GET /tasks/check-posted` on the half hour across the same window (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml:12-16`, `cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml:12-16`). Both triggers are disabled in their base HelmReleases and enabled only by the production overlays (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml:9`, `cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml:10`), so outside production these endpoints must be called by hand.
 
 ## OpenAPI spec
 
@@ -327,8 +359,7 @@ Integrating a new service requires coordination between your team, the Bulk Prin
 5. **Configuration changes**: The Bulk Print team adds entries to `ftp.service-folders` and `reports.service-config` in `application.yaml`.
 6. **Client integration**: Add `send-letter-client` as a dependency. The client handles S2S token injection and provides typed API methods.
 
-There is no separate S2S whitelisting beyond the `service-folders` configuration -- if your service name appears in that list, it can submit letters.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+There is no S2S allow-list inside send-letter-service beyond the `service-folders` configuration. The only service-name check in the submission path is the folder lookup, and its failure is what produces the 403 (`LetterService.java:144-148`), so an enabled entry in that list is sufficient to submit letters.
 
 **Document formatting requirements**: Templates must comply with Xerox formatting guidelines -- particularly letter margins and address-box positioning to fit the envelope window. The Bulk Print team can facilitate approval of templates with Xerox.
 

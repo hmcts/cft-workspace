@@ -14,6 +14,15 @@ sources:
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/ActionController.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/reports/StaleLetterController.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/reports/PendingLettersController.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/FtpConfigProperties.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/RetryConfig.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java
+  - send-letter-service:charts/rpe-send-letter-service/values.yaml
+  - send-letter-service:build.gradle
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml
+  - send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/SendLetterApi.java
+  - send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/config/RetryConfig.java
 status: reviewed
 last_reviewed: "2026-05-13T12:00:00Z"
 examples_extracted_from:
@@ -56,16 +65,25 @@ sources_sha:
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/ActionController.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/reports/StaleLetterController.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/reports/PendingLettersController.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/FtpConfigProperties.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/RetryConfig.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java": "cd01b8cca8df1d5afd7c786701493045172a0eb8"
+  "send-letter-service:charts/rpe-send-letter-service/values.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "send-letter-service:build.gradle": "b9d5b5269c60ac73613ccdb0634b5d601a83406e"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml": "7f749ac477177094eecec870262c84a3dbec2efe"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
+  "send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/SendLetterApi.java": "09d39a226c4ac7204cddd3b608acfa45a34935ef"
+  "send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/config/RetryConfig.java": "92c954a09550cc02852124d6b536d161f1c5fc20"
 ---
 
 ## TL;DR
 
 - Letters stuck in `Created` status means the `UploadLettersTask` scheduler is not picking them up for SFTP upload.
-- Most common causes: `SCHEDULING_ENABLED` is `false` (the default), the FTP downtime window is active, SFTP connectivity/auth failure, or a stale ShedLock row preventing the task from acquiring the lock.
+- Most common causes: the FTP downtime window is active, SFTP connectivity/auth failure, or a stale ShedLock row preventing the task from acquiring the lock. `SCHEDULING_ENABLED` is only a plausible cause when running locally -- the Helm chart sets it `"true"` for every deployed environment (`send-letter-service:charts/rpe-send-letter-service/values.yaml:57`).
 - A single non-IOException upload error breaks the entire batch (max 10 letters per cycle) -- one bad letter blocks all subsequent uploads until manual intervention.
 - The scheduler runs every 30 seconds but only processes letters created more than 2 minutes ago (`DB_POLL_DELAY`).
 - Use the admin endpoints (`mark-created`, `mark-aborted`, `mark-posted-locally`, `mark-not-sent`) to manage stuck letters. All require the `actions-api-key` secret as a Bearer token.
-- Letters uploaded but not printed within 2 business days are flagged as stale; an automated alert emails the team.
+- Letters uploaded but not confirmed `Posted` within 7 business days are flagged as stale; an automated alert emails the team.
 
 ## Symptom
 
@@ -73,16 +91,19 @@ Letters remain in `Created` status indefinitely. The `sentToPrintAt` column is n
 
 ## Step 1: Confirm scheduling is enabled
 
-The `UploadLettersTask` and the entire `SchedulerConfiguration` only activate when `scheduling.enabled=true` (`SchedulerConfiguration.java:20`). The default in `application.yaml:171` is:
+The `UploadLettersTask` and the entire `SchedulerConfiguration` only activate when `scheduling.enabled=true` (`send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/SchedulerConfiguration.java:20`). The application default is `false` (`send-letter-service:src/main/resources/application.yaml:171`):
 
 ```yaml
 scheduling:
   enabled: ${SCHEDULING_ENABLED:false}
 ```
 
+That default applies to local runs only. The Helm chart sets `SCHEDULING_ENABLED: "true"` (`send-letter-service:charts/rpe-send-letter-service/values.yaml:57`) and no environment overlay in `cnp-flux-config` turns it off, so every deployed environment schedules uploads.
+
 1. Check the pod's environment variable: `SCHEDULING_ENABLED` must be `true`.
 2. If missing or `false`, the scheduler bean is never created and no uploads will occur.
 3. Verify in logs at startup -- look for ShedLock initialisation messages. Their absence confirms scheduling is disabled.
+4. Because the chart already sets it, a `false` value in a deployed pod means something removed or overrode it -- check the HelmRelease rather than assuming the default is at fault.
 
 ## Step 2: Check the FTP downtime window
 
@@ -90,27 +111,29 @@ The `UploadLettersTask` checks `FtpAvailabilityChecker.isFtpAvailable()` before 
 
 <!-- DIVERGENCE: Confluence (Knowledge bank) says downtime is integer hours. Source application.yaml:139-140 shows full HH:MM time strings. Source wins. -->
 
-1. Check the configured window. Defaults are 16:00-17:00 London time (`application.yaml:138-140`):
-   ```yaml
-   ftp:
-     downtime:
-       from: ${FTP_DOWNTIME_FROM:16:00}
-       to: ${FTP_DOWNTIME_TO:17:00}
-   ```
-2. The checker parses these as `LocalTime` values and handles both same-day windows (start < end) and overnight windows (start > end) (`FtpAvailabilityChecker.java:30-35`).
+1. Work out which window the pod is actually running. The value comes from three layers, and the `application.yaml` default is the one you are least likely to be looking at:
+
+   | Layer | `FTP_DOWNTIME_FROM` | `FTP_DOWNTIME_TO` | Citation |
+   |-------|---------------------|-------------------|----------|
+   | `application.yaml` (local runs only) | `16:00` | `17:00` | `send-letter-service:src/main/resources/application.yaml:139-140` |
+   | Helm chart (all deployed environments) | `23:58` | `23:59` | `send-letter-service:charts/rpe-send-letter-service/values.yaml:71-72` |
+   | Production overlay | `16:00` | `18:00` | `cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:14-15` |
+
+   So production suppresses uploads for two hours each afternoon, and AAT, demo, ITHC and perftest suppress them for a single minute just before midnight. The 16:00-17:00 pair in `application.yaml` is never the window in a deployed pod.
+2. The checker parses these as `LocalTime` values and handles both same-day windows (start < end) and overnight windows (start > end) (`send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/ftp/FtpAvailabilityChecker.java:30-35`). Note that the comparison is strict on both ends: a letter picked up at exactly `16:00` or exactly `18:00` is still treated as inside the window.
 3. If letters are stuck during what should be an active period, confirm the pod's timezone is `Europe/London` and that the env vars have not been misconfigured to create an all-day window (e.g. `FTP_DOWNTIME_FROM=00:00`, `FTP_DOWNTIME_TO=23:59`).
-4. **Xerox processing context**: Xerox starts downloading files between 16:00 and 17:30 on weekdays. The default downtime window aligns with this -- letters uploaded during Xerox's download window could be partially processed. Files received before 16:00 are processed same day (Mon-Fri). Xerox has 48 hours to print and mail after download.
+4. **Xerox processing context**: Xerox starts downloading files between 16:00 and 17:30 on weekdays. Files received before 16:00 are processed same day (Mon-Fri). Xerox has 48 hours to print and mail after download.
 
 ## Step 3: Verify SFTP connectivity
 
-The service uses SSHJ (`com.hierynomus:sshj:0.40.0`) with public-key authentication (`FtpClient.java:248-263`).
+The service uses SSHJ (`com.hierynomus:sshj` -- exact pin, read it from `send-letter-service:build.gradle`) with public-key authentication (`FtpClient.java:248-263`).
 
 1. Check logs for `UserAuthException` -- this is caught and logged as "Unable to authenticate" without retry (`FtpClient.java:225-228`). Common causes:
    - Expired or rotated SSH key pair.
    - PEM private key newline corruption in environment variables (`FtpConfigProperties.java:118-127` applies a workaround, but malformed keys can still fail).
    - Incorrect host fingerprint -- the service verifies the server fingerprint on connect.
 2. Check logs for `IOException` or `TimeoutException` during upload. On timeout, the service attempts to delete partial files before rethrowing (`FtpClient.java:99-105`).
-3. The retry template retries up to 5 times with 2000ms exponential backoff on `FtpException` (`RetryConfig.java:22-31`). If all retries are exhausted, the letter stays `Created` for the next scheduler cycle -- unless it was a non-IOException error (see Step 5).
+3. The retry template makes at most 5 attempts in total, with exponential backoff starting at 2000ms, and only on `FtpException` (`send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/RetryConfig.java:22-31`). Both numbers come from the misspelled `file-upoad` property block (`send-letter-service:src/main/resources/application.yaml:205-207`) -- searching for `file-upload` in config will not find them. If all attempts are exhausted, the letter stays `Created` for the next scheduler cycle -- unless it was a non-IOException error (see Step 5).
 
 ## Step 4: Check ShedLock state
 
@@ -155,7 +178,7 @@ The upload loop processes a maximum of `BATCH_SIZE = 10` letters per scheduler c
    Authorization: Bearer <ACTIONS_API_KEY>
    ```
    The API key is stored in the Key Vault secret `actions-api-key` (in `rpe-send-letter-<env>` vault).
-4. Letters with no service-folder mapping are marked `Skipped` (`UploadLettersTask.java:158-163`). Check that the calling service's S2S name has an entry in `ftp.service-folders`. Note that some services have an explicit `enabled` flag (e.g. `civil_service` defaults to `enabled: false`).
+4. Letters with no service-folder mapping are marked `Skipped` (`send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java:158-165`). Reaching this branch is unusual, because `LetterService` performs the same lookup on submission and rejects the request with HTTP 403 before anything is persisted (`send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java:144-148`). A `Skipped` letter therefore means the mapping was removed or disabled *after* the letter was accepted. Check that the calling service's S2S name still has an entry in `ftp.service-folders`. Entries carrying an `enabled` flag are dropped from the map entirely when it is false (`send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/FtpConfigProperties.java:157-162`), which is indistinguishable from the entry being absent. `civil_service` is the one such entry; its `application.yaml` default is `false` (`send-letter-service:src/main/resources/application.yaml:146`) but every deployed environment sets `CIVIL_SERVICE_ENABLED: true`.
 5. To re-queue a letter for upload (e.g. after fixing the root cause), mark it back to `Created`:
    ```
    PUT /letters/{id}/mark-created
@@ -218,7 +241,7 @@ The service exposes internal endpoints for monitoring upload health (accessible 
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /pending-letters` | Letters in `Created` status not yet uploaded |
-| `GET /stale-letters` | Letters uploaded > 2 business days ago without `Posted` confirmation |
+| `GET /stale-letters` | Letters uploaded > 7 business days ago without `Posted` confirmation |
 | `GET /stale-letters/download` | CSV download of stale letters |
 | `GET /letters?date=YYYY-MM-DD` | All letters created on a given date (expect `Uploaded` status) |
 | `GET /reports/count-summary?date=YYYY-MM-DD` | Letter count per service for a given day |
@@ -248,18 +271,18 @@ All admin endpoints are `PUT` requests under `/letters/{id}` and require `Author
 | `Uploaded` | Successfully uploaded to Xerox SFTP |
 | `Posted` | Confirmed printed and mailed (from Xerox report) |
 | `Aborted` | Manually cancelled -- will not be uploaded or reprinted |
-| `Skipped` | Service folder not found -- upload was skipped |
+| `Skipped` | Service folder mapping absent or disabled at upload time -- upload was skipped |
 | `FailedToUpload` | Upload attempted but failed (non-IOException) |
 | `PostedLocally` | Printed locally instead of by Xerox |
 | `NotSent` | Stale letter marked as not sent for re-investigation |
 
 ## Stale letters
 
-A letter is considered **stale** when it has been uploaded to Xerox's SFTP but no `Posted` confirmation has been received within 2 business days (`stale-letters.min-age-in-business-days: ${STALE_BUSINESS_DAYS:2}`).
+A letter is considered **stale** when it has been uploaded to Xerox's SFTP but no `Posted` confirmation has been received within the `stale-letters.min-age-in-business-days` threshold. The `application.yaml` default is 2 (`send-letter-service:src/main/resources/application.yaml:199`), but the flux base HelmRelease sets `STALE_BUSINESS_DAYS: 7` (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:17`) and no overlay changes it, so **7 business days is the threshold in every deployed environment**, production included. A letter that is five days late will not appear in `/stale-letters`.
 
-The `StaleLettersTask` runs on a cron schedule (default: `0 30 11 * * *` -- 11:30 AM London time) and sends an email alert if stale letters are found. A separate `DelayAndStaleReport` also monitors this.
+The `StaleLettersTask` runs on a cron schedule (default: `0 30 11 * * *` -- 11:30 AM London time) and sends an email alert if stale letters are found. A separate `DelayAndStaleReport` also monitors this; it is enabled only in production (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:19`).
 
-If a letter remains stale for 7+ days without a Xerox report (`min-age-in-days-for-no-report-abort: ${NO_REPORT_ABORT_DAYS:7}`), it may be auto-aborted by `CheckLettersPostedService`.
+If a letter remains stale for 7+ days without a Xerox report (`min-age-in-days-for-no-report-abort: ${NO_REPORT_ABORT_DAYS:7}`, `send-letter-service:src/main/resources/application.yaml:200`), it may be auto-aborted by `CheckLettersPostedService`. With `STALE_BUSINESS_DAYS: 7` deployed, the alert threshold and the auto-abort threshold sit close together, so a letter can be reported stale and abandoned within a short span.
 
 **To investigate stale letters:**
 1. Check the `/stale-letters` endpoint or download the CSV at `/stale-letters/download`.
@@ -267,7 +290,7 @@ If a letter remains stale for 7+ days without a Xerox report (`min-age-in-days-f
 
 ## International letters
 
-If a letter's `additionalData` JSON contains `"isInternational": true`, it is uploaded to `<serviceFolder>/International` rather than the base service folder (`UploadLettersTask.java:147-151`). This is verified in source code.
+If a letter's `additionalData` JSON contains `"isInternational": true`, it is uploaded to `<serviceFolder>/International` rather than the base service folder (`send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java:147-151`). The suffix is appended to the resolved folder, so the `International` subdirectory has to exist under each service folder on the SFTP server; a missing subdirectory surfaces as an upload failure rather than a `Skipped` letter.
 
 ## Verify
 
@@ -291,7 +314,9 @@ Based on historical incidents documented by the team:
 
 1. **Xerox security changes breaking SFTP auth** (P1): Xerox updated server-side security without notification. Letters accumulated in `Created` status but no data was lost. Resolution: Xerox rolled back; long-term fix was to agree notification process for maintenance.
 2. **Database storage exhaustion** (P2): DB at >95% capacity caused insert failures for new letter requests. Resolution: PlatOps increased DB storage.
-3. **Duplicate letters from client retries** (P1): When DB returned errors, the `send-letter-client` retry logic re-submitted letters, creating duplicates that Xerox printed. The duplicate detection logic did not catch all cases. Resolution: Reduced retries in client library; improved dedup logic (ongoing).
+3. **Duplicate letters from client retries** (P1): duplicates reached Xerox and were printed, because the duplicate detection logic did not catch all cases.
+
+   The retry loop in `send-letter-client` today does not re-POST the letter. `sendLetter` calls the proxy once, then calls `confirmRequestIsCreated`, and only that confirmation is wrapped in the retry template -- it re-reads `getLetterStatus` up to 10 times on a 404 (`send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/SendLetterApi.java:49-66`, `send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/SendLetterApi.java:72-91`, `send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/config/RetryConfig.java:27-34`). When the retries are exhausted the client raises a 500 carrying the body `letter not saved`, and a 409 from the status call is rethrown unchanged. A caller that treats that 500 as "not sent" and calls `sendLetter` again is the remaining route to a duplicate: the letter may in fact have been persisted, and the caller's own retry, not the library's, submits it a second time.
 
 ## Examples
 
@@ -330,6 +355,8 @@ private int processLetters() {
 ```
 
 An `IOException` (network/SFTP failure) propagates without marking the letter — the letter stays `Created` and will be retried on the next 30-second cycle. A non-IOException (e.g. encryption failure) marks it `FailedToUpload` and breaks the batch.
+
+Encryption is one class of non-IOException failure that cannot be reproduced outside production. The chart sets `ENCRYPTION_ENABLED: "true"` (`send-letter-service:charts/rpe-send-letter-service/values.yaml:54`) and the AAT, demo, ITHC and perftest overlays each set it back to `false`, so those environments upload plain `.zip` files and never execute the PGP path. A key-rotation or bad-public-key fault will only ever break production, and a lower environment reproducing the same batch will succeed.
 
 ### Admin action endpoints
 

@@ -19,6 +19,14 @@ sources:
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/DeleteOldFilesTask.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/ClearOldLetterContentTask.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/launchdarkly/Flags.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/FtpConfigProperties.java
+  - send-letter-service:charts/rpe-send-letter-service/values.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml
 status: reviewed
 last_reviewed: "2026-05-13T12:00:00Z"
 examples_extracted_from:
@@ -68,16 +76,24 @@ sources_sha:
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/DeleteOldFilesTask.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/ClearOldLetterContentTask.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/launchdarkly/Flags.java": "fd35783ce1052ca8487b0e0ab929d7991078c07b"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/FtpConfigProperties.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:charts/rpe-send-letter-service/values.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml": "7f749ac477177094eecec870262c84a3dbec2efe"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml": "40aead8406c136c315b5fd7b8c52be6ab8d94514"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
 ---
 
 ## TL;DR
 
 - Single Spring Boot service (port 8485) that accepts PDF documents via REST, persists them to PostgreSQL, and asynchronously uploads zip/PGP bundles to an external print provider (Xerox) over SFTP.
-- Two key scheduled pipelines: `UploadLettersTask` (polls DB, uploads to SFTP every 30s) and `MarkLettersPostedService` (parses provider CSV reports to confirm posting) -- coordinated across pods via ShedLock (JDBC-backed).
+- Two key pipelines: `UploadLettersTask` (in-process `@Scheduled`, polls DB and uploads to SFTP every 30s) and `MarkLettersPostedService` (parses provider CSV reports to confirm posting, driven from outside the pod by a Kubernetes CronJob) -- coordinated across pods via ShedLock (JDBC-backed).
 - Letters transition through `Created` -> `Uploaded` -> `Posted`; file content is nulled from the DB after posting to reclaim storage. Per-service data retention policies govern hard deletion (3 months to 18 years depending on service).
-- PGP encryption (AES-256, BouncyCastle) is opt-in; zip bytes are encrypted before SFTP upload producing `.pgp` files. Xerox requires a whitelisted egress IP for SSH traffic.
-- Onboarding a new service requires: S2S registration, Xerox folder creation (approx. 6-week lead time), and config updates to `ftp.service-folders` and `reports.service-config`.
-- LaunchDarkly feature flags gate the `DeleteOldLettersTask`; scheduling is disabled by default (`SCHEDULING_ENABLED=false`).
+- PGP encryption (AES-256, BouncyCastle) is enabled in production and disabled in every lower environment, so production uploads `.pgp` files while AAT, demo, ITHC and perftest upload plain `.zip`.
+- Onboarding a new service requires: S2S registration, Xerox folder creation, and config updates to `ftp.service-folders` and `reports.service-config`. A service with no `ftp.service-folders` entry cannot submit at all -- `POST /letters` returns 403.
+- LaunchDarkly feature flags gate the `DeleteOldLettersTask`. `SCHEDULING_ENABLED` defaults to `false` in `application.yaml` but the Helm chart sets it `true`, so schedulers run in every deployed environment.
 
 ## Runtime components
 
@@ -132,18 +148,20 @@ The primary upload loop runs as a Spring `@Scheduled` task with a fixed delay of
 
 **Key behaviour** (`UploadLettersTask.java:78-155`):
 
-1. Checks FTP availability window via `FtpAvailabilityChecker` -- skips if within the configured downtime (default 16:00-17:00 London).
+1. Checks FTP availability window via `FtpAvailabilityChecker` -- skips if within the configured downtime. Production runs 16:00-18:00; every other environment inherits the chart's 23:58-23:59, which is effectively no downtime at all.
 2. Queries for `Created` letters older than `db-poll-delay` (default 2 minutes) to avoid racing with async writes.
 3. Opens a single SFTP session and processes up to `BATCH_SIZE = 10` letters per run.
 4. For each letter, resolves the target SFTP folder from `ServiceFolderMapping`. If `additionalData.isInternational = true`, appends `/International` to the path.
 5. On successful upload: status -> `Uploaded`, sets `sentToPrintAt`.
 6. On a non-`IOException` error: marks the letter `FailedToUpload` and **breaks the batch** -- one bad letter blocks all subsequent letters until manual intervention (`UploadLettersTask.java:119-124`).
 
-The task bean is gated by `@ConditionalOnProperty(value = "scheduling.enabled", matchIfMissing = true)`, but `application.yaml` defaults `scheduling.enabled` to `false` via `${SCHEDULING_ENABLED:false}` -- so scheduling only activates in environments where `SCHEDULING_ENABLED=true`.
+The task bean is gated by `@ConditionalOnProperty(value = "scheduling.enabled", matchIfMissing = true)`, and `application.yaml` defaults `scheduling.enabled` to `false` via `${SCHEDULING_ENABLED:false}`. The Helm chart sets `SCHEDULING_ENABLED: "true"` (`send-letter-service:charts/rpe-send-letter-service/values.yaml:57`), so the `false` default only ever applies to a locally run instance -- every deployed environment has the schedulers active.
 
 ## Scheduling: MarkLettersPostedService
 
-Unlike `UploadLettersTask`, there is **no `@Scheduled` annotation** on `MarkLettersPostedService.processReports()`. It is triggered manually via `POST /tasks/process-reports` (protected by `actions.api-key`) and runs asynchronously in a single-thread executor (`TaskController.java:57-63`).
+There is **no `@Scheduled` annotation** on `MarkLettersPostedService.processReports()`. It is invoked over HTTP via `POST /tasks/process-reports` (protected by `actions.api-key`) and runs asynchronously in a single-thread executor (`TaskController.java:57-63`).
+
+In production that HTTP call is made on a schedule by a separate Kubernetes CronJob, `bp-cron-trigger-daily-processing`, which runs hourly on the hour Monday-Friday between 11:00 and 16:00 (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml:12-16`). The trigger is disabled in the base HelmRelease and switched on only by the prod overlay (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml:9`), so outside production nothing marks letters `Posted` unless somebody calls the endpoint by hand.
 
 **Key behaviour** (`MarkLettersPostedService.java:86-259`):
 
@@ -154,11 +172,11 @@ Unlike `UploadLettersTask`, there is **no `@Scheduled` annotation** on `MarkLett
 5. On successful parse: deletes the report from SFTP, records `ReportStatus.SUCCESS` in the `reports` table.
 6. On parse failure: keeps the file, records `ReportStatus.FAIL`.
 
-A complementary `CheckLettersPostedService` (triggered via `GET /tasks/check-posted`) marks letters `NoReportAborted` if they have been in `Uploaded` status for more than 7 days with no corresponding report record.
+A complementary `CheckLettersPostedService` (triggered via `GET /tasks/check-posted`) marks letters `NoReportAborted` if they have been in `Uploaded` status for more than 7 days with no corresponding report record. That endpoint is driven by a second CronJob, `bp-cron-trigger-daily-checks`, on the half hour Monday-Friday between 11:30 and 16:30 (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml:12-16`), 30 minutes after each report-processing run.
 
 ## ShedLock
 
-Distributed lock coordination ensures only one pod executes each scheduled task at a time. The lock provider is `JdbcTemplateLockProvider` backed by the `shedlock` table (created in Flyway migration `V010__Add_shedlock.sql`).
+Distributed lock coordination ensures only one pod executes each scheduled task at a time. The lock provider is `JdbcTemplateLockProvider` backed by the `shedlock` table (created in Flyway migration `V010__Add_shedlock.sql`). The deployment runs two replicas with inter-pod anti-affinity (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:9-10`), so both pods reach every `@Scheduled` trigger and the lock is what stops them uploading the same letter twice.
 
 Configuration (`SchedulerConfiguration.java:19-31`):
 
@@ -181,14 +199,16 @@ The service uses the SSHJ library (`com.hierynomus:sshj`) for SFTP operations.
 
 **Upload path convention**: `{targetFolder}/{serviceFolder}/{filename}` for normal letters; `{targetFolder}/{serviceFolder}/International/{filename}` for international letters (`additionalData.isInternational = true`); `{smokeTestTargetFolder}/{filename}` for smoke-test letters.
 
-**Availability window**: `FtpAvailabilityChecker` compares the current London time against a configurable downtime window (env vars `FTP_DOWNTIME_FROM` / `FTP_DOWNTIME_TO`, default 16:00-17:00). Handles both same-day and overnight windows (`FtpAvailabilityChecker.java:30-36`).
+**Availability window**: `FtpAvailabilityChecker` compares the current London time against a configurable downtime window (env vars `FTP_DOWNTIME_FROM` / `FTP_DOWNTIME_TO`), handling both same-day and overnight windows (`FtpAvailabilityChecker.java:30-36`). The `application.yaml` fallback of 16:00-17:00 is never what runs: the chart sets 23:58-23:59 (`send-letter-service:charts/rpe-send-letter-service/values.yaml:71-72`) and the prod overlay widens it to 16:00-18:00 (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:14-15`).
+
+**Target paths**: the chart pins `FTP_TARGET_FOLDER` to `TO_XEROX` and `FTP_REPORTS_FOLDER` to `FROM_XEROX` for every environment (`send-letter-service:charts/rpe-send-letter-service/values.yaml:67-69`).
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 **Network constraints**: Xerox requires a whitelisted IP address for inbound SSH connections. The service uses a dedicated Azure gateway for SFTP egress to satisfy this requirement. Xerox hosts a Globalscape FTP server for their onward processing.
 
 ## PGP encryption
 
-Encryption is opt-in, controlled by `encryption.enabled` (env `ENCRYPTION_ENABLED`, default `false`).
+Encryption is controlled by `encryption.enabled` (env `ENCRYPTION_ENABLED`). `application.yaml` defaults it to `false`, the chart turns it on for every environment (`send-letter-service:charts/rpe-send-letter-service/values.yaml:54`), and each lower-environment overlay turns it back off (`cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml:9`). The net effect: production uploads `.pgp`, AAT/demo/ITHC/perftest upload `.zip`, so a filename extension is enough to tell which environment produced a file.
 
 When enabled (`LetterService.java:365-371`):
 
@@ -197,11 +217,13 @@ When enabled (`LetterService.java:365-371`):
 3. Algorithm: AES-256 with integrity packet; compression: ZIP (`PgpEncryptionUtil.java:139-142`, `:159`).
 4. `Letter.isEncrypted` and `Letter.encryptionKeyFingerprint` are persisted so the provider knows to decrypt.
 
-Crypto libraries: BouncyCastle `bcprov-jdk18on`, `bcpkix-jdk18on`, `bcpg-jdk18on` version 1.84.
+Crypto libraries: BouncyCastle `bcprov-jdk18on`, `bcpkix-jdk18on`, `bcpg-jdk18on` (exact pin -- read it from `build.gradle`).
 
 ## Email reporting
 
 Reports are sent via Spring Mail (SMTP port 587, STARTTLS). The `EmailSender` bean is only created when `spring.mail.host` is configured (`EmailSender.java:18`). Each report task additionally requires its own `@ConditionalOnProperty` enable flag.
+
+The chart sets `SMTP_HOST` to the literal string `false` (`send-letter-service:charts/rpe-send-letter-service/values.yaml:75`) and only the prod overlay supplies a real host along with the three report enable flags (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:13,16,19-20`). Email reporting therefore exists in production only; in every other environment the `EmailSender` bean is absent and the report tasks are inert.
 
 | Report | Cron (London) | Content |
 |--------|---------------|---------|
@@ -286,15 +308,14 @@ Adding a new service to Bulk Print is a multi-party process with approximately *
 4. **Configuration**: Bulk Print team adds entries to `ftp.service-folders` (mapping S2S service name to SFTP folder) and `reports.service-config` (mapping to display name and report code) in `application.yaml`.
 5. **Deployment order**: The Xerox folder must exist before the configuration is deployed -- deploying config first will cause upload failures for letters from that service.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-The service does not validate letter types -- it passes the type through to Xerox, which handles envelope selection and processing rules based on what was agreed during onboarding.
+The service applies no validation to the letter `type` beyond `@NotEmpty`: the value has its underscores stripped and is concatenated into the upload filename, and nothing else reads it (`FileNameHelper.java:100-117`). A wrong or misspelled type is therefore accepted, uploaded, and only discovered at the provider's end.
 
 Current onboarded services and their SFTP folder mappings (`application.yaml:141-168`):
 
 | S2S Service | SFTP Folder | Notes |
 |-------------|-------------|-------|
 | `cmc_claim_store` | `CMC` | |
-| `civil_service` | `CMC` | Feature-flagged (`CIVIL_SERVICE_ENABLED`, default false) |
+| `civil_service` | `CMC` | Gated on `CIVIL_SERVICE_ENABLED`; `false` in `application.yaml`, `true` in every deployed environment |
 | `civil_general_applications` | `CMC` | |
 | `send_letter_tests` | `BULKPRINT` | Smoke test |
 | `nfdiv_case_api` | `NFDIVORCE` | |
@@ -307,21 +328,23 @@ Current onboarded services and their SFTP folder mappings (`application.yaml:141
 | `prl_cos_api` | `PRIVLAW` | |
 | `pcs_api` | `PCS` | |
 
+An entry with `enabled: false` is dropped at bind time -- `setServiceFolders` filters on `isEnabled()` before collecting the map (`FtpConfigProperties.java:157-162`) -- so a disabled service is indistinguishable from an absent one.
+
 ## Data retention and cleanup
 
 Three separate cleanup mechanisms operate on different timescales:
 
 ### 1. SFTP file cleanup (`DeleteOldFilesTask`)
 
-Deletes uploaded files from the SFTP server once they exceed a configurable TTL (default 12 hours). Runs hourly at 15 minutes past the hour. Gated by `FILE_CLEANUP_ENABLED` (default `false`, enabled in production only).
+Deletes uploaded files from the SFTP server once they exceed a configurable TTL (default 12 hours). Runs hourly at 15 minutes past the hour. Gated by `FILE_CLEANUP_ENABLED`: `false` in `application.yaml`, `true` in the base HelmRelease, and back to `false` in the prod overlay (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:14`, `cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:17`). Uploaded files therefore accumulate indefinitely on the production SFTP server and are pruned only in the lower environments.
 
 ### 2. DB content cleanup (`ClearOldLetterContentTask`)
 
-Nulls `fileContent` for letters in `Uploaded` status that are older than the configured TTL (default 31 days). Runs daily at 07:00 London. Gated by `OLD_LETTER_CONTENT_CLEANUP_ENABLED` (default `false`). Intended for AAT environments.
+Nulls `fileContent` for letters in `Uploaded` status that are older than the configured TTL (default 31 days). Runs daily at 07:00 London. Gated by `OLD_LETTER_CONTENT_CLEANUP_ENABLED`, which follows the same pattern as the SFTP cleanup flag -- on in the base HelmRelease, off in prod (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:15`, `cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:18`). In production a letter's content is reclaimed by the `Posted` transition or not at all.
 
 ### 3. Hard deletion of old letters (`DeleteOldLettersTask`)
 
-Permanently deletes letter records from the database. Runs weekly (Saturday 17:00 London). Controlled by LaunchDarkly feature flag `send-letter-service-delete-letters-cron`. Each service has a configurable retention interval (`application.yaml:227-242`):
+Permanently deletes letter records from the database. Controlled by LaunchDarkly feature flag `send-letter-service-delete-letters-cron`. The `application.yaml` cron is weekly (Saturday 17:00 London), but production runs it daily at 02:00 (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:11`) and AAT every two hours between 08:00 and 18:00 on weekdays (`cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml:11`). Each service has a configurable retention interval (`application.yaml:227-242`):
 
 | Service | Retention |
 |---------|-----------|
@@ -338,6 +361,8 @@ Permanently deletes letter records from the database. Runs weekly (Saturday 17:0
 | `finrem_document_generator` | 3 months |
 | `nfdiv_case_api` | 3 months |
 | `sscs` | 3 months |
+
+These are the `application.yaml` values, which production uses unchanged. AAT overrides every one of them to `3 days` (`cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml:12-23`), so an AAT letter is unrecoverable after three days regardless of which service sent it.
 
 ## Feature flags (LaunchDarkly)
 

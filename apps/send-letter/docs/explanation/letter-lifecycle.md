@@ -15,6 +15,19 @@ sources:
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/ftp/FtpAvailabilityChecker.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/ReportsServiceConfig.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/DeleteOldLettersTask.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/ResponseExceptionHandler.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/SendLetterController.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/util/FileNameHelper.java
+  - send-letter-service:src/main/resources/application.yaml
+  - send-letter-service:charts/rpe-send-letter-service/values.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml
 status: reviewed
 last_reviewed: "2026-05-13T12:00:00Z"
 examples_extracted_from:
@@ -54,6 +67,19 @@ sources_sha:
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/ftp/FtpAvailabilityChecker.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/ReportsServiceConfig.java": "ec00579f69dd4c3006da31a78b5bab91336435f5"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/DeleteOldLettersTask.java": "0a6cda236a388bd69a40e088660e48515648b86d"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java": "cd01b8cca8df1d5afd7c786701493045172a0eb8"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/ResponseExceptionHandler.java": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/SendLetterController.java": "cd01b8cca8df1d5afd7c786701493045172a0eb8"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/util/FileNameHelper.java": "d5a03ebeda0f0ec72338d4a46b861766e0cc66e4"
+  "send-letter-service:src/main/resources/application.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "send-letter-service:charts/rpe-send-letter-service/values.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml": "7f749ac477177094eecec870262c84a3dbec2efe"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml": "40aead8406c136c315b5fd7b8c52be6ab8d94514"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml": "1b458db65004dbaa087d5b36329c05aefa0c8669"
 ---
 
 ## TL;DR
@@ -63,7 +89,7 @@ sources_sha:
 - The upload scheduler runs every 30 seconds, processes up to 10 letters per batch, and only targets letters created more than 2 minutes ago.
 - Xerox processes letters on a per-service schedule on weekdays (e.g. CMC 17:30, SSCS 18:00) and has a 48-hour SLA from print to post.
 - A letter stuck in `Uploaded` for more than 7 days without a matching provider report is automatically marked `NoReportAborted`.
-- After reaching a terminal state (`Posted`, `Aborted`, etc.), the `file_content` column is nulled to reclaim storage; separate cleanup tasks purge SFTP files (12h TTL) and old DB content (31-day TTL).
+- After reaching a terminal state (`Posted`, `Aborted`, etc.), the `file_content` column is nulled to reclaim storage. Separate cleanup tasks purge SFTP files (12h TTL) and old DB content (31-day TTL), but both are switched off in production, so the `Posted` transition is the only reclamation that happens there.
 
 ## State machine
 
@@ -72,7 +98,7 @@ stateDiagram-v2
     [*] --> Created : POST /letters
     Created --> Uploaded : UploadLettersTask (SFTP success)
     Created --> FailedToUpload : Non-IOException during upload
-    Created --> Skipped : No service-folder mapping found
+    Created --> Skipped : Service-folder mapping gone at upload time
     Uploaded --> Posted : Provider CSV report received
     Uploaded --> NoReportAborted : No report after 7 days
     Uploaded --> Aborted : Admin action
@@ -89,7 +115,7 @@ All nine values of `LetterStatus` (`LetterStatus.java:11-19`):
 | `Uploaded` | `UploadLettersTask` | ZIP/PGP successfully written to SFTP |
 | `Posted` | `MarkLettersPostedService` | Provider report confirms physical posting |
 | `FailedToUpload` | `LetterEventService.failLetterUpload()` | Non-IO error during SFTP upload |
-| `Skipped` | `UploadLettersTask` | No folder mapping for the calling service |
+| `Skipped` | `UploadLettersTask` | Folder mapping absent when the upload task reached the letter |
 | `NoReportAborted` | `CheckLettersPostedService` | Uploaded > 7 days, no report ever received |
 | `Aborted` | Admin (`ActionController`) | Manually aborted by operator |
 | `PostedLocally` | Admin (`ActionController`) | Operator confirmed letter posted outside normal flow |
@@ -101,10 +127,11 @@ When a calling service issues `POST /letters` (content type `application/vnd.uk.
 
 1. Authenticates the S2S token via `AuthTokenValidator`.
 2. Validates the request body -- up to 30 documents, each base64-encoded PDF (`LetterWithPdfsRequest.java:23-25`).
-3. Computes a checksum of the request for deduplication.
-4. Checks for an existing `Created` letter with the same checksum. If found, returns its UUID without inserting (`LetterService.java:151-162`).
-5. Assembles the PDF pages into a ZIP (optionally PGP-encrypted), stores the binary in `file_content`, and writes the `letters` row with status `Created` (`Letter.java:40`).
-6. Returns a `SendLetterResponse` containing the `letter_id` UUID.
+3. Resolves the calling service's SFTP folder. If there is no enabled `ftp.service-folders` entry for it, the request fails with `ServiceNotConfiguredException` (`LetterService.java:144-148`), which the handler renders as HTTP 403 with the body `Service not configured` (`ResponseExceptionHandler.java:211-215`). Nothing is persisted.
+4. Computes a checksum of the request for deduplication.
+5. Checks for an existing `Created` letter with the same checksum. If found, returns its UUID without inserting (`LetterService.java:151-162`).
+6. Assembles the PDF pages into a ZIP (optionally PGP-encrypted), stores the binary in `file_content`, and writes the `letters` row with status `Created` (`Letter.java:40`).
+7. Returns a `SendLetterResponse` containing the `letter_id` UUID.
 
 ### Deduplication
 
@@ -127,8 +154,9 @@ The `UploadLettersTask` scheduler transitions letters from `Created` to `Uploade
 - **Concurrency**: ShedLock (`@SchedulerLock(name = "UploadLetters")`) ensures only one pod runs the task at a time (`UploadLettersTask.java:78`).
 - **Batch size**: up to 10 letters per run (`UploadLettersTask.BATCH_SIZE`, `UploadLettersTask.java:38`).
 - **Poll delay**: only picks letters created more than 2 minutes ago to avoid reading mid-commit async writes (`application.yaml:177`).
-- **FTP availability check**: `FtpAvailabilityChecker` suppresses uploads during a configurable downtime window (default 16:00-17:00 London time, `application.yaml:139-140`).
-- **Scheduling disabled by default**: `SCHEDULING_ENABLED` must be `true` in deployed environments (`application.yaml:171`).
+- **FTP availability check**: `FtpAvailabilityChecker` suppresses uploads during a configurable downtime window, evaluated in Europe/London. The `application.yaml:139-140` fallback of 16:00-17:00 is overridden in every deployment: the chart sets 23:58-23:59 (`charts/rpe-send-letter-service/values.yaml:71-72`) and only production widens it, to 16:00-18:00 (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:14-15`). Outside production the window is narrow enough that uploads are effectively never suppressed.
+- **Scheduling**: `SCHEDULING_ENABLED` is `false` in `application.yaml:171` and `"true"` in the chart (`charts/rpe-send-letter-service/values.yaml:57`), so the task runs in every deployed environment.
+- **Replica count**: the deployment runs two replicas with inter-pod anti-affinity (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:9-10`), so both pods reach every `@Scheduled` trigger and the ShedLock row is what stops them uploading the same letter twice.
 
 ### Upload flow
 
@@ -136,7 +164,7 @@ The `UploadLettersTask` scheduler transitions letters from `Created` to `Uploade
 2. Queries `LetterRepository.findFirstLetterCreated(LocalDateTime)` to find the next eligible letter (`LetterRepository.java:29-32`).
 3. Opens a single SFTP session via `FtpClient.runWith(...)` and iterates up to 10 letters (`UploadLettersTask.java:98-130`).
 4. For each letter, resolves the target folder from `ServiceFolderMapping.getFolderFor(serviceName)`:
-   - If no mapping exists, the letter is marked `Skipped` (`UploadLettersTask.java:160-163`).
+   - If no mapping exists, the letter is marked `Skipped` (`UploadLettersTask.java:160-163`). Since submission already required a mapping, this only fires when the configuration changed after the letter was created.
    - If `additionalData.isInternational = true`, appends `/International` to the folder path (`UploadLettersTask.java:147-151`).
 5. Uploads the file via SSHJ to `{targetFolder}/{serviceFolder}/{filename}`.
 6. On success: sets status to `Uploaded`, records `sentToPrintAt` timestamp (`UploadLettersTask.java:153-155`).
@@ -162,7 +190,9 @@ The `MarkLettersPostedService` transitions letters from `Uploaded` to `Posted` w
 6. `markLetterAsPosted` sets `printedAt` and **nulls** `fileContent` to reclaim DB storage (`LetterRepository.java:150-152`).
 7. If all CSV rows parse cleanly, the report file is deleted from SFTP and a `ReportStatus.SUCCESS` row is written to the `reports` table. If any row fails parsing, the file is kept and `ReportStatus.FAIL` is recorded (`MarkLettersPostedService.java:142-151`).
 
-There is no scheduled trigger for report processing -- it is operator-initiated only via the admin endpoint.
+`MarkLettersPostedService` carries no `@Scheduled` annotation; the admin endpoint is the only way in. In production a separate Kubernetes CronJob, `bp-cron-trigger-daily-processing`, calls it on the hour from 11:00 to 16:00 Monday to Friday (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml:12-16`). `TRIGGER_ENABLED` is `false` in the base HelmRelease and `true` only in the production overlay (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml:9`), so in AAT, demo, ITHC and perftest a letter stays `Uploaded` until an operator calls the endpoint.
+
+`CheckLettersPostedService` is driven the same way, by `bp-cron-trigger-daily-checks`, on the half hour from 11:30 to 16:30 Monday to Friday (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml:12-16`), again enabled only in production (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml:10`).
 
 ### Report code resolution
 
@@ -218,15 +248,15 @@ Letters carry their full ZIP/PGP payload in the `file_content` bytea column. To 
 
 ### 2. SFTP file cleanup
 
-The `file-cleanup` task (gated by `FILE_CLEANUP_ENABLED`, default `false`) deletes uploaded files from the SFTP server after a configurable TTL (default 12 hours). It runs on a cron schedule at 15 minutes past each hour (`application.yaml:184-187`). This only runs in production -- the flag must be explicitly enabled.
+The `file-cleanup` task (gated by `FILE_CLEANUP_ENABLED`, default `false`) deletes uploaded files from the SFTP server after a configurable TTL (default 12 hours). It runs on a cron schedule at 15 minutes past each hour (`application.yaml:184-187`). The chart leaves the flag `"false"` (`charts/rpe-send-letter-service/values.yaml:63`), the flux base HelmRelease turns it on (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:14`), and the production overlay turns it back off (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:17`). Uploaded files therefore accumulate indefinitely on the production SFTP server and are removed only in the lower environments.
 
 ### 3. Old letter content cleanup
 
-The `old-letter-content-cleanup` task (gated by `OLD_LETTER_CONTENT_CLEANUP_ENABLED`, default `false`) nulls `file_content` for letters older than a configurable TTL (default 31 days / `P31D`). It runs daily at 07:00 (`application.yaml:189-192`). This catches any letters whose content was not already nulled by the status transition (e.g. letters stuck in intermediate states).
+The `old-letter-content-cleanup` task (gated by `OLD_LETTER_CONTENT_CLEANUP_ENABLED`, default `false`) nulls `file_content` for letters older than a configurable TTL (default 31 days / `P31D`). It runs daily at 07:00 (`application.yaml:189-192`). It catches letters whose content was not already nulled by a status transition. Like the SFTP cleanup it is on in the flux base and off in production (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:15`, `cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:18`), so a production letter that never reaches `Posted` keeps its payload until the row itself is deleted.
 
 ### 4. Permanent row deletion
 
-`DeleteOldLettersTask` (gated by LaunchDarkly flag `send-letter-service-delete-letters-cron`) runs a PostgreSQL function `batch_delete_letters(...)` with per-service retention intervals to permanently delete old letter rows from the database (`DeleteOldLettersTask.java:75-77`).
+`DeleteOldLettersTask` (gated by LaunchDarkly flag `send-letter-service-delete-letters-cron`) runs a PostgreSQL function `batch_delete_letters(...)` with per-service retention intervals to permanently delete old letter rows from the database (`DeleteOldLettersTask.java:75-77`). Production runs it daily at 02:00 in batches of 1000 (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:11-12`); AAT runs it every two hours between 08:00 and 18:00 on weekdays with every retention interval shortened to three days (`cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml:11-23`).
 
 **Important**: If a letter is deleted from the SFTP server but its DB row still exists, it can still appear in stale-letter reports. If the DB row is also deleted, the letter becomes completely unrecoverable and untraceable.
 
@@ -246,8 +276,7 @@ The letter status can be queried at:
 ```
 http://rpe-send-letter-service-prod.service.core-compute-prod.internal/letters/<letter-id>?include-additional-info=true
 ```
-This requires VPN access. The `letter_id` UUID is returned by `POST /letters` at creation time.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+The hostname follows the chart's ingress pattern `rpe-send-letter-service-{environment}.service.core-compute-{environment}.internal` (`charts/rpe-send-letter-service/values.yaml:3`), so the same URL works in any environment with the environment name substituted. `include-additional-info` is a query parameter on both status endpoints, defaulting to `false` (`SendLetterController.java:131`, `:159`); when it is not set the response's `additional_data` is null (`LetterService.java:519-527`). The host is an internal address and requires VPN access. The `letter_id` UUID is returned by `POST /letters` at creation time.
 
 ## Document format requirements
 
@@ -267,7 +296,9 @@ The `type` field in the letter request (e.g. `CMC001`, `SSCS001`) is a Xerox-sid
 - Inserts and special handling
 - Processing schedule
 
-The send-letter-service does not validate or interpret letter types. It passes the type value through to the filename on SFTP, where Xerox uses it to drive their internal batch processing. Each type must be agreed during the onboarding process between the service team, BSP team, and Xerox. There is an approximate 6-week lead time for Xerox to configure new letter types.
+The service applies no validation to `type` beyond `@NotEmpty`. The value has its underscores stripped and is concatenated into the upload filename, and nothing else reads it (`FileNameHelper.java:100-117`). A wrong or misspelled type is therefore accepted, uploaded, and only discovered at the print provider's end.
+
+Each type must be agreed during the onboarding process between the service team, BSP team, and Xerox. There is an approximate 6-week lead time for Xerox to configure new letter types.
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ## Bulk Print Frontend (in development)

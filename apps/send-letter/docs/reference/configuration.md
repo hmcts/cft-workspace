@@ -17,6 +17,20 @@ sources:
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/DeleteOldFilesTask.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/ClearOldLetterContentTask.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/DocumentService.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/ResponseExceptionHandler.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/ftp/ServiceFolderMapping.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/FeatureFlagController.java
+  - send-letter-service:charts/rpe-send-letter-service/values.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/demo.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml
 status: reviewed
 last_reviewed: "2026-05-13T12:00:00Z"
 examples_extracted_from:
@@ -63,15 +77,29 @@ sources_sha:
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/DeleteOldFilesTask.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/ClearOldLetterContentTask.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/DocumentService.java": "7e07075ecb606470195c23cf287cbd06dbc85b73"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/LetterService.java": "cd01b8cca8df1d5afd7c786701493045172a0eb8"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/ResponseExceptionHandler.java": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/ftp/ServiceFolderMapping.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java": "523d1f48bf4ca1a73880d32b060a821831ea9a9a"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/FeatureFlagController.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:charts/rpe-send-letter-service/values.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml": "7f749ac477177094eecec870262c84a3dbec2efe"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/demo.yaml": "05f4fc770803af2a940630a5ba9bc6b96628b31d"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml": "40aead8406c136c315b5fd7b8c52be6ab8d94514"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml": "1b458db65004dbaa087d5b36329c05aefa0c8669"
 ---
 
 ## TL;DR
 
 - All configuration lives in `src/main/resources/application.yaml` with environment variable overrides; secrets are mounted from `rpe-send-letter/` via Spring config tree.
-- `ftp.service-folders` maps each onboarded S2S service name to an SFTP subfolder; disabled entries cause letters to be `Skipped`.
+- `ftp.service-folders` maps each onboarded S2S service name to an SFTP subfolder. A service with no enabled entry cannot submit at all -- `POST /letters` returns 403 before anything is persisted.
 - `reports.service-config` maps services to report codes used when parsing provider CSV files.
-- Scheduling is **disabled by default** (`SCHEDULING_ENABLED=false`); must be explicitly enabled in deployed environments.
-- An FTP downtime window (default 16:00-17:00 London) suppresses uploads during provider maintenance.
+- Every default in `application.yaml` is a local-development default. The deployed value is the Helm chart's `charts/rpe-send-letter-service/values.yaml` overridden by the flux base HelmRelease and then by a per-environment overlay, so reading `application.yaml` alone gives the wrong answer for scheduling, encryption, downtime, cleanup and cron schedules.
+- An FTP downtime window suppresses uploads during provider maintenance. Production runs 16:00-18:00; every other environment inherits the chart's 23:58-23:59.
 - Cleanup configuration controls three tiers: SFTP file deletion (`file-cleanup`), DB content clearing (`old-letter-content-cleanup`), and per-service letter record deletion (`delete-old-letters`).
 
 ## FTP service folders
@@ -82,7 +110,7 @@ Bound to `FtpConfigProperties` via `@ConfigurationProperties(prefix = "ftp")` (`
 |---|---|---|---|
 | `ftp.service-folders[n].service` | String | — | S2S service name (e.g. `sscs`, `probate_backend`) |
 | `ftp.service-folders[n].folder` | String | — | SFTP subfolder name (e.g. `SSCS`, `PROBATE`) |
-| `ftp.service-folders[n].enabled` | Boolean | `true` | Set `false` to skip uploads for this service (letter status becomes `Skipped`) |
+| `ftp.service-folders[n].enabled` | Boolean | `true` | `false` drops the entry at bind time (`FtpConfigProperties.java:157-162`), making the service indistinguishable from one that was never configured |
 | `ftp.target-folder` / `FTP_TARGET_FOLDER` | String | — | Root SFTP directory under which service subfolders live |
 | `ftp.smoke-test-target-folder` / `FTP_SMOKE_TEST_TARGET_FOLDER` | String | — | Separate SFTP path for smoke-test letters (type `smoke_test`) |
 | `ftp.reports-folder` / `FTP_REPORTS_FOLDER` | String | — | Path on SFTP where provider deposits CSV report files |
@@ -98,7 +126,7 @@ Bound to `FtpConfigProperties` via `@ConfigurationProperties(prefix = "ftp")` (`
 | S2S service name | SFTP folder | Enabled by default |
 |---|---|---|
 | `cmc_claim_store` | `CMC` | yes |
-| `civil_service` | `CMC` | no (`CIVIL_SERVICE_ENABLED`, default `false`) |
+| `civil_service` | `CMC` | no (`CIVIL_SERVICE_ENABLED`, default `false`; set `true` in every deployed environment) |
 | `civil_general_applications` | `CMC` | yes |
 | `send_letter_tests` | `BULKPRINT` | yes |
 | `divorce_frontend` | `DIVORCE` | yes |
@@ -111,7 +139,7 @@ Bound to `FtpConfigProperties` via `@ConfigurationProperties(prefix = "ftp")` (`
 | `prl_cos_api` | `PRIVLAW` | yes |
 | `pcs_api` | `PCS` | yes |
 
-When `ServiceFolderMapping.getFolderFor(serviceName)` returns `Optional.empty()`, the letter is marked `Skipped` (`ServiceFolderMapping.java:41-43`).
+`ServiceFolderMapping.getFolderFor(serviceName)` is consulted twice. `LetterService.save()` calls it first and throws `ServiceNotConfiguredException` on `Optional.empty()`, which becomes a 403 with the body `Service not configured` (`LetterService.java:144-148`, `ResponseExceptionHandler.java:211-215`). `UploadLettersTask` calls it again and marks the letter `Skipped` if the mapping has gone (`ServiceFolderMapping.java:41-43`, `UploadLettersTask.java:143-165`). Removing or disabling a folder entry therefore rejects new submissions outright and strands any letter already in `Created`.
 
 ## Reports service config
 
@@ -147,7 +175,7 @@ Controlled by `SchedulerConfiguration` (`SchedulerConfiguration.java:20-21`). Th
 
 | Key / env var | Type | Default | Description |
 |---|---|---|---|
-| `scheduling.enabled` / `SCHEDULING_ENABLED` | Boolean | `false` | Master switch for all `@Scheduled` tasks and ShedLock. Must be `true` in deployed environments. |
+| `scheduling.enabled` / `SCHEDULING_ENABLED` | Boolean | `false` | Master switch for all `@Scheduled` tasks and ShedLock. The chart sets `"true"` (`charts/rpe-send-letter-service/values.yaml:57`), so it is on in every deployed environment. |
 | `scheduling.lock_at_most_for` | Duration (ISO-8601) | `PT10M` | Default ShedLock hold duration. Individual tasks may override. |
 | `tasks.upload-letters.interval-ms` / `UPLOAD_LETTERS_INTERVAL` | long | `30000` | Fixed delay between `UploadLettersTask` runs (ms) |
 | `tasks.upload-letters.db-poll-delay` / `DB_POLL_DELAY` | int (minutes) | `2` | Only letters created more than N minutes ago are eligible for upload (`UploadLettersTask.java:103` uses `minusMinutes(dbPollDelay)`) |
@@ -167,9 +195,18 @@ Controlled by `SchedulerConfiguration` (`SchedulerConfiguration.java:20-21`). Th
 | `PendingLettersTask` | `PendingLetters` | Cron `0 0 9 * * *` (9am) | default | `scheduling.enabled` |
 | `DeleteOldFilesTask` | `DeleteOldFiles` | Cron `0 15 * * * *` (hourly :15) | default | `file-cleanup.enabled` |
 | `ClearOldLetterContentTask` | `ClearOldLetterContent` | Cron `0 0 7 * * *` (7am) | default | `old-letter-content-cleanup.enabled` |
-| `DeleteOldLettersTask` | `DeleteOldLetters` | Cron `0 0 17 * * 6` (Sat 5pm) | `lockAtMostFor=2h` | LaunchDarkly flag only |
+| `DeleteOldLettersTask` | `DeleteOldLetters` | Cron `0 0 17 * * 6` (Sat 5pm); prod runs `0 0 2 * * *` | `lockAtMostFor=2h` | LaunchDarkly flag only |
 
 `DeleteOldLettersTask`, `DeleteOldFilesTask`, and `ClearOldLetterContentTask` are **not** guarded by `@ConditionalOnProperty(scheduling.enabled)`. They have their own independent enable flags. `DeleteOldLettersTask` additionally requires the LaunchDarkly flag `send-letter-service-delete-letters-cron` to be enabled at runtime.
+
+Report processing and posted-letter checks are not in this table because they have no `@Scheduled` annotation. They are driven from outside the pod by two Kubernetes CronJobs that call the task endpoints over HTTP:
+
+| CronJob | Schedule | Endpoint | Enabled |
+|---|---|---|---|
+| `bp-cron-trigger-daily-processing` | `0 11-16 * * 1-5` (hourly, 11:00-16:00, Mon-Fri) | `POST /tasks/process-reports` | prod only (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml:9`) |
+| `bp-cron-trigger-daily-checks` | `30 11-16 * * 1-5` (half past the hour, Mon-Fri) | `GET /tasks/check-posted` | prod only (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml:10`) |
+
+Both are defined at `cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml:12-16` and `cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml:12-16` with `TRIGGER_ENABLED: false`, so outside production nothing advances a letter past `Uploaded`.
 
 ## FTP downtime window
 
@@ -181,6 +218,15 @@ Controlled by `SchedulerConfiguration` (`SchedulerConfiguration.java:20-21`). Th
 | `ftp.downtime.to` / `FTP_DOWNTIME_TO` | `HH:mm` | `17:00` | End of provider maintenance window (London time) |
 
 The checker handles both same-day windows (`from < to`) and overnight windows (`from > to`).
+
+The `application.yaml` defaults are not the deployed values. The chart sets `23:58`-`23:59` (`charts/rpe-send-letter-service/values.yaml:71-72`) and only the production overlay replaces them, with `16:00`-`18:00` (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:14-15`):
+
+| Environment | Downtime window |
+|---|---|
+| prod | 16:00-18:00 |
+| aat, demo, ithc, perftest | 23:58-23:59 |
+
+A one-minute window in the lower environments means an upload failure there is never explained by the downtime check.
 
 ## SMTP / email reporting
 
@@ -203,6 +249,8 @@ Email is sent via Spring Mail (`JavaMailSender`). The `EmailSender` bean is only
 | `reports.delayed-stale-report.cron` / `DELAYED_STALE_REPORT_CRON` | Cron | `0 0 13 * * *` | Schedule (1pm London) |
 | `reports.delayed-stale-report.recipients` / `DELAYED_STALE_REPORT_RECIPIENTS` | String[] | — | Comma-separated email recipients |
 
+The chart supplies the literal string `"false"` as `SMTP_HOST` and leaves the upload-summary and FTP-upload-summary flags `"false"` (`charts/rpe-send-letter-service/values.yaml:75`, `:78-79`); `DELAYED_STALE_REPORT_ENABLED` keeps its `application.yaml` default. Only the production overlay sets a real SMTP host and turns all three reports on (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:13`, `:16`, `:19-20`). Email reporting therefore exists in production only.
+
 ## Encryption
 
 | Key / env var | Type | Default | Description |
@@ -211,6 +259,8 @@ Email is sent via Spring Mail (`JavaMailSender`). The `EmailSender` bean is only
 | `encryption.publicKey` / `ENCRYPTION_PUBLIC_KEY` | String | — | PGP public key (ASCII-armored format) |
 
 When enabled, uploaded files have `.pgp` extension; when disabled, `.zip` (`FileNameHelper.java:114-116`).
+
+The chart sets `ENCRYPTION_ENABLED: "true"` (`charts/rpe-send-letter-service/values.yaml:54`) and the aat, demo, ithc and perftest overlays each set it back to `false` (`cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml:9`). Production is the only environment uploading `.pgp`.
 
 ## Retry
 
@@ -227,26 +277,26 @@ The `upoad` misspelling is real in source (`RetryConfig.java:23-24`, `applicatio
 
 | Key / env var | Type | Default | Description |
 |---|---|---|---|
-| `stale-letters.min-age-in-business-days` / `STALE_BUSINESS_DAYS` | int | `2` | Business days an `Uploaded` letter can wait before being flagged as stale (`StaleLetterService.java:75`) |
+| `stale-letters.min-age-in-business-days` / `STALE_BUSINESS_DAYS` | int | `2` | Business days an `Uploaded` letter can wait before being flagged as stale (`StaleLetterService.java:75`). The flux base HelmRelease sets `7` for all environments (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:17`), so a letter is a week old before it appears in a stale report. |
 | `stale-letters.min-age-in-days-for-no-report-abort` / `NO_REPORT_ABORT_DAYS` | int | `7` | Days an `Uploaded` letter waits without a report before being marked `NoReportAborted` |
 
 ## File cleanup (SFTP)
 
-Deletes uploaded files from the provider SFTP server after a configured TTL. Gated by `file-cleanup.enabled` (prod only). The task respects the FTP downtime window (`DeleteOldFilesTask.java:67`).
+Deletes uploaded files from the provider SFTP server after a configured TTL. Gated by `file-cleanup.enabled`. The task respects the FTP downtime window (`DeleteOldFilesTask.java:67`).
 
 | Key / env var | Type | Default | Description |
 |---|---|---|---|
-| `file-cleanup.enabled` / `FILE_CLEANUP_ENABLED` | Boolean | `false` | Enable SFTP file deletion. Should be `true` in production only. |
+| `file-cleanup.enabled` / `FILE_CLEANUP_ENABLED` | Boolean | `false` | Enable SFTP file deletion. `"false"` in the chart (`charts/rpe-send-letter-service/values.yaml:63`), `"true"` in the flux base (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:14`), `false` again in prod (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:17`) -- so it runs in the lower environments and not in production, and uploaded files accumulate indefinitely on the production SFTP server. |
 | `file-cleanup.cron` / `FILE_CLEANUP_CRON` | Cron | `0 15 * * * *` | Schedule (default: 15 minutes past every hour, London time) |
 | `file-cleanup.ttl` | Duration | `12h` | Files older than this are deleted from SFTP |
 
 ## Old letter content cleanup (database)
 
-Clears the `fileContent` column of old letters in the database to reduce storage. Gated by `old-letter-content-cleanup.enabled`. Originally intended for AAT only but the flag is available in all environments.
+Clears the `fileContent` column of old letters in the database to reduce storage. Gated by `old-letter-content-cleanup.enabled`.
 
 | Key / env var | Type | Default | Description |
 |---|---|---|---|
-| `old-letter-content-cleanup.enabled` / `OLD_LETTER_CONTENT_CLEANUP_ENABLED` | Boolean | `false` | Enable DB content cleanup |
+| `old-letter-content-cleanup.enabled` / `OLD_LETTER_CONTENT_CLEANUP_ENABLED` | Boolean | `false` | Enable DB content cleanup. `"true"` in the flux base (`cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml:15`) and `false` in prod (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:18`), so in production a letter's content is reclaimed by the `Posted` transition or not at all. |
 | `old-letter-content-cleanup.cron` / `OLD_LETTER_CONTENT_CLEANUP_CRON` | Cron | `0 0 7 * * *` | Schedule (default: 7am London) |
 | `old-letter-content-cleanup.ttl` | Duration (ISO-8601) | `P31D` | Letters with `Uploaded` status older than this have their content cleared |
 
@@ -256,8 +306,18 @@ Permanently deletes letter records from the database based on per-service retent
 
 | Key / env var | Type | Default | Description |
 |---|---|---|---|
-| `delete-old-letters.cron` / `DELETE_OLD_LETTERS_CRON` | Cron | `0 0 17 * * 6` | Schedule (default: Saturday 5pm London) |
+| `delete-old-letters.cron` / `DELETE_OLD_LETTERS_CRON` | Cron | `0 0 17 * * 6` | Schedule (default: Saturday 5pm London). Overridden in every environment. |
 | `delete-old-letters.batch-size` / `BATCH_SIZE` | int | `1000` | Records deleted per batch iteration |
+
+Deployed schedules:
+
+| Environment | Cron | Batch size |
+|---|---|---|
+| prod | `0 0 2 * * *` (daily 02:00) | 1000 |
+| aat | `0 0 8-18/2 ? * MON-FRI` (every two hours, 08:00-18:00, Mon-Fri) | 1000 |
+| demo | `0 */20 1-23 * * 0-6` (every 20 minutes, 01:00-23:59) | 3500 |
+
+Sources: `cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:11-12`, `cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml:11`, `cnp-flux-config:apps/bsp/rpe-send-letter-service/demo.yaml:9-10`.
 
 ### Per-service retention intervals
 
@@ -277,7 +337,7 @@ Permanently deletes letter records from the database based on per-service retent
 | `sscs` | `delete-old-letters.sscs-interval` | `SSCS_INTERVAL` | `3 months` |
 | `pcs_api` | `delete-old-letters.pcs-interval` | `PCS_INTERVAL` | `6 months` |
 
-These intervals are passed as PostgreSQL `INTERVAL` casts. The business agreed each interval during onboarding.
+These intervals are passed as PostgreSQL `INTERVAL` casts. Production uses the defaults above unchanged; AAT overrides every one of them to `3 days` (`cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml:12-23`), so an AAT letter is unrecoverable after three days whichever service sent it. The business agreed each interval during onboarding.
 <!-- CONFLUENCE-ONLY: Confluence (Integrating to Bulk Print page) states "Agree with Business on when old letters needs to be deleted" as part of onboarding - not verified as a formal process in source -->
 
 ## Duplicate detection
@@ -290,7 +350,7 @@ The service can optionally check for duplicate letter submissions within a confi
 
 ## Rate limiting
 
-The `/feature-flags` endpoint (used by `FeatureFlagController`) is protected by a Resilience4j rate limiter to prevent abuse.
+`GET /feature-flags/{flag}` carries the only `@RateLimiter` annotation in the service (`FeatureFlagController.java:15`). Nothing throttles `POST /letters` or any other endpoint.
 
 | Key / env var | Type | Default | Description |
 |---|---|---|---|
@@ -349,11 +409,9 @@ The print provider (Xerox) processes letters on weekdays at service-specific tim
 
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
-This explains why the FTP downtime window (16:00-17:00) must end before the earliest Xerox processing time (16:30 for FINREM).
-
 ## Onboarding a new service
 
-Configuration changes required to onboard a new service (from Confluence and confirmed in source):
+Configuration changes required to onboard a new service:
 
 1. **S2S registration** — the calling service must be registered in `service-auth-provider-app`.
 2. **Xerox folder creation** — Xerox creates a folder on the SFTP server in both UAT and production (~6 week lead time from initial contact).
@@ -362,8 +420,9 @@ Configuration changes required to onboard a new service (from Confluence and con
 5. **`delete-old-letters` interval** — agree a retention period with the business and add a per-service interval property.
 6. **Letter type** — the `type` field in the POST request body is opaque to `send-letter-service`; it is passed through to Xerox who uses it to select envelope format, postage class, and processing rules.
 
-There is **no explicit S2S whitelisting** within `send-letter-service` itself. The `ftp.service-folders` configuration implicitly controls which services can successfully send letters: if a service is authenticated via S2S but has no folder mapping, its letters are marked `Skipped`.
-<!-- CONFLUENCE-ONLY: "6 week lead time for Xerox" and "no specific S2S whitelisting" claims from Confluence onboarding pages - not verified in source -->
+<!-- CONFLUENCE-ONLY: "6 week lead time for Xerox" claim from Confluence onboarding pages - not verified in source -->
+
+There is no S2S allow-list within `send-letter-service` itself. The `ftp.service-folders` configuration is what controls which services can send letters: a caller with a valid S2S token but no enabled folder mapping gets a 403 from `POST /letters` and no letter row is written (`LetterService.java:144-148`, `ResponseExceptionHandler.java:211-215`).
 
 ## Examples
 

@@ -16,7 +16,17 @@ sources:
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/DocumentService.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java
   - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/model/in/RecipientsValidator.java
-status: needs-fix
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/util/FileNameHelper.java
+  - send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/FeatureFlagController.java
+  - send-letter-service:charts/rpe-send-letter-service/values.yaml
+  - cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml
+  - cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml
+  - send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/SendLetterApi.java
+  - send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/config/RetryConfig.java
+  - send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/SendLetterAutoConfiguration.java
+  - ccd-case-document-am-api:src/main/resources/application.yaml
+  - ccd-case-document-am-api:src/main/resources/service_config.json
+status: reviewed
 last_reviewed: "2026-05-13T12:00:00Z"
 examples_extracted_from:
   - apps/send-letter/send-letter-mock/src/main/java/uk/gov/hmcts/reform/client/services/BulkPrintService.java
@@ -65,6 +75,16 @@ sources_sha:
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/DocumentService.java": "7e07075ecb606470195c23cf287cbd06dbc85b73"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java": "523d1f48bf4ca1a73880d32b060a821831ea9a9a"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/model/in/RecipientsValidator.java": "fafc1d84527b0687a12d30952ea72bba8474aeaa"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/util/FileNameHelper.java": "d5a03ebeda0f0ec72338d4a46b861766e0cc66e4"
+  "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/FeatureFlagController.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
+  "send-letter-service:charts/rpe-send-letter-service/values.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
+  "cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml": "40aead8406c136c315b5fd7b8c52be6ab8d94514"
+  "send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/SendLetterApi.java": "09d39a226c4ac7204cddd3b608acfa45a34935ef"
+  "send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/config/RetryConfig.java": "92c954a09550cc02852124d6b536d161f1c5fc20"
+  "send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/SendLetterAutoConfiguration.java": "92c954a09550cc02852124d6b536d161f1c5fc20"
+  "ccd-case-document-am-api:src/main/resources/application.yaml": "116d99f942a127dd17a3f08d8f3622e7006dc5cc"
+  "ccd-case-document-am-api:src/main/resources/service_config.json": "5e9a44cd94d3808723ba7080618af2d3348928d9"
 ---
 
 ## TL;DR
@@ -100,7 +120,9 @@ Your microservice must be registered with `service-auth-provider-app` so it can 
 
 Xerox creates folders on their SFTP server in both **UAT** and **production** environments. They will contact the Bulk Print team with the name and path of the folder created. The folder name is typically your service acronym in uppercase (e.g. `PCS`, `PROBATE`, `FPL`).
 
-As part of onboarding, agree a **document type code** with Xerox (e.g. `CMC001`, `SSCS001`). This is the value you pass in the `type` field of the letter request. Send Letter Service does not validate or interpret the type -- Xerox uses it to select the correct print queue, envelope format, and postage class.
+Send Letter Service applies no validation to `type` beyond `@NotEmpty`. It strips underscores from the value, concatenates it into the upload filename, and reads it nowhere else (`send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/services/util/FileNameHelper.java:100-117`). A wrong or misspelled code is accepted and uploaded, and surfaces only at the print provider's end.
+
+As part of onboarding, agree a **document type code** with Xerox (e.g. `CMC001`, `SSCS001`). This is the value you pass in the `type` field of the letter request. Xerox uses it to select the correct print queue, envelope format, and postage class.
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
 ### 4. Add configuration entries to send-letter-service
@@ -155,17 +177,16 @@ implementation group: 'com.github.hmcts', name: 'send-letter-client', version: '
 
 Check [`libs/send-letter-client`](https://github.com/hmcts/send-letter-client/releases) for the current release rather than copying a version from here. The client is on major 5.x.
 
-The client autoconfigures when the `send-letter.url` property is set. It exposes `SendLetterApi` which:
-- Always sends requests in **async mode** (`isAsync=true`) by default.
-- Automatically confirms letter creation by polling the status endpoint with retries after submission.
+The client autoconfigures when the `send-letter.url` property is set (`send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/SendLetterAutoConfiguration.java:14`). It exposes `SendLetterApi` which:
+- Hard-codes `isAsync=true` on every send, and `include-additional-info=false` plus `check-duplicate=true` on the status call, as `public static final` constants (`send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/SendLetterApi.java:25-27`). Async mode is not switchable through the client.
+- Confirms letter creation after every send by calling `confirmRequestIsCreated` (`send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/SendLetterApi.java:49-54`, `:62-66`), which retries `getLetterStatus` up to 10 times on a 404 with exponential backoff capped at 3 seconds (`send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/config/RetryConfig.java:27-34`). A 409 propagates unchanged; anything else that exhausts the retries is turned into a 500 with the body `letter not saved`, so a client-side 500 does not by itself mean the letter was lost (`send-letter-client:src/main/java/uk/gov/hmcts/reform/sendletter/api/SendLetterApi.java:72-91`).
 - Supports both `LetterV3` (per-document copy counts) and the older `LetterWithPdfsRequest` API.
 
 You also need the `send-letter.url` environment variable pointing to the service (e.g. `http://rpe-send-letter-service-aat.service.core-compute-aat.internal`).
 
 Alternatively, call the endpoint directly via HTTP.
 
-If your service fetches documents from **CDAM** (Case Document Access Management) to assemble letter PDFs, your service must also be whitelisted for CDAM access.
-<!-- CONFLUENCE-ONLY: not verified in source -->
+If your service fetches documents from **CDAM** (Case Document Access Management) to assemble letter PDFs, it needs two separate CDAM registrations. Its S2S name must appear in the `idam.s2s-authorised.services` list (`ccd-case-document-am-api:src/main/resources/application.yaml:72-73`), and it needs an entry in `service_config.json` granting the permissions it needs on the case types it touches (`ccd-case-document-am-api:src/main/resources/service_config.json`). Missing either one produces a CDAM failure while assembling the PDFs, before `POST /letters` is ever reached.
 
 ### 7. Obtain an S2S token
 
@@ -209,8 +230,7 @@ Key constraints (`LetterWithPdfsAndNumberOfCopiesRequest.java`, `Doc.java:17-21`
 
 **Duplicate detection**: the service deduplicates identical submissions automatically — same document to the same recipients returns the original `letter_id` rather than printing again. You control the time window and must include `recipients`; see [Deduplicating letters](#deduplicating-letters) below.
 
-<!-- REVIEW: Rate limiter only applies to FeatureFlagController (GET /feature-flags/{flag}), not to POST /letters. See send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/FeatureFlagController.java:15 — the @RateLimiter annotation is only on that controller. This claim should be removed or corrected. -->
-**Rate limiting**: the service applies a Resilience4j rate limiter of 15 requests per second across all callers (`application.yaml` `resilience4j.ratelimiter.instances.default`). Requests exceeding this rate are rejected immediately.
+**Rate limiting**: none on `POST /letters`. The service configures a Resilience4j limiter at 15 requests per second (`send-letter-service:src/main/resources/application.yaml:4-10`), but the only `@RateLimiter` annotation is on `GET /feature-flags/{flag}` (`send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/controllers/FeatureFlagController.java:15`), so submission throughput is bounded by the database and the upload scheduler rather than by an inbound limit.
 
 **Response** (HTTP 200):
 
@@ -249,7 +269,7 @@ GET /letters/{letter_id}
 ServiceAuthorization: <S2S token>
 ```
 
-Returns the current status. Possible public statuses: `Created`, `Uploaded`, `Posted`, `Aborted`, `Skipped`.
+Returns the current status. Possible public statuses: `Created`, `Uploaded`, `Posted`, `Aborted`. In AAT, demo, ITHC and perftest a letter will sit at `Uploaded` indefinitely, because the CronJob that calls `POST /tasks/process-reports` is enabled only in production (`cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml:9`).
 
 For extended history including events:
 
@@ -273,7 +293,7 @@ There is **no idempotency key or header to pass**. The service deduplicates by l
 
 ### The dedup window
 
-How far back the service looks for a match is set by `DUPLICATES_CUT_OFF_TIME` on `send-letter-service` (in **hours**). It is a single global value shared by all onboarded services — not per-service or per-request. It is currently **1 hour** in all environments (the chart default; no environment overrides it in `cnp-flux-config`). Changing it is a `send-letter-service` config change, so if you need a longer window, raise it with the Bulk Print team.
+How far back the service looks for a match is set by `DUPLICATES_CUT_OFF_TIME` on `send-letter-service` (in **hours**). It is a single global value shared by all onboarded services — not per-service or per-request. It is **1 hour** in every environment: the chart sets it (`send-letter-service:charts/rpe-send-letter-service/values.yaml:80`) and no overlay in `cnp-flux-config` overrides it. Changing it is a `send-letter-service` config change, so if you need a longer window, raise it with the Bulk Print team.
 
 ### What counts as a duplicate
 
@@ -332,8 +352,7 @@ curl -X POST https://rpe-send-letter-service-aat.service.core-compute-aat.intern
 
 **Service returns HTTP 403**: Your service is not configured in `ftp.service-folders`. Ensure the `application.yaml` PR has been merged and deployed.
 
-<!-- REVIEW: "db-poll-delay of 2 seconds" is wrong — it is 2 MINUTES. See application.yaml:177 (DB_POLL_DELAY:2) and UploadLettersTask.java:103 which uses minusMinutes(dbPollDelay). Also "16:00-17:00 UTC" should be "London time" (Europe/London zone). -->
-**Letter status stuck at `Created`**: The upload scheduler runs every 30 seconds (configurable via `UPLOAD_LETTERS_INTERVAL`). It also has a `db-poll-delay` of 2 seconds. During the FTP downtime window (default 16:00-17:00 UTC), uploads are suppressed entirely.
+**Letter status stuck at `Created`**: The upload scheduler runs every 30 seconds (configurable via `UPLOAD_LETTERS_INTERVAL`) and ignores letters created less than `db-poll-delay` **minutes** ago -- two minutes by default (`send-letter-service:src/main/resources/application.yaml:177`, `send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java:103`, which calls `minusMinutes`). Uploads are also suppressed entirely during the FTP downtime window, evaluated in Europe/London: 16:00-18:00 in production, 23:58-23:59 everywhere else (`cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml:14-15`, `send-letter-service:charts/rpe-send-letter-service/values.yaml:71-72`).
 
 **Xerox support issues**: Raise a ticket via ServiceNow:
 - Business Service: `Offsite Bulk Print (Shared)`
@@ -341,7 +360,7 @@ curl -X POST https://rpe-send-letter-service-aat.service.core-compute-aat.intern
 - Assignment group: `Offsite_Bulk_Printing_Xerox`
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
-**Encryption**: Letters are optionally PGP-encrypted before upload (controlled by `ENCRYPTION_ENABLED`). This is a service-level setting, not per-calling-service. If enabled, the print provider decrypts using the corresponding private key.
+**Encryption**: Letters are PGP-encrypted before upload when `ENCRYPTION_ENABLED` is set. This is a service-level setting, not per-calling-service, and the print provider decrypts using the corresponding private key. The chart sets it `"true"` (`send-letter-service:charts/rpe-send-letter-service/values.yaml:54`) and every non-production overlay sets it back to `false`, so an AAT upload is a plain `.zip` and a production upload is a `.pgp`. A test that inspects the uploaded file will not see what production produces.
 
 ## Examples
 
