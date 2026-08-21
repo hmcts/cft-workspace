@@ -15,6 +15,8 @@ sources:
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/model/request/DocumentType.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/envelopes/EnvelopeMessageProcessor.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -57,6 +59,10 @@ sources_sha:
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java": "191d098f8515659ce5fe6dfc59a5f553efa019ca"
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/model/request/DocumentType.java": "2cd992abb2d61d223f862018e3a3e2229087b6c8"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/envelopes/EnvelopeMessageProcessor.java"
+  : "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
 ---
 
 ## TL;DR
@@ -155,11 +161,11 @@ If validation fails:
   - For manual (caseworker-triggered) requests: returns errors and warnings to the caseworker in XUI.
   - For automated requests (`is_automated_process: true`): creates an exception record instead.
 - Return HTTP **400** only for genuinely malformed requests (bad syntax). The orchestrator treats this as an unrecoverable failure (`EnvelopeTransformer.java:59-61`), creates an exception record, and the BSP team is alerted about the incompatibility problem.
-- Other status codes (5xx, other 4xx): the orchestrator retries a few times. If all retries fail, it creates an exception record.
+- Other status codes (5xx, other 4xx), connection failures and timeouts: classified as `POTENTIALLY_RECOVERABLE` (`EnvelopeTransformer.java:65-67`). On the automated path the handler rethrows while the Service Bus delivery count is below `MAX_RETRIES_FOR_POTENTIALLY_RECOVERABLE_FAILURES`, which is 2, and creates an exception record once it is reached (`NewApplicationHandler.java:22`, `:55-62`). Delivery count starts at 0, so the endpoint is called on three deliveries in total before the fallback.
+
+Redelivery works by letting the message's PEEK_LOCK expire rather than by an explicit backoff (`EnvelopeMessageProcessor.java:133-150`), so the interval between those attempts is the queue's lock duration and the callback cannot influence it. An endpoint that stays down across all three deliveries leaves the envelope as an exception record for a caseworker to convert by hand.
 
 If the data is partially valid, return HTTP **200** with `warnings` populated and let the caseworker decide (they can re-submit with `ignore_warnings: true`). When `ignore_warnings` is false and your response contains warnings, the orchestrator returns those warnings to the caseworker without creating a case (`CcdNewCaseCreator.java:90-97`).
-
-<!-- CONFLUENCE-ONLY: Confluence states the orchestrator "retries a few times" on non-400/422 errors before creating an exception record. The EnvelopeTransformer source classifies non-400/422 errors as POTENTIALLY_RECOVERABLE but the retry mechanism is in the Service Bus message handler, not verified in the transformer itself. -->
 
 ### 4. Return the success response
 

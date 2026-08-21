@@ -29,6 +29,8 @@ sources:
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/common/Event.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorCode.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/ActionController.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/email/ReportSender.java
+  - bulk-scan-processor:charts/bulk-scan-processor/values.yaml
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/EnvelopeHandler.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceHandler.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java
@@ -107,6 +109,8 @@ sources_sha:
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CaseFinder.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/casecreation/AutoCaseCreator.java": "2b0ff9656c512532859844cfa7c588a9e45769db"
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java": "191d098f8515659ce5fe6dfc59a5f553efa019ca"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/email/ReportSender.java": "59142fdfbc273bb214c4aa84d4261bfb7a6f4661"
+  "bulk-scan-processor:charts/bulk-scan-processor/values.yaml": "143488c2c25b4bee56e4c8d5201c280a37c0c0d9"
 ---
 
 ## TL;DR
@@ -522,9 +526,13 @@ The `IncompleteEnvelopesTask` and `NoNewEnvelopesTask` monitoring tasks send ale
 
 ### Daily reports
 
-The processor generates a daily report (06:00 AM) summarising envelopes created the previous day. The blob-router-service generates both a daily report (06:00 AM) and a reconciliation report (07:00 AM) comparing what was received against what was successfully dispatched.
+`ReportSender` emails a CSV of the previous day's zip-file summary — the same data as `/reports/zip-files-summary` — on cron `${REPORTS_CRON:0 0 6 ? * *}`, so 06:00 unless an environment overrides it (`application.yaml:78-80`, `ReportSender.java:71-99`, `:106-108`). `@SchedulerLock(name = "report-sender")` keeps one replica sending, and a failed send is logged rather than retried, so a missed report has to be reconstructed from the reporting endpoints (`ReportSender.java:72`, `:87-89`).
 
-<!-- CONFLUENCE-ONLY: Daily report schedule times from "Bulk Scan, Bulk print & FaCT Useful Links" page (1638182762). Not verified in source. -->
+The bean is `@ConditionalOnProperty(prefix = "spring.mail", name = "host")` and takes its address list from `REPORTS_RECIPIENTS` (`ReportSender.java:27`, `:51`). Host, credentials and recipients all come from key vault secrets in the chart (`application.yaml:54-58`, `charts/bulk-scan-processor/values.yaml:85-90`), so an environment without those secrets processes envelopes with no daily report and no error to say so.
+
+The blob-router-service generates both a daily report (06:00 AM) and a reconciliation report (07:00 AM) comparing what was received against what was successfully dispatched.
+
+<!-- CONFLUENCE-ONLY: blob-router-service report schedules from "Bulk Scan, Bulk print & FaCT Useful Links" page (1638182762); blob-router-service is not cloned in this workspace. -->
 
 ## Database schema notes
 

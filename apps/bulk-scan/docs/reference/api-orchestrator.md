@@ -18,6 +18,15 @@ sources:
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/EventIds.java
   - bulk-scan-orchestrator:src/main/resources/application.yaml
+  - bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseEvent.json
+  - bulk-scan-ccd-definitions:definitions/divorce/data/sheets/CaseEvent.json
+  - bulk-scan-ccd-definitions:definitions/probate/data/sheets/CaseEvent.json
+  - bulk-scan-ccd-definitions:definitions/finrem/data/sheets/CaseEvent.json
+  - bulk-scan-ccd-definitions:definitions/privatelaw/data/sheets/CaseEvent.json
+  - bulk-scan-ccd-definitions:definitions/sscs/data/sheets/CaseEvent.json
+  - bulk-scan-ccd-definitions:definitions/cmc/data/sheets/CaseEvent.json
+  - bulk-scan-ccd-definitions:definitions/publiclaw/data/sheets/CaseEvent.json
+  - bulk-scan-ccd-definitions:definitions/nfd/data/sheets/CaseEvent.json
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -65,6 +74,15 @@ sources_sha:
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/EventIds.java": "277a9607e25400f67e44fabafc0938060ea2d4d5"
   "bulk-scan-orchestrator:src/main/resources/application.yaml": "3bf6a33c0e90821820d8bab62a9f3129a9dd3244"
+  "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseEvent.json": "ea6da3682f7d976e1084903f88e0fbbed3c1bfaa"
+  "bulk-scan-ccd-definitions:definitions/divorce/data/sheets/CaseEvent.json": "35b02b1772fe52b293b7ee0ada3f8e16f5cc5acc"
+  "bulk-scan-ccd-definitions:definitions/probate/data/sheets/CaseEvent.json": "048e77eeeeb4c29153dd2bae36d39ff7a97317ad"
+  "bulk-scan-ccd-definitions:definitions/finrem/data/sheets/CaseEvent.json": "cb564e9d4cd55543c6775a6e8da7c143958e36c6"
+  "bulk-scan-ccd-definitions:definitions/privatelaw/data/sheets/CaseEvent.json": "e7accc5a391fe45df1a4eae14be811336197f28f"
+  "bulk-scan-ccd-definitions:definitions/sscs/data/sheets/CaseEvent.json": "bf4ce54e4c3c5808d1af19a896d12faeb6e7b8d5"
+  "bulk-scan-ccd-definitions:definitions/cmc/data/sheets/CaseEvent.json": "f6dae4ab633e09e8020afdf32667d6058c36d470"
+  "bulk-scan-ccd-definitions:definitions/publiclaw/data/sheets/CaseEvent.json": "01bc579ef08926752d2f72815b2e9691f214d107"
+  "bulk-scan-ccd-definitions:definitions/nfd/data/sheets/CaseEvent.json": "65671e97c555fb762c486969c24e6484d44a6fa2"
 ---
 
 ## TL;DR
@@ -83,15 +101,33 @@ These endpoints are called by CCD when a caseworker triggers an event on an Exce
 | Endpoint | CCD Event | Purpose |
 |----------|-----------|---------|
 | `POST /callback/create-new-case` | `createNewCase` | Transforms ER into a service case via `transformation-url`, then creates the case in CCD |
-| `POST /callback/attach_case` | `attachToExistingCase` | Attaches ER documents/OCR to an existing service case; calls `update-url` for `SUPPLEMENTARY_EVIDENCE_WITH_OCR` |
-| `POST /callback/reclassify-exception-record` | (reclassify) | Reclassifies an exception record's journey classification |
+| `POST /callback/attach_case` | `attachToExistingCase`, and the per-service "extend" variants (`extendBulkScanCase`, probate's `extendCaveatCase`) | Attaches ER documents/OCR to an existing service case; calls `update-url` for `SUPPLEMENTARY_EVIDENCE_WITH_OCR` |
+| `POST /callback/reclassify-exception-record` | `reclassifyRecord` | Reclassifies an exception record's journey classification |
 
 All callbacks receive a standard CCD callback payload containing `case_details` with the Exception Record data. The orchestrator returns a CCD callback response with updated `data` fields.
 
 The controller also accepts `Authorization` (IDAM token) and `user-id` headers from CCD, which are forwarded to downstream services for caseworker-context operations (`CcdCallbackController.java:48-49`).
 
-<!-- CONFLUENCE-ONLY: the CCD-side event and callback-URL wiring that drives these endpoints is documented in Confluence pages 1064666568 and 1051493435. It lives in each service teams own CCD definition, so it cannot be verified from the orchestrator source. -->
-The CCD event definition for `createNewCase` must set `RetriesTimeoutURLAboutToSubmitEvent` to 30 seconds because the callback involves multiple microservice calls. The default 5s timeout may lead to occasional failures shown by CCD despite successful case creation.
+### CCD-side wiring
+
+The exception-record case types in `bulk-scan-ccd-definitions` are what point CCD at these endpoints. Each event's `CallBackURLAboutToSubmitEvent` is built from `${CCD_DEF_BULK_SCAN_ORCHESTRATOR_URL}`, so the definition is environment-parameterised rather than hard-coded per environment (`bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseEvent.json:21,35,49,101`).
+
+`RetriesTimeoutURLAboutToSubmitEvent` is the per-event callback timeout in seconds. Where it is set, `createNewCase` gets 30 seconds and the attach events get 10. Line numbers below are into each definition's `definitions/<name>/data/sheets/CaseEvent.json`:
+
+| Definition | `createNewCase` | attach events |
+|------------|-----------------|---------------|
+| `divorce` | 30 (line 35) | 10 (line 22) |
+| `probate` | 30 (line 52) | 10 (lines 22, 37), and 10 on `reclassifyRecord` (line 105) |
+| `finrem` | 30 (line 70) | 10 (line 22) |
+| `privatelaw` | 30 (line 37) | 10 (line 23) |
+| `sscs` | 30 (line 37) | not set |
+| `cmc`, `publiclaw` | no `createNewCase` event | 10 (line 22) |
+| `nfd`, `bulkscan-exception` | not set | not set |
+
+Definitions that leave the column empty fall back to the retry/timeout defaults configured in `ccd-data-store-api` rather than to a bulk-scan value. `cmc` and `publiclaw` define no `createNewCase` event at all, matching their absence of a `transformation-url` in the orchestrator's service config.
+
+<!-- CONFLUENCE-ONLY: Confluence pages 1064666568 and 1051493435 state that CCD's default 5s callback timeout is too short for the create-new-case chain and produces failures reported to the caseworker despite a successful case creation. The default lives in ccd-data-store-api deployment config and the failure mode is operational experience, so neither is checkable from bulk-scan source. -->
+`create-new-case` fans out to the service team's `transformation-url`, CDAM and CCD before returning, so it is the callback most sensitive to a short timeout.
 
 ## Transformation URL Contract
 

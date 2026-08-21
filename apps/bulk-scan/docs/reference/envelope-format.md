@@ -19,6 +19,13 @@ sources:
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/out/msg/ErrorMsg.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/ErrorNotificationSender.java
   - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/OcrValidator.java
+  - bulk-scan-orchestrator:src/main/resources/application.yaml
+  - bulk-scan-orchestrator:charts/bulk-scan-orchestrator/values.yaml
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/model/ccd/mappers/ExceptionRecordMapper.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/processedenvelopes/EnvelopeCcdAction.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -63,6 +70,16 @@ sources_sha:
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/blob/InputNonScannableItem.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/util/OcrDataDeserializer.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
   "bulk-scan-processor:src/main/resources/application.yaml": "143488c2c25b4bee56e4c8d5201c280a37c0c0d9"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/OcrValidator.java": "3b463d31c663cb0e155239467383b7732a64feaa"
+  "bulk-scan-orchestrator:src/main/resources/application.yaml": "3bf6a33c0e90821820d8bab62a9f3129a9dd3244"
+  "bulk-scan-orchestrator:charts/bulk-scan-orchestrator/values.yaml": "3bf6a33c0e90821820d8bab62a9f3129a9dd3244"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/model/ccd/mappers/ExceptionRecordMapper.java"
+  : "2a3662a2e5440b8c1f1b427f00f3257373590421"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/processedenvelopes/EnvelopeCcdAction.java"
+  : "a76033181dc8c25ef439e1cb0f4d91fd8287c226"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
 ---
 
 ## TL;DR
@@ -163,10 +180,14 @@ The schema enum values are **lowercase** (`new_application`, not `NEW_APPLICATIO
 |-------|----------------------|-----------|
 | `new_application` | `AUTO_CREATED_CASE` or `EXCEPTION_RECORD` | OCR data required if Form/SSCS1 document present; triggers new case creation. If transformation fails, creates an Exception Record |
 | `supplementary_evidence` | `AUTO_ATTACHED_TO_CASE` or `EXCEPTION_RECORD` | Attaches documents to an existing case identified by `case_number`; `Form` and `SSCS1` document types disallowed (`EnvelopeValidator.java:52-57`). If case not found, creates Exception Record |
-| `supplementary_evidence_with_ocr` | Case update or `EXCEPTION_RECORD` | OCR data required if Form/SSCS1 document present; updates existing case with OCR data and documents. Only Probate service as of June 2024; configurable for others |
+| `supplementary_evidence_with_ocr` | `AUTO_UPDATED_CASE` or `EXCEPTION_RECORD` | OCR data required if Form/SSCS1 document present; updates an existing case with OCR data and documents, but only where `auto-case-update-enabled` is on for the service — otherwise an Exception Record is created without attempting the update (`SupplementaryEvidenceWithOcrHandler.java:43-64`) |
 | `exception` | `EXCEPTION_RECORD` | Always creates an Exception Record; OCR validation skipped entirely (`OcrValidator.java:74`) |
 
-<!-- CONFLUENCE-ONLY: CCD action outcomes (AUTO_ATTACHED_TO_CASE, AUTO_CREATED_CASE, EXCEPTION_RECORD) from Confluence testing guide, not verified in source -->
+The four `ccd_action` values reported back to the processor are those of `EnvelopeCcdAction` (`EnvelopeCcdAction.java`); [API Processor Reference](api-processor.md#ccd-action-outcomes) sets out which handler produces which.
+
+Auto case update is enabled for two services only — `bulkscanauto` and `nfd` (`AUTO_CASE_UPDATE_ENABLED_*`, `bulk-scan-orchestrator:charts/bulk-scan-orchestrator/values.yaml:42-51`). Every other service, including Probate, receives an Exception Record for `supplementary_evidence_with_ocr` envelopes.
+
+<!-- DIVERGENCE: Confluence (Technical Specification V1.4) says supplementary_evidence_with_ocr auto-update runs for Probate only. bulk-scan-orchestrator:charts/bulk-scan-orchestrator/values.yaml sets AUTO_CASE_UPDATE_ENABLED_PROBATE to "false" and enables it only for BULKSCANAUTO and NFD. Source wins. -->
 
 ## scannable_items schema
 
@@ -347,18 +368,24 @@ Rejected envelopes are moved to a `{container}-rejected` container (e.g. `sscs-r
 
 ## Document subtypes
 
-The `document_sub_type` field is a dynamic, jurisdiction-specific list. The subtype is used as the `formType` when dispatching OCR validation requests. Known subtypes include:
+`metafile-schema.json` places no enum on `document_sub_type` — it is `["string", "null"]` and any value passes schema validation (`metafile-schema.json:145-148`). The value travels downstream as the envelope's `formType` and is consumed in two places, each of which does its own lookup:
 
-| Jurisdiction | Document Type | Subtypes |
-|-------------|--------------|----------|
-| Probate | Form | PA1P, PA1A, PA8A |
-| Probate | Cherished | Will |
-| CMC | Other | N9, N9a, N9b, N11, N225 |
-| SSCS | Form | SSCS1, SSCS1PE, SSCS1U, SSCS2 |
-| Divorce | Form | D8, DAOS1, DAOS2, DAOS3, DAOS4, DAOS5, D84, D80A-E, D36 |
-| Financial Remedy | Form | A |
+- **OCR validation dispatch (processor).** The subtype becomes `{formType}` in `{ocrValidationUrl}/forms/{formType}/validate-ocr`. A subtype the validating service does not recognise comes back as `404`, which the processor turns into `OcrValidationException("Unrecognised document subtype …")` and rejects the envelope (`OcrValidator.java:182-184`).
+- **Surname extraction (orchestrator).** `form-type-to-surname-ocr-field-mappings` maps a form type to the OCR field(s) holding the applicant surname. The lookup is an exact-match map with an empty-list default (`bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/config/ServiceConfigItem.java:107-109`), so an unmapped subtype yields no surname on the exception record (`ExceptionRecordMapper.java:111-120`). Case matters: SSCS configures both `sscs1` and `SSCS1` for this reason.
 
-<!-- CONFLUENCE-ONLY: document subtype list from Technical Specification V1.4, not verified in source -->
+The form types with surname mappings configured are:
+
+| Service | Form types |
+|---------|-----------|
+| `probate` | PA1P, PA8A, PA1A |
+| `sscs` | sscs1, SSCS1, SSCS1PE, SSCS1PEU, SSCS1U, SSCS2, SSCS5, SSCS8 |
+| `bulkscan`, `bulkscanauto` | PERSONAL |
+
+Source: `bulk-scan-orchestrator:src/main/resources/application.yaml:107-189`
+
+`divorce`, `finrem`, `cmc`, `publiclaw`, `nfd` and `privatelaw` declare no form-type mappings, so subtypes sent for those services never contribute a surname.
+
+<!-- CONFLUENCE-ONLY: Technical Specification V1.4 additionally lists CMC subtypes N9, N9a, N9b, N11, N225; Divorce D8, DAOS1-DAOS5, D84, D80A-E, D36; and Financial Remedy A. Those services configure no form-type mappings in bulk-scan-orchestrator and the schema has no subtype enum, so the lists cannot be checked against source. -->
 
 ## Error notification codes
 

@@ -25,6 +25,20 @@ sources:
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/exceptions/FileSizeExceedMaxUploadLimit.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/entity/ProcessEvent.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/common/Event.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/OcrValidator.java
+  - bulk-scan-orchestrator:charts/bulk-scan-orchestrator/values.yaml
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationRequestCreator.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/casecreation/AutoCaseCreator.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/ExceptionClassificationHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java
+  - cnp-flux-config:apps/bsp/bulk-scan-orchestrator/prod.yaml
+  - cnp-flux-config:apps/bsp/bulk-scan-orchestrator/aat.yaml
+  - cnp-flux-config:apps/bsp/bulk-scan-orchestrator/demo.yaml
+  - cnp-flux-config:apps/bsp/bulk-scan-orchestrator/ithc.yaml
+  - cnp-flux-config:apps/bsp/bulk-scan-orchestrator/perftest.yaml
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -70,6 +84,26 @@ sources_sha:
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/entity/Status.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
   ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/envelopes/EnvelopeMessageProcessor.java"
   : "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/OcrValidator.java": "3b463d31c663cb0e155239467383b7732a64feaa"
+  "bulk-scan-orchestrator:charts/bulk-scan-orchestrator/values.yaml": "3bf6a33c0e90821820d8bab62a9f3129a9dd3244"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java": "191d098f8515659ce5fe6dfc59a5f553efa019ca"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationRequestCreator.java"
+  : "2a3662a2e5440b8c1f1b427f00f3257373590421"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/casecreation/AutoCaseCreator.java"
+  : "2b0ff9656c512532859844cfa7c588a9e45769db"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/ExceptionClassificationHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  "cnp-flux-config:apps/bsp/bulk-scan-orchestrator/prod.yaml": "8ba4e8844d57070f48a9ef9a00e1d7b7178e71c5"
+  "cnp-flux-config:apps/bsp/bulk-scan-orchestrator/aat.yaml": "eb8746dc8fb3f2493cc0337fb3d38e7cdf664cad"
+  "cnp-flux-config:apps/bsp/bulk-scan-orchestrator/demo.yaml": "13d0a050a442f6bbf32aba9ba719be6b7c45598f"
+  "cnp-flux-config:apps/bsp/bulk-scan-orchestrator/ithc.yaml": "8ef474bf1db14c6741a8c04c9ef4848973f87bda"
+  "cnp-flux-config:apps/bsp/bulk-scan-orchestrator/perftest.yaml": "eb8746dc8fb3f2493cc0337fb3d38e7cdf664cad"
 ---
 
 ## TL;DR
@@ -358,16 +392,17 @@ ORDER BY pe.createdat DESC;
 
 ## Exception record creation rules
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
+30. An exception record is what the orchestrator produces whenever the automated path cannot finish. The trigger depends on the classification:
+    - `exception` — always, with no other possible outcome (`ExceptionClassificationHandler.java:32-35`).
+    - `supplementary_evidence` — when `CaseFinder` matches no case, and also when a case is matched but attaching the documents to it fails (`SupplementaryEvidenceHandler.java:49-77`).
+    - `supplementary_evidence_with_ocr` — when auto case update is off for the container, when the update is abandoned as impossible, or when a recoverable update error is still failing on the last delivery (`SupplementaryEvidenceWithOcrHandler.java:43-64`).
+    - `new_application` — when auto case creation is off for the container, when more than one case already exists for the envelope id, when the transformation endpoint answers 400 or 422 or returns a body that fails validation, when CCD rejects the create with 400 or 422, or when a recoverable failure is still failing on the last delivery (`AutoCaseCreator.java:54-59`, `:65-79`, `:129-137`, `EnvelopeTransformer.java:56-67`, `NewApplicationHandler.java:46-62`).
 
-30. An exception record is created by the orchestrator when any of the following conditions occur:
-    - Envelope has `supplementary_evidence` classification but no `case_number` is provided.
-    - Envelope has `supplementary_evidence` classification with a `case_number` that cannot be found in CCD.
-    - Envelope has `new_application` classification and OCR validation returns warnings or the transformation URL returns errors.
-    - Envelope classification from the supplier is `exception`.
-    - Any other processing failure outside the happy path.
+    In production and AAT, auto case creation is on for `bulkscanauto`, `probate` and `nfd`, and auto case update for `bulkscanauto` and `nfd`; every other container has both `false` (`charts/bulk-scan-orchestrator/values.yaml:32-51`, with no override in `cnp-flux-config:apps/bsp/bulk-scan-orchestrator/prod.yaml` or `aat.yaml`). For those services an exception record is the routine outcome for every envelope and not a fault to investigate.
 
-    Some jurisdictions (e.g. Financial Remedy, SSCS) are configured to always create exception records instead of auto-creating cases.
+    Read the flag for the environment you are debugging in, not the chart. Demo enables `privatelaw` and `finrem` creation (`cnp-flux-config:apps/bsp/bulk-scan-orchestrator/demo.yaml:15,17`), ithc enables `privatelaw` (`ithc.yaml:14`) and perftest enables `probate` (`perftest.yaml:11`). A container that auto-creates in demo and raises an exception record in production is behaving as configured.
+
+    Warnings are not a trigger. Requests on the automated path are built with `is_automated_process` and `ignore_warnings` both `true` (`TransformationRequestCreator.java:43-58`), so a transformation endpoint answering 200 with warnings still gets a case created, and an OCR `WARNINGS` response at the processor is logged with processing continuing (`OcrValidator.java:147-152`). Do not look for a warning when explaining an unexpected exception record — look for one of the triggers above.
 
 ## Error notification to supplier
 

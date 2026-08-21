@@ -17,6 +17,14 @@ sources:
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/StaleBlobController.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/entity/Status.java
   - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/common/Classification.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/EnvelopeValidator.java
+  - bulk-scan-helper-frontend:src/main/assets/js/secureRequester.ts
+  - bulk-scan-helper-frontend:src/main/routes/home.ts
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/processedenvelopes/EnvelopeCcdAction.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/ExceptionClassificationHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -61,6 +69,19 @@ sources_sha:
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/StaleBlobController.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/entity/Status.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
   "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/model/common/Classification.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/EnvelopeValidator.java": "1a4ed083d2ce4288859c9449cf36cb5f7e0a45b0"
+  "bulk-scan-helper-frontend:src/main/assets/js/secureRequester.ts": "0bd0169946c39362977ae6fa88ccf8e48b613ee1"
+  "bulk-scan-helper-frontend:src/main/routes/home.ts": "33b49e6bc97ea4890d3836af8509997468d24203"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/processedenvelopes/EnvelopeCcdAction.java"
+  : "a76033181dc8c25ef439e1cb0f4d91fd8287c226"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/ExceptionClassificationHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
 ---
 
 ## TL;DR
@@ -110,32 +131,46 @@ sources_sha:
 
 All entries share the `SAS_TOKEN_VALIDITY` env var default (`application.yaml:114-134`). Per-service overrides are possible via the `accesstoken.serviceConfig[].validity` property.
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-The following PO Box values are associated with each container (used in envelope metadata):
-- sscs: 12626, 13150
-- cmc: 12747
-- divorce: 12706
-- nfd: 13226
-- finrem: 12746
-- probate: 12625, 12624
-- publiclaw: 12879
-- privatelaw: 13235
+### Container Mappings and PO Boxes
+
+Separately from the SAS token config, `containers.mappings` binds each storage container to a jurisdiction and to the PO box values that may appear in envelope metadata (`application.yaml:136-186`):
+
+| Container | Jurisdiction | PO boxes |
+|-----------|--------------|----------|
+| `sscs` | SSCS | 12626, 13150, 13618 |
+| `probate` | PROBATE | 12625, 12624 |
+| `divorce` | DIVORCE | 12706 |
+| `finrem` | DIVORCE | 12746 |
+| `cmc` | CMC | 12747 |
+| `publiclaw` | PUBLICLAW | 12879 |
+| `privatelaw` | PRIVATELAW | 13235 |
+| `nfd` | DIVORCE | 13226 |
+
+`EnvelopeValidator.assertContainerMatchesJurisdictionAndPoBox` requires a single mapping to match all three of the container the blob was read from, the envelope's `jurisdiction`, and its `po_box` — compared case-insensitively. A triple that matches no mapping throws `ContainerJurisdictionPoBoxMismatchException` (`EnvelopeValidator.java:210-232`), which carries `ERR_METAFILE_INVALID` and rejects the envelope. Adding a PO box for an existing jurisdiction therefore requires a processor release, not just a supplier change.
+
+The mapping list covers eight containers. `bulkscan` and `bulkscanauto` appear only under `accesstoken.serviceConfig`, so they receive SAS tokens without a jurisdiction/PO box binding. `privatelaw` mappings are additionally gated by `PRIVATELAW_ENABLED` (default `false`, `application.yaml:178`).
+
+Each mapping also carries the per-jurisdiction `ocrValidationUrl` and, for probate, divorce, finrem, publiclaw, privatelaw and nfd, a `paymentsEnabled` toggle defaulting to `false`.
 
 ### External Access (API Gateway)
 
-The SAS token endpoint is exposed externally via Azure API Management (APIM), not directly from `bulk-scan-processor`. After the migration from bulk-scan to reform-scan architecture, the external-facing endpoint is:
+The SAS token endpoint is exposed externally via Azure API Management (APIM), not directly from `bulk-scan-processor`. The APIM route is:
 
 ```
-GET https://core-api-mgmt-{env}.azure-api.net/reform-scan/token/{serviceName}
+GET https://cft-mtls-api-mgmt-appgw.{env}.platform.hmcts.net/reform-scan/token/{serviceName}
 ```
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-External callers (the scanning supplier XBP, formerly Exela) must provide:
-- A valid client certificate (thumbprint registered in `blob-router-service` infrastructure `{env}.tfvar`)
-- `Ocp-Apim-Subscription-Key` header (subscription key from the `reform-scan` APIM subscription)
-- OAUTH 2.0 access token (obtained via APIM policy)
+<!-- DIVERGENCE: Confluence ("Switching from bulk-scan to reform-scan") gives the external host as core-api-mgmt-{env}.azure-api.net. The only APIM client in this workspace, bulk-scan-helper-frontend, calls cft-mtls-api-mgmt-appgw.{env}.platform.hmcts.net. Source wins. -->
 
-The API policy is defined in `blob-router-service/infrastructure/api-policy.xml`.
+`bulk-scan-helper-frontend` is the reference caller: it builds that base URL from the target environment (`bulk-scan-helper-frontend:src/main/assets/js/secureRequester.ts:21`) and requests `/reform-scan/token/{jurisdiction}` (`bulk-scan-helper-frontend:src/main/routes/home.ts:28`). Two credentials are required on every call:
+
+- A client certificate and key, presented through an `https.Agent` built from `resources/cert.pem` and `resources/private.pem` (`secureRequester.ts:23-26`).
+- An `Ocp-Apim-Subscription-Key` header (`secureRequester.ts:55-57`). The key is per-environment; a missing key throws before any request is made (`secureRequester.ts:37-44`).
+
+The returned token is appended directly to a container URL of the form `https://reformscan.{env}.platform.hmcts.net/{jurisdiction}/{fileName}?{sasToken}` (`bulk-scan-helper-frontend:src/main/routes/home.ts:40`), so the caller uploads straight to blob storage without any further HMCTS credential.
+
+<!-- CONFLUENCE-ONLY: not verified in source -- client certificate thumbprints are registered in blob-router-service infrastructure {env}.tfvar and the OAUTH 2.0 APIM policy lives in blob-router-service/infrastructure/api-policy.xml; blob-router-service is not cloned in this workspace -->
+Certificate thumbprints for external callers (the scanning supplier XBP, formerly Exela) are registered in `blob-router-service` infrastructure, whose APIM policy also applies an OAUTH 2.0 check.
 
 ### Authentication (Internal)
 
@@ -170,11 +205,16 @@ Envelopes carry a `Classification` enum value (`Classification.java`) that deter
 
 ### CCD Action Outcomes
 
-<!-- CONFLUENCE-ONLY: not verified in source -->
-After processing, the envelope's `ccd_action` field records the outcome:
-- `AUTO_ATTACHED_TO_CASE` -- supplementary evidence attached to an existing case via its case number
-- `AUTO_CREATED_CASE` -- new case successfully created from a new_application envelope
-- `EXCEPTION_RECORD` -- an Exception Record was created (due to classification=exception, missing/invalid case number, OCR validation warnings, or service-specific configuration)
+After processing, the envelope's `ccd_action` field records the outcome. The orchestrator reports one of four values, defined by the `EnvelopeCcdAction` enum (`EnvelopeCcdAction.java`):
+
+| `ccd_action` | Set when |
+|--------------|----------|
+| `AUTO_ATTACHED_TO_CASE` | A `supplementary_evidence` envelope matched an existing case and its documents were attached (`SupplementaryEvidenceHandler.java:49-54`) |
+| `AUTO_CREATED_CASE` | A `new_application` envelope produced a case, or the case already existed (`NewApplicationHandler.java:47-50`) |
+| `AUTO_UPDATED_CASE` | A `supplementary_evidence_with_ocr` envelope updated an existing case, which requires `auto-case-update-enabled` for the service (`SupplementaryEvidenceWithOcrHandler.java:43-49`) |
+| `EXCEPTION_RECORD` | An Exception Record was created instead — always for `classification=exception` (`ExceptionClassificationHandler.java:32-35`), and as the fallback from every other handler |
+
+Every exception-record branch calls `paymentsService.createNewPayment(envelope, ccdId, true)`, so the payment is registered against the exception record rather than a service case; `AUTO_*` outcomes pass `false` and register it against the real case.
 
 ## Envelope Query Endpoints
 

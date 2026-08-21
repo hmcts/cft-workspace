@@ -22,6 +22,18 @@ sources:
   - bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/controllers/PaymentController.java
   - bulk-scan-payment-processor:src/main/java/uk/gov/hmcts/reform/bulkscan/payment/processor/client/payhub/PayHubClient.java
   - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/model/request/BulkScanPayment.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/ActionController.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/ReportsController.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/EnvelopeController.java
+  - bulk-scan-helper-frontend:src/main/routes/home.ts
+  - bulk-scan-orchestrator:charts/bulk-scan-orchestrator/values.yaml
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationRequestCreator.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/casecreation/AutoCaseCreator.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/ExceptionClassificationHandler.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -70,6 +82,25 @@ sources_sha:
   : "191d098f8515659ce5fe6dfc59a5f553efa019ca"
   ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/servicebus/domains/processedenvelopes/ProcessedEnvelopeNotifier.java"
   : "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/ActionController.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/ReportsController.java": "77a26ce3d10483278a94f3148a618b69f1e66cbe"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/controllers/EnvelopeController.java": "2b43e4fa15ff5c6c837d0b8f207b54b3cc29b61c"
+  "bulk-scan-helper-frontend:src/main/routes/home.ts": "33b49e6bc97ea4890d3836af8509997468d24203"
+  "bulk-scan-orchestrator:charts/bulk-scan-orchestrator/values.yaml": "3bf6a33c0e90821820d8bab62a9f3129a9dd3244"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/EnvelopeTransformer.java"
+  : "191d098f8515659ce5fe6dfc59a5f553efa019ca"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/client/transformation/TransformationRequestCreator.java"
+  : "2a3662a2e5440b8c1f1b427f00f3257373590421"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/casecreation/AutoCaseCreator.java"
+  : "2b0ff9656c512532859844cfa7c588a9e45769db"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/NewApplicationHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/ExceptionClassificationHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
+  ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/SupplementaryEvidenceWithOcrHandler.java"
+  : "c7bcda72fb826e91f171f33989af1d1db0656562"
 ---
 
 ## TL;DR
@@ -129,8 +160,9 @@ sequenceDiagram
 
 ## Stage 0: Blob Router — upload and dispatch
 
-The scanning supplier (XBP, formerly Exela) authenticates via Azure API Management (APIM) using mutual TLS (client certificate + subscription key). The APIM endpoint has transitioned from `/reform-scan` to `/bulk-scan` (December 2024) for OAuth 2.0 enablement.
-<!-- CONFLUENCE-ONLY: APIM path change from /reform-scan to /bulk-scan in Dec 2024 — not verified in source -->
+The scanning supplier (XBP, formerly Exela) authenticates via Azure API Management (APIM) using mutual TLS (client certificate + subscription key). The APIM route in use is `/reform-scan/token/{service}` on the `cft-mtls-api-mgmt-appgw.{env}.platform.hmcts.net` gateway — see [API Processor Reference](../reference/api-processor.md#external-access-api-gateway) for the caller's side of the contract.
+
+<!-- DIVERGENCE: Confluence records the APIM path moving from /reform-scan to /bulk-scan in December 2024 for OAuth 2.0 enablement. bulk-scan-helper-frontend, the only APIM client in this workspace, still calls /reform-scan/token/{jurisdiction} (src/main/routes/home.ts:28). Source wins. -->
 
 The supplier retrieves a time-limited SAS token (default 300-second validity) from `blob-router-service`'s SAS token endpoint exposed through APIM. The token grants write+list+read access to the `reformscan` storage account.
 
@@ -278,14 +310,17 @@ The payment processor has **no** Service Bus listener — there is no `payments`
 
 ## Exception Record creation rules
 
-An Exception Record is created in the following situations:
-<!-- CONFLUENCE-ONLY: Business rules list from Confluence "Bulk Scan, Bulk print & FaCT Useful Links" — not verified in source -->
+An Exception Record is the fallback whenever the automatic path is unavailable or fails. Each classification has its own handler, and each handler its own set of fallbacks:
 
-1. **Supplementary evidence without case number** — envelope classified as `supplementary_evidence` but `case_number` is null or empty.
-2. **Supplementary evidence with unresolvable case** — envelope has `supplementary_evidence` classification with a case number that cannot be located in CCD.
-3. **New application with OCR validation warnings** — envelope classified as `new_application` containing OCR forms where the service team's validation endpoint returns warnings.
-4. **Supplier-marked exception** — the supplier sets `envelope_classification` to `exception` in the metadata (per the SIP business rules for that jurisdiction).
-5. **Any failure outside the happy path** — CCD API errors, transformation endpoint failures, unhandled exceptions during processing.
+1. **Supplier-marked exception** — `classification=exception` always produces one; there is no automatic path to attempt (`ExceptionClassificationHandler.java:32-35`).
+2. **Supplementary evidence that cannot be attached** — no case is found for the envelope, or a case is found but attaching the documents to it fails (`SupplementaryEvidenceHandler.java:49-77`). A null or unresolvable `case_number` lands here.
+3. **Supplementary evidence with OCR where auto-update is off** — the record is created without attempting an update. The same handler also falls back when the update is abandoned, or errors after the message has been redelivered twice (`SupplementaryEvidenceWithOcrHandler.java:43-64`).
+4. **New application that cannot be created** — auto case creation is disabled for the service, more than one case already exists for the envelope, CCD rejects the create with 400 or 422, or the service team's transformation endpoint returns 400/422 or an invalid body (`AutoCaseCreator.java:54-79`, `AutoCaseCreator.java:129-137`, `EnvelopeTransformer.java:56-68`, `NewApplicationHandler.java:51-54`).
+5. **A recoverable failure that stops being worth retrying** — 5xx responses, timeouts and unhandled exceptions are classified as potentially recoverable and left to redelivery, but once `deliveryCount` reaches 2 the handler creates an exception record instead (`NewApplicationHandler.java:22`, `NewApplicationHandler.java:55-62`).
+
+Auto case creation is on for three services only — `bulkscanauto`, `probate` and `nfd` (`bulk-scan-orchestrator:charts/bulk-scan-orchestrator/values.yaml:32-41`). For every other service, including SSCS, Divorce, FinRem, CMC, PublicLaw and PrivateLaw, a `new_application` envelope always becomes an exception record for a caseworker to convert.
+
+OCR validation warnings do not by themselves cause an exception record on the automated path: the orchestrator sets `ignore_warnings` to `true` on every queue-driven transformation request (`TransformationRequestCreator.java:43-58`). Warnings block a conversion only when a caseworker triggers one from an existing exception record.
 
 It is important to note that "exception record" (internal CCD case type for caseworker triage) and "exception" (a classification applied to the zip file by the supplier) are distinct concepts. One is an HMCTS-internal fallback mechanism; the other is a business-rule-driven classification.
 
@@ -334,28 +369,32 @@ The blob-router dispatches to, and the processor processes blobs from, the follo
 
 ## Operational recovery
 
-The processor exposes an administrative actions API (protected by an `actions-api-key` secret) for operational recovery of stuck envelopes:
+The processor exposes an administrative actions API for operational recovery of stuck envelopes. Every endpoint calls `validateAuthorization`, which does an exact string comparison against `Bearer {actions.api-key}` — there is no S2S or IDAM check on this controller, so the key is the only thing standing in front of it (`ActionController.java`):
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/actions/{envelopeId}/complete` | PUT | Manually mark an envelope as complete |
-| `/actions/reprocess/{envelopeId}` | PUT | Re-trigger processing for a failed envelope |
-| `/actions/update-classification-reprocess/{envelopeId}` | PUT | Change classification to `exception` and reprocess (forces exception record creation) |
-
-<!-- CONFLUENCE-ONLY: Actions API endpoints — not verified in source -->
+| `/actions/reprocess/{id}` | PUT | Re-trigger processing for a failed envelope (`ActionController.java:52`) |
+| `/actions/update-classification-reprocess/{id}` | PUT | Change classification to `EXCEPTION` and reprocess, forcing exception-record creation (`ActionController.java:70`) |
+| `/actions/{id}/complete` | PUT | Manually mark an envelope as complete (`ActionController.java:88`) |
+| `/actions/{id}/abort` | PUT | Manually mark an envelope as aborted (`ActionController.java:106`) |
 
 ### Monitoring endpoints
 
-| Endpoint | Service | Purpose |
-|----------|---------|---------|
-| `/reports/count-summary?date=YYYY-MM-DD` | blob-router | Envelope counts per service for a date |
-| `/envelopes?date=YYYY-MM-DD&container=<name>` | blob-router | List envelopes by container (status should be `DISPATCHED`) |
-| `/reports/envelopes-count-summary?date=YYYY-MM-DD` | processor | CFT envelope counts for a date |
-| `/reports/zip-files-summary?date=YYYY-MM-DD` | processor | All zip files received (status should be `COMPLETED`) |
-| `/envelopes/stale-incomplete-envelopes` | processor | Envelopes that failed to complete |
-| `/envelopes/{container}/{zipFileName}` | processor | Status of a specific envelope |
+On the processor:
 
-<!-- CONFLUENCE-ONLY: Monitoring endpoint paths — not verified in source -->
+| Endpoint | Purpose |
+|----------|---------|
+| `/reports/count-summary?date=YYYY-MM-DD` | Envelope counts for a date; `include-test` defaults to `false` (`ReportsController.java:112`) |
+| `/reports/envelopes-count-summary?date=YYYY-MM-DD` | Second count summary over the same date, built by a different repository query (`ReportsController.java:128`) |
+| `/reports/zip-files-summary?date=YYYY-MM-DD` | All zip files received, as JSON or CSV depending on `Accept` (`ReportsController.java:161`, `ReportsController.java:196`) |
+| `/reports/rejected-zip-files?date=YYYY-MM-DD` | Zip files rejected on a date (`ReportsController.java:227`) |
+| `/envelopes/stale-incomplete-envelopes` | Envelopes still incomplete past `stale_time`, default 2 hours (`EnvelopeController.java:127`) |
+| `/envelopes/{container}/{file_name}` | Status of a specific envelope; hidden from the OpenAPI spec (`EnvelopeController.java:112`) |
+
+`GET /envelopes` on the processor filters by `status` only — it takes neither `date` nor `container` (`EnvelopeController.java:67`), so a date-scoped sweep has to go through `/reports/*`.
+
+<!-- CONFLUENCE-ONLY: the blob-router equivalents of these endpoints (/reports/count-summary and /envelopes?date=&container=, whose envelopes should read DISPATCHED) come from the Confluence service operations guide; blob-router-service is not cloned in this workspace. -->
+The blob-router exposes its own count-summary and envelope-listing endpoints, where a healthy envelope reads `DISPATCHED`.
 
 ### Database uniqueness constraints
 

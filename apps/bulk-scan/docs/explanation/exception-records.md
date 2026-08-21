@@ -7,6 +7,7 @@ audience: both
 sources:
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/CreateExceptionRecord.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/model/ccd/ExceptionRecord.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/model/ccd/mappers/ExceptionRecordMapper.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/definition/ExceptionRecordFields.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/controllers/CcdCallbackController.java
   - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/CreateCaseCallbackService.java
@@ -19,6 +20,17 @@ sources:
   - bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseField.json
   - bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/State.json
   - bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/FixedLists.json
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/OcrValidator.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/exceptions/OcrValidationException.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/FileContentProcessor.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/FileRejector.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/ErrorNotificationSender.java
+  - bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/processor/BlobManager.java
+  - bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/PaymentsService.java
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/PaymentController.java
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/service/PaymentServiceImpl.java
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/ReportController.java
+  - ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/service/ReportServiceImpl.java
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -56,6 +68,7 @@ sources_sha:
   ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/envelopehandlers/CreateExceptionRecord.java"
   : "191d098f8515659ce5fe6dfc59a5f553efa019ca"
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/model/ccd/ExceptionRecord.java": "2d7e3260a9ee2c5f94e68a47064988dacf069794"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/model/ccd/mappers/ExceptionRecordMapper.java": "2a3662a2e5440b8c1f1b427f00f3257373590421"
   ? "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/ccd/definition/ExceptionRecordFields.java"
   : "ae77472667c4b8d8e9f33d1de8b57c78ed9f511d"
   "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/controllers/CcdCallbackController.java": "e5c2aae520540c34ba5a9476e59cdf9ebe3eca28"
@@ -69,6 +82,17 @@ sources_sha:
   "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/CaseField.json": "de9c28e2d2da5f41e0e322726d568c8a27f061fc"
   "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/State.json": "ea6da3682f7d976e1084903f88e0fbbed3c1bfaa"
   "bulk-scan-ccd-definitions:definitions/bulkscan-exception/data/sheets/FixedLists.json": "c9d2e780c0c3a13daaa3f8b7092fe48a51327a2a"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/validation/OcrValidator.java": "3b463d31c663cb0e155239467383b7732a64feaa"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/exceptions/OcrValidationException.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/FileContentProcessor.java": "ac5ee8dbac634179a557c12e09779457e22e34ad"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/FileRejector.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/services/ErrorNotificationSender.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-processor:src/main/java/uk/gov/hmcts/reform/bulkscanprocessor/tasks/processor/BlobManager.java": "e37789988ec16d3c5162a38a37c2c974b37d27b4"
+  "bulk-scan-orchestrator:src/main/java/uk/gov/hmcts/reform/bulkscan/orchestrator/services/PaymentsService.java": "c7bcda72fb826e91f171f33989af1d1db0656562"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/PaymentController.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/service/PaymentServiceImpl.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/controller/ReportController.java": "836954e8c43e2b30d36ccc2b90ca1ef03567ef40"
+  "ccpay-bulkscanning-app:src/main/java/uk/gov/hmcts/reform/bulkscanning/service/ReportServiceImpl.java": "cf9f94ec0592926c8dad9e653e94d8ac19d141e2"
 ---
 
 ## TL;DR
@@ -305,12 +329,18 @@ Before creating an exception record (or auto-creating a case), `bulk-scan-proces
 | Status | Outcome |
 |---|---|
 | `SUCCESS` | Envelope proceeds normally (auto-creation or supplementary evidence attachment) |
-| `WARNINGS` | Exception record created with warnings visible in `ocrDataValidationWarnings` field |
-| `ERRORS` | Envelope rejected; notification sent to scanning supplier (XBP/Exela) |
+| `WARNINGS` | Processing continues; the warnings travel on the envelope and land in `ocrDataValidationWarnings`, with `displayWarnings` set to `Yes`, on any exception record made from it (`ExceptionRecordMapper.java:59-60`, `ExceptionRecord.java:69-88`) |
+| `ERRORS` | Envelope rejected; error notification queued for the scanning supplier |
 
 The endpoint must verify the `ServiceAuthorization` header and allow only the `bulk_scan_processor` S2S service. If the OCR validation feature is not enabled for a service (or the service has not implemented the endpoint), the exception record is created without any validation.
 
-<!-- CONFLUENCE-ONLY: OCR validation error triggers notification to Exela - not verified in source -->
+An `ERRORS` response makes `OcrValidator` throw `OcrValidationException`, carrying error code `ERR_METAFILE_INVALID` and the returned error list as its detail message (`OcrValidator.java:138-146`, `OcrValidationException.java:15-27`). `FileContentProcessor` catches that as an `EnvelopeRejectionException`, records a `FILE_VALIDATION_FAILURE` event and passes the blob to `FileRejector` (`FileContentProcessor.java:112-116`), which publishes an `ErrorMsg` carrying the error code, the description and the container's PO boxes onto the `notifications` queue, then copies the zip into `<container>-rejected` and deletes it from the input container (`FileRejector.java:47-54`, `ErrorNotificationSender.java:78-100`, `BlobManager.java:120-176`).
+
+Rejection is terminal for that zip. No exception record is created, and because the blob leaves the input container nothing in the processor can pick it up again — recovery means the supplier re-sending a corrected envelope. A 404 from the validation endpoint takes the same path, via `OcrValidationException("Unrecognised document subtype …")` (`OcrValidator.java:182-184`), so a form type the service does not recognise rejects the envelope instead of falling through to an exception record.
+
+The queue message is the processor's last involvement; delivery to the supplier is done by a separate service reading that queue.
+
+<!-- CONFLUENCE-ONLY: the hop from the `notifications` queue to the supplier's mailbox is handled by reform-scan-notification-service, which is not cloned in this workspace. -->
 
 ## The update endpoint contract
 
@@ -430,9 +460,9 @@ When an envelope contains payments (cheques, postal orders, cash), the `bulk-sca
 2. **Payment processing completes:** The payment processor fires the `completeAwaitingPaymentDCNProcessing` event on the ER, clearing the gate (setting `awaitingPaymentDCNProcessing` to `"No"`).
 3. **On case creation from ER:** The orchestrator publishes a payment update message so Pay Hub can re-allocate the payment from the exception record to the newly created service case.
 
-If document validation fails but cheque/payment validation passes at the processor level, a potential orphan payment may exist in Pay Hub without a corresponding case or exception record reference. This is a known edge case documented in operational runbooks.
+The two sides of a payment reach `ccpay-bulkscanning-app` independently. The scanning supplier posts each cheque DCN straight to `POST /bulk-scan-payment` once banking has allocated it to a BGC slip, and if no row exists for that DCN an envelope is created holding just that payment with `paymentStatus` `INCOMPLETE` (`ccpay-bulkscanning-app` `PaymentController.java:71-88`, `PaymentServiceImpl.java:94-112`). The case side only arrives once the orchestrator has a CCD id to attach the payment to, in `createNewPayment(envelope, caseId, isExceptionRecord)` (`PaymentsService.java:46-62`). A DCN becomes `COMPLETE`, with source `Both`, only when both arrivals have happened (`PaymentServiceImpl.java:113-123`).
 
-<!-- CONFLUENCE-ONLY: orphan payment scenario (doc fails, cheque passes) from Confluence page 1102579002, not verified in source -->
+So an envelope rejected by the processor never reaches the orchestrator, and its banked payment stays in an `INCOMPLETE` envelope with no case or exception-record reference. Those rows are what the `DATA_LOSS` report lists: `GET /report/download?report_type=DATA_LOSS&date_from=…&date_to=…` selects payments left `INCOMPLETE` within the window (`ccpay-bulkscanning-app` `ReportController.java:53-59`, `ReportServiceImpl.java:226-241`).
 
 ## Onboarding a new jurisdiction
 
