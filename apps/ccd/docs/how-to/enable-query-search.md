@@ -18,6 +18,11 @@ sources:
   - ccd-data-store-api:src/main/resources/application.properties
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/SearchFieldAndResultGenerator.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SortOrder.java
+  - ccd-data-store-api:src/main/resources/db/migration/V0001__Base_version.sql
+  - ccd-data-store-api:src/main/resources/db/migration/V20250306_0000__CCD-6936_case_pointer_marked_by_logstash.sql
+  - cnp-flux-config:apps/ccd/ccd-logstash/ccd-logstash.yaml
+  - cnp-flux-config:apps/ccd/ccd-logstash-divorce/ccd-logstash-divorce.yaml
+  - cnp-flux-config:apps/ccd/ccd-logstash-indexer/ccd-logstash-indexer.yaml
 status: confluence-augmented
 last_reviewed: "2026-08-20T00:00:00Z"
 confluence_checked_at: "2026-08-20T00:00:00Z"
@@ -75,6 +80,11 @@ sources_sha:
   "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/SearchFieldAndResultGenerator.java": "8a5ceec6799e93975a91e430eb586a3c5160a88e"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SortOrder.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
+  "ccd-data-store-api:src/main/resources/db/migration/V0001__Base_version.sql": "2dc4bd32091d4f764d6ac7150265d04ed016bd1b"
+  "ccd-data-store-api:src/main/resources/db/migration/V20250306_0000__CCD-6936_case_pointer_marked_by_logstash.sql": "0b3fa976dfabfb1fd06c6f37c9832b0a5cdacaf3"
+  "cnp-flux-config:apps/ccd/ccd-logstash/ccd-logstash.yaml": "1279523ad1c36adafd4839ab81d7d1c20081d174"
+  "cnp-flux-config:apps/ccd/ccd-logstash-divorce/ccd-logstash-divorce.yaml": "354f256227ac3d25f687b696bc83a137b52a1cfa"
+  "cnp-flux-config:apps/ccd/ccd-logstash-indexer/ccd-logstash-indexer.yaml": "354f256227ac3d25f687b696bc83a137b52a1cfa"
 ---
 
 # Enable Query Search
@@ -95,7 +105,18 @@ sources_sha:
 - Elasticsearch enabled: `ELASTIC_SEARCH_ENABLED=true` on `ccd-data-store-api` (`application.properties:209`).
 - `ccd-definition-store-api` deployed with `elasticsearch.enabled=true` and either `failImportIfError=true` (synchronous, blocks import on ES failure) or `false` (asynchronous).
 - Case fields you want to search must be of a type that maps to an ES type in `elasticsearch.typeMappings` config (e.g. `Text`, `Date`, `FixedList`).
-- A working Logstash deployment for the jurisdiction. Logstash polls the `case_data` table on a configurable interval (1s in production) for rows where `marked_by_logstash=false`, indexes them, and marks the flag true. The `marked_by_logstash` column is reset to `false` by a `BEFORE INSERT OR UPDATE` database trigger (`trg_case_data_updated`) whenever changeable case fields are modified -- covering both API and manual DB changes. <!-- CONFLUENCE-ONLY: Logstash config lives in cnp-flux-config, outside this workspace. The trigger detail is from the ES LLD and DB schema. -->
+- A working Logstash deployment for the jurisdiction. Each release polls once a second (`schedule => "* * * * * *"`) and claims rows in one atomic statement rather than a select followed by an update:
+
+  ```
+  UPDATE case_data SET marked_by_logstash = true
+  WHERE marked_by_logstash = false AND jurisdiction = :jurisdiction
+  RETURNING id, created_date, last_modified, jurisdiction, case_type_id, state,
+            last_state_modified_date, data::TEXT as json_data, ...
+  ```
+
+  (`cnp-flux-config:apps/ccd/ccd-logstash-divorce/ccd-logstash-divorce.yaml:22-24`). Seven jurisdictions have a dedicated release (`ccd-logstash-civil`, `-cmc`, `-divorce`, `-ethos`, `-fpl`, `-probate`, `-sscs`); every other jurisdiction is covered by the shared `ccd-logstash` release, whose statement excludes exactly those seven by name (`cnp-flux-config:apps/ccd/ccd-logstash/ccd-logstash.yaml:80`). A new jurisdiction therefore starts indexing with no flux change.
+
+  The `marked_by_logstash` column is reset to `false` by the `trg_case_data_updated` trigger, which fires `BEFORE INSERT OR UPDATE OF data, data_classification, last_modified, last_state_modified_date, security_classification, state, supplementary_data` (`ccd-data-store-api:V0001__Base_version.sql:1170`) — so any write to those columns re-queues the case, whether it came from the API or from a manual DB edit. Case *pointer* rows (empty `data` and empty `state`) are the exception: the trigger function pins them to `true` and a `CHECK` constraint keeps them there, so Logstash never picks them up (`V20250306_0000__CCD-6936_case_pointer_marked_by_logstash.sql`).
 
 ---
 
@@ -253,7 +274,9 @@ For querying nested fields directly in ES, you need [nested queries](https://www
 
 ## Near real-time latency
 
-Search is **near real-time**: expect ~2 seconds between a case being created/updated and it becoming searchable. This is the sum of the Logstash polling interval (1s) plus ES refresh latency. When Logstash is down, existing indexed data remains searchable but new/updated cases will not appear until Logstash recovers. Persistent queues are enabled for Logstash pipelines, so events picked up between Logstash marking `marked_by_logstash=true` and successful ES output survive unexpected pod restarts. <!-- CONFLUENCE-ONLY: operational latency detail from the ES LLD -->
+Search is **near real-time**: expect ~2 seconds between a case being created/updated and it becoming searchable. This is the sum of the Logstash polling interval (1s) plus ES refresh latency. When Logstash is down, existing indexed data remains searchable but new/updated cases will not appear until Logstash recovers. <!-- CONFLUENCE-ONLY: the ~2s figure is the ES LLD's; only the 1s poll component is verifiable in flux config. -->
+
+Because a row is marked claimed by the same statement that reads it, a batch lost between the `UPDATE` and a successful ES write is not retried — the row is already `true`. Only four releases guard against this with a persisted on-disk queue (`queue.type: persisted`): the shared `ccd-logstash` release (`cnp-flux-config:apps/ccd/ccd-logstash/ccd-logstash.yaml:46,54`), `ccd-logstash-fpl`, `ccd-logstash-probateman` and `ccd-logstash-intdemo`. The other dedicated per-jurisdiction releases use the default in-memory queue, so an unexpected pod restart there can silently drop whatever was in flight. Re-index the affected cases (see step 4 under [Verify](#verify)) — touching the case is the only thing that re-queues it.
 
 ---
 
@@ -310,9 +333,11 @@ Some practical pitfalls drawn from the LLD:
    ```
    A `200` response with `cases` array confirms ES search is active for the case type.
 
-3. (Optional) hit Kibana / `_cat/indices` to inspect the generated mapping if a query is unexpectedly returning nothing. The Logstash dead-letter index `.logstash_dead_letter` collects any documents that couldn't be indexed (e.g. type-mismatch errors against the live mapping). <!-- CONFLUENCE-ONLY: dead-letter inspection workflow described only in the LLD -->
+3. (Optional) hit Kibana / `_cat/indices` to inspect the generated mapping if a query is unexpectedly returning nothing. Documents that ES rejected (e.g. a type mismatch against the live mapping) land in Logstash's dead-letter queue, and a second pipeline (`index-dead-letter-to-es`) re-reads that queue and writes them to the index `ccd-logstash-dead-letter` with the rejection reason attached (`cnp-flux-config:apps/ccd/ccd-logstash/ccd-logstash.yaml:47,55-58`). Only the four releases with `dead_letter_queue.enable: true` have this — for the rest, a rejected document leaves no trace beyond the pod logs.
 
-4. **Bulk reindexing.** If ES is redeployed and all cases need reindexing, use the dedicated `ccd-logstash-indexer` instance (separate from the per-jurisdiction instances). It uses paginated SQL queries against the full `case_data` table rather than the `marked_by_logstash` column. Deploy by setting replicas to 1 in `cnp-flux-config`; it runs once and should be scaled back to 0 when complete. <!-- CONFLUENCE-ONLY: operational procedure from the ES LLD; cnp-flux-config is outside this workspace -->
+4. **Bulk reindexing.** If ES is redeployed and all cases need reindexing, use the `ccd-logstash-indexer` releases (separate from the per-jurisdiction ones). They read with `jdbc_paging_enabled => true` / `jdbc_page_size => 5000` and a plain `SELECT … from case_data WHERE …` that ignores `marked_by_logstash` entirely, so a backfill does not disturb the live pipeline's queue (`cnp-flux-config:apps/ccd/ccd-logstash-indexer/ccd-logstash-indexer.yaml:20-22`).
+
+   Each release defaults to `replicas: 0` with the comment "Override value in env patches when required" (`ccd-logstash-indexer.yaml:8`); deploy by setting `replicas: 1` in the environment patch, then scale back to 0 when the run completes. There are six numbered releases (`ccd-logstash-indexer` through `-indexer6`) so a backfill can be sharded and run in parallel. The `WHERE` clause is hand-edited per run — the committed ones shard either by case type (`case_type_id in ('CIVIL', 'Benefit', 'PRLAPPS', 'Asylum')`) or by `id` percentile range — so treat whatever is in the file as the previous operator's leftovers and set your own predicate before scaling up.
 
 ---
 

@@ -13,7 +13,10 @@ sources:
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/repository/DefaultDataStoreRepository.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/definitionstore/DefinitionStoreApiClientConfig.java
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/errorhandling/noc/NoCValidationError.java
+  - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/errorhandling/RestExceptionHandler.java
   - aac-manage-case-assignment:src/main/resources/application.yaml
+  - rpx-xui-webapp:api/noc/errorCodeConverter.ts
+  - rpx-xui-webapp:src/noc/containers/noc-errors/noc-error.component.html
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/NoticeOfChange.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ChangeOrganisationApprovalStatus.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemRequestNoticeOfChange.java
@@ -75,6 +78,9 @@ sources_sha:
   ? "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/client/definitionstore/DefinitionStoreApiClientConfig.java"
   : "d47afee2b0d0a33ff20746c78f631834ac04251e"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/errorhandling/noc/NoCValidationError.java": "fd47890952be0b44521441cdb43233ef61268ce2"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/errorhandling/RestExceptionHandler.java": "1b4425f359f0fb88bb92a9287488b35dd8f10adb"
+  "rpx-xui-webapp:api/noc/errorCodeConverter.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
+  "rpx-xui-webapp:src/noc/containers/noc-errors/noc-error.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "aac-manage-case-assignment:src/main/resources/application.yaml": "9910b14cfb1fcad7a811420150a69864df3bf528"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/NoticeOfChange.java": "e0518056b0b4b00f457c8049abf201ee1dedd83b"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ChangeOrganisationApprovalStatus.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
@@ -422,12 +428,35 @@ this code rather than the generic callback failure, formatting the case type ID 
 NoC decision event is therefore how you veto a change of representation; if you return
 `INCOMPLETE_CALLBACK` with no message you get an unstructured 500 instead.
 
-Additionally, XUI surfaces user-facing messages (from EUI API spec):
-- "Not a valid case reference" — no case with that reference exists
-- "You already have access to the case" — the user's org already holds the matched OrganisationPolicy
-- "Another NoC request has been actioned" — race condition: a concurrent NoC was processed first
+### What the user actually sees
 
-<!-- CONFLUENCE-ONLY: XUI user-facing error messages (last three in list) come from EUI spec; not verified in aac-manage-case-assignment source. -->
+AAC pairs every NoC message with a code in `NoCValidationError` and returns both when the failure is a
+`NoCException` (`RestExceptionHandler.java:86-90`). XUI's error page switches on that code and renders
+its own copy rather than AAC's message
+(`rpx-xui-webapp:src/noc/containers/noc-errors/noc-error.component.html:9-58`):
+
+| AAC code | What the user sees |
+|---|---|
+| `has-represented` | "Your organisation already has access to this case", with a link to the case list |
+| `noc-in-progress` | "Something went wrong" / "A notice of change is already in progress for this case." |
+| `answers-not-identify-litigant` | "Your request cannot be submitted online", plus a link to paper form N434 |
+| `multiple-noc-requests-on-user`, `multiple-noc-requests-on-case`, `no-org-policy`, `noc-event-unavailable` | the shared fill-in-offline panel (`exui-noc-fill-form-offline`) |
+| anything else | "Something went wrong" followed by AAC's raw `message`, verbatim |
+
+Two consequences for your service.
+
+**Your callback's error message is user-facing copy.** `failed-service-noc-validation-id` has no case in
+the switch, so it lands on the default branch — meaning whatever text your `ApplyNoCDecision` callback
+returns in `callback_error_message` is rendered to the solicitor as-is. Write it for them, not for a log.
+
+**The code is re-derived by string matching on the non-`NoCException` paths.** A Feign error from a
+downstream call, or any unhandled exception, goes through `toResponseEntity` with a message but no code.
+For those, XUI's BFF reconstructs a code by substring-matching AAC's message against its own hardcoded
+copy of the message list (`rpx-xui-webapp:api/noc/errorCodeConverter.ts:12-89`, matched in
+`generateErrorCodeFromMessage` at `:91-130`), defaulting to `generic-error`. That table duplicates
+`NoCValidationError` in a different repo with no shared artifact between them, so rewording an AAC message
+silently drops the affected page to the generic branch. It is already out of step: `invalid-case-role` has
+no entry.
 
 ---
 
