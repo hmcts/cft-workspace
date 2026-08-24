@@ -307,3 +307,4 @@ repos:
   platops/azure-public-dns: { url: hmcts/azure-public-dns }
   platops/azure-platform-terraform: { url: hmcts/azure-platform-terraform }
   apps/cuiys/cui-ra: { url: hmcts/cui-ra }
+  platops/platform-ai-gateway-infra: { url: hmcts/platform-ai-gateway-infra }
