@@ -101,7 +101,7 @@ sources_sha:
   "ccpay-payment-app:infrastructure/main.tf": "ee7c2d7f0f6afaf7745af97efbc2137db3fcd6c5"
   "ccpay-payment-app:infrastructure/cft-api-mgmt.tf": "77c8d9342601a2740e0dc8ede816767a1e929c33"
   "ccpay-payment-app:infrastructure/template/cft-api-policy.xml": "77c8d9342601a2740e0dc8ede816767a1e929c33"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "1cf7125b2300245f5e39de4e88d7a715f4c515a4"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "67d250f6d9e01aea4cca1fccea0335de837673c4"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml": "b8d4f674f4f79c6505b4b4869ee3e96d0925ae3e"
 ---
 

@@ -85,7 +85,7 @@ sources_sha:
   "cnp-flux-config:apps/fees-pay/dead-letter-queue-process/dead-letter-queue-process.yaml": "295f6426772759c1bedd42dff4f81ac69bb4edf5"
   "cnp-flux-config:apps/fees-pay/unprocessed-payment-update/unprocessed-payment-update.yaml": "96fd2884955cf83b11d026f5c7d9597112901770"
   "cnp-flux-config:apps/fees-pay/ccpay-cpo-update-service/prod.yaml": "204f235858ef707acc00eb4ae24c6f72a9de6563"
-  "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "f660da02ae474a3048cbfa5da3fc4a646ecedd4b"
+  "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "d0c0963e9f746ac8fc5038459af65c77d786a96f"
   "cnp-flux-config:apps/fees-pay/ccpay-callback-function/prod.yaml": "7b22eb2f6fc3bfe636d2eeb4cbb0f7eb46f76bb5"
 ---
 

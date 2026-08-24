@@ -64,9 +64,9 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/TelephonyCallbackDto.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:api-contract/src/main/java/uk/gov/hmcts/payment/api/contract/TelephonyCardPaymentsRequest.java": "cd90241f94938ecec08b8768ce5e2bb4fc4fa5ab"
   "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
-  "ccpay-payment-app:charts/payment-api/values.yaml": "f4fb59095aad65f13e8673472f64f4cdb246af7a"
   "ccpay-payment-app:api/src/main/resources/application-local.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java": "109655a0103cf081d4da2680872c7f77351f6e16"
+  "ccpay-payment-app:charts/payment-api/values.yaml": "f4fb59095aad65f13e8673472f64f4cdb246af7a"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/configuration/security/SpringSecurityConfiguration.java": "e8033dfe3c25862046cd940eadb7522175cb4aba"
   "ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/dto/TelephonyProviderLinkIdRequest.java": "f3b63715036f0e4f237e3dd50832209f60de88ad"
   "ccpay-payment-api-gateway:template/cft-api-policy.xml": "e69e84c6afaa2125f92a298770553479a3970cc2"
@@ -74,7 +74,7 @@ sources_sha:
   "ccpay-bubble:express/services/PayhubService.js": "cabdc9f68da7170c3a1db77f6374adefbf286c3b"
   "ccpay-bubble:config/custom-environment-variables.yaml": "efbbb7d67f100b672667bcae1e12e542e5e1013d"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml": "b8d4f674f4f79c6505b4b4869ee3e96d0925ae3e"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "1cf7125b2300245f5e39de4e88d7a715f4c515a4"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "67d250f6d9e01aea4cca1fccea0335de837673c4"
   "cnp-flux-config:apps/fees-pay/ccpay-bubble-frontend/prod.yaml": "fa5de470940abe2cf8b11f32f40baf0db27defec"
 ---
 

@@ -69,7 +69,7 @@ sources_sha:
   "ccpay-bubble:express/mvc/controller/PayhubController.js": "974c0d8611cdab912a2929dae44cd50c17e8bad5"
   "ccpay-bubble:config/custom-environment-variables.yaml": "efbbb7d67f100b672667bcae1e12e542e5e1013d"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml": "b8d4f674f4f79c6505b4b4869ee3e96d0925ae3e"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "1cf7125b2300245f5e39de4e88d7a715f4c515a4"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "67d250f6d9e01aea4cca1fccea0335de837673c4"
   "cnp-flux-config:apps/fees-pay/ccpay-bubble-frontend/prod.yaml": "fa5de470940abe2cf8b11f32f40baf0db27defec"
 ---
 

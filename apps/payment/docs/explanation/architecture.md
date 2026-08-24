@@ -79,7 +79,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentStatusController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/FeatureToggler.java": "3e9ece1186c812f47690ff5020d35b37f163cb63"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/LaunchDarklyFeatureToggler.java": "65bcad2ffb092e534b051dbb0349914658506a57"
-  "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "f660da02ae474a3048cbfa5da3fc4a646ecedd4b"
+  "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "d0c0963e9f746ac8fc5038459af65c77d786a96f"
   "cnp-flux-config:apps/fees-pay/ccpay-callback-function/prod.yaml": "7b22eb2f6fc3bfe636d2eeb4cbb0f7eb46f76bb5"
   "ccpay-bulkscanning-app:src/main/resources/application.yaml": "1b54d11d83d0faf661f1c591bf676db77d01ee9e"
   "ccpay-bulkscanning-app:build.gradle": "7ceabdac8ebbe8059abb847346b6d0d8868a82fd"
