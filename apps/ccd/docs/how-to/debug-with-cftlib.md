@@ -62,13 +62,10 @@ sources_sha:
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
   "rse-cft-lib:cftlib/lib/runtime/compose/docker-compose.yml": "3803e3cd277d57d3882136a8399c68acae2ca000"
   "ccd-definition-store-api:application/src/main/resources/application.properties": "6d523fcfb408654266b488e56834fa3fc5f8d711"
-  ? ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/TransactionConfiguration.java
-  : "bda0438d09f29d99f546185907272748a1224c49"
-  ? ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/ApplicationParams.java
-  : "793bcd5000731abade5585f5dadc921ddb454fdd"
+  "ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/TransactionConfiguration.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/ApplicationParams.java": "793bcd5000731abade5585f5dadc921ddb454fdd"
   "ccd-data-store-api:src/main/resources/db/migration/V0001__Base_version.sql": "2dc4bd32091d4f764d6ac7150265d04ed016bd1b"
-  ? ccd-data-store-api:src/main/resources/db/migration/V20250306_0000__CCD-6936_case_pointer_marked_by_logstash.sql
-  : "0b3fa976dfabfb1fd06c6f37c9832b0a5cdacaf3"
+  "ccd-data-store-api:src/main/resources/db/migration/V20250306_0000__CCD-6936_case_pointer_marked_by_logstash.sql": "0b3fa976dfabfb1fd06c6f37c9832b0a5cdacaf3"
 ---
 
 # Debug with cftlib

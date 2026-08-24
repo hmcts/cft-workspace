@@ -92,8 +92,8 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "05e79e063aacd4ec9393d10254a9697bd37b2b50"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "a2e5c9892a3a612b44af41cd14091271de38b1c4"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "e00246fd7f6870e3e737d286b5a5725dab466681"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "d8d2c7df1d39dae3018c61fe9f864e79704c916a"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "d8d2c7df1d39dae3018c61fe9f864e79704c916a"
 ---
 
 # Decentralisation
@@ -400,7 +400,7 @@ public class PCSCaseView implements CaseView<PCSCase, State> {
 }
 ```
 
-`PCSCaseView.java:104-105` shows the production implementation. `CaseProjectionService` (inside `decentralised-runtime`) calls this bean when CCD requests a case read. The runtime does not wrap that call in a transaction, so the `@Transactional(readOnly = true)` on `getCase` is the service's own — it is what lets the projection walk a lazily-loaded entity graph in one unit of work.
+`PCSCaseView.java:108-109` shows the production implementation. `CaseProjectionService` (inside `decentralised-runtime`) calls this bean when CCD requests a case read. The runtime does not wrap that call in a transaction, so the `@Transactional(readOnly = true)` on `getCase` is the service's own — it is what lets the projection walk a lazily-loaded entity graph in one unit of work.
 
 ### 3. Define decentralised events
 
@@ -496,7 +496,7 @@ public class PCSCaseView implements CaseView<PCSCase, State> {
         long caseReference = request.caseRef();
         State state = request.state();
 
-        PCSCase pcsCase = getSubmittedCase(caseReference);
+        PCSCase pcsCase = getSubmittedCase(caseReference, state).pcsCase();
 
         // ... enrich view fields ...
 
@@ -513,7 +513,7 @@ public class PCSCaseView implements CaseView<PCSCase, State> {
 }
 ```
 
-<!-- source: apps/pcs/pcs-api/src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java:67-130 -->
+<!-- source: apps/pcs/pcs-api/src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java:67-141 -->
 
 ## Retain-and-dispose for decentralised cases
 

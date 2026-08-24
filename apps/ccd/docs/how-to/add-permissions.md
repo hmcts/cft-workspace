@@ -85,13 +85,6 @@ sources_sha:
   : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/SheetName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
-  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AuthorisationMapper.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
-  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AttributeBasedAccessControlService.java"
-  : "489236c1af684a67a9157f71e86ff52de7a026c0"
-  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/AccessProfileServiceImpl.java"
-  : "59ff93fdf61ce8bac912443bf6335d5d432f7b36"
-  ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java"
-  : "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
   "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseEvent.json": "980ad379b2aa2e5713cdc8745e9d65542fb06280"
   "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_CNP_27/AAT/AuthorisationCaseField.json": "980ad379b2aa2e5713cdc8745e9d65542fb06280"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/Permissions.java": "d88fa4143fcfa4f91da567faa684020b339a8b9b"
@@ -106,6 +99,10 @@ sources_sha:
   "apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/common/AccessControlService.java": "20b95a21e98b143b1c833f84f28ee6ef8664ed66"
   "apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/common/CaseAccessService.java": "b509326d3eefbb50e825485237675ec4117beebe"
   "apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/AuthorisedCreateCaseOperation.java": "593ffa40e6cc3beac85f5afb320d0a48b8fc2ccf"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AuthorisationMapper.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/AttributeBasedAccessControlService.java": "489236c1af684a67a9157f71e86ff52de7a026c0"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/AccessProfileServiceImpl.java": "59ff93fdf61ce8bac912443bf6335d5d432f7b36"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
 ---
 
 # Add Permissions

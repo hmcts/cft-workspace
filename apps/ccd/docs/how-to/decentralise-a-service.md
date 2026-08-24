@@ -78,16 +78,14 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java": "e3fca30b92506584a590ae203811d60202129d2d"
   ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/DelegatingSupplementaryDataUpdateOperation.java"
   : "e492e2aceaf88592e102b0363fddaa50ca4fc278"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "a2e5c9892a3a612b44af41cd14091271de38b1c4"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "e00246fd7f6870e3e737d286b5a5725dab466681"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "d8d2c7df1d39dae3018c61fe9f864e79704c916a"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "d8d2c7df1d39dae3018c61fe9f864e79704c916a"
   "rpx-xui-webapp:src/cases/utils/decentralised-redirect.util.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
   "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
   "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:src/cases/components/case-task/case-task.component.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
-  ? "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/VerifyNoCAnswersRequest.java"
-  : "dfa7debe58dc4710124070b6a29448dfda6fce67"
-  ? "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeRequest.java"
-  : "dfa7debe58dc4710124070b6a29448dfda6fce67"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/VerifyNoCAnswersRequest.java": "dfa7debe58dc4710124070b6a29448dfda6fce67"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeRequest.java": "dfa7debe58dc4710124070b6a29448dfda6fce67"
 ---
 
 # Decentralise a Service
@@ -153,7 +151,7 @@ public class MyCaseView implements CaseView<MyCase, State> {
 }
 ```
 
-Reference: `PCSCaseView.getCase()` (`pcs-api:src/.../PCSCaseView.java:104-105`). The two-overload
+Reference: `PCSCaseView.getCase()` (`pcs-api:src/.../PCSCaseView.java:108-109`). The two-overload
 form `getCase(request, blobCase)` is for legacy blob-based services only.
 
 Annotate `getCase` `@Transactional(readOnly = true)`, as PCS does. The SDK does not open a

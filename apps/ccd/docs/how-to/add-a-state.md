@@ -54,10 +54,9 @@ sources_sha:
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java": "c831f1fcc6e033c87eccd503aa4076c59ea85476"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java": "cde80e20584d39f3f3a890f473db818f79449fae"
   "ccd-config-generator:test-projects/e2e/src/cftlib/java/uk/gov/hmcts/divorce/cftlib/CftLibConfig.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
-  ? ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationCaseStateParser.java
+  ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationCaseStateParser.java"
   : "cc62a2b037c8ecbcb103d52cd7067908fee4a8a3"
-  ? ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationParser.java
-  : "8afc4a0f8bb4856b4044542fcb140ed668c11990"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/AuthorisationParser.java": "8afc4a0f8bb4856b4044542fcb140ed668c11990"
 ---
 
 # Add a State

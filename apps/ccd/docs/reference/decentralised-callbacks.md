@@ -92,8 +92,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
   "rpx-xui-webapp:src/models/environmentConfig.model.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
-  ? "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java"
-  : "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
+  "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
 ---
 
 # Decentralised Callbacks -- `/ccd-persistence/*` Contract

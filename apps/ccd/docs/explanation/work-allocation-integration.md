@@ -67,8 +67,7 @@ sources_sha:
   "sscs-tribunals-case-api:definitions/benefit/sheets/CaseEvent/CaseEvent-WA-nonprod.json": "56ce269dbc5c1c943c0d0eac18c6a78af87eaafb"
   "sscs-tribunals-case-api:definitions/benefit/sheets/CaseField/CaseField-workAllocation.json": "e7dcb4b26956f9dc7d2a63b3abb4a2aa30e73d5d"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/Service.java": "732ec28c7a68359452f0e767b5bd605d10608e61"
-  ? "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java"
-  : "272fb0b4257fe638eeea7af521ae84738cec491a"
+  "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/auth/permission/entities/PermissionTypes.java": "272fb0b4257fe638eeea7af521ae84738cec491a"
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/entity/TaskRoleResource.java": "a6e0eb1659e9b67f5ef737edcd4340c33bac0421"
   "am-role-assignment-service:src/main/resources/validationrules/core/specific-access-global.drl": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
 ---
