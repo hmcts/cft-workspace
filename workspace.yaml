@@ -308,3 +308,8 @@ repos:
   platops/azure-platform-terraform: { url: hmcts/azure-platform-terraform }
   apps/cuiys/cui-ra: { url: hmcts/cui-ra }
   platops/platform-ai-gateway-infra: { url: hmcts/platform-ai-gateway-infra }
+
+  # ─── apps/pt — Property Tribunal service team ────────────────────────────
+  apps/pt/pt-api: { url: hmcts/pt-api }
+  apps/pt/pt-frontend: { url: hmcts/pt-frontend }
+  apps/pt/pt-shared-infrastructure: { url: hmcts/pt-shared-infrastructure }
