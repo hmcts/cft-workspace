@@ -74,7 +74,7 @@ sources_sha:
   "ccpay-bubble:express/services/PayhubService.js": "cabdc9f68da7170c3a1db77f6374adefbf286c3b"
   "ccpay-bubble:config/custom-environment-variables.yaml": "efbbb7d67f100b672667bcae1e12e542e5e1013d"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml": "b8d4f674f4f79c6505b4b4869ee3e96d0925ae3e"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "67d250f6d9e01aea4cca1fccea0335de837673c4"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "f0e113a1aa6ec17afaf51a63adc0ba30511b0ae7"
   "cnp-flux-config:apps/fees-pay/ccpay-bubble-frontend/prod.yaml": "fa5de470940abe2cf8b11f32f40baf0db27defec"
 ---
 
