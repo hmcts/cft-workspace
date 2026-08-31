@@ -78,7 +78,7 @@ sources_sha:
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/SecurityConfiguration.java": "a1728d11379a77b55678f497d2debd6cc01d3872"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/DeleteDocumentDataInterceptor.java": "907765858535794d0fa8c55b5500c2e0be034679"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/CommentHeaderConfig.java": "ec97bb95c09e500d78f7a95517ed16bb3a6f4d94"
-  "em-annotation-api:src/main/resources/application.yaml": "4d60b72a3debbf1db23b103c6e2fe590940d29f1"
+  "em-annotation-api:src/main/resources/application.yaml": "d510c7324800a41af1507f39f09f1a3452e681e2"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationSetServiceImpl.java": "cb1b245382e54dbfed78167e1aaf5e237f3d9a32"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/BookmarkServiceImpl.java": "274d9b3c252af7c11e053bb8664cd43c91e2472b"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/errors/EmptyResponseException.java": "1a11a892b05081699066a311af6254d72462c197"

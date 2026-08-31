@@ -68,7 +68,7 @@ sources_sha:
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/SegmentDownloadServiceImpl.java": "711d96e5651c5f1932656ef6981ee45ea7ab10fc"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/PermissionEvaluatorImpl.java": "dca036be0df07c53e1400b3fd84572c57b37f624"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/config/security/SecurityConfiguration.java": "af70acf0ab8b8d6cdf43b5069a3ae17e01f904c0"
-  "em-hrs-api:src/main/resources/application.yaml": "060237e2439c825ca8e9ac5463b95004c812d1f8"
+  "em-hrs-api:src/main/resources/application.yaml": "679a3b9d051415424f6c824b7aafa9c049ebadd4"
   "em-hrs-api:src/main/resources/ttl_service_map.json": "22cc67abb7fca8771a32236166bc0076e616ea17"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/HearingRecording.java": "3f8eaf52de4f1a49e891a74be2f5530425db480b"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/HearingRecordingSegment.java": "d630cce32118cdb8542105f873badc789f893246"

@@ -67,7 +67,7 @@ sources_sha:
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Bookmark.java": "b84e15b87ad87e891117a17c4da4085249314af5"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/Metadata.java": "b84e15b87ad87e891117a17c4da4085249314af5"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/enumeration/AnnotationType.java": "c1e103cfbca25a5fdf8d8da4afc53d5ca5e064d9"
-  "em-annotation-api:src/main/resources/application.yaml": "4d60b72a3debbf1db23b103c6e2fe590940d29f1"
+  "em-annotation-api:src/main/resources/application.yaml": "d510c7324800a41af1507f39f09f1a3452e681e2"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/service/impl/AnnotationSetServiceImpl.java": "cb1b245382e54dbfed78167e1aaf5e237f3d9a32"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/config/security/SecurityConfiguration.java": "a1728d11379a77b55678f497d2debd6cc01d3872"
 ---

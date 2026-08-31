@@ -64,7 +64,7 @@ sources_sha:
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/batch/DocumentTaskCallbackProcessor.java": "d7b465083f9a9969889329f5e2772375321eae54"
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/batch/DocumentTaskStateMarker.java": "926f466e7b58cafb348cfdec478937e3992356df"
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/DocumentTask.java": "706ad3ed0c5d30ef9818dee4ae4fc72c5dde9c99"
-  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/pdf/PDFMerger.java": "fe4a3d11b923c23a72a16ef7fe982a53ab6e93a9"
+  "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/pdf/PDFMerger.java": "87e85c5e7b359f01ccbb43c50d115504fe7ab424"
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/info/BuildInfo.java": "ec4a5689709910de992e22b558e3fe58ccec585b"
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/service/impl/DocumentTaskServiceImpl.java": "3e65614c095b855b240593d6d91e58a02551d71a"
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/conversion/DocmosisConverter.java": "531d06a9344c8aa2a2efee8f0983a7162a6249ec"
@@ -82,8 +82,8 @@ sources_sha:
   "em-ccd-orchestrator:src/main/resources/bundleconfiguration/complex-example.yaml": "c9f34034b621149bf9da290484501407f540e196"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
-  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
-  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "e2f115cfbdce6268b717d319e1c22ea4d8d9d1b2"
+  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
+  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "9a25dd1115768d9856125a0c528f5f2a36e0ff8a"
 ---
 
 ## TL;DR
