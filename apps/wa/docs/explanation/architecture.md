@@ -56,7 +56,7 @@ confluence:
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
   "wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/controllers/TaskActionsController.java": "1d99034722b1261ca9e19f97571a035b04c649d1"
-  "wa-task-management-api:src/main/resources/application.yaml": "308d2b86243c7d52027d413be51089facd576c82"
+  "wa-task-management-api:src/main/resources/application.yaml": "f81d0a52a67fadb9884e0d94c8c63a7a92f53ec2"
   "wa-task-management-api:charts/wa-task-management-api/values.yaml": "2c1a4b4efa36ddddd2110db152330ec1aac3aa03"
   "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/controllers/startworkflow/CreateTaskController.java": "6b973ba98684616920e661cf2653e161e58fd20f"
   "wa-workflow-api:src/main/java/uk/gov/hmcts/reform/waworkflowapi/clients/service/CamundaClient.java": "120f1462b5aa74a5c3b9ea39210daa1db5960770"
