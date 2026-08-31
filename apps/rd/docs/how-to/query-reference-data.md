@@ -70,7 +70,7 @@ sources_sha:
   "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/controllers/StaffRefDataController.java": "797ed17a96dc04579f100997ce7ad8ee5e6af8a6"
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/versions/V2.java": "6decfd56865ff02585736a9b0341dc9fdeb753d4"
   "rd-judicial-api:src/main/java/uk/gov/hmcts/reform/judicialapi/elinks/repository/ProfileRepository.java": "8274b9f6ad00f83172a55e3de7bc98974682ce37"
-  "cnp-flux-config:apps/rd/rd-professional-api/prod.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
+  "cnp-flux-config:apps/rd/rd-professional-api/prod.yaml": "c67cf966e5955e7ef1b81975ae02778894c26148"
   "cnp-flux-config:apps/rd/rd-judicial-api/prod.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
   "cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml": "2f4fb694e1ffd5eb7aa6cf667450c51f9cc459fb"
   "cnp-flux-config:apps/rd/rd-caseworker-ref-api/prod.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
@@ -378,7 +378,7 @@ Each service's production allowlist is the `*_S2S_AUTHORISED_SERVICES` value in 
 
 | API | Environment Variable | Production Services | Source |
 |---|---|---|---|
-| PRD | `PRD_S2S_AUTHORISED_SERVICES` | `rd_professional_api`, `rd_user_profile_api`, `xui_webapp`, `finrem_payment_service`, `finrem_case_orchestration`, `finrem_citizen_ui`, `fpl_case_service`, `iac`, `aac_manage_case_assignment`, `divorce_frontend`, `civil_service`, `probate_backend`, `nfdiv_case_api`, `prl_cos_api`, `payment_app`, `et_cos`, `civil_general_applications` | `cnp-flux-config:apps/rd/rd-professional-api/prod.yaml:14` |
+| PRD | `PRD_S2S_AUTHORISED_SERVICES` | `rd_professional_api`, `rd_user_profile_api`, `xui_webapp`, `finrem_payment_service`, `finrem_case_orchestration`, `finrem_citizen_ui`, `fpl_case_service`, `iac`, `aac_manage_case_assignment`, `divorce_frontend`, `civil_service`, `probate_backend`, `nfdiv_case_api`, `am_org_role_mapping_service`, `prl_cos_api`, `payment_app`, `et_cos`, `civil_general_applications` | `cnp-flux-config:apps/rd/rd-professional-api/prod.yaml:14` |
 | JRD | `JRD_S2S_AUTHORISED_SERVICES` | `rd_judicial_api`, `am_org_role_mapping_service`, `iac`, `xui_webapp`, `ccd_data`, `sscs`, `sscs_bulkscan`, `fis_hmc_api`, `prl_cos_api`, `civil_service`, `sptribs_case_api`, `fpl_case_service`, `civil_general_applications`, `et_cos`, `idam-user-profile-bridge`, `finrem_case_orchestration`, `finrem_citizen_ui` | `cnp-flux-config:apps/rd/rd-judicial-api/prod.yaml:14` |
 | LRD | `LRD_S2S_AUTHORISED_SERVICES` | `rd_location_ref_api`, `payment_app`, `rd_caseworker_ref_api`, `rd_judicial_api`, `ccd_data`, `xui_webapp`, `sscs`, `sscs_bulkscan`, `adoption_web`, `civil_service`, `prl_cos_api`, `fis_hmc_api`, `sptribs_case_api`, `iac`, `civil_general_applications`, `et_cos`, `probate_backend`, `finrem_case_orchestration`, `finrem_citizen_ui`, `pcs_api` | `cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml:11` |
 | CRD | `CRD_S2S_AUTHORISED_SERVICES` | `rd_caseworker_ref_api`, `am_org_role_mapping_service`, `iac`, `xui_webapp`, `ccd_data`, `sscs`, `sscs_bulkscan`, `prl_cos_api`, `fpl_case_service`, `idam-user-profile-bridge`, `et_cos`, `rd_profile_sync`, `probate_backend`, `finrem_case_orchestration`, `finrem_citizen_ui` | `cnp-flux-config:apps/rd/rd-caseworker-ref-api/prod.yaml:35` |

@@ -101,9 +101,9 @@ sources_sha:
   "rd-location-ref-data-load:src/main/resources/application-lrd-building-location-router.yaml": "daee8f8057f6a07648309ad65b2eb72983f096ac"
   "rd-location-ref-data-load:src/main/resources/application-lrd-court-venue-router.yaml": "ed34764b37e90ec5530555042569e81a138820e6"
   "cnp-flux-config:apps/rd/rd-location-ref-api/aat.yaml": "7117c761a95fd2dbdff9d75e37e866aeec0bc0c2"
-  "cnp-flux-config:apps/rd/rd-location-ref-api/demo.yaml": "1cffc5950e44bf0c04530b6b35acb60b6762417c"
+  "cnp-flux-config:apps/rd/rd-location-ref-api/demo.yaml": "d88bac47b476c7214ea514833392741e3b28e54a"
   "cnp-flux-config:apps/rd/rd-location-ref-api/ithc.yaml": "977e9c8dc441f01e31d987b734738e72407464cd"
-  "cnp-flux-config:apps/rd/rd-location-ref-api/perftest.yaml": "e4be404e71cd2042b1d7912e6fdf1a0bb7200ce8"
+  "cnp-flux-config:apps/rd/rd-location-ref-api/perftest.yaml": "65962d3068bba5d7ba611220c09b680887e34fd3"
   "cnp-flux-config:apps/rd/rd-location-ref-api/prod.yaml": "2f4fb694e1ffd5eb7aa6cf667450c51f9cc459fb"
 ---
 
