@@ -68,7 +68,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/AccessControl.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/DefaultCaseDataAccessControl.java": "da6f87b5a52f0e3c7afe6a76777ddf098bd5fe90"
-  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
   "rpx-xui-webapp:api/roleAccess/dtos/to-role-assignment-dto.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
 ---
 

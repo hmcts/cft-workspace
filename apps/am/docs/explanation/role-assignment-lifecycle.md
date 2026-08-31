@@ -86,7 +86,7 @@ sources_sha:
   "am-role-assignment-service:charts/am-role-assignment-service/values.preview.template.yaml": "e869c163161f8b96767a34e45aae0b3cb4644c8c"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedataaccesscontrol/RoleAssignmentAttributesResource.java": "484119b15a8eacd34f30af868e363047f014cd40"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/PseudoRoleAssignmentsGenerator.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"
-  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
   "cnp-flux-config:apps/am/am-role-assignment-service/prod.yaml": "e781760115094d551f69723716c4a8bb3c6591e3"
 ---
 
