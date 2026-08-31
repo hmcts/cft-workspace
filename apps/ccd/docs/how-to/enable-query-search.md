@@ -77,7 +77,7 @@ sources_sha:
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/endpoint/std/CaseSearchEndpoint.java": "b13d8bcef6553345ada5c3f153bd61e39421b574"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/v2/internal/controller/UICaseSearchController.java": "b13d8bcef6553345ada5c3f153bd61e39421b574"
-  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/SearchFieldAndResultGenerator.java": "8a5ceec6799e93975a91e430eb586a3c5160a88e"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/SortOrder.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-data-store-api:src/main/resources/db/migration/V0001__Base_version.sql": "2dc4bd32091d4f764d6ac7150265d04ed016bd1b"

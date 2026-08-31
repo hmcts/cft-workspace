@@ -66,7 +66,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/PersistenceStrategyResolver.java": "079679807d1f7becaaef398a2991ddcaf5c46235"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/DelegatingCaseDetailsRepository.java": "3f31c2b5662bbfbe8d341fb02ce3688124b5cdd6"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPIInterceptor.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
-  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedCaseEvent.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedAuditEvent.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedSubmitEventResponse.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
@@ -76,12 +76,12 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/service/DecentralisedCreateCaseEventService.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "05e79e063aacd4ec9393d10254a9697bd37b2b50"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "770b4fa7598f9f3b9e608b335170eb191b0ddd55"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "9fe79e8e30e98faf96dc3411d069b09a08a2a295"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2c5e11485c5e17da845232984205437ee223296a"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "de230f23a924a3427156022b92cbc2aba20c5b03"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventPublisher.java": "7d89554b6041589e987b918b9811a97d9e54524b"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventScheduler.java": "f6e8da81cdba5d42749e5419393a74a44a38fe7c"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdMessageQueueRepository.java": "c2823aeb77a6c8a7863c255953ab994b1d3e2a9d"
@@ -525,7 +525,7 @@ The **Transactional Outbox Pattern**:
 
 This guarantees at-least-once delivery: a message is only queued if the case data commit succeeded.
 
-The SDK implements step 1, and it is on by default — no configuration required. `MessagePublisher.publishEvent()` does the insert (`MessagePublisher.java:84-95`), called from `AuditEventService.saveAuditRecord` (`AuditEventService.java:195-213`) inside the submission transaction.
+The SDK implements step 1, and it is on by default — no configuration required. `MessagePublisher.publishEvent()` does the insert (`MessagePublisher.java:84-95`), called from `AuditEventService.saveAuditRecord` (`AuditEventService.java:233-250`) inside the submission transaction.
 
 Two conditions gate it:
 

@@ -54,7 +54,7 @@ sources_sha:
   "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java": "9098a05a1f349631f606f4831c0c024deb6a4b5a"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/Database.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/Project.java": "732ec28c7a68359452f0e767b5bd605d10608e61"
-  "rse-cft-lib:cftlib/lib/runtime/compose/docker-compose.yml": "3803e3cd277d57d3882136a8399c68acae2ca000"
+  "rse-cft-lib:cftlib/lib/runtime/compose/docker-compose.yml": "d056f27d77a7efc17e08c26b11424844f46a37b5"
   "rse-cft-lib:cftlib/lib/runtime/src/main/resources/application.yml": "3ba38c64b8733c7a0074f1cb54d41293b91e5f03"
   "rse-cft-lib:cftlib/test-project/src/cftlib/java/uk/gov/hmcts/libconsumer/CFTLibConfig.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
   "rse-cft-lib:cftlib/lib/test-runner/src/main/java/uk/gov/hmcts/rse/ccd/lib/test/CftlibTest.java": "1b82c829cfc6fb569ee0086afbbc520b27882ec4"

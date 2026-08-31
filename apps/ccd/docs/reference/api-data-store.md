@@ -67,7 +67,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
   ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/AuthorisedSupplementaryDataUpdateOperation.java"
   : "80adc76067063ba3c3600fb3e0674b41bfe5426f"
-  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/EventTokenService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/DefaultCaseDetailsRepository.java": "3f31c2b5662bbfbe8d341fb02ce3688124b5cdd6"

@@ -66,7 +66,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/elasticsearch/ElasticsearchCaseSearchOperation.java": "6bd724e7501334211b25c150e57a1180f2df758d"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/global/GlobalSearchServiceImpl.java": "051411831ba3771976e7e6b6a2eb72fcccd2045f"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/processor/GlobalSearchProcessorService.java": "64ac13de0e0876cd2d3b86f2dbf862f61417d541"
-  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
   ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/SearchInputCaseFieldEntity.java"
   : "bda0438d09f29d99f546185907272748a1224c49"
   ? "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/SearchResultCaseFieldEntity.java"

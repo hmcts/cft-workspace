@@ -65,7 +65,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/DelegatingCaseDetailsRepository.java": "3f31c2b5662bbfbe8d341fb02ce3688124b5cdd6"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/PersistenceStrategyResolver.java": "079679807d1f7becaaef398a2991ddcaf5c46235"
-  "ccd-data-store-api:src/main/resources/application.properties": "5daf60c31eeb61da276722c2639fa50d279a26a8"
+  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/endpoint/ImportController.java": "793bcd5000731abade5585f5dadc921ddb454fdd"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
   ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/ElasticDefinitionImportListener.java"

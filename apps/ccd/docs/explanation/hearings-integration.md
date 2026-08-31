@@ -53,7 +53,7 @@ sources_sha:
   "hmc-cft-hearing-service:src/main/java/uk/gov/hmcts/reform/hmc/interceptors/HeaderProcessor.java": "3d746be29dbd8181b6e485626034854e077c81f8"
   "hmc-cft-hearing-service:src/main/java/uk/gov/hmcts/reform/hmc/config/DataStoreUrlManager.java": "5c2a6bad955917f98ea9183c660873c216820b25"
   "civil-service:src/main/java/uk/gov/hmcts/reform/civil/service/search/UnnotifiedHearingsSearchService.java": "17a4f4cc896dbc01115f6618b2f1062a7dfaa318"
-  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/utils/HmcDataUtils.java": "a9359f463a11d4130a71de643264d6db0e08dadf"
+  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/utils/HmcDataUtils.java": "70391f72b4560bc206dc219634d1f9ccc9bd7577"
 ---
 
 # Hearings Integration (HMC)

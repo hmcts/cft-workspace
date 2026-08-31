@@ -43,7 +43,7 @@ sources_sha:
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/config/BatchConfiguration.java": "305d667570e24bd9d0b98f5a48c5be1c3563f259"
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/service/impl/DmStoreDownloaderImpl.java": "0fcf36d48857753416d60e626744567e9df3170a"
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/service/impl/DmStoreUploaderImpl.java": "0fcf36d48857753416d60e626744567e9df3170a"
-  "em-stitching-api:src/main/resources/application.yaml": "b4fa29544c90897df72b4f8376efe1600cc4c154"
+  "em-stitching-api:src/main/resources/application.yaml": "bc7f4ab083283e3898f0f05a0dd21191dbc55a06"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdStitchBundleCallbackController.java": "5bc8c4fda1c1b561846b3d960398f7fc86700ac5"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/NewBundleController.java": "76f50f2a1fff38d4500c39030ff043f132ff9f59"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/endpoint/CcdCloneBundleController.java": "5bc8c4fda1c1b561846b3d960398f7fc86700ac5"

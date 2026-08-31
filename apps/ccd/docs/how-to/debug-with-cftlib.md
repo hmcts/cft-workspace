@@ -60,7 +60,7 @@ sources_sha:
   "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java": "9098a05a1f349631f606f4831c0c024deb6a4b5a"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/ControlPlane.java": "71544992866ebc3f02139e17b9782c9437213a22"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
-  "rse-cft-lib:cftlib/lib/runtime/compose/docker-compose.yml": "3803e3cd277d57d3882136a8399c68acae2ca000"
+  "rse-cft-lib:cftlib/lib/runtime/compose/docker-compose.yml": "d056f27d77a7efc17e08c26b11424844f46a37b5"
   "ccd-definition-store-api:application/src/main/resources/application.properties": "6d523fcfb408654266b488e56834fa3fc5f8d711"
   "ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/TransactionConfiguration.java": "bda0438d09f29d99f546185907272748a1224c49"
   "ccd-definition-store-api:domain/src/main/java/uk/gov/hmcts/ccd/definition/store/domain/ApplicationParams.java": "793bcd5000731abade5585f5dadc921ddb454fdd"

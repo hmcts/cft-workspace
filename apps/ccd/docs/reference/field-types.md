@@ -33,6 +33,8 @@ sources:
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20220923_3686__CCD-3686__JudicialUser.sql
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_2__GA2_CaseAccessGroup.sql
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_4__GA4_CaseAccessGroups_collection.sql
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20260804_8066__CCD-8066_StaffUser_simple_base_type.sql
+  - ccd-definition-store-api:repository/src/main/resources/db/migration/V20260826_8066__CCD-8066_StaffUser_complex_base_type.sql
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20201218__RDM-10041__CaseLocation.sql
   - ccd-definition-store-api:repository/src/main/resources/db/migration/V20210818_12761__RDM-12761_Update_base_type_field_ids_for_WorkAllocation.sql
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/DisplayContextParameterValidator.java
@@ -93,20 +95,22 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/ListValue.java": "4f0c9ded1ba53dfb7a23fed2e5c7997c68c32f1c"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/FieldTypeEntity.java": "bda0438d09f29d99f546185907272748a1224c49"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/entity/CaseFieldEntity.java": "6ad5468e76b9ce8c56d74d619b2b5c79cdee63e9"
-  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java": "a3eb4d238899d2957cc65251aad0a455c981dc93"
+  "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java": "9d405159ce9faf660a7b9f35558a9727e4d56892"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V0001__Base_version.sql": "42e4acfedce25f90d5d368e4cf963e3f71f9bb4c"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20230723_4590__CCD-4590_CreateCaseMessage.sql": "3b65b115949cb8611696670a331d992bbd6c322b"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20230724_4590__CCD-4590_CreateCaseQueriesCollection.sql": "3b65b115949cb8611696670a331d992bbd6c322b"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20220923_3686__CCD-3686__JudicialUser.sql": "69a04c63a2788de12a872d4f6d7d7ea690bb459d"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_2__GA2_CaseAccessGroup.sql": "0433376e83a1001e75f42e1d775e3035ca257145"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20231114_4__GA4_CaseAccessGroups_collection.sql": "0433376e83a1001e75f42e1d775e3035ca257145"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V20260804_8066__CCD-8066_StaffUser_simple_base_type.sql": "a8bcda5a80d961b0b12a2f893030e4cc4dad5a2f"
+  "ccd-definition-store-api:repository/src/main/resources/db/migration/V20260826_8066__CCD-8066_StaffUser_complex_base_type.sql": "9d405159ce9faf660a7b9f35558a9727e4d56892"
   "ccd-definition-store-api:repository/src/main/resources/db/migration/V20201218__RDM-10041__CaseLocation.sql": "fc252db8e43e2a01d4c2ab3465f3f96e503c5e84"
   ? "ccd-definition-store-api:repository/src/main/resources/db/migration/V20210818_12761__RDM-12761_Update_base_type_field_ids_for_WorkAllocation.sql"
   : "0695abac5904488378bd57fbea368e6aee2c3364"
   ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/DisplayContextParameterValidator.java"
   : "704943e3529d5bba87cd6c005b445b773ff8fc8a"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/FieldTypeParser.java": "8b9a6ba16a83f14c7d6f4b8bfe335e448fc2935a"
-  "ccd-definition-store-api:elastic-search-support/src/main/resources/application.yml": "a3eb4d238899d2957cc65251aad0a455c981dc93"
+  "ccd-definition-store-api:elastic-search-support/src/main/resources/application.yml": "a8bcda5a80d961b0b12a2f893030e4cc4dad5a2f"
   ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java"
   : "70a1523ad356b828a6e094f4246effdeeeadda7b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/search/MetaData.java": "bf6f9ecc0149aba4c80456c27b6d5fef74616ad7"
@@ -119,7 +123,7 @@ sources_sha:
 
 # Field Types
 
-CCD field types are declared in the `FieldType` column of the `CaseField` spreadsheet sheet (or the `fieldType` attribute in JSON definitions). The definition-store stores them in the `field_type` table (`FieldTypeEntity`), seeded with the platform's built-ins by `V0001__Base_version.sql` and per-feature migrations (`FieldTypeUtils.java:5–53`). Each base type also gets an Elasticsearch mapping at import time, configured in `elastic-search-support/src/main/resources/application.yml`. The ccd-config-generator SDK mirrors most built-in types as Java classes under `uk.gov.hmcts.ccd.sdk.type`.
+CCD field types are declared in the `FieldType` column of the `CaseField` spreadsheet sheet (or the `fieldType` attribute in JSON definitions). The definition-store stores them in the `field_type` table (`FieldTypeEntity`), seeded with the platform's built-ins by `V0001__Base_version.sql` and per-feature migrations (`FieldTypeUtils.java:5–54`). Each base type also gets an Elasticsearch mapping at import time, configured in `elastic-search-support/src/main/resources/application.yml`. The ccd-config-generator SDK mirrors most built-in types as Java classes under `uk.gov.hmcts.ccd.sdk.type`.
 
 ## TL;DR
 
@@ -281,7 +285,7 @@ Sub-fields `region` and `baseLocation`, typed `Region` and `BaseLocation` rather
 
 ### `Region` / `BaseLocation`
 
-Registered as base types by `V20201218__RDM-10041__CaseLocation.sql:10-14` (`FieldTypeUtils.java:44–45`) and ES-mapped as `defaultText` (`application.yml:87–88`). Confluence marks both as **in development** — temporarily backed by `String` rather than a fixed list, as an interim solution because the standard `FixedList` baseType cannot have service-customised values. <!-- CONFLUENCE-ONLY: "in development" framing not verified in source — types are seeded and indexed today. -->
+Registered as base types by `V20201218__RDM-10041__CaseLocation.sql:10-14` (`FieldTypeUtils.java:44–45`) and ES-mapped as `defaultText` (`application.yml:90–91`). Confluence marks both as **in development** — temporarily backed by `String` rather than a fixed list, as an interim solution because the standard `FixedList` baseType cannot have service-customised values. <!-- CONFLUENCE-ONLY: "in development" framing not verified in source — types are seeded and indexed today. -->
 
 ### `Organisation`
 
@@ -350,7 +354,7 @@ Empty marker type (`FlagLauncher.java`: no fields). Tells ExUI to launch the Fla
 
 Empty marker type (`ComponentLauncher.java`: no fields). Tells ExUI a web component needs to be launched; the specific component is configured per-instance via `DisplayContextParameter` in `CaseEventToFields`, `ComplexTypes`, or `CaseTypeTab`. Not indexed in ES.
 
-`ComponentLauncher` is the only generic launcher. **`SummaryLauncher`, `HearingsLauncher`, `RolesLauncher` and `TaskLauncher` are not registered base types** — they appear in no migration and in no constant on `FieldTypeUtils.java`, whose full registered set is the 48 names at `FieldTypeUtils.java:5-53`. Naming one of them in a `FieldType` cell fails the import. Use `ComponentLauncher` with the appropriate `DisplayContextParameter` instead. <!-- DIVERGENCE: "CCD Supported Field Types" (RCCD/205906788, v228) lists SummaryLauncher, HearingsLauncher, RolesLauncher and TaskLauncher as base types alongside FlagLauncher, each "an empty base type with the sole purpose of indicating to ExUI that the <X> component needs to be launched". Only FlagLauncher and ComponentLauncher exist in source (FieldTypeUtils.java:49-50, V20220113_12977__RDM-12977_FlagLauncher_base_type.sql, V20220131_13077__RDM-13077_ComponentLauncher_base_type.sql). The four specific launchers appear to be a superseded design that ComponentLauncher generalised. Source wins. -->
+`ComponentLauncher` is the only generic launcher. **`SummaryLauncher`, `HearingsLauncher`, `RolesLauncher` and `TaskLauncher` are not registered base types** — they appear in no migration and in no constant on `FieldTypeUtils.java`, whose full registered set is the 49 names at `FieldTypeUtils.java:5-54`. Naming one of them in a `FieldType` cell fails the import. Use `ComponentLauncher` with the appropriate `DisplayContextParameter` instead. <!-- DIVERGENCE: "CCD Supported Field Types" (RCCD/205906788, v228) lists SummaryLauncher, HearingsLauncher, RolesLauncher and TaskLauncher as base types alongside FlagLauncher, each "an empty base type with the sole purpose of indicating to ExUI that the <X> component needs to be launched". Only FlagLauncher and ComponentLauncher exist in source (FieldTypeUtils.java:49-50, V20220113_12977__RDM-12977_FlagLauncher_base_type.sql, V20220131_13077__RDM-13077_ComponentLauncher_base_type.sql). The four specific launchers appear to be a superseded design that ComponentLauncher generalised. Source wins. -->
 
 ### `WaysToPay`
 
@@ -359,6 +363,10 @@ Empty marker (`WaysToPay.java`: `@JsonIgnoreType`, no fields). Triggers ExUI's "
 ### `JudicialUser`
 
 Sub-fields (per migration `V20220923_3686__CCD-3686__JudicialUser.sql`): `idamId` (Text), `personalCode` (Text). No SDK class — annotate a Java field with the predefined complex type name `JudicialUser`. <!-- CONFLUENCE-ONLY: SDK does not currently ship a `JudicialUser` POJO. -->
+
+### `StaffUser`
+
+Sub-field (per migration `V20260826_8066__CCD-8066_StaffUser_complex_base_type.sql`): `idamId` (Text, `PUBLIC`). Registered on `FieldTypeUtils.java:52` and ES-mapped as `defaultText` (`application.yml:92`). It started life as a simple base type (`V20260804_8066__CCD-8066_StaffUser_simple_base_type.sql`); the later migration renames that row to `StaffUser_old` and re-registers `StaffUser` as a `Complex` type, so a definition written against the simple form no longer resolves. No SDK class — annotate a Java field with the predefined complex type name `StaffUser`.
 
 ### `CaseAccessGroup` / `CaseAccessGroups`
 
@@ -451,7 +459,7 @@ Both are excluded from Elasticsearch indexing (`application.yml: ccdIgnoredTypes
 
 ## Elasticsearch type mappings
 
-The definition-store pushes an ES mapping per field on import. `CaseMappingGenerator` produces the `data` object mapping by looking up each field's base-type string in the `typeMappings` map (`application.yml:69–90`), with named templates in `elasticMappings` (`application.yml:10–60`):
+The definition-store pushes an ES mapping per field on import. `CaseMappingGenerator` produces the `data` object mapping by looking up each field's base-type string in the `typeMappings` map (`application.yml:71–94`), with named templates in `elasticMappings` (`application.yml:10–60`):
 
 | Mapping template | Definition |
 |---|---|
