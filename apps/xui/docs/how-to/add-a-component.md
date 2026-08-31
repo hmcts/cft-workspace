@@ -61,8 +61,8 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-read.component.ts": "5dbc31c8259c5f503b00b65476552b726b6dfd1c"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write-journey.component.ts"
   : "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
-  "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "3ea421b1e4974dd0a14a2d259ecbe3073f561896"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "1a897e8ee004b009cea34182c5cbea4e28519688"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "1a897e8ee004b009cea34182c5cbea4e28519688"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/markdown/markdown-component.module.ts": "315741f6698ef3b7d46e49e27742eefae21d0e24"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/journey/multipage-component-state.service.ts": "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
 ---

@@ -84,7 +84,7 @@ sources_sha:
   "rpx-xui-webapp:src/app/shared/services/environment.service.ts": "6c90fbc6b38434ad2f933356651b41f6ec813c64"
   "rpx-xui-webapp:src/app/directives/feature-toggle/feature-toggle.directive.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
-  "rpx-xui-webapp:package.json": "f2114b5f76f0eed12eb4c370c65157fe4aebaecb"
+  "rpx-xui-webapp:package.json": "4cce21b1bcf137df04e9305a455e8c88bbafabb4"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/launch-darkly.service.ts": "25f44bb18010b28961e6ac3d51ba9142178a558f"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.service.ts": "6532e170c4c925fca8df630bc87efc2becfdbab0"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts": "46113db85da141a989d239a95168a3588512ca88"

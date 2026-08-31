@@ -59,14 +59,14 @@ sources_sha:
   "rpx-xui-webapp:src/app/components/hmcts-global-footer/hmcts-global-footer.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/app/components/phase-banner/phase-banner.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
+  ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/welsh-translated-markdown/welsh-translated-markdown.directive.ts"
+  : "0c69822a961db385bf2f3947d2f172791553aaa5"
   "rpx-xui-webapp:src/app/app.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/hearings/containers/cancel-hearing/cancel-hearing.component.html": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "ccd-admin-web:config/default.yaml": "c525b01236acf627fad50d63d7125ce30dfc0dab"
   "ccd-admin-web:src/main/routes/welshDictionary.ts": "67b9ce88f5962216d876311dd9bb1c153f41739e"
   "ccd-admin-web:src/main/routes/manageWelshDictionary.ts": "e7a36d67e5443ffb0b2cc96628f7c34b538596f4"
   "ccd-admin-web:src/main/service/manage-welsh-dictionary-service.ts": "27db450b37774bd316e8425ce1edfdfcf0d13e75"
-  ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/welsh-translated-markdown/welsh-translated-markdown.directive.ts"
-  : "0c69822a961db385bf2f3947d2f172791553aaa5"
 ---
 
 ## TL;DR

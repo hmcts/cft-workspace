@@ -59,7 +59,7 @@ sources_sha:
   "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
   "rpx-xui-webapp:charts/xui-webapp/values.yaml": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:charts/xui-webapp/Chart.yaml": "69fa77d263137c54c33a0bddfd86586ba585e63c"
-  "rpx-xui-webapp:Dockerfile": "f5bb097efe787ff7db6d9889ae7f62ee3d48ba16"
+  "rpx-xui-webapp:Dockerfile": "1eea34a7ae5eeb5c43d14b0e1a3a3a16adfb6f9d"
   "rpx-xui-webapp:infrastructure/main.tf": "5376993d7f1f693f22ab014158974ad412abc4cc"
   "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
   "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "e30a86772d25ac208bf938e78ef2c7308c9cdd3a"
@@ -308,7 +308,7 @@ None of the three obvious mitigations is present. There is no per-prefix path al
 
 ### Container image
 
-All three apps use multi-stage Docker builds based on `hmctsprod.azurecr.io/base/node:20-alpine`. The final runtime stage contains only production node_modules for the API workspace, the compiled Angular bundle (`dist/browser/`), and the `config/` directory for `node-config`.
+All three apps use multi-stage Docker builds based on `hmctsprod.azurecr.io/base/node:24-alpine`. The final runtime stage contains only production node_modules for the API workspace, the compiled Angular bundle (`dist/browser/`), and the `config/` directory for `node-config`.
 
 ### Kubernetes deployment
 

@@ -64,7 +64,7 @@ sources_sha:
   "rpx-xui-webapp:api/noc/errorCodeConverter.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/noc/store/effects/noc.effects.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeResponse.java": "dfa7debe58dc4710124070b6a29448dfda6fce67"
-  "rpx-xui-manage-organisations:config/default.json": "c6ee3703d3f06e69afd20dc3065b8deaf3649727"
+  "rpx-xui-manage-organisations:config/default.json": "557a94237a5771d5e780f70b137a5c0184a5bbd6"
   "rpx-xui-manage-organisations:api/configuration/references.ts": "60a1f791b7e62dafaf70493b60f2d548dbc6a417"
 ---
 

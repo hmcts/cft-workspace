@@ -67,7 +67,7 @@ sources_sha:
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/timeout-notifications/timeout-notifications.service.ts": "e9487c78c450369bcdc2039fcae52eb6eb115351"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/components/hmcts-session-dialog/hmcts-session-dialog.component.ts": "4b63706d8c0e056720db07da0a650825d287fae0"
   "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
-  "rpx-xui-webapp:api/user/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/user/index.ts": "4cce21b1bcf137df04e9305a455e8c88bbafabb4"
   "rpx-xui-webapp:src/app/containers/app/app.component.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
   "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"

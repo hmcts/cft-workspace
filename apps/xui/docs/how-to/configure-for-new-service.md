@@ -64,7 +64,7 @@ sources_sha:
   "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
   "rpx-xui-webapp:api/lib/middleware/auth.ts": "3b6d926b78e0815e477c8938d564099e392a8c94"
   "rpx-xui-manage-organisations:src/app/app.constants.ts": "9b0d475e911a30043da89e928c6e64b2474a970d"
-  "rpx-xui-manage-organisations:config/default.json": "c6ee3703d3f06e69afd20dc3065b8deaf3649727"
+  "rpx-xui-manage-organisations:config/default.json": "557a94237a5771d5e780f70b137a5c0184a5bbd6"
   "rpx-xui-manage-organisations:api/caaCases/caaCases.util.ts": "60a1f791b7e62dafaf70493b60f2d548dbc6a417"
   "rpx-xui-manage-organisations:src/users/containers/invite-user/invite-user.component.ts": "0837466c5795729bc27c9c6d93cdaf5b4280d862"
   "rpx-xui-manage-organisations:src/users/containers/manage-user/manage-user.component.ts": "0837466c5795729bc27c9c6d93cdaf5b4280d862"

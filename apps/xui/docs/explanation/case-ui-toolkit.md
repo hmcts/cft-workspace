@@ -90,8 +90,8 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/conditional-show-form.directive.ts": "8892a7adb5f5cdeaaa74920c07eac09861779b4a"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/condition.peg.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts": "6a082439702a917c186720a837526f8c968c29d0"
-  "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "3ea421b1e4974dd0a14a2d259ecbe3073f561896"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "1a897e8ee004b009cea34182c5cbea4e28519688"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "1a897e8ee004b009cea34182c5cbea4e28519688"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.html": "7f1b0d12f0af5a80788e266558817af09930cd4f"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.scss": "4fda645087ccabf7c77b2902b1106efc9ed9415b"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read-label.html": "5dbc31c8259c5f503b00b65476552b726b6dfd1c"
@@ -103,7 +103,7 @@ sources_sha:
   "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "eed279a4dd5502643063241d86c2911799acac38"
   "rpx-xui-webapp:src/app/providers/providers.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/cases/cases.module.ts": "496d74f0b1a66c9aae6e057558642f2f447e59d9"
-  "rpx-xui-webapp:package.json": "f2114b5f76f0eed12eb4c370c65157fe4aebaecb"
+  "rpx-xui-webapp:package.json": "4cce21b1bcf137df04e9305a455e8c88bbafabb4"
   "civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn": "7b8e953f91f63dad2f50124a634989bd472d22b2"
   "civil-wa-task-configuration:src/main/resources/wa-task-configuration-civil-civil.dmn": "2a3ab1dec2ad1bbd323512eecf40646f4d3244cf"
 ---
@@ -340,7 +340,7 @@ Version pinning is exact (not caret/tilde) because SRT validates a specific vers
 
 `projects/ccd-case-ui-toolkit/package.json` is the manifest ng-packagr publishes, and it declares **only** peer dependencies — no runtime `dependencies` block at all. The peers cover the Angular 20 framework packages and NgRx 20, plus `rxjs`, `moment`, `underscore`, `ngx-chips`, `ngx-editor`, `ngx-markdown`, `ngx-pagination`, the ProseMirror packages and `rpx-xui-translation`. `@angular/cdk` and `@angular/material` are peers on their own earlier major lines (17 and 16), not on 20, so a consuming app has to satisfy both generations at once (`projects/ccd-case-ui-toolkit/package.json:4-37`).
 
-`@hmcts/media-viewer`, `@hmcts/ccpay-web-component` and `@edium/fsm` are not declared by the published package in any form, even though library code imports them. Consuming apps install them directly and choose their own versions — `rpx-xui-webapp` lists all three in its own `dependencies` (`rpx-xui-webapp:package.json:117-121`) — which means a version skew between the app and what the toolkit was built against surfaces as a runtime error, not an install-time conflict.
+`@hmcts/media-viewer`, `@hmcts/ccpay-web-component` and `@edium/fsm` are not declared by the published package in any form, even though library code imports them. Consuming apps install them directly and choose their own versions — `rpx-xui-webapp` lists all three in its own `dependencies` (`rpx-xui-webapp:package.json:118-122`) — which means a version skew between the app and what the toolkit was built against surfaces as a runtime error, not an install-time conflict.
 
 ## Local development with the toolkit
 
