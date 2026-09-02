@@ -32,7 +32,7 @@
 # exercised end-to-end — it needs an org user this caller could not create.
 # Its request shape comes from PRD's controller; treat with mild suspicion.
 
-source "$(dirname "$0")/lib/_common.sh"
+source "$(dirname "$0")/lib/_cft.sh"
 
 ENV_NAME="${PRD_ENV:-aat}"
 MICROSERVICE="${PRD_MICROSERVICE:-}"
@@ -129,62 +129,20 @@ while [[ $# -gt 0 ]]; do
 done
 
 PRD="http://rd-professional-api-$ENV_NAME.service.core-compute-$ENV_NAME.internal"
-S2S_URL="http://rpe-service-auth-provider-$ENV_NAME.service.core-compute-$ENV_NAME.internal"
-FLUX="$WORKSPACE_ROOT/platops/cnp-flux-config/apps/rd"
-
 note() { $JSON_OUT || info "$*" >&2; }
 
-for tool in az curl jq; do command -v "$tool" >/dev/null || die "$tool not on PATH"; done
+require_tools az curl jq
 
-require_vpn() {
-    getent hosts "rd-professional-api-$ENV_NAME.service.core-compute-$ENV_NAME.internal" >/dev/null 2>&1 \
-        || die "cannot resolve PRD's internal hostname — connect the VPN.
-If you connected it after starting the devcontainer, rebuild the container."
-}
-
-# Read an allowlist out of flux rather than the app default, which is much
-# shorter than what's actually deployed.
-allowlist() {
-    local svc="$1" file="$FLUX/$svc/$ENV_NAME.yaml"
-    [[ -f "$file" ]] || return 1
-    grep -oE 'S2S_AUTHORISED_SERVICES: .*' "$file" | head -1 | sed 's/.*: //'
-}
-
-on_allowlist() {
-    local svc="$1" list
-    list=$(allowlist "$svc") || return 2
-    printf '%s' "$list" | tr ',' '\n' | sed 's/ //g' | grep -qx "$MICROSERVICE"
-}
-
+require_vpn() { require_internal_dns "rd-professional-api-$ENV_NAME.service.core-compute-$ENV_NAME.internal"; }
+on_allowlist() { s2s_allowlisted "rd/$1" "$MICROSERVICE" "$ENV_NAME"; }
 s2s_token() {
     [[ -n "$MICROSERVICE" ]] || die "--microservice is required (or set PRD_MICROSERVICE)"
-    command -v docker >/dev/null || die "docker needed for the TOTP (or install oathtool)"
-    local secret otp token
-    secret=$(az keyvault secret show --vault-name "s2s-$ENV_NAME" \
-        --name "microservicekey-${MICROSERVICE//_/-}" --query value -o tsv 2>/dev/null) \
-        || die "could not read microservicekey-${MICROSERVICE//_/-} from vault s2s-$ENV_NAME"
-    if command -v oathtool >/dev/null; then
-        otp=$(oathtool --totp -b "$secret")
-    else
-        otp=$(docker run --rm hmctsprod.azurecr.io/imported/toolbelt/oathtool --totp -b "$secret" | tr -d '\r\n')
-    fi
-    token=$(curl -sS -X POST "$S2S_URL/lease" -H 'Content-Type: application/json' \
-        -d "{\"microservice\":\"$MICROSERVICE\",\"oneTimePassword\":\"$otp\"}")
-    [[ -n "$token" ]] || die "S2S lease failed for $MICROSERVICE"
-    printf '%s' "$token"
+    s2s_lease "$MICROSERVICE" "$ENV_NAME"
 }
 
 # N random digits. Deliberately NOT `tr -dc 0-9 </dev/urandom | head -cN`:
 # head closes the pipe, tr dies with SIGPIPE, and `set -o pipefail` then aborts
 # the whole script with status 141 — silently, since nothing is printed.
-digits() {
-    local n="$1" out=""
-    while (( ${#out} < n )); do
-        out+=$(( RANDOM % 10 ))
-    done
-    printf '%s' "$out"
-}
-
 # ["a","b"] from "a,b". Empty input must still yield [] — `jq -R` reads no
 # lines at all for empty input and would emit nothing, breaking --argjson.
 roles_json() {

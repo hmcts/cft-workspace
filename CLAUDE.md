@@ -14,7 +14,7 @@ platops/<repo>          # flux, dns, jenkins, AKS, plumbing
 workspace.yaml          # manifest of every repo this workspace pulls in
 INDEX.md                # generated taxonomy matrix (scripts/index)
 DOCS.md                 # generated doc-page index across docs/ + apps/*/docs/ (scripts/docs-index)
-scripts/                # bootstrap, sync, doctor, add-repo, grep, index, docs-index, idam-test-user, prd-test-org
+scripts/                # bootstrap, sync, doctor, add-repo, grep, index, docs-index, idam-test-user, prd-test-org, am-role-assignment
 docs/                   # tutorials / how-to / reference / explanation (Diátaxis) — workspace-wide / platform topics
 apps/<product>/docs/    # product-specific Diátaxis docs (ccd, xui, wa, am, bulk-scan)
 ```
@@ -47,6 +47,7 @@ Companion skills:
 - **`/cft-ccd-trace-callback`**, **`/cft-ccd-find-feature`** — CCD-specific lookups, kept under the cft-* family for naming consistency.
 - **`/cft-create-test-user <what>`** — creates IDAM test users, roles and OAuth clients in a non-prod environment. Wraps `scripts/idam-test-user`, which encodes the per-environment gotchas (AAT's 3h cleanup, RD's email-domain validation, role prerequisites).
 - **`/cft-manage-test-org <what>`** — creates/approves/deletes professional organisations and manages their users and PUI roles. Wraps `scripts/prd-test-org`; its `check` subcommand reports whether a microservice can create and/or approve, which is the usual blocker.
+- **`/cft-role-assignment <what>`** — creates, queries and deletes AM role assignments (the runtime half of "why can't this user see tasks"). Wraps `scripts/am-role-assignment`.
 - **`/docs-generate <product>`** — generates or refreshes a product's Diátaxis docs (CCD's pipeline, generalised). Includes a Confluence-augmentation phase.
 - **`/docs-drift`** — checks every doc page for drift across three modes (source citations, port manifest for root docs, Confluence revisions).
 

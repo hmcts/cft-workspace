@@ -24,7 +24,7 @@
 # Requires: az (logged in), curl, jq. No VPN needed — the testing-support API
 # is on public *.platform.hmcts.net ingress.
 
-source "$(dirname "$0")/lib/_common.sh"
+source "$(dirname "$0")/lib/_cft.sh"
 
 ENV_NAME="${IDAM_ENV:-aat}"
 PRODUCT="${IDAM_PRODUCT:-}"
@@ -107,11 +107,7 @@ IDAM_WEB="https://idam-web-public.$ENV_NAME.platform.hmcts.net"
 # Commentary goes to stderr so `--json` stdout stays pipeable either way.
 note() { $JSON_OUT || info "$*" >&2; }
 
-for tool in az curl jq; do
-    command -v "$tool" >/dev/null || die "$tool not on PATH"
-done
-
-uuid() { cat /proc/sys/kernel/random/uuid; }
+require_tools az curl jq
 
 # --- config resolution -----------------------------------------------------
 
