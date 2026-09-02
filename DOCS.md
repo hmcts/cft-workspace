@@ -192,6 +192,8 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Connect to a non-production PostgreSQL database | connect-to-a-nonprod-database | `docs/how-to/connect-to-a-nonprod-database.md` |
 | workspace | how-to | Create a GitHub Repository | github-repo | `docs/how-to/new-component/github-repo.md` |
 | workspace | how-to | Create App Registrations with Federated Credentials for GitHub Actions | federated-credentials | `docs/how-to/federated-credentials.md` |
+| workspace | how-to | Create a professional organisation for testing | create-test-organisations | `docs/how-to/create-test-organisations.md` |
+| workspace | how-to | Create IDAM test users in AAT and demo | create-idam-test-users | `docs/how-to/create-idam-test-users.md` |
 | workspace | how-to | Creating a new subscription | creating-a-new-subscription | `docs/how-to/creating-a-new-subscription.md` |
 | workspace | how-to | Database infrastructure | database-infrastructure | `docs/how-to/database-infrastructure.md` |
 | workspace | how-to | ElasticSearch | elasticsearch | `docs/how-to/new-component/elasticsearch.md` |
@@ -243,6 +245,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | reference | Frontend Web Performance | frontend-web-performance | `docs/reference/standards/frontend-web-performance.md` |
 | workspace | reference | Glossary | cnp-glossary | `docs/reference/cnp-glossary.md` |
 | workspace | reference | Health Probes | health-endpoints | `docs/reference/health-endpoints.md` |
+| workspace | reference | IDAM testing-support API | idam-testing-support-api | `docs/reference/idam-testing-support-api.md` |
 | workspace | reference | Java | java | `docs/reference/standards/java.md` |
 | workspace | reference | OpenAPI catalogue | api-catalogue | `docs/reference/api-catalogue.md` |
 | workspace | reference | Product-level CLAUDE.md taxonomy | taxonomy | `docs/reference/taxonomy.md` |

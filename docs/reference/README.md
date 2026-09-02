@@ -8,6 +8,11 @@ Look-up information. Information-dense, no narrative.
 - [Per-product CLAUDE.md taxonomy](taxonomy.md) — the controlled vocabulary used by `cft-ccd-find-feature`, `cft-list-integrations`, and `INDEX.md`.
 - [Devcontainer features](devcontainer-features.md) _(planned)_ — what the devcontainer ships and how to extend it.
 
+## CFT platform
+
+- [API catalogue](api-catalogue.md) — every OpenAPI spec published to `cnp-api-docs`.
+- [IDAM testing-support API](idam-testing-support-api.md) — test-user/role/client endpoints, auth, and per-environment cleanup lifespans.
+
 ## Cloud Native Platform
 
 - [CNP glossary](cnp-glossary.md)

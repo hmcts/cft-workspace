@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+# Create, query and delete AM role assignments in a non-production environment
+# via am-role-assignment-service. Replaces the per-team
+# organisational-role-assignment.sh scripts (25 near-identical copies across
+# the clones at time of writing).
+#
+# Subcommands:
+#   assign     create an organisational (or case) role assignment
+#   query      find assignments by actor / role / attributes
+#   actor      list every assignment held by one actor
+#   delete     delete assignments matching a query
+#   roles      list the role names AM knows about
+#
+# Requires: az (logged in), curl, jq, docker-or-oathtool, and the VPN —
+# am-role-assignment-service is internal-only.
+#
+# Verified against AAT: roles, assign, actor, query, delete-by-query and
+# delete-by-id, all round-tripped.
+#
+# Role names are not interchangeable: case-allocator is a CASE-role concept and
+# is rejected as an ORGANISATION role by the Drools rules even with the bypass.
+# Staff org roles (tribunal-caseworker, hearing-centre-admin, …) work.
+
+source "$(dirname "$0")/lib/_cft.sh"
+
+ENV_NAME="${AM_ENV:-aat}"
+MICROSERVICE="${AM_MICROSERVICE:-}"
+USER_TOKEN="${AM_USER_TOKEN:-}"
+ACTOR_ID=""
+ROLE_NAME=""
+ROLE_TYPE="ORGANISATION"
+ROLE_CATEGORY="LEGAL_OPERATIONS"
+CLASSIFICATION="PUBLIC"
+GRANT_TYPE="STANDARD"
+ATTRIBUTES=""
+PROCESS="staff-organisational-role-mapping"
+REFERENCE=""
+REPLACE=false
+BYPASS_DROOLS=true
+JSON_OUT=false
+ASSUME_YES=false
+ASSIGNMENT_ID=""
+
+usage() {
+    sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+    cat <<'EOF'
+
+Usage:
+  scripts/am-role-assignment <subcommand> [options]
+
+Options:
+  -e, --env <env>           aat (default) | demo | ithc | perftest
+  -m, --microservice <n>    S2S microservice (underscores), e.g. pcs_api
+      --user-token <jwt>    IDAM token of the ASSIGNER (needs an AM-permitted role)
+      --actor-id <uuid>     who the role is granted to (default: the assigner)
+      --assignment-id <id>  delete one specific assignment by its id
+      --role-name <name>    e.g. judge, tribunal-caseworker, case-allocator
+      --role-type <type>    ORGANISATION (default) | CASE
+      --role-category <c>   LEGAL_OPERATIONS (default) | JUDICIAL | ADMIN | PROFESSIONAL | CTSC
+      --classification <c>  PUBLIC (default) | PRIVATE | RESTRICTED
+      --grant-type <g>      STANDARD (default) | BASIC | SPECIFIC | CHALLENGED | EXCLUDED
+      --attributes <json>   e.g. '{"jurisdiction":"CIVIL","primaryLocation":"123"}'
+      --process <name>      default: staff-organisational-role-mapping
+      --reference <ref>     default: <actorId>
+      --replace             replaceExisting=true (clears the actor's matching roles first)
+      --enforce-drools      do NOT set byPassOrgDroolRule (default is to bypass)
+      --json                raw JSON only
+  -y, --yes                 skip the delete confirmation
+  -h, --help                this help
+
+Examples:
+  scripts/am-role-assignment roles  -m pcs_api --user-token "$TOK"
+  scripts/am-role-assignment assign -m pcs_api --user-token "$TOK" \
+      --role-name tribunal-caseworker --attributes '{"jurisdiction":"CIVIL","primaryLocation":"20262"}'
+  scripts/am-role-assignment actor  -m pcs_api --user-token "$TOK" --actor-id <uuid>
+  scripts/am-role-assignment query  -m pcs_api --user-token "$TOK" --role-name judge
+  scripts/am-role-assignment delete -m pcs_api --user-token "$TOK" --actor-id <uuid>
+
+Get a user token with:
+  scripts/idam-test-user user  -p <product> --client-id <c> -r <role> --email you@justice.gov.uk
+  scripts/idam-test-user login -p <product> --client-id <c> --email you@justice.gov.uk
+EOF
+}
+
+[[ $# -gt 0 ]] || { usage; exit 1; }
+SUBCOMMAND="$1"; shift
+case "$SUBCOMMAND" in -h|--help|help) usage; exit 0 ;; *) ;; esac
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -e|--env)          ENV_NAME="$2"; shift 2 ;;
+        -m|--microservice) MICROSERVICE="$2"; shift 2 ;;
+        --user-token)      USER_TOKEN="$2"; shift 2 ;;
+        --actor-id)        ACTOR_ID="$2"; shift 2 ;;
+        --assignment-id)   ASSIGNMENT_ID="$2"; shift 2 ;;
+        --role-name)       ROLE_NAME="$2"; shift 2 ;;
+        --role-type)       ROLE_TYPE="$2"; shift 2 ;;
+        --role-category)   ROLE_CATEGORY="$2"; shift 2 ;;
+        --classification)  CLASSIFICATION="$2"; shift 2 ;;
+        --grant-type)      GRANT_TYPE="$2"; shift 2 ;;
+        --attributes)      ATTRIBUTES="$2"; shift 2 ;;
+        --process)         PROCESS="$2"; shift 2 ;;
+        --reference)       REFERENCE="$2"; shift 2 ;;
+        --replace)         REPLACE=true; shift ;;
+        --enforce-drools)  BYPASS_DROOLS=false; shift ;;
+        --json)            JSON_OUT=true; shift ;;
+        -y|--yes)          ASSUME_YES=true; shift ;;
+        -h|--help)         usage; exit 0 ;;
+        *)                 die "unknown option: $1 (try --help)" ;;
+    esac
+done
+
+AM_HOST="am-role-assignment-service-$ENV_NAME.service.core-compute-$ENV_NAME.internal"
+AM="http://$AM_HOST"
+
+# Vendor media types from V1.java; a plain application/json Accept 406s.
+MT="application/vnd.uk.gov.hmcts.role-assignment-service"
+MT_CREATE="$MT.create-assignments+json;charset=UTF-8;version=1.0"
+MT_QUERY="$MT.post-assignment-query-request+json;charset=UTF-8;version=1.0"
+MT_GET="$MT.get-assignments+json;charset=UTF-8;version=1.0"
+MT_ROLES="$MT.get-roles+json;charset=UTF-8;version=1.0"
+MT_DELETE="$MT.delete-assignments+json;charset=UTF-8;version=1.0"
+MT_DELETE_QUERY="$MT.post-assignments-delete-request+json;charset=UTF-8;version=1.0"
+
+note() { $JSON_OUT || info "$*" >&2; }
+require_tools az curl jq
+
+need_token() {
+    [[ -n "$USER_TOKEN" ]] || die "--user-token is required (or set AM_USER_TOKEN).
+Mint one: scripts/idam-test-user login -p <product> --client-id <c> --email <addr>"
+}
+
+assigner_id() {
+    local uid
+    uid=$(jwt_payload "$USER_TOKEN" | jq -r '.uid // empty')
+    if [[ -z "$uid" ]]; then
+        uid=$(curl -sS "$(idam_web "$ENV_NAME")/o/userinfo" \
+                -H "Authorization: Bearer $USER_TOKEN" | jq -r '.uid // empty')
+    fi
+    [[ -n "$uid" ]] || die "could not determine the assigner's uid from the token"
+    printf '%s' "$uid"
+}
+
+preflight() {
+    [[ -n "$MICROSERVICE" ]] || die "--microservice is required (or set AM_MICROSERVICE)"
+    if ! s2s_allowlisted am/am-role-assignment-service "$MICROSERVICE" "$ENV_NAME"; then
+        case $? in
+            2) warn "could not read AM's S2S allowlist for $ENV_NAME (is platops/cnp-flux-config cloned?)" ;;
+            *) warn "$MICROSERVICE is NOT on am-role-assignment-service's allowlist for $ENV_NAME — expect 403.
+Check: grep S2S_AUTHORISED platops/cnp-flux-config/apps/am/am-role-assignment-service/$ENV_NAME.yaml" ;;
+        esac
+    fi
+    require_internal_dns "$AM_HOST"
+}
+
+RESPONSE_BODY=""
+call() {
+    local method="$1" url="$2" accept="$3" body="${4:-}"
+    local tmp; tmp=$(mktemp)
+    local -a args=(-sS -o "$tmp" -w '%{http_code}' -X "$method" "$url"
+                   -H "Accept: $accept"
+                   -H "Authorization: Bearer $USER_TOKEN"
+                   -H "ServiceAuthorization: Bearer $S2S_TOKEN")
+    [[ -n "$body" ]] && args+=(-H 'Content-Type: application/json' -d "$body")
+
+    local code; code=$(curl "${args[@]}") || true
+    RESPONSE_BODY=$(cat "$tmp" 2>/dev/null || true); rm -f "$tmp"
+    [[ "$code" =~ ^2 ]] && return 0
+
+    err "HTTP $code from $method $url"
+    if [[ -n "$RESPONSE_BODY" ]]; then
+        printf '%s\n' "$RESPONSE_BODY" | jq . >&2 2>/dev/null || printf '%s\n' "$RESPONSE_BODY" >&2
+    else
+        warn "(empty response body)"
+    fi
+    case "$code" in
+        403) warn "403: check $MICROSERVICE is on AM's S2S allowlist, and that the assigner's own roles permit assigning this role." ;;
+        406) warn "406: wrong Accept media type for this operation — a bug in this script, please report it." ;;
+        422) warn "422: AM's Drools rules rejected the assignment. Usual causes: the assigner lacks permission to grant this role; an invalid grantType/roleCategory/classification combination; or missing required attributes (e.g. jurisdiction) for this role." ;;
+        *) ;;
+    esac
+    exit 1
+}
+
+report() {
+    if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; return; fi
+    printf '%s\n' "$RESPONSE_BODY" | jq . 2>/dev/null || printf '%s\n' "$RESPONSE_BODY"
+}
+
+# AM expects every query filter as an array, even for a single value.
+query_body() {
+    jq -nc \
+        --arg actor "$ACTOR_ID" --arg role "$ROLE_NAME" --arg rt "$ROLE_TYPE" \
+        --argjson attrs "$([[ -n "$ATTRIBUTES" ]] && printf '%s' "$ATTRIBUTES" || printf 'null')" '
+        {}
+        | (if $actor != "" then .actorId  = [$actor] else . end)
+        | (if $role  != "" then .roleName = [$role]  else . end)
+        | (if $rt    != "" then .roleType = [$rt]    else . end)
+        | (if $attrs != null
+           then .attributes = ($attrs | with_entries(.value |= (if type=="array" then . else [tostring] end)))
+           else . end)'
+}
+
+case "$SUBCOMMAND" in
+    roles)
+        need_token; preflight
+        S2S_TOKEN=$(s2s_lease "$MICROSERVICE" "$ENV_NAME")
+        call GET "$AM/am/role-assignments/roles" "$MT_ROLES"
+        if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
+            printf '%s\n' "$RESPONSE_BODY" | jq -r '[.[].name] | sort | .[]' 2>/dev/null || report
+        fi
+        ;;
+
+    assign)
+        need_token; preflight
+        [[ -n "$ROLE_NAME" ]] || die "--role-name is required"
+        S2S_TOKEN=$(s2s_lease "$MICROSERVICE" "$ENV_NAME")
+        ASSIGNER=$(assigner_id)
+        [[ -n "$ACTOR_ID" ]] || { ACTOR_ID="$ASSIGNER"; note "no --actor-id: assigning to the assigner ($ASSIGNER)"; }
+        [[ -n "$REFERENCE" ]] || REFERENCE="$ACTOR_ID"
+        BODY=$(jq -nc \
+            --arg assigner "$ASSIGNER" --arg actor "$ACTOR_ID" --arg role "$ROLE_NAME" \
+            --arg rt "$ROLE_TYPE" --arg rc "$ROLE_CATEGORY" --arg cls "$CLASSIFICATION" \
+            --arg gt "$GRANT_TYPE" --arg proc "$PROCESS" --arg ref "$REFERENCE" \
+            --argjson replace "$REPLACE" --argjson bypass "$BYPASS_DROOLS" \
+            --argjson attrs "$([[ -n "$ATTRIBUTES" ]] && printf '%s' "$ATTRIBUTES" || printf '{}')" '
+            {roleRequest: {assignerId:$assigner, replaceExisting:$replace,
+                           process:$proc, reference:$ref,
+                           byPassOrgDroolRule:$bypass},
+             requestedRoles: [{actorIdType:"IDAM", actorId:$actor,
+                               roleType:$rt, roleName:$role, roleCategory:$rc,
+                               classification:$cls, grantType:$gt,
+                               readOnly:false, attributes:$attrs}]}')
+        call POST "$AM/am/role-assignments" "$MT_CREATE" "$BODY"
+        if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
+            printf '%s\n' "$RESPONSE_BODY" | jq '.roleAssignmentResponse // .' 2>/dev/null || report
+            ok "assigned '$ROLE_NAME' ($ROLE_TYPE/$GRANT_TYPE) to $ACTOR_ID"
+        fi
+        ;;
+
+    actor)
+        need_token; preflight
+        [[ -n "$ACTOR_ID" ]] || die "--actor-id is required"
+        S2S_TOKEN=$(s2s_lease "$MICROSERVICE" "$ENV_NAME")
+        call GET "$AM/am/role-assignments/actors/$ACTOR_ID" "$MT_GET"
+        if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
+            printf '%s\n' "$RESPONSE_BODY" \
+                | jq '[.roleAssignmentResponse[]? | {id, roleName, roleType, grantType, roleCategory, classification, attributes}]' \
+                2>/dev/null || report
+        fi
+        ;;
+
+    query)
+        need_token; preflight
+        [[ -n "$ACTOR_ID$ROLE_NAME$ATTRIBUTES" ]] || die "give at least one of --actor-id / --role-name / --attributes"
+        S2S_TOKEN=$(s2s_lease "$MICROSERVICE" "$ENV_NAME")
+        call POST "$AM/am/role-assignments/query" "$MT_QUERY" "$(query_body)"
+        if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
+            printf '%s\n' "$RESPONSE_BODY" \
+                | jq '[.roleAssignmentResponse[]? | {id, actorId, roleName, roleType, grantType, attributes}]' \
+                2>/dev/null || report
+        fi
+        ;;
+
+    delete)
+        need_token; preflight
+        [[ -n "$ACTOR_ID$ROLE_NAME$ATTRIBUTES$ASSIGNMENT_ID" ]] || die "give --assignment-id, or at least one of --actor-id / --role-name / --attributes"
+        S2S_TOKEN=$(s2s_lease "$MICROSERVICE" "$ENV_NAME")
+        if ! $ASSUME_YES; then
+            printf 'Delete assignments matching actor=%s role=%s in %s? [y/N] ' \
+                "${ACTOR_ID:-any}" "${ROLE_NAME:-any}" "$ENV_NAME" >&2
+            read -r reply
+            [[ "$reply" =~ ^[Yy] ]] || die "aborted"
+        fi
+        if [[ -n "$ASSIGNMENT_ID" ]]; then
+            call DELETE "$AM/am/role-assignments/$ASSIGNMENT_ID" "$MT_DELETE"
+            ok "deleted assignment $ASSIGNMENT_ID"
+        else
+            call POST "$AM/am/role-assignments/query/delete" "$MT_DELETE_QUERY" \
+                "$(jq -nc --argjson q "$(query_body)" '{queryRequests: [$q]}')"
+            ok "delete request accepted"
+        fi
+        $JSON_OUT && printf '%s\n' "$RESPONSE_BODY"
+        ;;
+
+    *)
+        die "unknown subcommand: $SUBCOMMAND (try --help)"
+        ;;
+esac
