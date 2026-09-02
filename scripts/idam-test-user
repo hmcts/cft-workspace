@@ -1,0 +1,341 @@
+#!/usr/bin/env bash
+# Create IDAM test data in a non-production CFT environment via
+# idam-testing-support-api. Wraps the recipes in
+# docs/how-to/create-idam-test-users.md so the per-environment gotchas
+# (cleanup lifespan, RD email-domain validation, role prerequisites) are
+# handled rather than rediscovered.
+#
+# Subcommands:
+#   token                  print a client-credentials access token
+#   user                   create a user (POST /test/idam/users)
+#   fixture                create-or-update at a stable UUID (PUT, idempotent)
+#   cft-user               user + RD user/caseworker profiles (PUT /test/cft/users)
+#   role                   create an IDAM role
+#   get                    look up a user by email or id
+#   login                  password-grant as a created user (proves activation)
+#   notification           latest GOV.UK Notify message for an address
+#   burner                 unauthenticated throwaway user (15-min lifespan)
+#
+# Config resolution, in order of precedence:
+#   1. flags (--product/--client-id/--secret-name)
+#   2. environment variables (IDAM_PRODUCT/IDAM_CLIENT_ID/IDAM_SECRET_NAME)
+#   3. auto-detection of the secret name by listing the product's Key Vault
+#
+# Requires: az (logged in), curl, jq. No VPN needed — the testing-support API
+# is on public *.platform.hmcts.net ingress.
+
+source "$(dirname "$0")/lib/_common.sh"
+
+ENV_NAME="${IDAM_ENV:-aat}"
+PRODUCT="${IDAM_PRODUCT:-}"
+CLIENT_ID="${IDAM_CLIENT_ID:-}"
+SECRET_NAME="${IDAM_SECRET_NAME:-}"
+PASSWORD="${IDAM_TEST_PASSWORD:-Pa55word11}"
+ROLES=""
+EMAIL=""
+FORENAME="Test"
+SURNAME="User"
+USER_ID=""
+JSON_OUT=false
+
+usage() {
+    sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'
+    cat <<'EOF'
+
+Usage:
+  scripts/idam-test-user <subcommand> [options]
+
+Options:
+  -e, --env <env>            aat (default) | demo | ithc | perftest | sandbox
+  -p, --product <name>       Key Vault prefix, e.g. the dir under apps/
+      --client-id <id>       IDAM client to authenticate as
+      --secret-name <name>   Key Vault secret holding the client secret
+  -r, --roles <a,b,c>        comma-separated IDAM roles (must already exist)
+      --email <addr>         defaults to a generated unique address
+      --forename <name>      default: Test
+      --surname <name>       default: User
+      --id <uuid>            for fixture/cft-user/get; default: generated
+      --password <pw>        default: Pa55word11 (or $IDAM_TEST_PASSWORD)
+      --json                 emit raw JSON only, no commentary
+  -h, --help                 this help
+
+Examples:
+  scripts/idam-test-user token -p pcs --client-id pcs-frontend
+  scripts/idam-test-user user -p pcs --client-id pcs-frontend -r citizen
+  scripts/idam-test-user cft-user -p pcs --client-id pcs-frontend -r caseworker
+  scripts/idam-test-user fixture -p pcs --client-id pcs-frontend -r citizen \
+      --id 11111111-2222-3333-4444-555555555555
+  scripts/idam-test-user get -p pcs --client-id pcs-frontend --email someone@justice.gov.uk
+
+Cleanup: entities are owned by a testing session keyed on your token. In AAT
+that session expires after ~3h and everything in it is DELETED. In demo it is
+90d. Use demo for anything that must survive.
+EOF
+}
+
+# --- arg parsing -----------------------------------------------------------
+
+[[ $# -gt 0 ]] || { usage; exit 1; }
+SUBCOMMAND="$1"; shift
+
+case "$SUBCOMMAND" in
+    -h|--help|help) usage; exit 0 ;;
+esac
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -e|--env)         ENV_NAME="$2"; shift 2 ;;
+        -p|--product)     PRODUCT="$2"; shift 2 ;;
+        --client-id)      CLIENT_ID="$2"; shift 2 ;;
+        --secret-name)    SECRET_NAME="$2"; shift 2 ;;
+        -r|--roles)       ROLES="$2"; shift 2 ;;
+        --email)          EMAIL="$2"; shift 2 ;;
+        --forename)       FORENAME="$2"; shift 2 ;;
+        --surname)        SURNAME="$2"; shift 2 ;;
+        --id)             USER_ID="$2"; shift 2 ;;
+        --password)       PASSWORD="$2"; shift 2 ;;
+        --json)           JSON_OUT=true; shift ;;
+        -h|--help)        usage; exit 0 ;;
+        *)                die "unknown option: $1 (try --help)" ;;
+    esac
+done
+
+TSA="https://idam-testing-support-api.$ENV_NAME.platform.hmcts.net"
+IDAM_WEB="https://idam-web-public.$ENV_NAME.platform.hmcts.net"
+
+# Commentary goes to stderr so `--json` stdout stays pipeable either way.
+note() { $JSON_OUT || info "$*" >&2; }
+
+for tool in az curl jq; do
+    command -v "$tool" >/dev/null || die "$tool not on PATH"
+done
+
+uuid() { cat /proc/sys/kernel/random/uuid; }
+
+# --- config resolution -----------------------------------------------------
+
+resolve_secret_name() {
+    [[ -n "$SECRET_NAME" ]] && return 0
+    local vault="$PRODUCT-$ENV_NAME" candidates
+    note "Looking up the IDAM client secret in vault $vault …"
+    candidates=$(az keyvault secret list --vault-name "$vault" \
+        --query "[].name" -o tsv 2>/dev/null | grep -iE 'idam.*(secret|client)' || true)
+    [[ -n "$candidates" ]] || die "no IDAM secret found in $vault. Pass --secret-name explicitly.
+Listed with: az keyvault secret list --vault-name $vault -o tsv --query '[].name'"
+
+    # Prefer an exact <client-id>-idam-secret match, else a single candidate.
+    local exact
+    exact=$(printf '%s\n' "$candidates" | grep -ix "$CLIENT_ID-idam-secret" || true)
+    if [[ -n "$exact" ]]; then
+        SECRET_NAME="$exact"
+    elif [[ $(printf '%s\n' "$candidates" | wc -l) -eq 1 ]]; then
+        SECRET_NAME="$candidates"
+    else
+        err "several candidate secrets in $vault — pick one with --secret-name:"
+        printf '%s\n' "$candidates" | sed 's/^/  /' >&2
+        exit 1
+    fi
+    note "Using secret: $SECRET_NAME"
+}
+
+get_token() {
+    [[ -n "$PRODUCT" ]]   || die "--product is required (or set IDAM_PRODUCT)"
+    [[ -n "$CLIENT_ID" ]] || die "--client-id is required (or set IDAM_CLIENT_ID)"
+    resolve_secret_name
+
+    local secret token payload scope
+    secret=$(az keyvault secret show --vault-name "$PRODUCT-$ENV_NAME" \
+        --name "$SECRET_NAME" --query value -o tsv 2>/dev/null) \
+        || die "could not read $SECRET_NAME from $PRODUCT-$ENV_NAME (az login? permissions?)"
+
+    token=$(curl -sS -X POST "$IDAM_WEB/o/token" \
+        -H 'Content-Type: application/x-www-form-urlencoded' \
+        --data-urlencode 'grant_type=client_credentials' \
+        --data-urlencode "client_id=$CLIENT_ID" \
+        --data-urlencode "client_secret=$secret" \
+        --data-urlencode 'scope=profile roles' | jq -r '.access_token // empty')
+
+    [[ -n "$token" ]] || die "token request failed for client $CLIENT_ID in $ENV_NAME"
+
+    # The create endpoints require SCOPE_profile; fail loudly now rather than
+    # with an opaque 403 later.
+    payload=$(printf '%s' "$token" | cut -d. -f2 | tr '_-' '/+')
+    scope=$(printf '%s==' "$payload" | base64 -d 2>/dev/null | jq -r '.scope // empty' 2>/dev/null || true)
+    if [[ -n "$scope" && "$scope" != *profile* ]]; then
+        warn "token scope is '$scope' — missing 'profile'; /test/idam/users will 403"
+    fi
+
+    printf '%s' "$token"
+}
+
+# --- helpers ---------------------------------------------------------------
+
+roles_json() {
+    [[ -n "$ROLES" ]] || die "--roles is required for this subcommand"
+    printf '%s' "$ROLES" | jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$";""))'
+}
+
+# RD (used by /test/cft/users) validates the email domain and rejects
+# disposable inboxes that /test/idam/users accepts.
+default_email() {
+    local prefix="$1" domain="$2"
+    printf '%s-%s@%s' "$prefix" "$(uuid)" "$domain"
+}
+
+user_body() {
+    local id="$1"
+    jq -nc \
+        --arg pw "$PASSWORD" --arg email "$EMAIL" \
+        --arg fn "$FORENAME" --arg sn "$SURNAME" \
+        --arg id "$id" --argjson roles "$(roles_json)" \
+        '{password:$pw, user:({email:$email, forename:$fn, surname:$sn, roleNames:$roles}
+          + (if $id == "" then {} else {id:$id} end))}'
+}
+
+# Perform the request, storing the body in RESPONSE_BODY. On a non-2xx it
+# reports the failure and exits non-zero.
+#
+# This deliberately sets a global rather than echoing the body, so callers can
+# write `call ...; report` instead of `report "$(call ...)"` — the latter runs
+# call in a subshell where `exit 1` would only kill the subshell, leaving the
+# script to carry on and return 0 after a failed request.
+RESPONSE_BODY=""
+call() {
+    local method="$1" url="$2" token="${3:-}" body="${4:-}"
+    local tmp; tmp=$(mktemp)
+    local -a args=(-sS -o "$tmp" -w '%{http_code}' -X "$method" "$url")
+    [[ -n "$token" ]] && args+=(-H "Authorization: Bearer $token")
+    [[ -n "$body" ]]  && args+=(-H 'Content-Type: application/json' -d "$body")
+
+    local code; code=$(curl "${args[@]}") || true
+    RESPONSE_BODY=$(cat "$tmp" 2>/dev/null || true); rm -f "$tmp"
+
+    [[ "$code" =~ ^2 ]] && return 0
+
+    err "HTTP $code from $method $url"
+    # Pretty-print the error body if it's JSON, else emit it raw. Note the
+    # redirection order: `>&2` must come before `2>/dev/null`, otherwise stdout
+    # is pointed at the already-nulled fd2 and the body vanishes.
+    if [[ -n "$RESPONSE_BODY" ]]; then
+        printf '%s\n' "$RESPONSE_BODY" | jq . >&2 2>/dev/null \
+            || printf '%s\n' "$RESPONSE_BODY" >&2
+    else
+        warn "(empty response body)"
+    fi
+    case "$code" in
+        400) warn "400 usually means an unknown role, or (on /test/cft/users) a rejected email domain — use @justice.gov.uk" ;;
+        401|403) warn "403/401: check the token carries the 'profile' scope" ;;
+        409) warn "409: that email or id already exists — use 'fixture' for idempotent reseeding" ;;
+    esac
+    exit 1
+}
+
+report() {
+    local json="${1:-$RESPONSE_BODY}"
+    if $JSON_OUT; then printf '%s\n' "$json"; return; fi
+    printf '%s\n' "$json" | jq . 2>/dev/null || printf '%s\n' "$json"
+    local id email
+    id=$(printf '%s' "$json" | jq -r '.id // empty')
+    email=$(printf '%s' "$json" | jq -r '.email // empty')
+    [[ -n "$email" ]] && ok "email:    $email"
+    [[ -n "$id" ]]    && ok "id:       $id"
+    [[ -n "$email" ]] && ok "password: $PASSWORD"
+    if [[ "$ENV_NAME" == "aat" ]]; then
+        warn "AAT: this is deleted when the testing session expires (~3h). Use --env demo to keep it."
+    fi
+}
+
+# --- subcommands -----------------------------------------------------------
+
+case "$SUBCOMMAND" in
+    token)
+        get_token; echo
+        ;;
+
+    user)
+        [[ -n "$EMAIL" ]] || EMAIL=$(default_email "test-user" "mailnesia.com")
+        TOKEN=$(get_token)
+        call POST "$TSA/test/idam/users" "$TOKEN" "$(user_body "")"; report
+        ;;
+
+    fixture)
+        [[ -n "$USER_ID" ]] || USER_ID=$(uuid)
+        [[ -n "$EMAIL" ]]   || EMAIL=$(default_email "fixture" "mailnesia.com")
+        TOKEN=$(get_token)
+        note "Idempotent PUT at id $USER_ID — safe to re-run."
+        call PUT "$TSA/test/idam/users/$USER_ID" "$TOKEN" "$(user_body "$USER_ID")"; report
+        ;;
+
+    cft-user)
+        [[ -n "$USER_ID" ]] || USER_ID=$(uuid)
+        # RD rejects disposable domains here, so default to one it accepts.
+        [[ -n "$EMAIL" ]]   || EMAIL=$(default_email "cft-user" "justice.gov.uk")
+        if [[ "$EMAIL" == *@mailnesia.com ]]; then
+            warn "RD rejects @mailnesia.com on /test/cft/users — expect 400. Use @justice.gov.uk."
+        fi
+        TOKEN=$(get_token)
+        call PUT "$TSA/test/cft/users/$USER_ID" "$TOKEN" "$(user_body "$USER_ID")"
+        report
+        # Assert the RD side actually landed — a 200 above isn't proof on its own.
+        if ! $JSON_OUT; then
+            for kind in user-profiles caseworker-profiles; do
+                code=$(curl -sS -o /dev/null -w '%{http_code}' \
+                    "$TSA/test/rd/$kind/$USER_ID" -H "Authorization: Bearer $TOKEN")
+                [[ "$code" == "200" ]] && ok "rd $kind: present" || warn "rd $kind: HTTP $code"
+            done
+        fi
+        ;;
+
+    role)
+        [[ -n "$ROLES" ]] || die "--roles is required (one role name)"
+        TOKEN=$(get_token)
+        BODY=$(jq -nc --arg n "$ROLES" '{name:$n, description:"created by scripts/idam-test-user"}')
+        call POST "$TSA/test/idam/roles" "$TOKEN" "$BODY"; report
+        ;;
+
+    get)
+        TOKEN=$(get_token)
+        if [[ -n "$USER_ID" ]]; then
+            call GET "$TSA/test/idam/users/$USER_ID" "$TOKEN"; report
+        elif [[ -n "$EMAIL" ]]; then
+            call GET "$TSA/test/idam/users?email=$EMAIL" "$TOKEN"; report
+        else
+            die "get needs --id or --email"
+        fi
+        ;;
+
+    login)
+        [[ -n "$EMAIL" ]] || die "login needs --email"
+        [[ -n "$PRODUCT" ]] || die "--product is required"
+        [[ -n "$CLIENT_ID" ]] || die "--client-id is required"
+        resolve_secret_name
+        SECRET=$(az keyvault secret show --vault-name "$PRODUCT-$ENV_NAME" \
+            --name "$SECRET_NAME" --query value -o tsv 2>/dev/null) || die "could not read client secret"
+        TOK=$(curl -sS -X POST "$IDAM_WEB/o/token" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'grant_type=password' \
+            --data-urlencode "client_id=$CLIENT_ID" \
+            --data-urlencode "client_secret=$SECRET" \
+            --data-urlencode "username=$EMAIL" \
+            --data-urlencode "password=$PASSWORD" \
+            --data-urlencode 'scope=openid profile roles' | jq -r '.access_token // empty')
+        [[ -n "$TOK" ]] || die "password grant failed for $EMAIL — wrong password, or the user was cleaned up"
+        $JSON_OUT && printf '%s\n' "$TOK" || { ok "login OK for $EMAIL"; printf '%s\n' "$TOK"; }
+        ;;
+
+    notification)
+        [[ -n "$EMAIL" ]] || die "notification needs --email"
+        TOKEN=$(get_token)
+        call GET "$TSA/test/idam/notifications/latest/$EMAIL" "$TOKEN"; report
+        ;;
+
+    burner)
+        [[ -n "$EMAIL" ]] || EMAIL=$(default_email "burner" "mailnesia.com")
+        note "Burner users need no auth and live ~15 min. Rate limited to 1 per 3 min."
+        call POST "$TSA/test/idam/burner/users" "" "$(user_body "")"; report
+        ;;
+
+    *)
+        die "unknown subcommand: $SUBCOMMAND (try --help)"
+        ;;
+esac

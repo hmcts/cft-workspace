@@ -38,6 +38,25 @@ The **big gotcha** is cleanup: in AAT your user is deleted after ~3 hours. See
 [Cleanup and session lifespan](#cleanup-and-session-lifespan) before you build anything that
 assumes a user still exists.
 
+## The short version
+
+[`scripts/idam-test-user`](../../scripts/idam-test-user) wraps everything below, including the
+gotchas this page documents:
+
+```console
+./scripts/idam-test-user user     -p <product> --client-id <client> -r citizen
+./scripts/idam-test-user cft-user -p <product> --client-id <client> -r caseworker   # + RD profiles
+./scripts/idam-test-user fixture  -p <product> --client-id <client> -r citizen --id <uuid>
+./scripts/idam-test-user --help
+```
+
+It resolves the Key Vault secret name itself, checks the token carries `profile`, defaults to an
+email domain RD accepts, warns about AAT cleanup, and asserts the RD profiles landed. Add `-e demo`
+for the long-lived environment, `--json` for pipeable output.
+
+The rest of this page is the underlying calls — read it when you need to script this inside your
+own repo, or when something fails and you want to know why.
+
 ## Prerequisites
 
 - `az login` done, and read access to your service's `<product>-<env>` Key Vault (to fetch the

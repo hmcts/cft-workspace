@@ -74,37 +74,54 @@ Verify the current values rather than trusting these numbers:
 grep -n "CLEANUP" platops/cnp-flux-config/apps/idam/idam-testing-support-api/{aat,demo}.yaml
 ```
 
-### 3. Find the service's IDAM client and secret
+### 3. Use `scripts/idam-test-user` — don't hand-assemble curl
 
-The token needs an IDAM client. Look in the service's own scripts first — several products
-already have one, and reusing theirs beats inventing a new call:
+**This is the default path for users/roles.** The workspace ships a wrapper that already encodes
+the gotchas (scope check, RD's email-domain validation, role prerequisite, correct exit codes,
+per-env cleanup warning). Reassembling curl by hand is how those get lost.
 
 ```bash
-./scripts/grep -l "test/idam/users"                 # any product's existing script
-./scripts/grep -l "test/idam/users" apps/<product>/ # just theirs
+./scripts/idam-test-user --help
 ```
 
-If the target product already has one, **point the user at it** instead of writing a new one —
-that's the best outcome. If it doesn't, another product's script is a template, not something to
-run as-is: its client ID, vault, and secret names are all product-specific.
+| Need | Command |
+|---|---|
+| one-off login | `idam-test-user user -p <product> --client-id <id> -r citizen` |
+| fixture at a stable UUID (idempotent) | `idam-test-user fixture … --id <uuid>` |
+| caseworker/judicial visible to Reference Data | `idam-test-user cft-user … -r caseworker` |
+| create a role first | `idam-test-user role … -r <role-name>` |
+| prove the account works | `idam-test-user login … --email <addr>` |
+| read the activation email | `idam-test-user notification … --email <addr>` |
+| throwaway, no auth | `idam-test-user burner -r citizen` |
+| just a token | `idam-test-user token -p <product> --client-id <id>` |
 
-Never carry one product's `CLIENT_ID` / vault / secret name over into another product's commands.
-Resolve them for the product actually in question.
+`-e demo` switches environment. `--json` gives clean stdout for piping into other tooling.
 
-Otherwise find the client ID and secret name:
+It auto-detects the Key Vault secret name, so usually only `-p` and `--client-id` are needed.
+Find `--client-id` from the product's config if you don't know it:
 
 ```bash
 ./scripts/grep -n "client_id\|idam-secret\|IDAM_CLIENT" apps/<product>/<repo>/ | head -20
-az keyvault secret list --vault-name "<product>-<env>" -o table | grep -i idam
 ```
 
-Secret naming isn't uniform — `<service>-idam-secret`, `idam-secret`, and
-`<service>-idam-client-secret` all occur. Don't guess; list the vault or read the service's
-Jenkinsfile/chart.
+If auto-detection reports several candidate secrets, it lists them and asks for `--secret-name`
+— pass the right one rather than guessing.
 
-### 4. Emit the commands (users)
+**Never carry one product's `--client-id` / vault / secret name over to another product.** Resolve
+them for the product actually in question.
 
-Follow `docs/how-to/create-idam-test-users.md`. Pick the right endpoint for the job:
+Also check whether the product already has its own script — if so, mention it, since it may
+encode team-specific conventions the generic wrapper doesn't:
+
+```bash
+./scripts/grep -l "test/idam/users" apps/<product>/
+```
+
+### 4. Fall back to raw curl only when the wrapper doesn't fit
+
+Reach for `docs/how-to/create-idam-test-users.md` and hand-rolled curl only when the user
+explicitly wants the underlying calls, needs an endpoint the wrapper doesn't cover, or is
+scripting inside their own repo where a workspace script isn't available.
 
 | Need | Endpoint |
 |---|---|
@@ -127,41 +144,58 @@ invisible to `rd-user-profile-api`, which breaks most caseworker journeys.
 
 Follow `docs/how-to/create-test-organisations.md`. Two things to establish before writing anything:
 
-1. **Is the caller's microservice on PRD's S2S allowlist?**
+1. **Is the caller's microservice on both allowlists?** Check **flux**, not the app's
+   `application.yaml` — the compiled-in default is much shorter than what's actually deployed:
    ```bash
-   grep -n "PRD_S2S_AUTHORISED_SERVICES" apps/rd/rd-professional-api/src/main/resources/application.yaml
+   grep -n "S2S_AUTHORISED" platops/cnp-flux-config/apps/rd/rd-professional-api/aat.yaml
+   grep -n "S2S_AUTHORISED" platops/cnp-flux-config/apps/rd/rd-user-profile-api/aat.yaml
    ```
-   If not, the API route needs a PRD change. **Recommend the UI route instead** — it's genuinely
-   faster for one org and avoids the allowlist entirely.
+   PRD's list governs **create**; `rd-user-profile-api`'s much shorter list governs **approve**,
+   because approval makes PRD call it for the superUser profile. Most service-team microservices
+   are on the first but not the second.
 
-2. **Do they have a `prd-admin` user?** Approval to `ACTIVE` is `@Secured("prd-admin")`. If not,
-   they need to create one first via step 4 — which means the AAT cleanup applies to that admin
-   user too.
+2. **Do they have a `prd-admin` user?** Approval is `@Secured("prd-admin")`. Create one via step 3
+   (`-r prd-admin`, and use an `@justice.gov.uk` address) — the AAT cleanup applies to it too.
+
+**Set expectations before they start:** creating a `PENDING` org via the API works, but approving
+it usually returns `403` with a misleading "Bearer token is expired" message. Tell them upfront and
+recommend create-via-API, approve-via-UI. Full diagnosis in the how-to.
 
 Always mention: new orgs are `PENDING` and their users can do nothing until approved; PRD creates
-the superUser's IDAM account itself (invitation email, not a chosen password); and **organisations
-are never cleaned up**, so name them recognisably.
+the superUser's IDAM account itself (invitation email, not a chosen password); PBA numbers must be
+randomised (globally unique); and **a `400` may still have created the org**, so never blind-retry
+a failed create.
+
+Organisations have no automatic expiry, but `prd-admin` **can** delete them while `PENDING` —
+offer to clean up afterwards rather than leaving litter in a shared environment.
 
 If the user only needs to *read* org data in a test, raise stubbing as the cheaper option
 (`apps/civil/civil-ccd-definition/e2e/helpers/activeOrganisationUsers.js` swaps wiremock response
 files per user) before walking them through creating a real org.
 
-### 6. Offer to script it, don't just narrate
+### 6. Run it, or say why you didn't
 
-If this looks like something they'll repeat, offer to write it into their repo's `bin/` — modelled
-on `apps/pcs/pcs-frontend/bin/dev/createIdamUser.sh` for a single user, or
-`apps/finrem/finrem-ccd-definitions/create_idam_id_scripts/caseworker.sh` for a batch reseed at
-fixed UUIDs.
+`scripts/idam-test-user` is safe to run for the user — it's read-only against Azure apart from
+creating the test data they asked for, and AAT self-cleans. Offer to run it and report the created
+email / id / password, rather than only printing a command.
 
-A script in the service's own repo is a clone-local change — it belongs in that repo's history,
-never in a workspace-repo commit.
+Two cases to check first: `az account show` must succeed, and for a **demo** target say so
+explicitly before creating, since demo data persists ~90 days.
+
+If they'll repeat this inside their own repo, offer a script in that repo's `bin/` — modelled on
+`apps/finrem/finrem-ccd-definitions/create_idam_id_scripts/caseworker.sh` for batch reseeds at
+fixed UUIDs. That's a clone-local change belonging in the repo's own history, never in a
+workspace-repo commit.
 
 ## Don't
 
+- Don't hand-assemble curl when `scripts/idam-test-user` covers the case.
 - Don't hand over the legacy `POST /testing-support/accounts` on `idam-api` for new work. It's
   proxied in AAT but not preview, and takes a different payload shape (`roles: [{code}]`).
 - Don't promise an AAT user will still exist tomorrow.
-- Don't invent Key Vault secret names — list the vault.
+- Don't invent Key Vault secret names — let the script auto-detect, or list the vault.
 - Don't offer to run `az keyvault secret show` against a vault the user hasn't mentioned working
   in without saying which vault you're reading.
+- Don't use `@mailnesia.com` with `cft-user` — RD rejects it.
 - Don't create real organisations when the test only reads org data.
+- Don't retry a failed org create without checking whether it was created anyway.
