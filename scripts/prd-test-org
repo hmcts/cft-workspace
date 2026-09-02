@@ -17,17 +17,20 @@
 # both rpe-service-auth-provider and rd-professional-api are internal-only.
 #
 # Two allowlists govern this flow and they are NOT the same list:
-#   * PRD's           -> governs `create`
-#   * rd-user-profile-api's -> governs `approve`, because approving makes PRD
-#     call it for the superUser profile and PRD returns its status verbatim.
-# `check` reports both. Most service-team microservices can create but not
-# approve; approve via the Administer Organisations UI instead.
+#   * PRD's                 -> governs create / list / users / delete
+#   * rd-user-profile-api's -> governs anything that CREATES A USER PROFILE,
+#     i.e. `approve` (superUser profile) and `add-user` (invitee profile).
+#     PRD calls it and returns its status verbatim, so you get a 403 whose
+#     message talks about your token expiring. It isn't your token.
+# `check` reports both. Most service-team microservices are on the first list
+# but not the second: they can create and inspect organisations, but cannot
+# approve one or invite users. Use the Administer Organisations UI for those.
 #
-# Verified against AAT: check, create, list, users, delete, and the approve
-# 403 path. `add-user` and `set-roles` are NOT yet exercised end-to-end — they
-# need an ACTIVE organisation, which needs an approval this caller can't do.
-# Their request shapes come from PRD's controllers; treat with mild suspicion
-# and report back.
+# Verified against AAT: check, create, list, users, delete, and the 403 path
+# for both approve and add-user (confirmed against a real ACTIVE org, so the
+# 403 is the allowlist and not the org's status). `set-roles` is not yet
+# exercised end-to-end — it needs an org user this caller could not create.
+# Its request shape comes from PRD's controller; treat with mild suspicion.
 
 source "$(dirname "$0")/lib/_common.sh"
 
@@ -226,7 +229,7 @@ call() {
     case "$code" in
         400) warn "400: PBA already exists, or duplicate sraId. NOTE: a PBA-rejected create still creates the org — run 'list' before retrying." ;;
         404) warn "404 'expected 1, actual 0' on a user call usually means the organisation is still PENDING — the superUser's profile is only created at approval. Approve it first." ;;
-        403) warn "403 on approve is usually NOT your token — PRD proxies rd-user-profile-api and returns its status. Run 'check' to see if $MICROSERVICE is on that allowlist; approve via the UI if not." ;;
+        403) warn "403 on approve/add-user is usually NOT your token — PRD calls rd-user-profile-api to create the user profile and returns its status verbatim. Run 'check': if $MICROSERVICE is missing from that allowlist, use the Administer Organisations UI instead." ;;
         *) ;;
     esac
     exit 1
@@ -237,8 +240,8 @@ case "$SUBCOMMAND" in
         [[ -n "$MICROSERVICE" ]] || die "--microservice is required"
         for svc in rd-professional-api rd-user-profile-api; do
             case "$svc" in
-                rd-professional-api)  what="create an organisation" ;;
-                rd-user-profile-api)  what="approve one to ACTIVE" ;;
+                rd-professional-api)  what="create / list / users / delete" ;;
+                rd-user-profile-api)  what="approve / add-user (anything creating a user profile)" ;;
                 *) what="?" ;;
             esac
             if on_allowlist "$svc"; then
@@ -341,6 +344,12 @@ case "$SUBCOMMAND" in
         [[ -n "$USER_EMAIL" ]] || die "--user-email is required"
         [[ -n "$ROLES" ]] || die "-r/--roles is required (e.g. pui-case-manager)"
         warn_unknown_pui_roles "$ROLES"
+        # Inviting a user creates a user profile, so this needs the SECOND
+        # allowlist just like approve does.
+        if ! on_allowlist rd-user-profile-api; then
+            warn "$MICROSERVICE is not on rd-user-profile-api's allowlist — this will very likely 403."
+            warn "Invite the user via https://manage-org.$ENV_NAME.platform.hmcts.net instead."
+        fi
         case "$USER_EMAIL" in
             *@mailnesia.com|*@mailinator.com)
                 warn "$USER_EMAIL is a disposable domain; RD rejects these. Prefer @justice.gov.uk." ;;
