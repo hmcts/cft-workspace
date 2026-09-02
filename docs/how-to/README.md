@@ -5,6 +5,7 @@ Goal-oriented recipes for engineers who already know the basics. Each page answe
 ## Workspace operations
 
 - [Add a new repo to the workspace](add-a-repo.md)
+- [Set up the Atlassian and Jenkins MCP servers](set-up-mcp-servers.md)
 - [Regenerate per-product CLAUDE.md taxonomy](regenerate-claude-mds.md) _(planned)_
 - [Update yq, the CFT scripts, and the devcontainer features](update-tooling.md) _(planned)_
 

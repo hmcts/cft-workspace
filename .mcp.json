@@ -10,6 +10,18 @@
         "ghcr.io/sooperset/mcp-atlassian:latest"
       ]
     },
+    "jenkins": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network", "host",
+        "--env-file", ".claude/.jenkins.env",
+        "ghcr.io/lanbaoshen/mcp-jenkins:latest",
+        "--transport", "stdio"
+      ]
+    },
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]

@@ -51,7 +51,11 @@ If you're not using VS Code, run those steps yourself on the host.
 ./scripts/index
 ```
 
-## 4. First AI-assisted interaction
+## 4. Optional: MCP servers
+
+The workspace ships `atlassian` (Jira + Confluence) and `jenkins` MCP servers. Both need credentials you create yourself — see [set up the Atlassian and Jenkins MCP servers](../how-to/set-up-mcp-servers.md). Skip this for now if you only need code search.
+
+## 5. First AI-assisted interaction
 
 Start your preferred client from the workspace root. In Claude Code, try one of:
 
@@ -73,7 +77,7 @@ $cft-list-integrations work_allocation
 
 The first two read static state. The latter two consult `INDEX.md` — if it is empty, the client will offer to run `docs-generate-product-md` first.
 
-## 5. Working inside a clone
+## 6. Working inside a clone
 
 `cd` into a specific clone before running build/test commands. Each is its own git repo with its own toolchain — see its `README.md` and any local `AGENTS.md` or `CLAUDE.md`.
 

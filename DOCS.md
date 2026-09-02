@@ -35,23 +35,23 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | tutorials | First Case Type (Config Generator) | tutorial-config-generator | `apps/ccd/docs/tutorials/first-case-type-config-generator.md` |
 | ccd | tutorials | First Case Type (JSON) | tutorial-json | `apps/ccd/docs/tutorials/first-case-type-json.md` |
 | ccd | tutorials | Running with cftlib | tutorial-cftlib | `apps/ccd/docs/tutorials/running-with-cftlib.md` |
-| ccd | how-to | Add Permissions | permissions | `apps/ccd/docs/how-to/add-permissions.md` |
 | ccd | how-to | Add a Complex Type | data-types | `apps/ccd/docs/how-to/add-a-complex-type.md` |
+| ccd | how-to | Add an Event | event-model | `apps/ccd/docs/how-to/add-an-event.md` |
 | ccd | how-to | Add a Page Mid-Event Callback | callbacks | `apps/ccd/docs/how-to/add-a-page-mid-event-callback.md` |
 | ccd | how-to | Add a State | overview | `apps/ccd/docs/how-to/add-a-state.md` |
 | ccd | how-to | Add a Tab | overview | `apps/ccd/docs/how-to/add-a-tab.md` |
-| ccd | how-to | Add an Event | event-model | `apps/ccd/docs/how-to/add-an-event.md` |
+| ccd | how-to | Add Permissions | permissions | `apps/ccd/docs/how-to/add-permissions.md` |
 | ccd | how-to | Debug with cftlib | tutorial-cftlib | `apps/ccd/docs/how-to/debug-with-cftlib.md` |
 | ccd | how-to | Decentralise a Service | decentralisation | `apps/ccd/docs/how-to/decentralise-a-service.md` |
 | ccd | how-to | Enable Global Search | search | `apps/ccd/docs/how-to/enable-global-search.md` |
 | ccd | how-to | Enable Query Search | search | `apps/ccd/docs/how-to/enable-query-search.md` |
 | ccd | how-to | Enable Retain and Dispose | retain-and-dispose | `apps/ccd/docs/how-to/enable-retain-and-dispose.md` |
 | ccd | how-to | Enable Work Basket | work-basket | `apps/ccd/docs/how-to/enable-work-basket.md` |
+| ccd | how-to | Implement a Callback | callbacks | `apps/ccd/docs/how-to/implement-a-callback.md` |
 | ccd | how-to | Implement Case Flags | case-flags | `apps/ccd/docs/how-to/implement-case-flags.md` |
 | ccd | how-to | Implement Notice of Change | notice-of-change | `apps/ccd/docs/how-to/implement-noc.md` |
 | ccd | how-to | Implement Notice of Change for a decentralised service | notice-of-change | `apps/ccd/docs/how-to/implement-noc-decentralised.md` |
 | ccd | how-to | Implement Reasonable Adjustments | case-flags | `apps/ccd/docs/how-to/implement-reasonable-adjustments.md` |
-| ccd | how-to | Implement a Callback | callbacks | `apps/ccd/docs/how-to/implement-a-callback.md` |
 | ccd | how-to | Publish a Definition to AAT | definition-import | `apps/ccd/docs/how-to/publish-definition-to-aat.md` |
 | ccd | how-to | Restrict Document Upload by File Extension | documents-and-cdam | `apps/ccd/docs/how-to/restrict-document-upload-extensions.md` |
 | ccd | how-to | Store a Document | documents-and-cdam | `apps/ccd/docs/how-to/store-a-document.md` |
@@ -60,8 +60,8 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | reference | API: CDAM (Case Document Access Management) | documents-and-cdam | `apps/ccd/docs/reference/api-cdam.md` |
 | ccd | reference | API: Data Store | architecture | `apps/ccd/docs/reference/api-data-store.md` |
 | ccd | reference | API: Definition Store | architecture | `apps/ccd/docs/reference/api-definition-store.md` |
-| ccd | reference | CCD Feature Tokens | overview | `apps/ccd/docs/reference/ccd-feature-tokens.md` |
 | ccd | reference | Callback Contract | callbacks | `apps/ccd/docs/reference/callback-contract.md` |
+| ccd | reference | CCD Feature Tokens | overview | `apps/ccd/docs/reference/ccd-feature-tokens.md` |
 | ccd | reference | Config Generator API reference | data-types | `apps/ccd/docs/reference/config-generator-api.md` |
 | ccd | reference | Decentralised Callbacks -- `/ccd-persistence/*` Contract | decentralisation | `apps/ccd/docs/reference/decentralised-callbacks.md` |
 | ccd | reference | Field Types | data-types | `apps/ccd/docs/reference/field-types.md` |
@@ -70,12 +70,12 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | ccd | reference | Permissions Matrix | permissions | `apps/ccd/docs/reference/permissions-matrix.md` |
 | ccd | explanation | Asynchronous Case-Event Messaging | messaging | `apps/ccd/docs/explanation/messaging.md` |
 | ccd | explanation | Audit and History | audit | `apps/ccd/docs/explanation/audit-and-history.md` |
-| ccd | explanation | CCD Architecture | architecture | `apps/ccd/docs/explanation/architecture.md` |
-| ccd | explanation | CCD Field Data Types | data-types | `apps/ccd/docs/explanation/data-types.md` |
-| ccd | explanation | CCD Permissions | permissions | `apps/ccd/docs/explanation/permissions.md` |
 | ccd | explanation | Callbacks | callbacks | `apps/ccd/docs/explanation/callbacks.md` |
 | ccd | explanation | Case File View | case-file-view | `apps/ccd/docs/explanation/case-file-view.md` |
 | ccd | explanation | Case Flags | case-flags | `apps/ccd/docs/explanation/case-flags.md` |
+| ccd | explanation | CCD Architecture | architecture | `apps/ccd/docs/explanation/architecture.md` |
+| ccd | explanation | CCD Field Data Types | data-types | `apps/ccd/docs/explanation/data-types.md` |
+| ccd | explanation | CCD Permissions | permissions | `apps/ccd/docs/explanation/permissions.md` |
 | ccd | explanation | Decentralisation | decentralisation | `apps/ccd/docs/explanation/decentralisation.md` |
 | ccd | explanation | Definition Import | definition-import | `apps/ccd/docs/explanation/definition-import.md` |
 | ccd | explanation | Document Extension Validation | documents-and-cdam | `apps/ccd/docs/explanation/document-extension-validation.md` |
@@ -114,6 +114,8 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | em | explanation | Media Viewer | media-viewer | `apps/em/docs/explanation/media-viewer.md` |
 | em | explanation | Overview | overview | `apps/em/docs/explanation/overview.md` |
 | em | explanation | Stitching And Bundling | stitching | `apps/em/docs/explanation/stitching-and-bundling.md` |
+| legacy | explanation | GAPS2: reconciling apps/legacy/gaps2 with hmcts/GAPS2 | gaps2-repo-provenance | `apps/legacy/docs/explanation/gaps2-repo-reconciliation.md` |
+| legacy | explanation | SEND (GAPS2) to CCD case type mapping | send-ccd-migration | `apps/legacy/docs/explanation/send-to-ccd-mapping.md` |
 | payment | how-to | Configure Pci Pal Flow | telephony | `apps/payment/docs/how-to/configure-pci-pal-flow.md` |
 | payment | how-to | Integrate From A Service | overview | `apps/payment/docs/how-to/integrate-from-a-service.md` |
 | payment | how-to | Troubleshoot Payment Status | lifecycle | `apps/payment/docs/how-to/troubleshoot-payment-status.md` |
@@ -187,8 +189,8 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Automated dependency updates | automated-dependency-updates | `docs/how-to/automated-dependency-updates.md` |
 | workspace | how-to | Azure Frontdoor Web Application Firewall Debug | afd-waf | `docs/how-to/afd-waf.md` |
 | workspace | how-to | Common pipeline | overview | `docs/how-to/common-pipeline/overview.md` |
-| workspace | how-to | Create App Registrations with Federated Credentials for GitHub Actions | federated-credentials | `docs/how-to/federated-credentials.md` |
 | workspace | how-to | Create a GitHub Repository | github-repo | `docs/how-to/new-component/github-repo.md` |
+| workspace | how-to | Create App Registrations with Federated Credentials for GitHub Actions | federated-credentials | `docs/how-to/federated-credentials.md` |
 | workspace | how-to | Creating a new subscription | creating-a-new-subscription | `docs/how-to/creating-a-new-subscription.md` |
 | workspace | how-to | Database infrastructure | database-infrastructure | `docs/how-to/database-infrastructure.md` |
 | workspace | how-to | ElasticSearch | elasticsearch | `docs/how-to/new-component/elasticsearch.md` |
@@ -221,22 +223,23 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Release Categorisation | release-sizing | `docs/how-to/release-sizing.md` |
 | workspace | how-to | Sandbox Cleardown | sandbox-cleardown | `docs/how-to/sandbox-cleardown.md` |
 | workspace | how-to | Secrets Management | secrets-management | `docs/how-to/new-component/secrets-management.md` |
+| workspace | how-to | Set up the Atlassian and Jenkins MCP servers | set-up-mcp-servers | `docs/how-to/set-up-mcp-servers.md` |
 | workspace | how-to | Shutter Implementation and Design | shutter | `docs/how-to/path-to-live/shutter.md` |
 | workspace | how-to | TLS certificates | tls-certificates | `docs/how-to/path-to-live/tls-certificates.md` |
 | workspace | how-to | Troubleshooting issues | troubleshooting | `docs/how-to/troubleshooting.md` |
 | workspace | how-to | Update Redis with Zone Redundancy | update-redis-with-zone-redundant | `docs/how-to/update-redis-with-zone-redundant.md` |
-| workspace | reference | API design | apis | `docs/reference/cnp-standards/apis.md` |
-| workspace | reference | APIs | apis | `docs/reference/practices/apis.md` |
 | workspace | reference | Angular | angular | `docs/reference/standards/angular.md` |
 | workspace | reference | Angular Web Performance | angular-web-performance | `docs/reference/standards/angular-web-performance.md` |
+| workspace | reference | API design | apis | `docs/reference/cnp-standards/apis.md` |
+| workspace | reference | APIs | apis | `docs/reference/practices/apis.md` |
 | workspace | reference | Authentication and authorization | authentication-and-authorization | `docs/reference/standards/authentication-and-authorization.md` |
 | workspace | reference | Backend applications | backends | `docs/reference/practices/backends.md` |
 | workspace | reference | Certificates | certificates | `docs/reference/practices/certificates.md` |
 | workspace | reference | Cookies | cookies | `docs/reference/standards/cookies.md` |
 | workspace | reference | Database schema changes | db-schema-change | `docs/reference/cnp-standards/db-schema-change.md` |
 | workspace | reference | Environments | cnp-environments | `docs/reference/cnp-environments.md` |
-| workspace | reference | Frontend Web Performance | frontend-web-performance | `docs/reference/standards/frontend-web-performance.md` |
 | workspace | reference | Frontend applications | frontend | `docs/reference/practices/frontend.md` |
+| workspace | reference | Frontend Web Performance | frontend-web-performance | `docs/reference/standards/frontend-web-performance.md` |
 | workspace | reference | Glossary | cnp-glossary | `docs/reference/cnp-glossary.md` |
 | workspace | reference | Health Probes | health-endpoints | `docs/reference/health-endpoints.md` |
 | workspace | reference | Java | java | `docs/reference/standards/java.md` |

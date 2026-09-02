@@ -25,6 +25,8 @@ ssh -T git@github.com         # confirm SSH
 
 Run Claude Code or Codex from the workspace root so it discovers the shared instructions and workflows. The devcontainer includes both CLIs; authenticate the client you use on its first run.
 
+To give the agent access to Jira, Confluence, and Jenkins, set up the MCP servers — see [how to set up the Atlassian and Jenkins MCP servers](./docs/how-to/set-up-mcp-servers.md). Optional; cross-repo search and the docs skills work without it.
+
 ## Layout
 
 ```
@@ -60,6 +62,11 @@ The workflow definitions under `.claude/` remain the single source of truth. Nat
 | MCP servers | `.mcp.json` | `.codex/config.toml` |
 
 For example, use `/cft-tour ccd` in Claude Code or `$cft-tour ccd` in Codex. Project-scoped Codex configuration is loaded only after the repository is trusted. The Codex guides for [project instructions](https://developers.openai.com/codex/guides/agents-md), [skills](https://developers.openai.com/codex/skills), and [configuration](https://developers.openai.com/codex/config-basic) describe these conventions.
+
+## MCP
+
+The MCP configuration includes Atlassian (JIRA & Confluence), Jenkins and Playwright. Credentials for the `atlassian` and `jenkins` MCP servers are gitignored and created per-user: [set-up-mcp-servers](./docs/how-to/set-up-mcp-servers.md).
+
 
 ## Scripts
 
