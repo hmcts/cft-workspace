@@ -59,6 +59,29 @@ completes). Start with the UI route if this is a one-off.
 **Verified in AAT:** the S2S lease, org creation, and org deletion all work via the API. Approval
 does *not*, for most callers. The pragmatic path is create via API, approve via UI.
 
+## The short version
+
+[`scripts/prd-test-org`](../../scripts/prd-test-org) wraps all of the below:
+
+```console
+./scripts/prd-test-org check    -m <microservice>                    # can I create? approve?
+./scripts/prd-test-org create   -m <microservice> --name ZZZ-MYTEST
+./scripts/prd-test-org add-user -m <ms> --org-id <id> --admin-token "$TOK" \
+    --user-email sol@justice.gov.uk -r pui-case-manager
+./scripts/prd-test-org users    -m <ms> --org-id <id> --admin-token "$TOK"
+./scripts/prd-test-org set-roles -m <ms> --org-id <id> --admin-token "$TOK" \
+    --user-id <uuid> -r pui-finance-manager --remove-roles pui-caa
+./scripts/prd-test-org list     -m <ms> --name ZZZ- --admin-token "$TOK"
+./scripts/prd-test-org delete   -m <ms> --org-id <id> --admin-token "$TOK"
+```
+
+**Run `check` first** — it needs no VPN or credentials and tells you whether your microservice can
+create an organisation, approve one, or neither. It reads both allowlists from flux, which is the
+question that otherwise surfaces as a confusing `403` half an hour later.
+
+The script randomises PBAs, defaults the superUser to a domain RD accepts, and maps the misleading
+errors to their real causes. The rest of this page is the underlying calls.
+
 ## Route A: the API
 
 ### 1. Check you're on the S2S allowlist
@@ -271,6 +294,36 @@ already have a `prd-admin` token from step 4.
 
 The PUI roles that matter: `pui-user-manager`, `pui-organisation-manager`,
 `pui-finance-manager`, `pui-case-manager`, `pui-caa`.
+
+Users can't do anything until the **organisation** is `ACTIVE`, regardless of their roles — adding
+users to a `PENDING` org silently gets you users who can't act.
+
+### 6. Inspect and change a user's roles
+
+List the organisation's users with their roles (`prd-admin`; `returnRoles=true` is what includes
+the roles at all):
+
+```bash
+curl -s "http://rd-professional-api-$ENV.service.core-compute-$ENV.internal/refdata/internal/v1/organisations/ABC1DEF/users?returnRoles=true" \
+  -H "ServiceAuthorization: Bearer $S2S_TOKEN" -H "Authorization: Bearer $PRD_ADMIN_TOKEN" \
+  | jq '[.users[] | {userIdentifier, email, idamStatus, roles}]'
+```
+
+Add and remove roles on an existing user — `PUT .../{orgId}/users/{userId}`, `@Secured("prd-admin")`.
+Note `rolesAdd` / `rolesDelete` are arrays of **objects**, not bare strings:
+
+```bash
+curl -s -X PUT "http://rd-professional-api-$ENV.service.core-compute-$ENV.internal/refdata/internal/v1/organisations/ABC1DEF/users/$USER_ID" \
+  -H "ServiceAuthorization: Bearer $S2S_TOKEN" -H "Authorization: Bearer $PRD_ADMIN_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"rolesAdd":[{"name":"pui-finance-manager"}],"rolesDelete":[{"name":"pui-caa"}]}'
+```
+
+Send `[]` rather than omitting the key when you only want to add or only remove. The external
+equivalent (`PUT /refdata/external/v1/organisations/users/{userId}`) is `@Secured("pui-user-manager")`
+and infers the org from the caller, so it needs a token belonging to a user inside the org.
+
+`userIdentifier` from the `users` listing is the IDAM UUID — that's the `{userId}` these take.
 
 ## Getting the superUser logged in
 

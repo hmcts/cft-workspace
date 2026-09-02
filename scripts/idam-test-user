@@ -80,6 +80,7 @@ SUBCOMMAND="$1"; shift
 
 case "$SUBCOMMAND" in
     -h|--help|help) usage; exit 0 ;;
+    *) ;;
 esac
 
 while [[ $# -gt 0 ]]; do
@@ -226,6 +227,7 @@ call() {
         400) warn "400 usually means an unknown role, or (on /test/cft/users) a rejected email domain — use @justice.gov.uk" ;;
         401|403) warn "403/401: check the token carries the 'profile' scope" ;;
         409) warn "409: that email or id already exists — use 'fixture' for idempotent reseeding" ;;
+        *) ;;
     esac
     exit 1
 }

@@ -1,0 +1,401 @@
+#!/usr/bin/env bash
+# Create / inspect / delete professional organisations in a non-production
+# environment via rd-professional-api (PRD). Wraps the recipes in
+# docs/how-to/create-test-organisations.md.
+#
+# Subcommands:
+#   check                  report whether a microservice can create and/or approve
+#   create                 create a PENDING organisation (S2S only)
+#   approve                approve to ACTIVE (needs a prd-admin user token)
+#   list                   list organisations, optionally filtered by name
+#   delete                 delete an organisation (PENDING/REVIEW only)
+#   add-user               invite a user into an organisation with PUI roles
+#   users                  list an organisation's users and their roles
+#   set-roles              add/remove PUI roles on an existing org user
+#
+# Requires: az (logged in), curl, jq, docker (for the TOTP), and the VPN —
+# both rpe-service-auth-provider and rd-professional-api are internal-only.
+#
+# Two allowlists govern this flow and they are NOT the same list:
+#   * PRD's           -> governs `create`
+#   * rd-user-profile-api's -> governs `approve`, because approving makes PRD
+#     call it for the superUser profile and PRD returns its status verbatim.
+# `check` reports both. Most service-team microservices can create but not
+# approve; approve via the Administer Organisations UI instead.
+#
+# Verified against AAT: check, create, list, users, delete, and the approve
+# 403 path. `add-user` and `set-roles` are NOT yet exercised end-to-end — they
+# need an ACTIVE organisation, which needs an approval this caller can't do.
+# Their request shapes come from PRD's controllers; treat with mild suspicion
+# and report back.
+
+source "$(dirname "$0")/lib/_common.sh"
+
+ENV_NAME="${PRD_ENV:-aat}"
+MICROSERVICE="${PRD_MICROSERVICE:-}"
+ORG_ID=""
+ORG_NAME=""
+SUPERUSER_EMAIL=""
+ADMIN_TOKEN="${PRD_ADMIN_TOKEN:-}"
+NAME_FILTER=""
+STATUS="PENDING"
+JSON_OUT=false
+ASSUME_YES=false
+USER_EMAIL=""
+USER_ID=""
+FORENAME="Test"
+SURNAME="User"
+ROLES=""
+ROLES_REMOVE=""
+
+# The PUI roles that govern what an organisation's users can do.
+PUI_ROLES="pui-user-manager pui-organisation-manager pui-finance-manager pui-case-manager pui-caa"
+
+usage() {
+    sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'
+    cat <<'EOF'
+
+Usage:
+  scripts/prd-test-org <subcommand> [options]
+
+Options:
+  -e, --env <env>          aat (default) | demo | ithc | perftest
+  -m, --microservice <n>   S2S microservice name (underscores), e.g. pcs_api
+      --org-id <id>        7-char organisation identifier
+      --name <name>        organisation name (create); prefix filter (list/delete)
+      --email <addr>       superUser email; must NOT be a disposable domain
+      --admin-token <jwt>  prd-admin user token, for approve/delete/list/users
+      --status <status>    list filter: PENDING (default) | ACTIVE | REVIEW | ...
+      --user-email <addr>  user to invite (add-user) or target (set-roles)
+      --user-id <uuid>     user's IDAM id, for set-roles
+  -r, --roles <a,b,c>      PUI roles to grant (add-user, set-roles)
+      --remove-roles <a,b> PUI roles to revoke (set-roles)
+      --forename <name>    default: Test
+      --surname <name>     default: User
+      --json               raw JSON only
+  -y, --yes                skip the delete confirmation
+  -h, --help               this help
+
+PUI roles: pui-user-manager, pui-organisation-manager, pui-finance-manager,
+pui-case-manager, pui-caa. The organisation must be ACTIVE before its users
+can do anything.
+
+Examples:
+  scripts/prd-test-org check -m pcs_api
+  scripts/prd-test-org create -m pcs_api --name "ZZZ-MYTEST"
+  scripts/prd-test-org list -m pcs_api --name ZZZ- --admin-token "$TOK"
+  scripts/prd-test-org add-user -m pcs_api --org-id ABC1DEF --admin-token "$TOK" \
+      --user-email sol@justice.gov.uk -r pui-case-manager,pui-user-manager
+  scripts/prd-test-org users -m pcs_api --org-id ABC1DEF --admin-token "$TOK"
+  scripts/prd-test-org set-roles -m pcs_api --org-id ABC1DEF --admin-token "$TOK" \
+      --user-id <uuid> -r pui-finance-manager --remove-roles pui-caa
+  scripts/prd-test-org delete -m pcs_api --org-id ABC1DEF --admin-token "$TOK"
+
+Get a prd-admin token with:
+  scripts/idam-test-user user  -p <product> --client-id <c> -r prd-admin --email you@justice.gov.uk
+  scripts/idam-test-user login -p <product> --client-id <c> --email you@justice.gov.uk
+
+Organisations have NO automatic expiry — delete yours when finished.
+EOF
+}
+
+[[ $# -gt 0 ]] || { usage; exit 1; }
+SUBCOMMAND="$1"; shift
+case "$SUBCOMMAND" in -h|--help|help) usage; exit 0 ;; esac
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -e|--env)          ENV_NAME="$2"; shift 2 ;;
+        -m|--microservice) MICROSERVICE="$2"; shift 2 ;;
+        --org-id)          ORG_ID="$2"; shift 2 ;;
+        --name)            ORG_NAME="$2"; NAME_FILTER="$2"; shift 2 ;;
+        --email)           SUPERUSER_EMAIL="$2"; shift 2 ;;
+        --admin-token)     ADMIN_TOKEN="$2"; shift 2 ;;
+        --status)          STATUS="$2"; shift 2 ;;
+        --user-email)      USER_EMAIL="$2"; shift 2 ;;
+        --user-id)         USER_ID="$2"; shift 2 ;;
+        -r|--roles)        ROLES="$2"; shift 2 ;;
+        --remove-roles)    ROLES_REMOVE="$2"; shift 2 ;;
+        --forename)        FORENAME="$2"; shift 2 ;;
+        --surname)         SURNAME="$2"; shift 2 ;;
+        --json)            JSON_OUT=true; shift ;;
+        -y|--yes)          ASSUME_YES=true; shift ;;
+        -h|--help)         usage; exit 0 ;;
+        *)                 die "unknown option: $1 (try --help)" ;;
+    esac
+done
+
+PRD="http://rd-professional-api-$ENV_NAME.service.core-compute-$ENV_NAME.internal"
+S2S_URL="http://rpe-service-auth-provider-$ENV_NAME.service.core-compute-$ENV_NAME.internal"
+FLUX="$WORKSPACE_ROOT/platops/cnp-flux-config/apps/rd"
+
+note() { $JSON_OUT || info "$*" >&2; }
+
+for tool in az curl jq; do command -v "$tool" >/dev/null || die "$tool not on PATH"; done
+
+require_vpn() {
+    getent hosts "rd-professional-api-$ENV_NAME.service.core-compute-$ENV_NAME.internal" >/dev/null 2>&1 \
+        || die "cannot resolve PRD's internal hostname — connect the VPN.
+If you connected it after starting the devcontainer, rebuild the container."
+}
+
+# Read an allowlist out of flux rather than the app default, which is much
+# shorter than what's actually deployed.
+allowlist() {
+    local svc="$1" file="$FLUX/$svc/$ENV_NAME.yaml"
+    [[ -f "$file" ]] || return 1
+    grep -oE 'S2S_AUTHORISED_SERVICES: .*' "$file" | head -1 | sed 's/.*: //'
+}
+
+on_allowlist() {
+    local svc="$1" list
+    list=$(allowlist "$svc") || return 2
+    printf '%s' "$list" | tr ',' '\n' | sed 's/ //g' | grep -qx "$MICROSERVICE"
+}
+
+s2s_token() {
+    [[ -n "$MICROSERVICE" ]] || die "--microservice is required (or set PRD_MICROSERVICE)"
+    command -v docker >/dev/null || die "docker needed for the TOTP (or install oathtool)"
+    local secret otp token
+    secret=$(az keyvault secret show --vault-name "s2s-$ENV_NAME" \
+        --name "microservicekey-${MICROSERVICE//_/-}" --query value -o tsv 2>/dev/null) \
+        || die "could not read microservicekey-${MICROSERVICE//_/-} from vault s2s-$ENV_NAME"
+    if command -v oathtool >/dev/null; then
+        otp=$(oathtool --totp -b "$secret")
+    else
+        otp=$(docker run --rm hmctsprod.azurecr.io/imported/toolbelt/oathtool --totp -b "$secret" | tr -d '\r\n')
+    fi
+    token=$(curl -sS -X POST "$S2S_URL/lease" -H 'Content-Type: application/json' \
+        -d "{\"microservice\":\"$MICROSERVICE\",\"oneTimePassword\":\"$otp\"}")
+    [[ -n "$token" ]] || die "S2S lease failed for $MICROSERVICE"
+    printf '%s' "$token"
+}
+
+# N random digits. Deliberately NOT `tr -dc 0-9 </dev/urandom | head -cN`:
+# head closes the pipe, tr dies with SIGPIPE, and `set -o pipefail` then aborts
+# the whole script with status 141 — silently, since nothing is printed.
+digits() {
+    local n="$1" out=""
+    while (( ${#out} < n )); do
+        out+=$(( RANDOM % 10 ))
+    done
+    printf '%s' "$out"
+}
+
+# ["a","b"] from "a,b". Empty input must still yield [] — `jq -R` reads no
+# lines at all for empty input and would emit nothing, breaking --argjson.
+roles_json() {
+    [[ -z "${1:-}" ]] && { printf '[]'; return 0; }
+    printf '%s' "$1" | jq -Rc 'split(",") | map(gsub("^\\s+|\\s+$";"")) | map(select(. != ""))'
+}
+
+# [{"name":"a"},{"name":"b"}] — the shape rolesAdd/rolesDelete expect.
+role_names_json() {
+    roles_json "${1:-}" | jq -c 'map({name: .})'
+}
+
+# PUI role typos otherwise fail confusingly downstream, so flag them here.
+warn_unknown_pui_roles() {
+    local r
+    for r in $(printf '%s' "${1:-}" | tr ',' ' '); do
+        [[ -z "$r" ]] && continue
+        case " $PUI_ROLES " in
+            *" $r "*) ;;
+            *) warn "'$r' is not a standard PUI role ($PUI_ROLES) — continuing, but check it exists" ;;
+        esac
+    done
+}
+
+RESPONSE_BODY=""
+call() {
+    local method="$1" url="$2" s2s="$3" user="${4:-}" body="${5:-}"
+    local tmp; tmp=$(mktemp)
+    local -a args=(-sS -o "$tmp" -w '%{http_code}' -X "$method" "$url"
+                   -H "ServiceAuthorization: Bearer $s2s")
+    [[ -n "$user" ]] && args+=(-H "Authorization: Bearer $user")
+    [[ -n "$body" ]] && args+=(-H 'Content-Type: application/json' -d "$body")
+
+    local code; code=$(curl "${args[@]}") || true
+    RESPONSE_BODY=$(cat "$tmp" 2>/dev/null || true); rm -f "$tmp"
+    [[ "$code" =~ ^2 ]] && return 0
+
+    err "HTTP $code from $method $url"
+    if [[ -n "$RESPONSE_BODY" ]]; then
+        printf '%s\n' "$RESPONSE_BODY" | jq . >&2 2>/dev/null || printf '%s\n' "$RESPONSE_BODY" >&2
+    fi
+    case "$code" in
+        400) warn "400: PBA already exists, or duplicate sraId. NOTE: a PBA-rejected create still creates the org — run 'list' before retrying." ;;
+        404) warn "404 'expected 1, actual 0' on a user call usually means the organisation is still PENDING — the superUser's profile is only created at approval. Approve it first." ;;
+        403) warn "403 on approve is usually NOT your token — PRD proxies rd-user-profile-api and returns its status. Run 'check' to see if $MICROSERVICE is on that allowlist; approve via the UI if not." ;;
+        *) ;;
+    esac
+    exit 1
+}
+
+case "$SUBCOMMAND" in
+    check)
+        [[ -n "$MICROSERVICE" ]] || die "--microservice is required"
+        for svc in rd-professional-api rd-user-profile-api; do
+            case "$svc" in
+                rd-professional-api)  what="create an organisation" ;;
+                rd-user-profile-api)  what="approve one to ACTIVE" ;;
+                *) what="?" ;;
+            esac
+            if on_allowlist "$svc"; then
+                ok  "$MICROSERVICE IS on $svc ($ENV_NAME) — can $what"
+            elif [[ $? -eq 2 ]]; then
+                warn "could not read $svc allowlist for $ENV_NAME (is platops/cnp-flux-config cloned?)"
+            else
+                err "$MICROSERVICE is NOT on $svc ($ENV_NAME) — cannot $what"
+            fi
+        done
+        note "Allowlists come from platops/cnp-flux-config/apps/rd/*/$ENV_NAME.yaml, not application.yaml."
+        ;;
+
+    create)
+        require_vpn
+        [[ -n "$ORG_NAME" ]] || die "--name is required"
+        SUFFIX=$(cat /proc/sys/kernel/random/uuid | cut -c1-8)
+        # PBA numbers are globally unique, so always randomise.
+        PBA="PBA$(digits 7)"
+        [[ -n "$SUPERUSER_EMAIL" ]] || SUPERUSER_EMAIL="superuser-$SUFFIX@justice.gov.uk"
+        # The `*)` default matters: without it a non-matching case exits
+        # non-zero and `set -e` kills the script silently.
+        case "$SUPERUSER_EMAIL" in
+            *@mailnesia.com|*@mailinator.com)
+                warn "$SUPERUSER_EMAIL is a disposable domain; RD rejects these on approval. Prefer @justice.gov.uk." ;;
+            *) ;;
+        esac
+        S2S=$(s2s_token)
+        BODY=$(jq -nc --arg n "$ORG_NAME" --arg sra "sra-$SUFFIX" --arg pba "$PBA" \
+                     --arg em "$SUPERUSER_EMAIL" --arg cn "$(digits 8)" '
+            {name:$n, status:"PENDING", sraId:$sra, sraRegulated:"false",
+             companyNumber:$cn, companyUrl:"https://example.org",
+             superUser:{firstName:"Super", lastName:"User", email:$em},
+             paymentAccount:[$pba],
+             contactInformation:[{addressLine1:"1 Test Street", townCity:"Testville",
+                                  postCode:"TE5 7ST", country:"UK"}]}')
+        call POST "$PRD/refdata/external/v1/organisations" "$S2S" "" "$BODY"
+        if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
+            printf '%s\n' "$RESPONSE_BODY" | jq .
+            ok "organisation: $(printf '%s' "$RESPONSE_BODY" | jq -r .organisationIdentifier)"
+            ok "superUser:    $SUPERUSER_EMAIL"
+            ok "PBA:          $PBA"
+            warn "Status is PENDING — users can do nothing until it is approved."
+            warn "No automatic expiry: delete it when done (see 'delete')."
+        fi
+        ;;
+
+    approve)
+        require_vpn
+        [[ -n "$ORG_ID" ]] || die "--org-id is required"
+        [[ -n "$ADMIN_TOKEN" ]] || die "--admin-token is required (a prd-admin user token)"
+        if ! on_allowlist rd-user-profile-api; then
+            warn "$MICROSERVICE is not on rd-user-profile-api's allowlist — this will very likely 403."
+            warn "Approve via https://administer-orgs.$ENV_NAME.platform.hmcts.net instead."
+        fi
+        S2S=$(s2s_token)
+        [[ -n "$ORG_NAME" ]] || die "--name is required (must match the existing organisation)"
+        [[ -n "$SUPERUSER_EMAIL" ]] || die "--email is required (the existing superUser)"
+        BODY=$(jq -nc --arg n "$ORG_NAME" --arg em "$SUPERUSER_EMAIL" '
+            {name:$n, status:"ACTIVE", sraRegulated:"false",
+             superUser:{firstName:"Super", lastName:"User", email:$em},
+             contactInformation:[{addressLine1:"1 Test Street"}]}')
+        call PUT "$PRD/refdata/internal/v1/organisations/$ORG_ID" "$S2S" "$ADMIN_TOKEN" "$BODY"
+        ok "approved $ORG_ID"
+        ;;
+
+    list)
+        require_vpn
+        [[ -n "$ADMIN_TOKEN" ]] || die "--admin-token is required (a prd-admin user token)"
+        S2S=$(s2s_token)
+        call GET "$PRD/refdata/internal/v1/organisations?status=$STATUS" "$S2S" "$ADMIN_TOKEN"
+        if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
+            # PRD returns {organisations:[…]} for some statuses and a bare array
+            # for others, so normalise before filtering.
+            printf '%s\n' "$RESPONSE_BODY" | jq --arg f "$NAME_FILTER" '
+                (if type == "array" then . else (.organisations // []) end)
+                | map({name, organisationIdentifier, status})
+                | if $f == "" then . else map(select(.name | test($f))) end'
+        fi
+        ;;
+
+    delete)
+        require_vpn
+        [[ -n "$ORG_ID" ]] || die "--org-id is required"
+        [[ -n "$ADMIN_TOKEN" ]] || die "--admin-token is required (a prd-admin user token)"
+        if ! $ASSUME_YES; then
+            printf 'Delete organisation %s in %s? [y/N] ' "$ORG_ID" "$ENV_NAME" >&2
+            read -r reply
+            [[ "$reply" =~ ^[Yy] ]] || die "aborted"
+        fi
+        S2S=$(s2s_token)
+        call DELETE "$PRD/refdata/internal/v1/organisations/$ORG_ID" "$S2S" "$ADMIN_TOKEN"
+        ok "deleted $ORG_ID"
+        ;;
+
+    add-user)
+        require_vpn
+        [[ -n "$ORG_ID" ]] || die "--org-id is required"
+        [[ -n "$ADMIN_TOKEN" ]] || die "--admin-token is required (a prd-admin user token)"
+        [[ -n "$USER_EMAIL" ]] || die "--user-email is required"
+        [[ -n "$ROLES" ]] || die "-r/--roles is required (e.g. pui-case-manager)"
+        warn_unknown_pui_roles "$ROLES"
+        case "$USER_EMAIL" in
+            *@mailnesia.com|*@mailinator.com)
+                warn "$USER_EMAIL is a disposable domain; RD rejects these. Prefer @justice.gov.uk." ;;
+            *) ;;
+        esac
+        S2S=$(s2s_token)
+        BODY=$(jq -nc --arg fn "$FORENAME" --arg sn "$SURNAME" --arg em "$USER_EMAIL" \
+                     --argjson roles "$(roles_json "$ROLES")" \
+            '{firstName:$fn, lastName:$sn, email:$em, roles:$roles, resendInvite:false}')
+        # Note the trailing slash — the mapping is declared with one.
+        call POST "$PRD/refdata/internal/v1/organisations/$ORG_ID/users/" "$S2S" "$ADMIN_TOKEN" "$BODY"
+        if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
+            printf '%s\n' "$RESPONSE_BODY" | jq . 2>/dev/null || printf '%s\n' "$RESPONSE_BODY"
+            ok "invited $USER_EMAIL to $ORG_ID with: $ROLES"
+            warn "PRD creates the IDAM account itself and sends an invitation — you do not choose the password."
+            warn "Read the invite: scripts/idam-test-user notification -p <product> --client-id <c> --email $USER_EMAIL"
+        fi
+        ;;
+
+    users)
+        require_vpn
+        [[ -n "$ORG_ID" ]] || die "--org-id is required"
+        [[ -n "$ADMIN_TOKEN" ]] || die "--admin-token is required (a prd-admin user token)"
+        S2S=$(s2s_token)
+        call GET "$PRD/refdata/internal/v1/organisations/$ORG_ID/users?returnRoles=true" "$S2S" "$ADMIN_TOKEN"
+        if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
+            printf '%s\n' "$RESPONSE_BODY" | jq '
+                (if type == "array" then . else (.users // []) end)
+                | map({userIdentifier, email, idamStatus, roles})' 2>/dev/null \
+                || printf '%s\n' "$RESPONSE_BODY"
+        fi
+        ;;
+
+    set-roles)
+        require_vpn
+        [[ -n "$ORG_ID" ]] || die "--org-id is required"
+        [[ -n "$ADMIN_TOKEN" ]] || die "--admin-token is required (a prd-admin user token)"
+        [[ -n "$USER_ID" ]] || die "--user-id is required (the user's IDAM id — get it from 'users')"
+        [[ -n "$ROLES$ROLES_REMOVE" ]] || die "give -r/--roles and/or --remove-roles"
+        warn_unknown_pui_roles "$ROLES,$ROLES_REMOVE"
+        S2S=$(s2s_token)
+        # rolesAdd/rolesDelete are sets of {name: ...}, not bare strings.
+        BODY=$(jq -nc \
+            --argjson add "$(role_names_json "$ROLES")" \
+            --argjson del "$(role_names_json "$ROLES_REMOVE")" \
+            '{rolesAdd:$add, rolesDelete:$del}')
+        call PUT "$PRD/refdata/internal/v1/organisations/$ORG_ID/users/$USER_ID" "$S2S" "$ADMIN_TOKEN" "$BODY"
+        if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
+            printf '%s\n' "$RESPONSE_BODY" | jq . 2>/dev/null || printf '%s\n' "$RESPONSE_BODY"
+            [[ -n "$ROLES" ]]        && ok "added:   $ROLES"
+            [[ -n "$ROLES_REMOVE" ]] && ok "removed: $ROLES_REMOVE"
+        fi
+        ;;
+
+    *)
+        die "unknown subcommand: $SUBCOMMAND (try --help)"
+        ;;
+esac
