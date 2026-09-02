@@ -10,6 +10,9 @@ audience: both
 
 Use this page for database infrastructure guidance.
 
+For getting a `psql` session against a non-production database, see
+[Connect to a non-production PostgreSQL database](connect-to-a-nonprod-database.md).
+
 ## PostgreSQL Flexible Server
 
 ### Creation

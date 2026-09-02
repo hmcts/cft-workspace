@@ -54,6 +54,7 @@ Build/release using the shared CNP pipeline. See [`common-pipeline/`](common-pip
 - [Application Gateway WAF (AFD/WAF)](afd-waf.md)
 - [Automated dependency updates](automated-dependency-updates.md)
 - [Connect via VPN](connect-via-vpn.md)
+- [Connect to a non-production database](connect-to-a-nonprod-database.md) — psql against AAT/perftest via Key Vault credentials
 - [Create a new subscription](creating-a-new-subscription.md)
 - [Database infrastructure](database-infrastructure.md) — PostgreSQL Flexible Server creation and JIT production access
 - [Federated credentials](federated-credentials.md)
