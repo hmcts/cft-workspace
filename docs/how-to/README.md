@@ -11,6 +11,8 @@ Goal-oriented recipes for engineers who already know the basics. Each page answe
 
 ## CFT operations
 
+- [Create IDAM test users in AAT and demo](create-idam-test-users.md)
+- [Create a professional organisation for testing](create-test-organisations.md)
 - [Run a CCD definition import locally](run-a-ccd-import.md) _(planned)_
 - [Debug an IDAM token](debug-idam-token.md) _(planned)_
 - [Stand up a service against AAT](run-against-aat.md) _(planned)_

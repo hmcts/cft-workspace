@@ -45,6 +45,7 @@ Companion skills:
 - **`/cft-how-to <task>`** — finds a how-to recipe for an action-shaped task.
 - **`/cft-find-example <feature>`** — finds real code examples; routes per-product via `exemplar_dirs:` in each product CLAUDE.md.
 - **`/cft-ccd-trace-callback`**, **`/cft-ccd-find-feature`** — CCD-specific lookups, kept under the cft-* family for naming consistency.
+- **`/cft-create-test-user <what>`** — creates IDAM test users/roles/clients or professional organisations in a non-prod environment; emits the concrete commands for the caller's service and env.
 - **`/docs-generate <product>`** — generates or refreshes a product's Diátaxis docs (CCD's pipeline, generalised). Includes a Confluence-augmentation phase.
 - **`/docs-drift`** — checks every doc page for drift across three modes (source citations, port manifest for root docs, Confluence revisions).
 
