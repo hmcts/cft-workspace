@@ -19,6 +19,7 @@ sources:
   - ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/ElasticDefinitionImportListener.java
   - ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java
   - ccd-definition-store-api:elastic-search-support/src/main/resources/globalSearchCasesMapping.json
+  - ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java
   - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/DisplayApiController.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/ReferenceDataRepository.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/global/GlobalSearchResponseTransformer.java
@@ -84,6 +85,8 @@ sources_sha:
   ? "ccd-definition-store-api:elastic-search-support/src/main/java/uk/gov/hmcts/ccd/definition/store/elastic/mapping/CaseMappingGenerator.java"
   : "70a1523ad356b828a6e094f4246effdeeeadda7b"
   "ccd-definition-store-api:elastic-search-support/src/main/resources/globalSearchCasesMapping.json": "3888fb1a78316b9ab3ee597967e4424be68d2e6c"
+  ? "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java"
+  : "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
   "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/DisplayApiController.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/ReferenceDataRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/search/global/GlobalSearchResponseTransformer.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
@@ -102,7 +105,7 @@ sources_sha:
 - Work-basket inputs and results are configured via `WorkBasketInputFields` / `WorkBasketResultFields` definition sheets; they drive what filter inputs ExUI renders and what columns appear in the list. The DB-backed work-basket page is being progressively migrated onto `/internal/searchCases` with `use_case=WORKBASKET`.
 - Global search is fed by `SearchCriteria` / `SearchParty` complex fields written into case data at save time by `GlobalSearchProcessorService`; Logstash also routes a subset of those documents into a dedicated cross-jurisdiction `global_search` index.
 - `POST /searchCases?ctid=` accepts a native Elasticsearch JSON body (or a `native_es_query`-wrapped custom request); `POST /internal/searchCases?ctid=&use_case=` is the internal UI variant that applies configured sort and shapes results for display.
-- ES indexes are owned by `ccd-definition-store-api`: case-type-specific indexes (`<caseTypeId>_cases-NNNNNN` behind a `<caseTypeId>_cases` alias) are created/upserted on definition import; cases are indexed by Logstash polling `case_data.marked_by_logstash`.
+- ES indexes are owned by `ccd-definition-store-api`: case-type-specific indexes (`<caseTypeId>_cases-NNNNNN` behind a `<caseTypeId>_cases` alias) are created/upserted on definition import; centralised cases are indexed by Logstash polling `case_data.marked_by_logstash`. Decentralised case types index themselves through the SDK's in-process indexer instead — see [Decentralisation § Search and Elasticsearch indexing](decentralisation.md#search-and-elasticsearch-indexing).
 - Elasticsearch must be explicitly enabled via `ELASTIC_SEARCH_ENABLED=true`; the work-basket-inputs configuration endpoint (`GET .../work-basket-inputs`) is always served regardless.
 
 ---
@@ -411,6 +414,8 @@ In queries, alias references must be prefixed with `alias.`:
 For text aliases, a `_keyword` sibling alias is generated automatically (pointing at the underlying field's `.keyword` sub-field) so the alias can be sorted.
 
 ### Logstash — how cases reach ES
+
+This section covers **centralised** case types. Decentralised case types do not use Logstash at all: the `ccd-config-generator` SDK ships `DecentralisedESIndexer`, which runs inside the service's own process and indexes from the service's `ccd` schema. See [Decentralisation § Search and Elasticsearch indexing](decentralisation.md#search-and-elasticsearch-indexing) for that pipeline — notably that the document's `data` comes from the per-event snapshot in `ccd.case_event`, not from live case data.
 
 `ccd-data-store-api` writes case data to Postgres, not directly to ES. Logstash polls the `case_data` table for the case-type's jurisdiction, takes any rows where `marked_by_logstash = false`, indexes them into ES, and flips the column to `true`. The flag is reset to `false` by the `trg_case_data_updated` trigger on insert/update of any tracked column.
 

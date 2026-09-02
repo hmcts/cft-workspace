@@ -11,6 +11,7 @@ sources:
   - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql
   - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java
+  - ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventPayload.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java
@@ -68,6 +69,7 @@ sources_sha:
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql"
   : "85f32117928bda311dd7c752f185ba9cd47c7464"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "de230f23a924a3427156022b92cbc2aba20c5b03"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventPayload.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
@@ -119,15 +121,21 @@ In `build.gradle`, set `decentralised = true` inside the `ccd { }` block:
 ```groovy
 ccd {
     decentralised   = true
-    runtimeIndexing = true   // re-index CCD config on startup
+    runtimeIndexing = true   // run the Elasticsearch indexer in-process
 }
 ```
 
 This causes the plugin to pull in the `decentralised-runtime` dependency and wire
 `ServicePersistenceController` automatically (`build.gradle` in pcs-api).
 
-> `runtimeIndexing` is separate from `decentralised` -- it controls whether the CCD
-> definition is re-resolved at startup. Enable it when running locally or in preview.
+> `runtimeIndexing` is separate from `decentralised` -- it controls whether the SDK's
+> `ccd-runtime-indexing` module (the in-process Elasticsearch indexer) is added to
+> `implementation` and so runs in the deployed service. Left `false`, the same artefact is
+> added only to `cftlibImplementation`, so the indexer runs under cftlib but not in the
+> deployed service (`CcdSdkPlugin.java:85-92`). Decentralised case types have no Logstash
+> pipeline, so a deployed service that needs search must enable it. PCS drives it from an env
+> check so it can be switched off when running without the CCD stack
+> (`apps/pcs/pcs-api/build.gradle:99-105`).
 
 ---
 

@@ -25,6 +25,14 @@ sources:
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/LegacyCallbackSubmissionHandler.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0001.sql
   - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql
+  - ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java
+  - ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0008.sql
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0017__enhance_indexing.sql
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0019__notify_es_queue_changes.sql
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0020__prioritise_live_es_queue_updates.sql
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java
@@ -88,6 +96,20 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/LegacyCallbackSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0001.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
+  ? "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java"
+  : "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
+  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java"
+  : "303b6617c09391e0700c6ae904b6dc54e119f9c0"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0008.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
+  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql"
+  : "85f32117928bda311dd7c752f185ba9cd47c7464"
+  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0017__enhance_indexing.sql"
+  : "7173ae8de9e9ae1e004042e2a4ecc28b39a6c842"
+  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0019__notify_es_queue_changes.sql"
+  : "6ae803d3750d132178091c4fb578c11ce70cedcb"
+  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0020__prioritise_live_es_queue_updates.sql"
+  : "303b6617c09391e0700c6ae904b6dc54e119f9c0"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "770b4fa7598f9f3b9e608b335170eb191b0ddd55"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
@@ -375,11 +397,11 @@ The `ccd-config-generator` SDK's `decentralised-runtime` module provides everyth
 // build.gradle
 ccd {
     decentralised = true
-    runtimeIndexing = true   // re-index CCD config at startup
+    runtimeIndexing = true   // run the in-process Elasticsearch indexer
 }
 ```
 
-Setting `decentralised = true` pulls in the `decentralised-runtime` dependency and wires `ServicePersistenceController` automatically (`build.gradle` in pcs-api). The service does **not** write this controller itself.
+Setting `decentralised = true` pulls in the `decentralised-runtime` dependency and wires `ServicePersistenceController` automatically (`build.gradle` in pcs-api). The service does **not** write this controller itself. `runtimeIndexing` is the separate opt-in for the SDK's Elasticsearch indexer — see [Opting in](#opting-in).
 
 ### 2. Implement `CaseView`
 
@@ -450,16 +472,75 @@ CCD continues to use its central Elasticsearch cluster as the single source for 
 
 The indexing pipeline is what changes:
 
-- **Centralised cases**: existing Logstash instances continue to index from CCD's PostgreSQL.
-- **Decentralised cases**: each adopting service provisions its **own dedicated Logstash instance** that reads from a view or table in the service's database and writes into CCD's shared ES cluster.
+- **Centralised cases**: existing per-jurisdiction Logstash instances continue to index from CCD's PostgreSQL (see [Search Architecture](search-architecture.md#logstash--how-cases-reach-es)).
+- **Decentralised cases**: the SDK ships an **in-process indexer**, `DecentralisedESIndexer` (`sdk/ccd-runtime-indexing`), which runs inside the service's own JVM, reads the `ccd` schema co-located with the service's domain tables, and bulk-writes into CCD's shared ES cluster. There is no per-service Logstash deployment.
 
-To prevent the centralised and service-owned indexers from racing each other, two rules apply (`db/migration/V0001__Base_version.sql:71, 1170`):
+The earlier design called for each adopting service to provision its own dedicated Logstash instance. That was superseded by the SDK indexer; the external-versioning requirement survives, but as an implementation detail of `DecentralisedESIndexer` rather than something a service configures (see [External versioning](#external-versioning-and-failure-handling) below).
 
-- Decentralised Logstash indexers **must use Elasticsearch external versioning**.
-- Services **must start their external version numbers at v > 1**, because CCD's centralised pipeline writes `version=1` for the pointer row at creation. Starting above 1 ensures the service's first write wins over the pointer's baseline.
-- Subsequent case events on a pointer never modify columns that would re-trigger the centralised Logstash extract.
+### Opting in
 
-<!-- CONFLUENCE-ONLY: the v>1 rule is documented in the LLD with links to specific lines in V0001__Base_version.sql; verified those lines exist but the rule itself is operational guidance not enforced by code. -->
+`ccd { runtimeIndexing = true }` in the service's `build.gradle` adds `com.github.hmcts:ccd-runtime-indexing` to `implementation`; with it left `false` the same artefact is added only to `cftlibImplementation`, so the indexer runs in local/cftlib runs but not in the deployed service (`CcdSdkPlugin.java:85-92`). The bean itself is additionally gated on `ccd.sdk.decentralised.es-indexer.enabled`, which defaults to on (`DecentralisedESIndexer.java:47-50`). The target cluster comes from `ELASTIC_SEARCH_HOSTS` (comma-separated, defaults to `http://localhost:9200`).
+
+PCS sets `runtimeIndexing` from an env check so it can be switched off when the service runs without the CCD stack (`apps/pcs/pcs-api/build.gradle:99-105`).
+
+### The queue is trigger-driven; the document body is not
+
+Two distinct mechanisms, both in the service's `ccd` schema, and the distinction matters:
+
+**1. What gets enqueued** — `trigger_enqueue_case_revision`, an `after insert or update` row trigger on `ccd.case_data`, upserts `(reference, case_revision)` into `ccd.es_queue` (`V0020__prioritise_live_es_queue_updates.sql`). The queue is keyed on `reference` alone, keeping the `greatest` revision and the `least` (earliest) `enqueued_at`, so repeated events on a hot case collapse to one row without losing queue position. `case_revision` itself is incremented by a separate `before update` trigger on the same table (`V0008.sql:8-20`).
+
+**2. What gets indexed** — the claim query builds the document from `ccd.case_data` for metadata (`reference`, `state`, `jurisdiction`, `case_type_id`, `supplementary_data`, timestamps) but takes `data` — the case-data payload searches actually match on — from the newest `ccd.case_event` row at or below the claimed revision (`DecentralisedESIndexer.java:409-415`):
+
+```sql
+join lateral (
+    select ce.*
+    from ccd.case_event ce
+    where ce.case_data_id = cd.id
+      and ce.case_revision <= c.case_revision
+    order by ce.case_revision desc, ce.id desc
+    limit 1
+) ce on true
+```
+
+It has to work this way: for a decentralised case type `ccd.case_data.data` stays `{}` (see [Where event data lives](#where-event-data-lives)), so `ccd.case_event.data` is the only stored CCD-shaped snapshot of the case. The indexer is pure SQL over the queue — it never calls the service's `CaseView`.
+
+This inverts the centralised assumption. Centralised Logstash reads `case_data.data`, which is live, so the event is incidental to indexing. Decentralised, the snapshot is per-event by construction, which means **an event is the only thing that produces a new document body**.
+
+The practical consequence: a background flow that mutates only the service's domain tables changes nothing that the index can see. No `ccd.case_data` write means no revision bump and no queue row; and enqueueing the case by hand doesn't help either, because the claim query resolves the same latest `case_event` row and re-ships its stale `data`. Notice of Change is the worked example — applying it rewrites PCS representation tables and AM role assignments, so the old firm's `OrganisationPolicy` stayed in the index and the new firm couldn't see the case. The fix is to record an event (PCS added a hidden `noticeOfChangeApplied` system event), which is what mints a fresh `case_event.data` from the current projection *and* bumps the revision. See [Values CCD writes into case data are not automatically durable](#values-ccd-writes-into-case-data-are-not-automatically-durable) for the same "own your derived data" theme on the write path.
+
+### Wake-up and batching
+
+A statement-level trigger on `ccd.es_queue` calls `pg_notify('ccd_es_queue_changed', '')` (`V0019__notify_es_queue_changes.sql`). The indexer holds a dedicated connection with `LISTEN ccd_es_queue_changed` and blocks on `getNotifications(pollIntervalMs)`, so a commit wakes it immediately and the poll interval (`ccd.sdk.decentralised.poll-interval-ms`, default 10 s) is only a backstop (`DecentralisedESIndexer.java:250, 291`). The listener reconnects on failure after 1 s.
+
+Each pass claims up to `ccd.sdk.indexing.batch-size` (default 25) rows with `for update skip locked`, stamping `locked_until = now() + ccd.sdk.indexing.queue-lock-seconds` (default 30) and a per-pass `lock_token` (`DecentralisedESIndexer.java:362-378`). Multiple replicas can therefore index concurrently. If a pass claims a full batch and hits no transient failures it loops again after `ccd.sdk.indexing.drain-delay-ms` (default 100) rather than waiting for the next notification.
+
+### What lands in Elasticsearch
+
+| Aspect | Value |
+|---|---|
+| Index | `lower(case_type_id) \|\| '_cases'` — the same alias definition-store creates (`DecentralisedESIndexer.java:396`) |
+| Document id | `ccd.case_data.id` (CCD's internal numeric case id) |
+| External version | the claimed `case_revision` |
+| Global search | second bulk operation into `global_search` when the case data contains `SearchCriteria` |
+
+The `global_search` fan-out replicates CCD's central Logstash config: it trims `data` down to `SearchCriteria`, `caseManagementLocation`, `CaseAccessCategory`, `caseNameHmctsInternal`, `caseManagementCategory`, trims `supplementary_data` to `HMCTSServiceId`, drops the timestamp fields, and re-indexes under the same document id (`DecentralisedESIndexer.java:325-347`). This is why `PCSCaseView` sets an empty `SearchCriteria` on every projection — without the key present the case is never routed to the global index.
+
+### External versioning and failure handling
+
+Every bulk operation is written with `versionType(ExternalGte)` and `version = case_revision` (`DecentralisedESIndexer.java:567-578`). Revision monotonicity is what makes the pipeline safely retryable and idempotent: a stale document can never overwrite a newer one, and re-indexing the same revision is a no-op rather than a conflict. Bulk item statuses are classified in `classifyBulkActionStatus` (`DecentralisedESIndexer.java:557-565`):
+
+| Status | Outcome |
+|---|---|
+| 2xx | complete — queue row deleted |
+| 409 (version conflict) | complete — a newer revision is already in ES, logged and skipped |
+| 400, 404 | dead-lettered to `ccd.es_dead_letter_queue`, queue row still cleared |
+| anything else | retryable — the lock is released so the row is re-claimed |
+
+`ccd.es_dead_letter_queue` is keyed on `(case_event_id, case_revision, index_id)` and carries the ES failure reason (`V0017__enhance_indexing.sql:40-50`). Rows are cleaned up automatically when a later revision for the same case and index indexes successfully (`DecentralisedESIndexer.java:521-527`).
+
+### Bulk reindexing
+
+`CaseReindexingService` is the decentralised equivalent of standing up `ccd-logstash-indexer`. `enqueueCasesModifiedSince(date)` inserts queue rows for every case modified since a given date, and `countCasesModifiedSince(date)` sizes the job first. Reindex rows are enqueued with `enqueued_at = now() + ccd.sdk.reindexing.queue-priority-offset-seconds` (default 21 600, i.e. 6 hours) so that — because `enqueued_at` is the ordering key and live updates take the `least` value — a backfill never starves live traffic (`CaseReindexingService.java:52-71`).
 
 ## Message publishing (transactional outbox)
 
