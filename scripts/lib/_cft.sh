@@ -20,7 +20,7 @@ uuid() {
     if [[ -r /proc/sys/kernel/random/uuid ]]; then
         cat /proc/sys/kernel/random/uuid
     else
-        uuidgen | tr 'A-Z' 'a-z'   # macOS
+        uuidgen | tr 'A-Z' 'a-z'
     fi
 }
 
@@ -39,7 +39,6 @@ require_internal_dns() {
     if command -v getent >/dev/null; then
         getent hosts "$host" >/dev/null 2>&1
     else
-        # macOS has no getent; dscacheutil consults the same resolver stack.
         dscacheutil -q host -a name "$host" 2>/dev/null | grep -q ip_address
     fi || die "cannot resolve $host — connect the VPN.
 If you connected it after starting the devcontainer, rebuild the container."
@@ -75,7 +74,6 @@ Check: az keyvault secret list --vault-name s2s-$env -o tsv --query '[].name' | 
     if command -v oathtool >/dev/null; then
         otp=$(oathtool --totp -b "$secret")
     else
-        # oathtool is in the devcontainer; on macOS: brew install oath-toolkit.
         command -v docker >/dev/null || die "need oathtool or docker to generate the S2S TOTP"
         otp=$(docker run --rm hmctsprod.azurecr.io/imported/toolbelt/oathtool \
                   --totp -b "$secret" | tr -d '\r\n')
