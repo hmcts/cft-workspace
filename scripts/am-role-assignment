@@ -11,7 +11,7 @@
 #   delete     delete assignments matching a query
 #   roles      list the role names AM knows about
 #
-# Requires: az (logged in), curl, jq, docker-or-oathtool, and the VPN —
+# Requires: az (logged in), curl, jq, oathtool-node-or-docker, and the VPN —
 # am-role-assignment-service is internal-only.
 #
 # Verified against AAT: roles, assign, actor, query, delete-by-query and

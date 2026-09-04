@@ -74,18 +74,29 @@ Check: az keyvault secret list --vault-name s2s-$env -o tsv --query '[].name' | 
 
     if command -v oathtool >/dev/null; then
         otp=$(oathtool --totp -b "$secret")
-    elif command -v python3 >/dev/null; then
-        otp=$(python3 - "$secret" <<'PYEOF'
-import base64, hmac, struct, sys, time
-key = base64.b32decode(sys.argv[1].upper() + "=" * (-len(sys.argv[1]) % 8))
-msg = struct.pack(">Q", int(time.time()) // 30)
-d = hmac.new(key, msg, "sha1").digest()
-o = d[19] & 0xF
-print(f"{(struct.unpack('>I', d[o:o+4])[0] & 0x7FFFFFFF) % 1000000:06d}")
-PYEOF
-)
+    elif command -v node >/dev/null; then
+        # node, not python3: macOS ships /usr/bin/python3 as an Xcode-CLT stub
+        # that satisfies `command -v` but fails to run until the tools are
+        # installed, and `set -e` would then abort instead of trying docker.
+        otp=$(node -e '
+const crypto = require("crypto");
+const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+let bits = "";
+for (const c of process.argv[1].toUpperCase().replace(/=+$/, "")) {
+  const i = A.indexOf(c);
+  if (i < 0) { console.error("secret is not base32"); process.exit(1); }
+  bits += i.toString(2).padStart(5, "0");
+}
+// Trailing bits that do not complete a byte are padding — drop them.
+const key = Buffer.from((bits.match(/.{8}/g) || []).map(b => parseInt(b, 2)));
+const msg = Buffer.alloc(8);
+msg.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
+const d = crypto.createHmac("sha1", key).update(msg).digest();
+const o = d[19] & 0xf;
+process.stdout.write(String((d.readUInt32BE(o) & 0x7fffffff) % 1000000).padStart(6, "0"));
+' "$secret")
     else
-        command -v docker >/dev/null || die "need oathtool, python3 or docker to generate the S2S TOTP"
+        command -v docker >/dev/null || die "need oathtool, node or docker to generate the S2S TOTP"
         otp=$(docker run --rm hmctsprod.azurecr.io/imported/toolbelt/oathtool \
                   --totp -b "$secret" | tr -d '\r\n')
     fi

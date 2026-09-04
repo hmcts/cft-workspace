@@ -132,7 +132,8 @@ az keyvault secret list --vault-name "s2s-$ENV" -o tsv --query "[].name" | grep 
 ```
 
 `oathtool` isn't installed in the devcontainer, hence the docker image above; a native
-`oathtool --totp -b "$S2S_SECRET"` works if you have it.
+`oathtool --totp -b "$S2S_SECRET"` works if you have it. `scripts/lib/_cft.sh` also carries a
+`node` fallback for hosts with neither.
 
 **VPN required from here on.** Both `rpe-service-auth-provider` and `rd-professional-api` are
 only exposed on internal `*.service.core-compute-<env>.internal` hostnames — PRD's chart
