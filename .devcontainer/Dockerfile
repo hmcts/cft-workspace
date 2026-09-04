@@ -72,6 +72,12 @@ RUN set -eux; \
     curl -fsSL "https://github.com/getsops/sops/releases/download/${sops_ver}/sops-${sops_ver}.linux.${arch}" \
         -o /usr/local/bin/sops; \
     chmod +x /usr/local/bin/sops; \
+    ralphex_ver="1.6.1"; \
+    curl -fsSL "https://github.com/umputun/ralphex/releases/download/v${ralphex_ver}/ralphex_${ralphex_ver}_linux_${arch}.tar.gz" \
+        | tar -xz -C /tmp ralphex completions/ralphex.zsh; \
+    install -m 0755 /tmp/ralphex /usr/local/bin/ralphex; \
+    install -D -m 0644 /tmp/completions/ralphex.zsh /usr/local/share/zsh/site-functions/_ralphex; \
+    rm -rf /tmp/ralphex /tmp/completions; \
     \
     rm -rf /var/lib/apt/lists/*
 

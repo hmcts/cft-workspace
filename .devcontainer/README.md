@@ -18,3 +18,5 @@ To build locally from `Dockerfile` instead of pulling, swap the `image` key in `
 ```
 
 The image includes both Claude Code and Codex. Claude state is mounted from the host as before. Codex state uses the persistent `cft-codex` Docker volume so host-specific configuration is not copied into the Linux container; run `codex login --device-auth` once inside the container.
+
+[ralphex](https://github.com/umputun/ralphex) is installed as well, pinned by version in the `Dockerfile`. It drives Claude Code in a loop and can delegate external review to `codex`, so authenticate both before using it.
