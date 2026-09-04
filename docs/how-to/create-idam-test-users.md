@@ -65,8 +65,7 @@ own repo, or when something fails and you want to know why.
 - **No VPN needed** — `*.platform.hmcts.net` ingress hosts are publicly resolvable.
 
 The snippets below read `/proc/sys/kernel/random/uuid` for unique emails and user IDs rather than
-`uuidgen`, which is **not installed in the devcontainer**. On a non-Linux host use `uuidgen`
-(present on macOS) or `node -e 'console.log(crypto.randomUUID())'`.
+`uuidgen`, which is **not installed in the devcontainer**. On macOS use `uuidgen`.
 
 ## Steps
 

@@ -131,9 +131,8 @@ hyphens, so `xui_webapp` is stored as `microservicekey-xui-webapp`. List them wi
 az keyvault secret list --vault-name "s2s-$ENV" -o tsv --query "[].name" | grep microservicekey-
 ```
 
-`oathtool` is installed in the devcontainer. Outside it, `scripts/lib/_cft.sh` falls back to
-`node` and then to the `hmctsprod.azurecr.io/imported/toolbelt/oathtool` image, so the helper
-scripts work without it — but the snippet above assumes it's on PATH.
+`oathtool` is installed in the devcontainer. On macOS, `brew install oath-toolkit`; failing that,
+`scripts/lib/_cft.sh` falls back to the `hmctsprod.azurecr.io/imported/toolbelt/oathtool` image.
 
 **VPN required from here on.** Both `rpe-service-auth-provider` and `rd-professional-api` are
 only exposed on internal `*.service.core-compute-<env>.internal` hostnames — PRD's chart
