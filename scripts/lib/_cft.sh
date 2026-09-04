@@ -16,7 +16,13 @@ require_tools() {
     for t in "$@"; do command -v "$t" >/dev/null || die "$t not on PATH"; done
 }
 
-uuid() { cat /proc/sys/kernel/random/uuid; }
+uuid() {
+    if [[ -r /proc/sys/kernel/random/uuid ]]; then
+        cat /proc/sys/kernel/random/uuid
+    else
+        uuidgen | tr 'A-Z' 'a-z'   # macOS
+    fi
+}
 
 # N random digits. Deliberately NOT `tr -dc 0-9 </dev/urandom | head -cN`:
 # head closes the pipe, tr dies with SIGPIPE and `set -o pipefail` then aborts
@@ -30,7 +36,12 @@ digits() {
 # Internal *.service.core-compute-<env>.internal hostnames need the VPN.
 require_internal_dns() {
     local host="$1"
-    getent hosts "$host" >/dev/null 2>&1 || die "cannot resolve $host — connect the VPN.
+    if command -v getent >/dev/null; then
+        getent hosts "$host" >/dev/null 2>&1
+    else
+        # macOS has no getent; dscacheutil consults the same resolver stack.
+        dscacheutil -q host -a name "$host" 2>/dev/null | grep -q ip_address
+    fi || die "cannot resolve $host — connect the VPN.
 If you connected it after starting the devcontainer, rebuild the container."
 }
 
@@ -63,8 +74,18 @@ Check: az keyvault secret list --vault-name s2s-$env -o tsv --query '[].name' | 
 
     if command -v oathtool >/dev/null; then
         otp=$(oathtool --totp -b "$secret")
+    elif command -v python3 >/dev/null; then
+        otp=$(python3 - "$secret" <<'PYEOF'
+import base64, hmac, struct, sys, time
+key = base64.b32decode(sys.argv[1].upper() + "=" * (-len(sys.argv[1]) % 8))
+msg = struct.pack(">Q", int(time.time()) // 30)
+d = hmac.new(key, msg, "sha1").digest()
+o = d[19] & 0xF
+print(f"{(struct.unpack('>I', d[o:o+4])[0] & 0x7FFFFFFF) % 1000000:06d}")
+PYEOF
+)
     else
-        command -v docker >/dev/null || die "need oathtool or docker to generate the S2S TOTP"
+        command -v docker >/dev/null || die "need oathtool, python3 or docker to generate the S2S TOTP"
         otp=$(docker run --rm hmctsprod.azurecr.io/imported/toolbelt/oathtool \
                   --totp -b "$secret" | tr -d '\r\n')
     fi
