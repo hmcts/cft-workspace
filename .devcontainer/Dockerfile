@@ -13,7 +13,8 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
         zsh git curl wget ca-certificates jq unzip xz-utils gnupg lsb-release \
         sudo locales tzdata \
-        postgresql-client; \
+        postgresql-client \
+        oathtool; \
     \
     install -m 0755 -d /etc/apt/keyrings; \
     \

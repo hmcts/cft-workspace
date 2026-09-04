@@ -116,7 +116,7 @@ MICROSERVICE=CHANGE_ME              # underscores, as it appears in the allowlis
 
 S2S_SECRET=$(az keyvault secret show --vault-name "s2s-$ENV" \
   --name "microservicekey-$(echo $MICROSERVICE | tr '_' '-')" --query value -o tsv)
-OTP=$(docker run --rm hmctsprod.azurecr.io/imported/toolbelt/oathtool --totp -b "$S2S_SECRET")
+OTP=$(oathtool --totp -b "$S2S_SECRET")
 
 S2S_TOKEN=$(curl -s -X POST "$S2S_URL/lease" -H 'Content-Type: application/json' \
   -d "{\"microservice\":\"$MICROSERVICE\",\"oneTimePassword\":\"$OTP\"}")
@@ -131,9 +131,9 @@ hyphens, so `xui_webapp` is stored as `microservicekey-xui-webapp`. List them wi
 az keyvault secret list --vault-name "s2s-$ENV" -o tsv --query "[].name" | grep microservicekey-
 ```
 
-`oathtool` isn't installed in the devcontainer, hence the docker image above; a native
-`oathtool --totp -b "$S2S_SECRET"` works if you have it. `scripts/lib/_cft.sh` also carries a
-`node` fallback for hosts with neither.
+`oathtool` is installed in the devcontainer. Outside it, `scripts/lib/_cft.sh` falls back to
+`node` and then to the `hmctsprod.azurecr.io/imported/toolbelt/oathtool` image, so the helper
+scripts work without it — but the snippet above assumes it's on PATH.
 
 **VPN required from here on.** Both `rpe-service-auth-provider` and `rd-professional-api` are
 only exposed on internal `*.service.core-compute-<env>.internal` hostnames — PRD's chart
