@@ -216,7 +216,7 @@ case "$SUBCOMMAND" in
     create)
         require_vpn
         [[ -n "$ORG_NAME" ]] || die "--name is required"
-        SUFFIX=$(cat /proc/sys/kernel/random/uuid | cut -c1-8)
+        SUFFIX=$(uuid | cut -c1-8)
         # PBA numbers are globally unique, so always randomise.
         PBA="PBA$(digits 7)"
         [[ -n "$SUPERUSER_EMAIL" ]] || SUPERUSER_EMAIL="superuser-$SUFFIX@justice.gov.uk"

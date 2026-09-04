@@ -16,7 +16,13 @@ require_tools() {
     for t in "$@"; do command -v "$t" >/dev/null || die "$t not on PATH"; done
 }
 
-uuid() { cat /proc/sys/kernel/random/uuid; }
+uuid() {
+    if [[ -r /proc/sys/kernel/random/uuid ]]; then
+        cat /proc/sys/kernel/random/uuid
+    else
+        uuidgen | tr 'A-Z' 'a-z'
+    fi
+}
 
 # N random digits. Deliberately NOT `tr -dc 0-9 </dev/urandom | head -cN`:
 # head closes the pipe, tr dies with SIGPIPE and `set -o pipefail` then aborts
@@ -30,7 +36,11 @@ digits() {
 # Internal *.service.core-compute-<env>.internal hostnames need the VPN.
 require_internal_dns() {
     local host="$1"
-    getent hosts "$host" >/dev/null 2>&1 || die "cannot resolve $host — connect the VPN.
+    if command -v getent >/dev/null; then
+        getent hosts "$host" >/dev/null 2>&1
+    else
+        dscacheutil -q host -a name "$host" 2>/dev/null | grep -q ip_address
+    fi || die "cannot resolve $host — connect the VPN.
 If you connected it after starting the devcontainer, rebuild the container."
 }
 
