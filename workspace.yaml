@@ -313,3 +313,5 @@ repos:
   apps/pt/pt-api: { url: hmcts/pt-api }
   apps/pt/pt-frontend: { url: hmcts/pt-frontend }
   apps/pt/pt-shared-infrastructure: { url: hmcts/pt-shared-infrastructure }
+  apps/dtsse/github-metrics: { url: hmcts/github-metrics }
+  apps/dtsse/dtsse-github-metrics: { url: hmcts/dtsse-github-metrics }
