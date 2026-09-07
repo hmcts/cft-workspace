@@ -29,7 +29,7 @@ sources_sha:
   "rd-professional-api:src/main/resources/application.yaml": "8501e4e7406318653bae352c04d5e03c1944a2cf"
   "rd-user-profile-api:src/main/resources/application.yaml": "8f4b5d2ee8f0d608f1fdaba60e7fd36ab585923c"
   "cnp-flux-config:apps/rd/rd-professional-api/aat.yaml": "fc6c420ab2f7d42579bbe33bc2f128b391450512"
-  "cnp-flux-config:apps/rd/rd-user-profile-api/aat.yaml": "d42ed980a7c78386cf64189c9ed4adb7e920bfbb"
+  "cnp-flux-config:apps/rd/rd-user-profile-api/aat.yaml": "622a7b4a9182e72ece5d90e9615074fe52f84acb"
   "rd-professional-api:src/functionalTest/java/uk/gov/hmcts/reform/professionalapi/client/ProfessionalApiClient.java": "1f80936bc8a1d85d7f0ab6c161c4bd6bb1e6bffa"
   "rd-professional-api:src/functionalTest/java/uk/gov/hmcts/reform/professionalapi/AuthorizationFunctionalTest.java": "be21a1daf4798f1c28bd6e33be90917b677bf57a"
   "cnp-flux-config:apps/xui/xui-mo-webapp/aat.yaml": "b52924ddf7e6644a5cd1a673934f094cdbdd8b63"
@@ -235,7 +235,7 @@ accept a `statusMessage`; PRD's own functional tests exercise all of them.
 > grep -n "S2S_AUTHORISED" platops/cnp-flux-config/apps/rd/rd-user-profile-api/aat.yaml
 > ```
 >
-> At time of writing that list is roughly a quarter the length of PRD's, so **most service-team
+> At time of writing that list is roughly half the length of PRD's, so **many service-team
 > microservices that can create an organisation cannot approve one.**
 >
 > How to tell it apart from a genuine auth failure: a `prd-admin` **GET**
