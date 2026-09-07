@@ -59,7 +59,7 @@ sources_sha:
   "ccd-next-hearing-date-updater:src/main/resources/application.yaml": "de5b7b6a8c6c685027fbc25f1cdd57dad3961412"
   "ccd-next-hearing-date-updater:charts/ccd-next-hearing-date-updater/values.yaml": "dc0cd2718504fe2715cbe20a15357b21044897c3"
   "ccd-next-hearing-date-updater:src/cftlib/java/uk/gov/hmcts/reform/next/hearing/date/updater/CftLibConfig.java": "a76ed99b52280efd2b9f2f21899e19d63cf56d64"
-  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
+  "ccd-data-store-api:src/main/resources/application.properties": "a3bd23b7e2a57b903a610b651b7a6f33c1781b15"
   "ccd-test-definitions:src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/common/ComplexTypes.json": "a7c2be423f52aa6bc6da65ecceeb689b762ab5a4"
   "ccd-data-store-api:src/test/resources/tests/BEFTA_MASTER-jurisdiction-payload.json": "66aab5d80a29e472cfb88b79c7efa1bfa25fcd80"
   ? "ccd-next-hearing-date-updater:src/main/java/uk/gov/hmcts/reform/next/hearing/date/updater/service/NextHearingDateUpdaterService.java"

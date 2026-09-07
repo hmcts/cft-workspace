@@ -35,6 +35,7 @@ sources:
   - ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0020__prioritise_live_es_queue_updates.sql
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseEventTransactionCoordinator.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java
@@ -84,38 +85,35 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/DelegatingCaseDetailsRepository.java": "3f31c2b5662bbfbe8d341fb02ce3688124b5cdd6"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java": "e3fca30b92506584a590ae203811d60202129d2d"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
-  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
+  "ccd-data-store-api:src/main/resources/application.properties": "a3bd23b7e2a57b903a610b651b7a6f33c1781b15"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java": "b58f7f447730bf5ec8f9bca0bd831c1abe2b6db0"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getevents/AuditEventLoader.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseAuditEventRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "de230f23a924a3427156022b92cbc2aba20c5b03"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseDataRepository.java": "cde80e20584d39f3f3a890f473db818f79449fae"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2a5833f94c41ffd6e32f473deaf910fc2ecc2a53"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseDataRepository.java": "f03c01ae7b0d0d73be7b623a42d42f329ae80e4b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/LegacyCallbackSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0001.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
-  ? "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java"
-  : "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
-  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java"
-  : "303b6617c09391e0700c6ae904b6dc54e119f9c0"
+  "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java": "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java": "303b6617c09391e0700c6ae904b6dc54e119f9c0"
   "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0008.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql"
   : "85f32117928bda311dd7c752f185ba9cd47c7464"
-  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0017__enhance_indexing.sql"
-  : "7173ae8de9e9ae1e004042e2a4ecc28b39a6c842"
-  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0019__notify_es_queue_changes.sql"
-  : "6ae803d3750d132178091c4fb578c11ce70cedcb"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0017__enhance_indexing.sql": "7173ae8de9e9ae1e004042e2a4ecc28b39a6c842"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0019__notify_es_queue_changes.sql": "6ae803d3750d132178091c4fb578c11ce70cedcb"
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0020__prioritise_live_es_queue_updates.sql"
   : "303b6617c09391e0700c6ae904b6dc54e119f9c0"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "770b4fa7598f9f3b9e608b335170eb191b0ddd55"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "a133054d701a8a8b18b5416e76ee46606a5aec6b"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseEventTransactionCoordinator.java": "dd278838230209d05a9b0a91b883b18d0fb0c9c6"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "72ce2f858c011ea3d7b02d750794d50e4d876c7c"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "72ce2f858c011ea3d7b02d750794d50e4d876c7c"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "62adf6c0f59736d77421502957079bc4551eeba1"
 ---
 
 # Decentralisation
@@ -380,12 +378,12 @@ Three distinct things get called "event data" in this design, and they land in d
 | `ccd.case_data.data` — legacy JSON blob | Service DB, `ccd` schema | only on the legacy-callback path (see below) |
 | Case pointer row (`data = {}`) | CCD DB | `CasePointerRepository` |
 
-The SDK's Flyway migrations create `ccd.case_data`, `ccd.case_event`, `case_event_audit`, `es_queue`, `submitted_callback_queue`, and `message_queue_candidates` in the **same datasource** as the service's domain tables (`dataruntime-db/migration/V0001.sql`; ordering enforced by `DecentralisedDataConfiguration.java:29-49`). That co-location is what allows a single transaction to cover the domain write, the audit row, and the outbox insert (`CaseSubmissionService.java:65-98`).
+The SDK's Flyway migrations create `ccd.case_data`, `ccd.case_event`, `case_event_audit`, `es_queue`, `submitted_callback_queue`, and `message_queue_candidates` in the **same datasource** as the service's domain tables (`dataruntime-db/migration/V0001.sql`; ordering enforced by `DecentralisedDataConfiguration.java:29-49`). That co-location is what allows a single transaction to cover the domain write, the audit row, and the outbox insert. The ordering inside that transaction — idempotency lock, reserve the case-event id, run the handler, upsert the case, snapshot the audit row — belongs to `CaseEventTransactionCoordinator.execute` (`CaseEventTransactionCoordinator.java:31-61`), which `CaseSubmissionService` delegates to.
 
 Two details worth knowing:
 
-- The audit snapshot is **not** the payload CCD sent in. `CaseSubmissionService.java:86` re-reads the case through `caseProjectionService.load(...)` *after* the handler has written, and stores that. So `ccd.case_event.data` is your `CaseView` projection of your own committed state.
-- `ccd.case_data.data` stays `{}` for `Submit<T,S>` events. `CaseDataRepository.upsertCase` only touches the `data` column when `has_data` is true (`CaseDataRepository.java:148,150`), and `DecentralisedSubmissionHandler` passes `Optional.empty()`. Only `LegacyCallbackSubmissionHandler.java:82` supplies a blob, snapshotted from the about-to-submit callback response.
+- The audit snapshot is **not** the payload CCD sent in. `CaseEventTransactionCoordinator.java:49-50` flushes pending JPA writes and then re-reads the case through `caseProjectionService.load(...)` *after* the handler has written, and stores that. So `ccd.case_event.data` is your `CaseView` projection of your own committed state.
+- `ccd.case_data.data` stays `{}` for `Submit<T,S>` events. `CaseDataRepository.upsertCase` only touches the `data` column when `has_data` is true (`CaseDataRepository.java:143,156`), and `DecentralisedSubmissionHandler` passes `Optional.empty()`. Only `LegacyCallbackSubmissionHandler.java:82` supplies a blob, snapshotted from the about-to-submit callback response.
 
 ## Implementing a decentralised service with the SDK
 
@@ -556,7 +554,7 @@ CCD's existing `ccd-message-publisher` service can be reused and re-deployed by 
 
 ## Preview environment support
 
-The `%s` placeholder in `ccd.decentralised.case-type-service-urls` is replaced with the case type ID suffix at routing time (`PersistenceStrategyResolver.java:171, 175`). Combined with `CASE_TYPE_SUFFIX` (appended to case type ID and name, `CaseType.java:72-88`), this allows each PR to get its own isolated case type routed to its own preview deployment.
+The `%s` placeholder in `ccd.decentralised.case-type-service-urls` is replaced with the case type ID suffix at routing time (`PersistenceStrategyResolver.java:171, 175`). Combined with `CASE_TYPE_SUFFIX` (appended to case type ID and name, `CaseType.java:84-100`), this allows each PR to get its own isolated case type routed to its own preview deployment.
 
 ## Example
 

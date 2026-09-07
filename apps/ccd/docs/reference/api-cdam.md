@@ -67,7 +67,7 @@ sources_sha:
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/Service.java": "732ec28c7a68359452f0e767b5bd605d10608e61"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
-  "platops/cnp-flux-config:apps/ccd/ccd-case-document-am-api/prod.yaml": "51608cee72db3e528bf2ac2da20e3ef6e6b80f5f"
+  "platops/cnp-flux-config:apps/ccd/ccd-case-document-am-api/prod.yaml": "66a6b9c1fd6f8384a998ee351f1c77112984336b"
   "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/endpoints/CaseDocumentAmController.java": "cf06c5f0618c9dc1bcdc5c636d899ae2500ef2af"
   "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/advice/ErrorResponse.java": "a3a5d5b6428a627427b24e16900c32e0981c2488"
   "ccd-case-document-am-api:src/main/java/uk/gov/hmcts/reform/ccd/documentam/controller/advice/CaseDocumentControllerAdvice.java": "ffcde0d9598de941886406b0933faab07523d58f"

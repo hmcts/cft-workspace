@@ -18,6 +18,7 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java
+  - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseEventTransactionCoordinator.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java
@@ -72,7 +73,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/PersistenceStrategyResolver.java": "079679807d1f7becaaef398a2991ddcaf5c46235"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/DelegatingCaseDetailsRepository.java": "3f31c2b5662bbfbe8d341fb02ce3688124b5cdd6"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPIInterceptor.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
-  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
+  "ccd-data-store-api:src/main/resources/application.properties": "a3bd23b7e2a57b903a610b651b7a6f33c1781b15"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedCaseEvent.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedAuditEvent.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedSubmitEventResponse.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
@@ -82,34 +83,31 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/service/DecentralisedCreateCaseEventService.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "770b4fa7598f9f3b9e608b335170eb191b0ddd55"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "a133054d701a8a8b18b5416e76ee46606a5aec6b"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseEventTransactionCoordinator.java": "dd278838230209d05a9b0a91b883b18d0fb0c9c6"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "9fe79e8e30e98faf96dc3411d069b09a08a2a295"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "d8da78cb8858bde94150c173cc38217b01f8381f"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "de230f23a924a3427156022b92cbc2aba20c5b03"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2a5833f94c41ffd6e32f473deaf910fc2ecc2a53"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventPublisher.java": "7d89554b6041589e987b918b9811a97d9e54524b"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventScheduler.java": "f6e8da81cdba5d42749e5419393a74a44a38fe7c"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdMessageQueueRepository.java": "c2823aeb77a6c8a7863c255953ab994b1d3e2a9d"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdServiceBusProperties.java": "f6e8da81cdba5d42749e5419393a74a44a38fe7c"
   ? "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdServiceBusConnectionValidator.java"
   : "0fe3c2b693c558395d2e6227fe7e6062e782afff"
+  "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java": "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java": "303b6617c09391e0700c6ae904b6dc54e119f9c0"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0017__enhance_indexing.sql": "7173ae8de9e9ae1e004042e2a4ecc28b39a6c842"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0019__notify_es_queue_changes.sql": "6ae803d3750d132178091c4fb578c11ce70cedcb"
+  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0020__prioritise_live_es_queue_updates.sql"
+  : "303b6617c09391e0700c6ae904b6dc54e119f9c0"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
   "rpx-xui-webapp:src/models/environmentConfig.model.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
-  ? "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java"
-  : "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
-  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java"
-  : "303b6617c09391e0700c6ae904b6dc54e119f9c0"
-  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
-  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0017__enhance_indexing.sql"
-  : "7173ae8de9e9ae1e004042e2a4ecc28b39a6c842"
-  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0019__notify_es_queue_changes.sql"
-  : "6ae803d3750d132178091c4fb578c11ce70cedcb"
-  ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0020__prioritise_live_es_queue_updates.sql"
-  : "303b6617c09391e0700c6ae904b6dc54e119f9c0"
 ---
 
 # Decentralised Callbacks -- `/ccd-persistence/*` Contract
@@ -600,7 +598,7 @@ Service teams using `ccd-config-generator` get a ready-made implementation via `
 On `POST /ccd-persistence/cases`:
 
 1. Validates `Authorization` header is present (returns 401 if blank).
-2. Delegates to `CaseSubmissionService.submit()`:
+2. Delegates to `CaseSubmissionService.submit()`, which hands the transaction to `CaseEventTransactionCoordinator.execute()`:
    - `IdempotencyEnforcer.lockCaseAndGetExistingEvent()` acquires a `FOR UPDATE` lock on the case row and checks if an event with the same idempotency key already exists.
    - If the key exists, the previously persisted event is returned (idempotent replay).
    - If the event has a `submitHandler` set, routes to `DecentralisedSubmissionHandler`.

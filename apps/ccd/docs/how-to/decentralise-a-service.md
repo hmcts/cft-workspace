@@ -60,28 +60,28 @@ diataxis: how-to
 product: ccd
 sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "770b4fa7598f9f3b9e608b335170eb191b0ddd55"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "a133054d701a8a8b18b5416e76ee46606a5aec6b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "9fe79e8e30e98faf96dc3411d069b09a08a2a295"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "d8da78cb8858bde94150c173cc38217b01f8381f"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql"
   : "85f32117928bda311dd7c752f185ba9cd47c7464"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "de230f23a924a3427156022b92cbc2aba20c5b03"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2a5833f94c41ffd6e32f473deaf910fc2ecc2a53"
   "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventPayload.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPI.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPIInterceptor.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
-  "ccd-data-store-api:src/main/resources/application.properties": "24b5ca9bb710214f31373528d363175b8a2514df"
+  "ccd-data-store-api:src/main/resources/application.properties": "a3bd23b7e2a57b903a610b651b7a6f33c1781b15"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java": "e3fca30b92506584a590ae203811d60202129d2d"
   ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/DelegatingSupplementaryDataUpdateOperation.java"
   : "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "72ce2f858c011ea3d7b02d750794d50e4d876c7c"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "72ce2f858c011ea3d7b02d750794d50e4d876c7c"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "62adf6c0f59736d77421502957079bc4551eeba1"
   "rpx-xui-webapp:src/cases/utils/decentralised-redirect.util.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
   "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
   "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
@@ -254,7 +254,7 @@ ccd.decentralised.case-type-service-urls[PCS]=http://localhost:4013
 
 Env-var form: `CCD_DECENTRALISED_CASE-TYPE-SERVICE-URLS_PCS=http://localhost:3206`. In preview
 environments set `CASE_TYPE_SUFFIX=pr-123` to namespace the case type ID
-(`CaseType.java:72-88`).
+(`CaseType.java:84-100`).
 
 > **Performance:** the resolver uses a Caffeine LRU cache (100k entries, ~10MB) for routing.
 > Expect ~25ms extra latency per decentralised hop.
@@ -302,7 +302,7 @@ public void configure(final ConfigBuilder<PCSCase, State, AccessProfile> builder
 }
 ```
 
-(`pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java:66-67,111-113`)
+(`pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java:78-79,122-124`)
 
 PCS injects the host from Spring configuration rather than reading `System.getenv()` directly, so
 the value comes from `caseApi.url` in `application.yaml` and follows the usual property-override
@@ -474,9 +474,10 @@ The five SDK-provided endpoints (`ServicePersistenceController.java:35-107`):
 #### Idempotency
 
 Every `POST /ccd-persistence/cases` carries an `Idempotency-Key` UUID header. The SDK
-enforces this via `SELECT ... FOR UPDATE` on `ccd.case_data` joined to `ccd.case_event` on
-`idempotency_key` (`IdempotencyEnforcer.java:23-59`). On duplicate keys it replays the
-historical response (`CaseSubmissionService.java:123-128`). CCD will **not** retry on failure
+enforces this in two steps inside the submission transaction: a `SELECT ... FOR UPDATE` on the
+`ccd.case_data` row to lock the case, then a lookup of `ccd.case_event` by `case_data_id` and
+`idempotency_key` (`IdempotencyEnforcer.java:23-64`). On duplicate keys it replays the
+historical response (`CaseSubmissionService.java:104-109`). CCD will **not** retry on failure
 (unlike legacy callbacks); upstream clients may retry on ambiguous responses.
 <!-- CONFLUENCE-ONLY: "CCD will not retry" comes from the LLD; the retry policy lives on the CCD data-store side, not in the SDK source. -->
 

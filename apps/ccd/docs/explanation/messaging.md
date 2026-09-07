@@ -75,10 +75,10 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/DataBlockGenerator.java": "991f7f4c0b1e06baa4c0d791083306f16f618b7b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/additionaldata/DefinitionBlockGenerator.java": "9c7139a70732f6dca95acb412c36706fa9e79be8"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "de230f23a924a3427156022b92cbc2aba20c5b03"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2a5833f94c41ffd6e32f473deaf910fc2ecc2a53"
   ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER/FT_MultiplePages/CaseEvent.json"
   : "01a70f64ffabade51fd2d3849223d55037c72252"
-  "libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/PublishedEvent.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
+  "libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/PublishedEvent.java": "2a5833f94c41ffd6e32f473deaf910fc2ecc2a53"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventScheduler.java": "f6e8da81cdba5d42749e5419393a74a44a38fe7c"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventPublisher.java": "7d89554b6041589e987b918b9811a97d9e54524b"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdMessageQueueRepository.java": "c2823aeb77a6c8a7863c255953ab994b1d3e2a9d"
@@ -310,7 +310,8 @@ public class PublishedEvent implements CCDConfig<CaseData, State, UserRole> {
             .grantHistoryOnly(LEGAL_ADVISOR, JUDGE))
             .page("addCaseNotes")
             .pageLabel("Add case notes")
-            .optional(CaseData::getNote);
+            .optional(CaseData::getNote)
+            .readonly(CaseData::getNotes);
     }
 }
 ```

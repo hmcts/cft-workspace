@@ -80,9 +80,9 @@ sources_sha:
   "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/OrganisationTypeConstants.java": "53085300965ee773e0fa62fe633b374e8658f2d0"
   "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/util/RefDataUtil.java": "53085300965ee773e0fa62fe633b374e8658f2d0"
   ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessType.json"
-  : "0b035fa17258e24bc51803ded7ecb26fea032068"
+  : "5a97ccb8a624ea65af72dc2c29ec209539515b85"
   ? "apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/BEFTA_MASTER_GROUPACCESS/common/AccessTypeRole.json"
-  : "46629947d6c4fdeee0105ce354ff496efc27ac89"
+  : "5a97ccb8a624ea65af72dc2c29ec209539515b85"
 ---
 
 # Group Access
@@ -322,7 +322,7 @@ Two access types: one for a solicitor profile, one for a government organisation
   "LiveTo" : "",
   "CaseTypeID" : "FT_CaseProfessionalGroupAccess",
   "AccessTypeID" : "GA_SOLICITOR",
-  "OrganisationProfileID" : "SOLICITOR_PROFILE",
+  "OrganisationProfileID" : "BEFTA_SOLICITOR_PROFILE",
   "AccessMandatory" : "No",
   "AccessDefault" : "No",
   "Display" : "Yes",
@@ -334,7 +334,7 @@ Two access types: one for a solicitor profile, one for a government organisation
   "LiveTo" : "",
   "CaseTypeID" : "FT_CaseProfessionalGroupAccess",
   "AccessTypeID" : "GA_OGD",
-  "OrganisationProfileID" : "GOVERNMENT_ORGANISATION_PROFILE",
+  "OrganisationProfileID" : "BEFTA_GOVERNMENT_ORGANISATION_PROFILE",
   "AccessMandatory" : "No",
   "AccessDefault" : "No",
   "Display" : "Yes",
@@ -357,7 +357,7 @@ Note the `CaseAccessGroupIDTemplate` value: `BEFTA_MASTER:FT_CaseProfessionalGro
   "LiveTo" : "",
   "CaseTypeID" : "FT_CaseProfessionalGroupAccess",
   "AccessTypeID" : "GA_SOLICITOR",
-  "OrganisationProfileID" : "SOLICITOR_PROFILE",
+  "OrganisationProfileID" : "BEFTA_SOLICITOR_PROFILE",
   "OrganisationalRoleName" : "",
   "GroupRoleName" : "CaseProfessionalGroupAccess_GA_Role",
   "CaseAssignedRoleField" : "CaseProfessionalGroupAccess_GA_Role",
@@ -368,7 +368,7 @@ Note the `CaseAccessGroupIDTemplate` value: `BEFTA_MASTER:FT_CaseProfessionalGro
   "LiveTo" : "",
   "CaseTypeID" : "FT_CaseProfessionalGroupAccess",
   "AccessTypeID" : "GA_OGD",
-  "OrganisationProfileID" : "GOVERNMENT_ORGANISATION_PROFILE",
+  "OrganisationProfileID" : "BEFTA_GOVERNMENT_ORGANISATION_PROFILE",
   "OrganisationalRoleName" : "CaseProfessionalGroupAccess_Org_Role",
   "GroupRoleName" : "CaseProfessionalGroupAccess_GA_Role",
   "CaseAssignedRoleField" : "CaseProfessionalGroupAccess_GA_Role",
@@ -379,7 +379,7 @@ Note the `CaseAccessGroupIDTemplate` value: `BEFTA_MASTER:FT_CaseProfessionalGro
   "LiveTo" : "",
   "CaseTypeID" : "FT_CaseProfessionalGroupAccess",
   "AccessTypeID" : "GA_OGD",
-  "OrganisationProfileID" : "GOVERNMENT_ORGANISATION_PROFILE",
+  "OrganisationProfileID" : "BEFTA_GOVERNMENT_ORGANISATION_PROFILE",
   "OrganisationalRoleName" : "CaseProfessionalGroupAccess_Org_Role",
   "GroupRoleName" : "",
   "CaseAssignedRoleField" : "",
