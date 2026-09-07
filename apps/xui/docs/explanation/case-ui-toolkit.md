@@ -91,7 +91,7 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/condition.peg.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "1a897e8ee004b009cea34182c5cbea4e28519688"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "1a897e8ee004b009cea34182c5cbea4e28519688"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "6fda093087d590850bedf0562dabd10be4b4ceb2"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.html": "7f1b0d12f0af5a80788e266558817af09930cd4f"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.scss": "4fda645087ccabf7c77b2902b1106efc9ed9415b"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read-label.html": "5dbc31c8259c5f503b00b65476552b726b6dfd1c"
@@ -103,7 +103,7 @@ sources_sha:
   "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "eed279a4dd5502643063241d86c2911799acac38"
   "rpx-xui-webapp:src/app/providers/providers.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/cases/cases.module.ts": "496d74f0b1a66c9aae6e057558642f2f447e59d9"
-  "rpx-xui-webapp:package.json": "4cce21b1bcf137df04e9305a455e8c88bbafabb4"
+  "rpx-xui-webapp:package.json": "3247d8de307486566a4f58879858242aec5e13b8"
   "civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn": "7b8e953f91f63dad2f50124a634989bd472d22b2"
   "civil-wa-task-configuration:src/main/resources/wa-task-configuration-civil-civil.dmn": "2a3ab1dec2ad1bbd323512eecf40646f4d3244cf"
 ---

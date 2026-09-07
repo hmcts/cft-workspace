@@ -62,7 +62,7 @@ sources_sha:
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write-journey.component.ts"
   : "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
   "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "1a897e8ee004b009cea34182c5cbea4e28519688"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "1a897e8ee004b009cea34182c5cbea4e28519688"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "6fda093087d590850bedf0562dabd10be4b4ceb2"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/markdown/markdown-component.module.ts": "315741f6698ef3b7d46e49e27742eefae21d0e24"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/journey/multipage-component-state.service.ts": "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
 ---

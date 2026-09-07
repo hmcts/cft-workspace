@@ -82,7 +82,7 @@ sources_sha:
   "rpx-xui-translation:projects/rpx-xui-translation/src/public-api.ts": "91c0b307dd4a8ac874f88112e3555aa3e6f97e17"
   "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-webapp:api/health/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
-  "ccpay-bubble:package.json": "7d1ce67f737a32f8043f4bfca7e3daf8129da095"
+  "ccpay-bubble:package.json": "2e99052f6f49291dad5449ac306014a3ea9a998a"
   "ccpay-bubble:src/app/app.module.ts": "b2d8aef5a92852479d4a223d5320a6ed82784d65"
   "em-media-viewer:package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
   "em-media-viewer:projects/media-viewer/package.json": "caaa9e5940dd35186ace33c97091e051c8794330"
