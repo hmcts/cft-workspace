@@ -76,9 +76,9 @@ sources_sha:
   "cnp-flux-config:apps/bsp/rpe-send-letter-service/rpe-send-letter-service.yaml": "7f749ac477177094eecec870262c84a3dbec2efe"
   "cnp-flux-config:apps/bsp/rpe-send-letter-service/prod.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
   "cnp-flux-config:apps/bsp/rpe-send-letter-service/aat.yaml": "a4d6829670f0f153c1846b79920c70ba63ef7bcd"
-  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml": "f1cd9aa23dc739f4e57f067d6b4fc7aaf1ae1a67"
   "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml": "40aead8406c136c315b5fd7b8c52be6ab8d94514"
-  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml": "f1cd9aa23dc739f4e57f067d6b4fc7aaf1ae1a67"
   "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml": "1b458db65004dbaa087d5b36329c05aefa0c8669"
 ---
 

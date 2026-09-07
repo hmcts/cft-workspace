@@ -74,9 +74,9 @@ sources_sha:
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/config/FtpConfigProperties.java": "4ad8b8107eacb25c81d44a742a57b0b3bf5e66dc"
   "send-letter-service:src/main/java/uk/gov/hmcts/reform/sendletter/tasks/UploadLettersTask.java": "523d1f48bf4ca1a73880d32b060a821831ea9a9a"
   "send-letter-service:charts/rpe-send-letter-service/values.yaml": "3036dec3fa0c30be2662ec2c2bd52c60896d3cc9"
-  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/bp-cron-trigger-daily-processing.yaml": "f1cd9aa23dc739f4e57f067d6b4fc7aaf1ae1a67"
   "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-processing/prod.yaml": "40aead8406c136c315b5fd7b8c52be6ab8d94514"
-  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml": "5ff8c9ce8e7878c290a3441f83d6625cee841b41"
+  "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/bp-cron-trigger-daily-checks.yaml": "f1cd9aa23dc739f4e57f067d6b4fc7aaf1ae1a67"
   "cnp-flux-config:apps/bsp/bp-cron-trigger-daily-checks/prod.yaml": "1b458db65004dbaa087d5b36329c05aefa0c8669"
 ---
 
