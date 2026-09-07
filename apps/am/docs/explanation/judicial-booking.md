@@ -90,7 +90,7 @@ sources_sha:
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java": "7e4eb810bfd5adca1c0c9825960a6e1e5a9c8851"
   ? "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/controller/testingsupport/RefreshJobsController.java"
   : "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
-  "am-role-assignment-batch-service:src/main/resources/application.yaml": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "am-role-assignment-batch-service:src/main/resources/application.yaml": "dc8a46b39abbf09373ceb60058a7383db4517e5a"
   "cnp-flux-config:apps/am/am-role-assignment-batch-service/prod.yaml": "65bd3d613151c3022fa81bdfe62a93ce33b88145"
   "rpx-xui-webapp:src/app/app-utils.ts": "eed279a4dd5502643063241d86c2911799acac38"
   "rpx-xui-webapp:api/accessManagement/index.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"

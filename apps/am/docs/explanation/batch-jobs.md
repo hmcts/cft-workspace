@@ -49,12 +49,12 @@ sources_sha:
   "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/config/BatchConfig.java": "1dab3801131feb14a32b7ccedd3ad96b0982ab70"
   "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
   "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteJudicialExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
-  "am-role-assignment-batch-service:src/main/resources/application.yaml": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "am-role-assignment-batch-service:src/main/resources/application.yaml": "dc8a46b39abbf09373ceb60058a7383db4517e5a"
   "am-role-assignment-batch-service:charts/am-role-assignment-batch-service/values.yaml": "e5df307cfb505df6b55546f200adb7b7f5606a7c"
   ? "am-role-assignment-refresh-batch:src/main/java/uk/gov/hmcts/reform/roleassignmentrefresh/domain/service/process/RefreshJobsOrchestrator.java"
   : "7c1fd658b6c1687cdabce688b6d28759f39a7ccc"
   "am-role-assignment-refresh-batch:src/main/java/uk/gov/hmcts/reform/roleassignmentrefresh/task/RefreshORMRules.java": "f05bdae53b45575a5fe5b341fa7725cf76d07769"
-  "am-role-assignment-refresh-batch:src/main/resources/application.yaml": "10e5e18b33c34cf740e99b9b02ee2a027e1ab5a3"
+  "am-role-assignment-refresh-batch:src/main/resources/application.yaml": "a6d293c0ed65af385cb43c6e63a53f849064e729"
   "am-role-assignment-refresh-batch:charts/am-role-assignment-refresh-batch/values.yaml": "f69f12cdfd2c865a3bb0501d84c105aad0948a51"
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql": "4634ca2f2028547d964f2f1deb111816ffa5da75"
   "am-org-role-mapping-service:src/main/resources/application.yaml": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
@@ -117,7 +117,7 @@ The flow (orchestrated in `RefreshJobsOrchestrator.java:63`):
 3. For each job:
    - If no `linkedJobId` (or `linkedJobId == 0`): call `POST /am/role-mapping/refresh?jobId=<id>` with an empty user list — triggers a full category/jurisdiction refresh.
    - If `linkedJobId` is present: fetch the linked job's `userIds` array and pass it to ORM — triggers a targeted per-user refresh.
-   - Sleep `refresh-job-delay-duration` (default 60 seconds) between each job dispatch (`application.yaml:70`).
+   - Sleep `refresh-job-delay-duration` (default 60 seconds) between each job dispatch (`application.yaml:71`).
 4. After all jobs dispatched, sleep `refresh-job-count-delay-duration` (default 540 seconds / 9 minutes) to allow ORM's async processing to complete (`RefreshJobsOrchestrator.java:91`).
 5. Call RAS user-count again for an "after" snapshot and compare.
 6. Optionally send a delta email via SendGrid (disabled by default).
@@ -126,7 +126,7 @@ The flow (orchestrated in `RefreshJobsOrchestrator.java:63`):
 
 Unlike the purge batch (which is pure JDBC with no outbound HTTP), the refresh batch authenticates to ORM and RAS using:
 
-- **S2S token**: generated via `ServiceAuthTokenGenerator` using microservice name `am_role_assignment_refresh_batch` and a TOTP secret from Key Vault (`application.yaml:79`).
+- **S2S token**: generated via `ServiceAuthTokenGenerator` using microservice name `am_role_assignment_refresh_batch` and a TOTP secret from Key Vault (`application.yaml:79-80`).
 - **IDAM user token**: obtained via OAuth2 password grant for a dedicated admin user (`orm.admin@hmcts.NET`) on every Feign request — there is no token caching (`IdamRepository.java:31-44`).
 
 Both headers (`ServiceAuthorization` and `Authorization`) are injected by `FeignClientInterceptor` (`FeignClientInterceptor.java:25-26`).

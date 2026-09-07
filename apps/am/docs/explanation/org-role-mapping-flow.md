@@ -113,7 +113,7 @@ sources_sha:
   "am-org-role-mapping-service:src/main/resources/validationrules/stcic/stcic-judicial-org-role-mapping.drl": "3ccbdde742b4e7b15a2e2fea1f2e8b0a0f3a8f54"
   "am-judicial-booking-service:src/main/resources/db/migration/V1_1__init_tables.sql": "910817b922d76c16f7c7a1cdf63105516b36b705"
   "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteJudicialExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
-  "am-role-assignment-batch-service:src/main/resources/application.yaml": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "am-role-assignment-batch-service:src/main/resources/application.yaml": "dc8a46b39abbf09373ceb60058a7383db4517e5a"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/casedataaccesscontrol/RoleAssignmentFilteringResult.java": "3e6786db4c5df9e1646fa4fd67529a6a11acaaa0"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/RoleAttributeMatcher.java": "484119b15a8eacd34f30af868e363047f014cd40"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/LocationMatcher.java": "e6d5579f206077c006f9ca7999ffbecca9bc89f9"

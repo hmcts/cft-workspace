@@ -101,7 +101,7 @@ sources_sha:
   "am-role-assignment-service:charts/am-role-assignment-service/values.aat.template.yaml": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
   "am-role-assignment-service:charts/am-role-assignment-service/values.preview.template.yaml": "e869c163161f8b96767a34e45aae0b3cb4644c8c"
   "am-role-assignment-batch-service:src/main/java/uk/gov/hmcts/reform/roleassignmentbatch/task/DeleteJudicialExpiredRecords.java": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
-  "am-role-assignment-batch-service:src/main/resources/application.yaml": "85ab735f7b60e74650e8a27dc8c473a6a750722d"
+  "am-role-assignment-batch-service:src/main/resources/application.yaml": "dc8a46b39abbf09373ceb60058a7383db4517e5a"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java": "7e4eb810bfd5adca1c0c9825960a6e1e5a9c8851"
   "am-org-role-mapping-service:src/main/resources/validationrules/civil/civil-judicial-org-role-mapping.drl": "c15c7771f4f24dbfecdc81514fe9f16c2546ed6c"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/apihelper/Constants.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
