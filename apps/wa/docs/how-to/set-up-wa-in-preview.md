@@ -18,8 +18,8 @@ sources:
   - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/controller/testingsupport/OrgMappingController.java
 status: verified
 sources_sha:
-  "sptribs-case-api:charts/sptribs-case-api/Chart.yaml": "2ea4d5f7e49caf86bf7ecae4cbb62de174b13981"
-  "sptribs-case-api:charts/sptribs-case-api/values.yaml": "2ea4d5f7e49caf86bf7ecae4cbb62de174b13981"
+  "sptribs-case-api:charts/sptribs-case-api/Chart.yaml": "fe639dd698b1f1b849aec3827d452cb0e4650452"
+  "sptribs-case-api:charts/sptribs-case-api/values.yaml": "fe639dd698b1f1b849aec3827d452cb0e4650452"
   "sptribs-case-api:charts/sptribs-case-api/values.wa.preview.template.yaml": "f3663f74852a15b006bc7e80bbbc5c5774345d3c"
   "cnp-flux-config:apps/sptribs/preview/aso/sptribs-postgres-config.yaml": "8e7d09ac38d68ff1241f6f03999f5a466a44d1a8"
   "wa-shared-infrastructure:aat.tfvars": "98e59f0635166193c0b4f278b5e2e9f6dea281fc"
