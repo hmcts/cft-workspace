@@ -19,7 +19,7 @@ confluence:
     title: "Microsite workflow overview"
     space: "CUIRA"
 sources_sha:
-  "cui-ra:src/main/controllers/dataController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/controllers/dataController.ts": "b1e59e1bcf8c294b026dbfaadb4a9dce29b00372"
   "cui-ra:src/main/controllers/reviewController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
   "cui-ra:src/main/builders/formBuilder.ts": "23e2b5f4aef9c21e1a2f91819eae9df9a16e964e"
   "cui-ra:config/default.json": "324d85792ffb142ce54f9263e03634e7b324aae9"

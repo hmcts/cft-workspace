@@ -21,8 +21,8 @@ confluence:
     space: "CUIRA"
 confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
-  "cui-ra:src/main/controllers/apiController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
-  "cui-ra:src/main/controllers/dataController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
+  "cui-ra:src/main/controllers/apiController.ts": "b1e59e1bcf8c294b026dbfaadb4a9dce29b00372"
+  "cui-ra:src/main/controllers/dataController.ts": "b1e59e1bcf8c294b026dbfaadb4a9dce29b00372"
   "cui-ra:src/main/controllers/reviewController.ts": "3998070da7aa9dad78ae68c562f230e672300584"
   "cui-ra:config/default.json": "324d85792ffb142ce54f9263e03634e7b324aae9"
 ---
