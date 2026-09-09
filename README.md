@@ -66,14 +66,16 @@ For example, use `/cft-tour ccd` in Claude Code or `$cft-tour ccd` in Codex. Pro
 
 ## Team-specific tooling
 
-Everything under the root `.claude/` is shared — every engineer loads it, and every skill in it spends context in every session. Tooling only one team needs lives in `apps/<product>/.claude/` as a Claude Code plugin, catalogued in [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json) and installed by the engineers who want it:
+Everything under the root `.claude/` is shared — every engineer loads it, and every skill in it spends context in every session. A team's own skills, agents, commands, scripts and hooks live in `apps/<product>/.claude/` instead, packaged as a Claude Code plugin, catalogued in [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json), and installed only by the engineers who want them:
 
 ```bash
 claude plugin install pcs@cft-workspace   # or /plugin in-session
 claude plugin disable pcs@cft-workspace   # stop loading it, keep it installed
 ```
 
-Nothing is enabled by default, and team skills are namespaced (`/pcs:issue-claim`) so they can't collide with the shared ones. Recipe for adding one, and the full enable/disable story: [how to add team-specific Claude skills, agents and scripts](./docs/how-to/add-team-claude-tooling.md).
+Nothing is enabled by default, and team skills are namespaced (`/pcs:issue-claim`) so they can't collide with the shared ones.
+
+→ **[How to add team-specific Claude skills, agents and scripts](./docs/how-to/add-team-claude-tooling.md)** — creating a team plugin, testing it before you push, and the enable/disable options for each engineer.
 
 ## MCP
 
