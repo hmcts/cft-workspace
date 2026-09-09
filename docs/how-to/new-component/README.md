@@ -7,6 +7,7 @@ Standing up a brand-new microservice on CNP.
 - [Jenkins repository setup](jenkins-repository.md)
 - [Helm chart](helm-chart.md)
 - [GitOps / Flux](gitops-flux.md)
+- [Point a HelmRelease at the right chart](flux-chart-source.md)
 - [Feature flags](feature-flags.md)
 - [Elasticsearch](elasticsearch.md)
 - [Secrets management](secrets-management.md)

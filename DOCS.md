@@ -114,6 +114,8 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | em | explanation | Media Viewer | media-viewer | `apps/em/docs/explanation/media-viewer.md` |
 | em | explanation | Overview | overview | `apps/em/docs/explanation/overview.md` |
 | em | explanation | Stitching And Bundling | stitching | `apps/em/docs/explanation/stitching-and-bundling.md` |
+| legacy | explanation | GAPS2: reconciling apps/legacy/gaps2 with hmcts/GAPS2 | gaps2-repo-provenance | `apps/legacy/docs/explanation/gaps2-repo-reconciliation.local.md` |
+| legacy | explanation | SEND (GAPS2) to CCD case type mapping | send-ccd-migration | `apps/legacy/docs/explanation/send-to-ccd-mapping.local.md` |
 | payment | how-to | Configure Pci Pal Flow | telephony | `apps/payment/docs/how-to/configure-pci-pal-flow.md` |
 | payment | how-to | Integrate From A Service | overview | `apps/payment/docs/how-to/integrate-from-a-service.md` |
 | payment | how-to | Troubleshoot Payment Status | lifecycle | `apps/payment/docs/how-to/troubleshoot-payment-status.md` |
@@ -216,6 +218,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Migrating from `cnp-module-redis` to `terraform-module-azure-managed-redis` | migrating-to-managed-redis | `docs/how-to/migrating-to-managed-redis.md` |
 | workspace | how-to | Node.js | publish-nodejs-library | `docs/how-to/common-pipeline/publish-nodejs-library.md` |
 | workspace | how-to | Operational Acceptance Testing | oat | `docs/how-to/path-to-live/oat.md` |
+| workspace | how-to | Point a HelmRelease at the right chart | flux-chart-source | `docs/how-to/new-component/flux-chart-source.md` |
 | workspace | how-to | Postgresql single server to flexible server migration using Azure DMS | postgresql-singleserver-to-flexibleserver-migration-dms | `docs/how-to/postgresql-singleserver-to-flexibleserver-migration-dms.md` |
 | workspace | how-to | Postgresql single server to flexible server migration using Azure Portal | postgresql-singleserver-to-flexibleserver-migration-portal | `docs/how-to/postgresql-singleserver-to-flexibleserver-migration-portal.md` |
 | workspace | how-to | Profile a Java application running in an AKS cluster | profile-java-app-in-aks | `docs/how-to/profile-java-app-in-aks.md` |
