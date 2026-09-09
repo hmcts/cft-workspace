@@ -45,15 +45,22 @@
       "Bash(az aks delete:*)"
     ],
     "ask": [
-      "Bash(gh workflow run:*)",
-      "Bash(gh api:*)",
       "RemoteTrigger",
-      "CronCreate",
-      "mcp__jenkins__build_item",
-      "Bash(./scripts/jenkins rerun:*)"
+      "CronCreate"
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/ask-cost-actions.sh"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
