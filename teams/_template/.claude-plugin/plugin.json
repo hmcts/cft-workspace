@@ -1,0 +1,8 @@
+{
+  "name": "example-team",
+  "description": "One-line summary of what this team's tooling does. Shown in /plugin, so make it specific.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Example team"
+  }
+}

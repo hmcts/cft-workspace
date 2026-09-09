@@ -39,6 +39,7 @@ platops/<repo>            flux, dns, jenkins, AKS, plumbing
 workspace.yaml            manifest - single source of truth
 docs/                     workspace-wide / platform docs (Diátaxis)
 apps/<product>/docs/      product-specific docs (Diátaxis)
+teams/<team>/             per-team Claude Code plugin - opt-in skills, agents, scripts
 ```
 
 ## Documentation
@@ -63,6 +64,16 @@ The workflow definitions under `.claude/` remain the single source of truth. Nat
 
 For example, use `/cft-tour ccd` in Claude Code or `$cft-tour ccd` in Codex. Project-scoped Codex configuration is loaded only after the repository is trusted. The Codex guides for [project instructions](https://developers.openai.com/codex/guides/agents-md), [skills](https://developers.openai.com/codex/skills), and [configuration](https://developers.openai.com/codex/config-basic) describe these conventions.
 
+## Team-specific tooling
+
+Everything under `.claude/` is shared — every engineer loads it, and every skill in it spends context in every session. Tooling only one team needs lives in `teams/<team>/` as a Claude Code plugin, catalogued in [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json) and installed by the engineers who want it:
+
+```bash
+claude plugin install pcs@cft-workspace   # or /plugin in-session
+```
+
+Nothing is enabled by default, and team skills are namespaced (`/pcs:issue-claim`) so they can't collide with the shared ones. To add a team, see [how to add team-specific Claude skills, agents and scripts](./docs/how-to/add-team-claude-tooling.md) and copy [`teams/_template/`](./teams/README.md).
+
 ## MCP
 
 The MCP configuration includes Atlassian (JIRA & Confluence), Jenkins and Playwright. Credentials for the `atlassian` and `jenkins` MCP servers are gitignored and created per-user: [set-up-mcp-servers](./docs/how-to/set-up-mcp-servers.md).
@@ -79,6 +90,7 @@ The MCP configuration includes Atlassian (JIRA & Confluence), Jenkins and Playwr
 | `scripts/grep <pattern>` | Ripgrep across all clones with CFT-aware excludes. |
 | `scripts/index` | Regenerate `INDEX.md` from each product's `CLAUDE.md` frontmatter. |
 | `scripts/docs-index` | Regenerate `DOCS.md` from each Diátaxis doc page's frontmatter. |
+| `scripts/validate-plugins` | Check the team-plugin catalogue and every plugin it points at. Runs in CI on every PR. |
 
 The `prefix` argument filters by path prefix — e.g. `./scripts/sync apps/nfdiv` only touches the nfdiv clones.
 

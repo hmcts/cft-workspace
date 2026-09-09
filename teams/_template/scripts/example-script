@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Example of a script bundled with a team plugin.
+#
+# Team scripts live inside the plugin rather than in the workspace's top-level
+# scripts/, which is for tooling every team needs. Skills address them as
+# ${CLAUDE_PLUGIN_ROOT}/scripts/<name> — never a path relative to the cwd,
+# because the plugin runs from an installed copy under ~/.claude/plugins/cache,
+# not from your checkout of this repo.
+#
+# The workspace root is $CLAUDE_PROJECT_DIR when Claude Code launched there.
+set -euo pipefail
+
+echo "Replace me. Plugin root: ${CLAUDE_PLUGIN_ROOT:-unset}"

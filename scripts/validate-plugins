@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Validate the team-plugin catalogue and every plugin it points at.
+#
+# A syntax error or a stale path in .claude-plugin/marketplace.json doesn't fail
+# for the team that introduced it — it fails for everyone, because a marketplace
+# that won't parse takes every other team's plugin with it. Hence a check on
+# every PR rather than a path-filtered one.
+#
+# This is the cheap structural pass (no npm, no auth). `claude plugin validate`
+# is the richer local check and knows about fields this script doesn't:
+#   claude plugin validate .claude-plugin/marketplace.json
+#   claude plugin validate --strict teams/<team>
+
+source "$(dirname "$0")/lib/_common.sh"
+
+cd "$WORKSPACE_ROOT"
+
+CATALOGUE=".claude-plugin/marketplace.json"
+FAIL=0
+
+fail() { err "  ✗ $*"; FAIL=$((FAIL+1)); }
+
+command -v jq >/dev/null || die "jq not on PATH."
+
+[[ -f "$CATALOGUE" ]] || die "$CATALOGUE is missing."
+jq -e . "$CATALOGUE" >/dev/null 2>&1 || die "$CATALOGUE is not valid JSON."
+
+info "team plugin catalogue"
+
+# A marketplace with no name can't be referenced as <plugin>@<marketplace>.
+market_name=$(jq -r '.name // ""' "$CATALOGUE")
+[[ -n "$market_name" ]] || fail "$CATALOGUE: no \"name\""
+
+count=$(jq '.plugins | length' "$CATALOGUE")
+if [[ "$count" -eq 0 ]]; then
+    log "  ${C_DIM}catalogue is empty — no team plugins yet${C_RESET}"
+fi
+
+while IFS=$'\t' read -r name source; do
+    [[ -n "$name" ]] || { fail "$CATALOGUE: an entry has no \"name\""; continue; }
+
+    if [[ -z "$source" ]]; then
+        fail "$name: no \"source\""
+        continue
+    fi
+
+    # Only in-repo plugins are structurally checkable here. An entry sourced
+    # from another repo is a team's own to keep working; leave it alone.
+    if [[ "$source" != ./* ]]; then
+        log "  ${C_DIM}$name → $source (external, not checked)${C_RESET}"
+        continue
+    fi
+
+    dir="${source#./}"
+    manifest="$dir/.claude-plugin/plugin.json"
+    before=$FAIL
+
+    if [[ ! -f "$manifest" ]]; then
+        fail "$name: $manifest is missing"
+        continue
+    fi
+    if ! jq -e . "$manifest" >/dev/null 2>&1; then
+        fail "$name: $manifest is not valid JSON"
+        continue
+    fi
+
+    # The two names are matched at install time, not by any file layout rule,
+    # so a mismatch installs nothing and reports no error.
+    declared=$(jq -r '.name // ""' "$manifest")
+    [[ "$declared" == "$name" ]] ||
+        fail "$name: $manifest declares name \"$declared\" — must match the catalogue entry"
+
+    [[ -n "$(jq -r '.description // ""' "$manifest")" ]] ||
+        fail "$name: $manifest has no \"description\" (it's what /plugin shows)"
+
+    # A skill with no description is invisible to the model: the description is
+    # the only part loaded until the skill runs.
+    while IFS= read -r skill; do
+        fm=$(awk '/^---[[:space:]]*$/{c++; if(c==2)exit; if(c>0)next} c==1{print}' "$skill")
+        [[ "$fm" == *"name:"* ]] || fail "$skill: frontmatter has no \"name\""
+        [[ "$fm" == *"description:"* ]] || fail "$skill: frontmatter has no \"description\""
+    done < <(find "$dir/skills" -name SKILL.md -type f 2>/dev/null)
+
+    components=$(find "$dir" -mindepth 1 -maxdepth 2 \
+        \( -path "$dir/skills/*" -o -path "$dir/agents/*" -o -path "$dir/commands/*" -o -path "$dir/hooks/*" \) \
+        -print -quit 2>/dev/null)
+    [[ -n "$components" ]] ||
+        fail "$name: $dir has no skills/, agents/, commands/ or hooks/ — nothing would load"
+
+    [[ $FAIL -eq $before ]] && ok "  ✓ $name → $dir"
+done < <(jq -r '.plugins[]? | [.name // "", (if (.source|type) == "string" then .source else "" end)] | @tsv' "$CATALOGUE")
+
+if [[ $FAIL -gt 0 ]]; then
+    err "$FAIL problem(s)"
+    exit 1
+fi
+ok "catalogue ok"
