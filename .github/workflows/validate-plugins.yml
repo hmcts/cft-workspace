@@ -1,0 +1,45 @@
+name: Validate team plugins
+
+# .claude-plugin/marketplace.json is a shared failure point: it is one file that
+# every team appends to, and a marketplace that won't parse — or that points at
+# a directory a rename left behind — doesn't degrade to "that team's plugin is
+# missing". It takes the whole catalogue down, for every team, silently, because
+# a plugin that fails to load says nothing in the session that needed it.
+#
+# scripts/validate-plugins is the structural pass: valid JSON, every in-repo
+# source resolves, plugin.json's name matches its catalogue entry (a mismatch
+# installs nothing and reports no error), and each plugin actually ships
+# something loadable. Teams get the richer check from `claude plugin validate`
+# locally; this job deliberately needs no npm install and no credentials.
+#
+# Runs on every PR, not only ones touching apps/*/.claude/** or .claude-plugin/**. A
+# path-filtered job can't be a required status check: on a PR that doesn't
+# match the filter it never reports, and the merge blocks forever waiting for
+# it. Same reasoning as lint-workflows.yml.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-plugins-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate-plugins
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # jq is preinstalled on ubuntu-latest; the script needs nothing else.
+      - name: Validate catalogue and plugins
+        run: ./scripts/validate-plugins

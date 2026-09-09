@@ -1,0 +1,11 @@
+{
+  "name": "cft-workspace",
+  "owner": {
+    "name": "HMCTS CFT",
+    "email": "hmcts@justice.gov.uk"
+  },
+  "metadata": {
+    "description": "Team-specific Claude Code tooling for the CFT workspace. Shared workspace-wide skills stay in the root .claude/; each entry here is one team's own skills, agents, commands and scripts, held in apps/<product>/.claude/ and installed only by the engineers who want them."
+  },
+  "plugins": []
+}
