@@ -39,12 +39,18 @@
       "Bash(git push --force*)",
       "Bash(git reset --hard*)",
       "Bash(rm -rf*)",
-      "Bash(./scripts/* --no-verify*)"
+      "Bash(./scripts/* --no-verify*)",
+      "Bash(az aks start:*)",
+      "Bash(az aks stop:*)",
+      "Bash(az aks delete:*)"
     ],
     "ask": [
       "Bash(gh workflow run:*)",
-      "Bash(gh api repos/hmcts/auto-shutdown:*)",
-      "CronCreate"
+      "Bash(gh api:*)",
+      "RemoteTrigger",
+      "CronCreate",
+      "mcp__jenkins__build_item",
+      "Bash(./scripts/jenkins rerun:*)"
     ]
   },
   "hooks": {
