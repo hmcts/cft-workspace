@@ -159,6 +159,11 @@ know:
 - **Installing is asynchronous.** A plugin installed this session may not appear
   in the skill list until the next one — `/reload-plugins` avoids the wait.
 
+Install at the default `user` scope, which is per-engineer and machine-wide, or
+`--scope local` to limit it to this checkout. **Not `--scope project`** — that
+writes `enabledPlugins` into the workspace's committed `.claude/settings.json`
+and turns your team's plugin on for every other team too.
+
 Turning one off has two levels. `disable` keeps it installed but stops loading
 it, which is what you want when a team's hooks or skills are getting in the way
 of unrelated work:
