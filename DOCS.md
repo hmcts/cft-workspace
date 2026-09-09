@@ -114,8 +114,6 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | em | explanation | Media Viewer | media-viewer | `apps/em/docs/explanation/media-viewer.md` |
 | em | explanation | Overview | overview | `apps/em/docs/explanation/overview.md` |
 | em | explanation | Stitching And Bundling | stitching | `apps/em/docs/explanation/stitching-and-bundling.md` |
-| legacy | explanation | GAPS2: reconciling apps/legacy/gaps2 with hmcts/GAPS2 | gaps2-repo-provenance | `apps/legacy/docs/explanation/gaps2-repo-reconciliation.local.md` |
-| legacy | explanation | SEND (GAPS2) to CCD case type mapping | send-ccd-migration | `apps/legacy/docs/explanation/send-to-ccd-mapping.local.md` |
 | payment | how-to | Configure Pci Pal Flow | telephony | `apps/payment/docs/how-to/configure-pci-pal-flow.md` |
 | payment | how-to | Integrate From A Service | overview | `apps/payment/docs/how-to/integrate-from-a-service.md` |
 | payment | how-to | Troubleshoot Payment Status | lifecycle | `apps/payment/docs/how-to/troubleshoot-payment-status.md` |

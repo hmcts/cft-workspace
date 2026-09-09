@@ -17,7 +17,7 @@ DOCS.md                 # generated doc-page index across docs/ + apps/*/docs/ (
 scripts/                # bootstrap, sync, doctor, add-repo, grep, index, docs-index, idam-test-user, prd-test-org, am-role-assignment
 docs/                   # tutorials / how-to / reference / explanation (Diátaxis) — workspace-wide / platform topics
 apps/<product>/docs/    # product-specific Diátaxis docs (ccd, xui, wa, am, bulk-scan)
-teams/<team>/           # per-team Claude Code plugins (opt-in skills/agents/commands/scripts)
+apps/<product>/.claude/ # per-team Claude Code plugin — opt-in skills/agents/commands/scripts
 ```
 
 Every clone is its own git repo with its own VCS history, build system, README, and conventions. Treat each as standalone. There is **no** top-level build, dependency graph, or cross-repo tooling beyond what's in `scripts/`.
@@ -86,7 +86,7 @@ The `/docs-generate-product-md` command (re-runnable) populates these. `scripts/
 - **Workspace repo never tracks clone contents.** If you find yourself about to `git add apps/<product>/<repo>/<file>`, stop — that's a clone-local change and belongs in that repo's commit history, not the workspace's.
 - **`scripts/sync` is non-destructive** — it skips dirty / branched / unpushed clones. Treat clone-local WIP as the user's working state.
 - **Add a repo** via `scripts/add-repo <path> <org/repo>`, not by hand-editing `workspace.yaml` and re-running bootstrap (the script keeps the two in sync).
-- **`.claude/` is shared; `teams/<team>/` is not.** A skill, agent, command or script that only one team needs belongs in that team's plugin under `teams/`, catalogued in `.claude-plugin/marketplace.json` and installed per-engineer — not in `.claude/skills/` or `scripts/`, where it would cost every engineer in every team context in every session. Team skills are namespaced (`/pcs:issue-claim`). Recipe: [`docs/how-to/add-team-claude-tooling.md`](docs/how-to/add-team-claude-tooling.md).
+- **Root `.claude/` is shared; `apps/<product>/.claude/` is not.** A skill, agent, command or script that only one team needs belongs in that team's plugin at `apps/<product>/.claude/`, catalogued in `.claude-plugin/marketplace.json` and installed per-engineer — not in the root `.claude/skills/` or `scripts/`, where it would cost every engineer in every team context in every session. Team skills are namespaced (`/pcs:issue-claim`). Like `apps/<product>/docs/`, these are workspace-repo files, not clone-local. Recipe: [`docs/how-to/add-team-claude-tooling.md`](docs/how-to/add-team-claude-tooling.md).
 
 ## Cross-repo searches
 

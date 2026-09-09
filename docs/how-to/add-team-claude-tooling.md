@@ -9,21 +9,26 @@ audience: both
 
 The skills in `.claude/skills/` and the scripts in `scripts/` are shared: every
 engineer in every team loads them, and every one of them spends context in
-every session. Tooling that only one team needs goes in a **team plugin**
-instead — `teams/<team>/`, catalogued in
+every session. Tooling that only one team needs goes in a **team plugin** —
+`apps/<product>/.claude/`, catalogued in
 [`.claude-plugin/marketplace.json`](../../.claude-plugin/marketplace.json), and
 installed only by the engineers who want it.
 
-Skill names are namespaced by plugin (`/pcs:issue-claim`), so a team plugin can
-use any name without checking what the workspace or another team already has.
+It sits next to the product's other workspace-repo scaffolding
+(`apps/<product>/CLAUDE.md`, `apps/<product>/docs/`), and like those it is
+tracked here, not in any clone — `.gitignore` re-includes it. Skill names are
+namespaced by plugin (`/pcs:issue-claim`), so a team plugin can use any name
+without checking what the workspace or another team already has.
 
 ## Create the plugin
 
+Three files, all under `apps/<product>/.claude/`:
+
 ```bash
-cp -r teams/_template teams/pcs
+mkdir -p apps/pcs/.claude/.claude-plugin apps/pcs/.claude/skills/issue-claim
 ```
 
-Edit `teams/pcs/.claude-plugin/plugin.json` — `name` must match the catalogue
+`apps/pcs/.claude/.claude-plugin/plugin.json` — `name` must match the catalogue
 entry you are about to add:
 
 ```json
@@ -35,40 +40,51 @@ entry you are about to add:
 }
 ```
 
-Then fill in the parts you need. All four directories are picked up by
-convention — nothing to declare in `plugin.json`:
+`apps/pcs/.claude/skills/issue-claim/SKILL.md` — the `description` is the whole
+interface. It is all the model sees until the skill runs, so write when to use
+it, not just what it does:
 
-| Path | Becomes |
-|---|---|
-| `teams/pcs/skills/<name>/SKILL.md` | `/pcs:<name>` |
-| `teams/pcs/agents/<name>.md` | subagent type `pcs:<name>` |
-| `teams/pcs/commands/<name>.md` | `/pcs:<name>` |
-| `teams/pcs/scripts/<name>` | `${CLAUDE_PLUGIN_ROOT}/scripts/<name>` |
-| `teams/pcs/hooks/hooks.json` | hooks, active only for engineers who installed the plugin |
+```markdown
+---
+name: issue-claim
+description: Issue a possession claim end-to-end against a local or AAT PCS stack. Use when asked to create test claim data, reproduce a claim-issue bug, or check a claim renders in XUI.
+---
 
-Two rules that are easy to get wrong:
+# Issue a claim
 
-- **Never use cwd-relative paths.** A plugin runs from an installed copy under
-  `~/.claude/plugins/cache/`, not from your checkout. Address bundled files as
-  `${CLAUDE_PLUGIN_ROOT}/…` and the workspace root as `$CLAUDE_PROJECT_DIR`.
-- **The `description` line is the whole interface.** It is all the model sees
-  until the skill runs, so write when to use it, not just what it does.
+1. …
+```
 
-Add the entry to `.claude-plugin/marketplace.json`:
+And the catalogue entry in `.claude-plugin/marketplace.json`:
 
 ```json
 {
   "name": "pcs",
-  "source": "./teams/pcs",
+  "source": "./apps/pcs/.claude",
   "description": "PCS team workflows: local stack, CCD definition checks, E2E previews"
 }
 ```
 
+Everything else is optional, and picked up by convention — nothing to declare in
+`plugin.json`:
+
+| Path under `apps/pcs/.claude/` | Becomes |
+|---|---|
+| `skills/<name>/SKILL.md` | `/pcs:<name>` |
+| `agents/<name>.md` | subagent type `pcs:<name>` |
+| `commands/<name>.md` | `/pcs:<name>` |
+| `scripts/<name>` | `${CLAUDE_PLUGIN_ROOT}/scripts/<name>` |
+| `hooks/hooks.json` | hooks, active only for engineers who installed the plugin |
+
+**Never use cwd-relative paths.** A plugin runs from an installed copy under
+`~/.claude/plugins/cache/`, not from your checkout. Address bundled files as
+`${CLAUDE_PLUGIN_ROOT}/…` and the workspace root as `$CLAUDE_PROJECT_DIR`.
+
 Check both manifests before you push:
 
 ```bash
-claude plugin validate .claude-plugin/marketplace.json
-claude plugin validate --strict teams/pcs
+./scripts/validate-plugins
+claude plugin validate --strict apps/pcs/.claude
 ```
 
 Then raise a PR on `hmcts/cft-workspace` as usual. Reviewers are looking for the
@@ -79,8 +95,20 @@ needs it, it belongs in `.claude/skills/`), and does it route to `DOCS.md` /
 ## Test it before you push
 
 The catalogue every engineer gets is fetched from `master`, so your working copy
-isn't what gets installed. To point the marketplace at your checkout for the
-length of a session:
+isn't what gets installed. Two ways to try a plugin you haven't pushed:
+
+```bash
+claude --add-dir apps/pcs        # loads apps/pcs/.claude directly, no install
+```
+
+That is the quick one, and it is why the plugin lives at this path — Claude Code
+discovers a subdirectory's `.claude/` when the directory is passed to
+`--add-dir`. The skills load **unnamespaced** (`/issue-claim`, not
+`/pcs:issue-claim`), so don't combine it with having the plugin installed, or
+you'll see both copies.
+
+To exercise the real thing, install path included, point the marketplace at your
+checkout instead:
 
 ```bash
 claude plugin marketplace add "$PWD"     # same name, so it replaces the master copy
@@ -104,10 +132,10 @@ Delete that block when you're done, or you'll silently stop seeing other teams'
 updates from `master`. After editing a skill, `/reload-plugins` picks it up
 without restarting.
 
-## Enable a plugin (each engineer, once)
+## Enable and disable
 
 The workspace's `.claude/settings.json` makes the catalogue known to everyone
-but enables nothing, so this is opt-in:
+but enables nothing, so every plugin is opt-in, per engineer:
 
 ```
 /plugin
@@ -118,7 +146,8 @@ the UI:
 
 ```bash
 claude plugin install pcs@cft-workspace
-claude plugin details pcs         # what it adds, and what it costs in context
+claude plugin list                 # what's installed, and from where
+claude plugin details pcs          # what it adds, and what it costs in context
 ```
 
 Then `/pcs:` in the prompt should complete to that team's skills. Two things to
@@ -130,20 +159,31 @@ know:
 - **Installing is asynchronous.** A plugin installed this session may not appear
   in the skill list until the next one — `/reload-plugins` avoids the wait.
 
-To share the choice with the rest of the team, commit nothing: each engineer
-installs what they want. If a team decides everyone in it should have the plugin
-on by default, that is `"enabledPlugins": {"pcs@cft-workspace": true}` in their
-own `.claude/settings.local.json`, not in the workspace's shared settings.
-
-To turn one off:
+Turning one off has two levels. `disable` keeps it installed but stops loading
+it, which is what you want when a team's hooks or skills are getting in the way
+of unrelated work:
 
 ```bash
-claude plugin uninstall pcs@cft-workspace
+claude plugin disable pcs@cft-workspace
+claude plugin enable pcs@cft-workspace
+claude plugin uninstall pcs@cft-workspace   # remove it entirely
 ```
+
+A team that wants its own plugin on by default for everyone in it can commit
+nothing to the shared settings — each engineer puts this in their own
+`.claude/settings.local.json` (gitignored):
+
+```json
+{ "enabledPlugins": { "pcs@cft-workspace": true } }
+```
+
+Settings precedence is user < project < local, so the same key set to `false` in
+`.claude/settings.local.json` is also how you opt out of anything a future
+change to the shared `.claude/settings.json` turns on by default.
 
 ## Codex
 
 Plugins are a Claude Code mechanism; Codex has no equivalent, and the
 `.agents/skills/` adapters cover the shared workspace skills only. Codex users
-can still read `teams/<team>/skills/<name>/SKILL.md` directly — it is ordinary
-Markdown — but there is no `$pcs:<name>` invocation.
+can still read `apps/<product>/.claude/skills/<name>/SKILL.md` directly — it is
+ordinary Markdown — but there is no `$pcs:<name>` invocation.

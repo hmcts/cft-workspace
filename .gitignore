@@ -16,6 +16,9 @@
 !/apps/*/README.md
 !/apps/*/.gitkeep
 !/apps/*/docs/
+# The team's Claude Code plugin — workspace-repo scaffolding like docs/, not
+# clone-local. Catalogued in .claude-plugin/marketplace.json.
+!/apps/*/.claude/
 
 # 3) libs/ and platops/ contain only repo clones; allow only .gitkeep at the top.
 /libs/*

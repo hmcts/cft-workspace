@@ -12,7 +12,7 @@ name: Validate team plugins
 # something loadable. Teams get the richer check from `claude plugin validate`
 # locally; this job deliberately needs no npm install and no credentials.
 #
-# Runs on every PR, not only ones touching teams/** or .claude-plugin/**. A
+# Runs on every PR, not only ones touching apps/*/.claude/** or .claude-plugin/**. A
 # path-filtered job can't be a required status check: on a PR that doesn't
 # match the filter it never reports, and the merge blocks forever waiting for
 # it. Same reasoning as lint-workflows.yml.

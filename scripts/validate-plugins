@@ -9,7 +9,7 @@
 # This is the cheap structural pass (no npm, no auth). `claude plugin validate`
 # is the richer local check and knows about fields this script doesn't:
 #   claude plugin validate .claude-plugin/marketplace.json
-#   claude plugin validate --strict teams/<team>
+#   claude plugin validate --strict apps/<product>/.claude
 
 source "$(dirname "$0")/lib/_common.sh"
 
