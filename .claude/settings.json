@@ -40,6 +40,11 @@
       "Bash(git reset --hard*)",
       "Bash(rm -rf*)",
       "Bash(./scripts/* --no-verify*)"
+    ],
+    "ask": [
+      "Bash(gh workflow run:*)",
+      "Bash(gh api repos/hmcts/auto-shutdown:*)",
+      "CronCreate"
     ]
   },
   "hooks": {
