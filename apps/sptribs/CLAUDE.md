@@ -29,11 +29,12 @@ repos:
   - apps/sptribs/sptribs-dss-update-case-web
   - apps/sptribs/sptribs-e2etests
   - apps/sptribs/sptribs-shared-infrastructure
+  - apps/sptribs/sptribs-send-prototype
 ---
 
 # Special Tribunals (sptribs)
 
-Special Tribunals is the HMCTS service handling Criminal Injuries Compensation (CIC) tribunal cases (with scope to expand to other tribunal types such as Mental Health). It allows caseworkers to create, manage, and progress CIC tribunal cases through CCD (XUI), and provides two separate citizen-facing web journeys: one for submitting new DSS applications and one for updating existing cases.
+Special Tribunals is the HMCTS service handling Criminal Injuries Compensation (CIC) tribunal cases, now expanding to other tribunal types — Special Educational Needs and Disability (SEND) is the first, and eight more are planned. It allows caseworkers to create, manage, and progress CIC tribunal cases through CCD (XUI), and provides two separate citizen-facing web journeys: one for submitting new DSS applications and one for updating existing cases.
 
 ## Repos
 
@@ -42,6 +43,8 @@ Special Tribunals is the HMCTS service handling Criminal Injuries Compensation (
 - `apps/sptribs/sptribs-dss-update-case-web` — Node/Express citizen-facing web app (port 3100) for the DSS Update Case journey; allows citizens and legal representatives to upload documents against an existing CCD case
 - `apps/sptribs/sptribs-e2etests` — Playwright-based end-to-end test suite covering DSS Submit, DSS Update, and Case API UI flows; shared pipeline test runner
 - `apps/sptribs/sptribs-shared-infrastructure` — Terraform-managed Azure infrastructure (App Insights, Key Vault, monitoring alerts)
+- `apps/sptribs/sptribs-send-prototype` — Node/Express citizen prototype (port 3211) for the SEND35 journey: appeal a decision about an education, health and care (EHC) plan. Hand-written pages on the `@hmcts-cft/*` starter stack; submits to the `StSend35` case type in `sptribs-case-api`. Preview only, deployed from a PR.
+- `apps/sptribs/tfs-frontend` — **local-only spike, not in `workspace.yaml` and with no git remote.** A config-driven journey engine that renders tribunal forms from JSON in `config/forms/`, plus a generator that emits CCD case-type Java into `sptribs-case-api`. `sptribs-send-prototype` is deliberately the opposite approach; do not confuse the two.
 
 ## Architecture
 
@@ -71,6 +74,33 @@ Key callback event IDs for citizen DSS flows are declared in `application.yaml` 
 - `cftlib`: `com.github.hmcts.rse-cft-lib` v0.19.2017; `bootWithCcd` and `cftlibTest` tasks embed the full CFT stack in-process for local development and testing
 - `flyway`: Migrations in `src/main/resources/db/migration/` (V1 creates correspondence table; V1.1 adds anonymisation sequence)
 - `send_letter`: `send-letter-service` URL wired via `${SEND_LETTER_SERVICE_BASEURL}` in `application.yaml`
+
+
+## SEND (StSend35)
+
+The second CCD case type on this platform, and the first of eight new services Special
+Tribunals is bringing onto it. Two repos, one prototype:
+
+- **`sptribs-send-prototype`** is the citizen journey — 52 pages covering all 17 sections of
+  SEND35, a GDS task list hub, and a `create-case` call to CCD once the declaration is signed.
+- **`sptribs-case-api`** carries the case type: 17 `@JsonUnwrapped` complexes (85 fields), three
+  states, three events, and 13 caseworker tabs. SEND stays in the existing `ST_CIC`
+  jurisdiction.
+
+Supporting more than one case type needed groundwork in `sptribs-case-api`, and the reason is
+worth knowing before touching CCD config there: `CCDDefinitionGenerator` groups every
+`CCDConfig` bean by its declared case-data class and clears each group's output directory
+before writing it. Configs declared on bare `CaseData` form a group nothing calls
+`caseType()` on, whose output directory is the definitions **parent** — so writing it deletes
+every case type already written. Harmless with one case type, destructive with two, and it
+surfaces as `FileNotFoundException` against correct Java. Every CIC config is therefore
+declared on `CriminalInjuriesCompensationData`; see `docs/adding-a-case-type.md` in that repo.
+
+Both live on PRs for a Preview deployment rather than on master:
+[sptribs-case-api#2642](https://github.com/hmcts/sptribs-case-api/pull/2642) and
+[sptribs-send-prototype#2](https://github.com/hmcts/sptribs-send-prototype/pull/2). The
+frontend reaches the case-api PR's CCD by in-cluster DNS, using `env.CASE_API_PR` in its
+`Jenkinsfile_CNP`.
 
 ## Notable conventions and quirks
 
