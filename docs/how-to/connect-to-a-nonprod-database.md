@@ -12,7 +12,8 @@ the admin credentials out of the service's Key Vault. Useful for inspecting or f
 fixture data when a functional test fails on environment state rather than code.
 
 For **production**, do not use this page — production access is JIT-only via Entra access
-packages. See [Database infrastructure](database-infrastructure.md#production-access).
+packages. See [Connect to a production database](prod-access-db.md), and
+[Database infrastructure](database-infrastructure.md#production-access) for the setup side.
 
 ## Prerequisites
 
