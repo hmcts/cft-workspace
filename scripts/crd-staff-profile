@@ -1,0 +1,435 @@
+#!/usr/bin/env bash
+#
+# Create a PERMANENT staff user in a non-prod CFT environment: a real IDAM account
+# *and* the matching CRD (rd-caseworker-ref-api) staff profile row, so the user shows
+# up in eXUI's Staff UI with services, job title, region and base locations.
+#
+# This is the scripted equivalent of what an admin does in eXUI Staff UI
+# (Staff > Add new user), plus the IDAM roles Staff UI can never grant.
+#
+# Why two steps: Staff UI's POST /refdata/case-worker/profile creates the IDAM user
+# itself via user-profile-api, but leaves it PENDING with no password. So we mint a
+# real, activated IDAM account first, then let CRD find it (user-profile-api returns
+# 409) and merge -- StaffRefDataServiceImpl.createUserProfileInIdamUP() treats 201 and
+# 409 the same, and updateUserRolesInIdam() only ADDS missing roles, never removes.
+#
+# Roles you end up with:
+#   - whatever you pass in --roles          (step 1, granted directly in IDAM)
+#   - cwd-user                              (step 2, CRD adds it unconditionally)
+#   - staff-admin                           (step 2, because we always send staff_admin:true)
+#   - any roles mapped from job-title x service-code in case_worker_idam_role_association
+# cwd-admin / cwd-system-user are ONLY reachable via step 1 -- CRD never grants them.
+#
+# Requires: the HMCTS VPN (rd-caseworker-ref-api and the S2S provider are internal-only,
+# with no public ingress -- see charts/rd-caseworker-ref-api/values.yaml), az (logged in),
+# curl, jq, python3.
+#
+set -uo pipefail
+
+SELF="$(basename "$0")"
+SKILL_DIR="${CRD_IDAM_SKILL_DIR:-$(cd "$(dirname "$0")/.." && pwd)/.claude/skills/idam-manage-user}"
+
+ENVN="aat"
+EMAIL=""; FORENAME="Test"; SURNAME="StaffUser"; PASSWORD=""
+ROLES="caseworker,caseworker-civil,caseworker-civil-staff,staff-admin,cwd-admin,cwd-system-user"
+SERVICE="CIVIL"
+JOB_TITLE="Senior Legal Caseworker"
+USER_TYPE="CTSC"
+REGION="National"
+LOCATION="Birmingham Civil and Family Justice Centre"
+ACTOR_EMAIL="${CRD_ACTOR_EMAIL:-}"; ACTOR_PASSWORD="${CRD_ACTOR_PASSWORD:-}"
+TASK_SUPERVISOR="false"; CASE_ALLOCATOR="false"
+SKIP_IDAM="false"; DRY_RUN="false"; JSON_ONLY="false"
+
+# eXUI's own service -> service-code map (rpx-xui-webapp config/default.json,
+# serviceRefDataMapping). The Staff UI dropdown is built from exactly this.
+service_codes_for() {
+  case "$(printf '%s' "$1" | tr 'a-z' 'A-Z')" in
+    IA)         echo "BFA1" ;;
+    CIVIL)      echo "AAA7" ;;
+    PRIVATELAW) echo "ABA5" ;;
+    PUBLICLAW)  echo "ABA3" ;;
+    SSCS)       echo "BBA3" ;;
+    ST_CIC)     echo "BBA2" ;;
+    EMPLOYMENT) echo "BHA1" ;;
+    DIVORCE)    echo "ABA1" ;;
+    FR)         echo "ABA2" ;;
+    PROBATE)    echo "ABA6" ;;
+    HRS)        echo "HRS"  ;;
+    PCS)        echo "AAA3" ;;
+    *)          echo "" ;;
+  esac
+}
+
+usage() {
+  cat <<EOF
+$SELF -- create a permanent IDAM user + CRD staff profile (eXUI Staff UI, scripted)
+
+Usage:
+  $SELF create   [options]     IDAM account + CRD staff profile (the full flow)
+  $SELF profile  [options]     CRD staff profile only (IDAM user must already exist)
+  $SELF get      --email <e>   read back a staff profile
+  $SELF lookups                dump job titles / user types / services / regions
+  $SELF token                  print the S2S + user tokens (for ad-hoc curl)
+
+Options:
+  -e, --env <env>          aat (default) | demo | ithc | perftest
+      --email <addr>       the user to create                          [required]
+      --forename <name>    default: $FORENAME
+      --surname <name>     default: $SURNAME
+      --password <pw>      default: generated (must not contain fore/surname)
+      --roles <a,b,c>      IDAM roles granted in step 1
+                           default: $ROLES
+      --service <name>     CIVIL|IA|PCS|SSCS|ST_CIC|...  default: $SERVICE
+      --job-title <title>  default: $JOB_TITLE
+      --user-type <type>   default: $USER_TYPE
+      --region <name>      default: $REGION
+      --location <search>  base location search string
+                           default: $LOCATION
+      --actor-email <e>    a staff-admin user to authenticate as       [required]
+      --actor-password <p> its password                                [required]
+      --task-supervisor    set task_supervisor:true
+      --case-allocator     set case_allocator:true
+      --skip-idam          skip step 1 (same as 'profile')
+      --dry-run            resolve everything, print the payload, do not POST
+      --json               machine-readable output only
+  -h, --help
+
+Environment variables:
+  CRD_ACTOR_EMAIL / CRD_ACTOR_PASSWORD   defaults for --actor-email/--actor-password
+
+Examples:
+  $SELF create --email jane.doe@justice.gov.uk --forename Jane --surname Doe \\
+      --actor-email staff-ui-admin@justice.gov.uk --actor-password 'Password12!'
+
+  $SELF create --email civil.admin@justice.gov.uk --service CIVIL \\
+      --job-title 'Legal Caseworker' --region 'London' --dry-run
+
+Notes:
+  * The email domain must be on CRD's allowlist (application.yaml, domainList):
+    justice.gov.uk, dwp.gov.uk, hmrc.gov.uk, hmcts.net, dfcni.gov.uk,
+    ibca.org.uk, cabinetoffice.gov.uk
+  * CRD refuses a second profile for the same email (PROFILE_ALREADY_CREATED) --
+    a re-run needs the PUT update endpoint, not this script.
+  * staff_admin is always sent as true. Sending false would make CRD DELETE the
+    staff-admin role from an existing user (updateMismatchedDatatoUP).
+EOF
+}
+
+die() { echo "$SELF: $*" >&2; exit 1; }
+say() { [ "$JSON_ONLY" = "true" ] || echo "$*"; }
+
+CMD="${1:-}"; [ -n "$CMD" ] || { usage; exit 1; }
+case "$CMD" in create|profile|get|lookups|token) shift ;; -h|--help) usage; exit 0 ;; *) usage; exit 1 ;; esac
+[ "$CMD" = "profile" ] && SKIP_IDAM="true"
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -e|--env)          ENVN="$2"; shift 2 ;;
+    --email)           EMAIL="$2"; shift 2 ;;
+    --forename)        FORENAME="$2"; shift 2 ;;
+    --surname)         SURNAME="$2"; shift 2 ;;
+    --password)        PASSWORD="$2"; shift 2 ;;
+    --roles)           ROLES="$2"; shift 2 ;;
+    --service)         SERVICE="$2"; shift 2 ;;
+    --job-title)       JOB_TITLE="$2"; shift 2 ;;
+    --user-type)       USER_TYPE="$2"; shift 2 ;;
+    --region)          REGION="$2"; shift 2 ;;
+    --location)        LOCATION="$2"; shift 2 ;;
+    --actor-email)     ACTOR_EMAIL="$2"; shift 2 ;;
+    --actor-password)  ACTOR_PASSWORD="$2"; shift 2 ;;
+    --task-supervisor) TASK_SUPERVISOR="true"; shift ;;
+    --case-allocator)  CASE_ALLOCATOR="true"; shift ;;
+    --skip-idam)       SKIP_IDAM="true"; shift ;;
+    --dry-run)         DRY_RUN="true"; shift ;;
+    --json)            JSON_ONLY="true"; shift ;;
+    -h|--help)         usage; exit 0 ;;
+    *) die "unknown option: $1" ;;
+  esac
+done
+
+case "$ENVN" in aat|demo|ithc|perftest) ;; *) die "unsupported env: $ENVN (aat|demo|ithc|perftest)" ;; esac
+
+CRD="http://rd-caseworker-ref-api-$ENVN.service.core-compute-$ENVN.internal"
+LRD="http://rd-location-ref-api-$ENVN.service.core-compute-$ENVN.internal"
+S2S_URL="http://rpe-service-auth-provider-$ENVN.service.core-compute-$ENVN.internal"
+IDAM_PUBLIC="https://idam-web-public.$ENVN.platform.hmcts.net"
+RPX_VAULT="rpx-$ENVN"
+
+for bin in curl jq python3 az; do command -v "$bin" >/dev/null 2>&1 || die "$bin not on PATH"; done
+
+# ---------------------------------------------------------------- preflight ---
+# The internal hosts only resolve on the HMCTS VPN. Fail loudly and early rather
+# than after we have already created an IDAM account.
+preflight_vpn() {
+  host "rd-caseworker-ref-api-$ENVN.service.core-compute-$ENVN.internal" >/dev/null 2>&1 && return 0
+  cat >&2 <<EOF
+$SELF: cannot resolve rd-caseworker-ref-api-$ENVN.service.core-compute-$ENVN.internal
+
+rd-caseworker-ref-api and the S2S provider have no public ingress
+(charts/rd-caseworker-ref-api/values.yaml sets ingressHost to the .internal name only),
+and pods/portforward is not granted in the 'rd' / 'rpe' namespaces.
+
+Connect to the HMCTS VPN and re-run.
+EOF
+  exit 3
+}
+
+# ------------------------------------------------------------------ tokens ---
+# S2S: xui_webapp is on CRD's allowlist (application.yaml s2s-authorised.services).
+# oathtool isn't installed on macOS by default, so TOTP is done in python.
+totp() {
+  python3 - "$1" <<'PY'
+import base64, hmac, hashlib, struct, sys, time
+secret = sys.argv[1].strip().replace(' ', '').upper()
+secret += '=' * (-len(secret) % 8)
+key = base64.b32decode(secret, casefold=True)
+msg = struct.pack('>Q', int(time.time()) // 30)
+h = hmac.new(key, msg, hashlib.sha1).digest()
+o = h[19] & 15
+print('%06d' % ((struct.unpack('>I', h[o:o+4])[0] & 0x7fffffff) % 1000000))
+PY
+}
+
+get_s2s_token() {
+  local secret otp
+  secret=$(az keyvault secret show --vault-name "$RPX_VAULT" -n mc-s2s-client-secret --query value -o tsv 2>/dev/null) \
+    || die "could not read mc-s2s-client-secret from $RPX_VAULT (az login?)"
+  [ -n "$secret" ] || die "mc-s2s-client-secret is empty in $RPX_VAULT"
+  otp=$(totp "$secret") || die "TOTP generation failed"
+  curl -s -m 25 -X POST "$S2S_URL/lease" -H 'Content-Type: application/json' \
+    -d "{\"microservice\":\"xui_webapp\",\"oneTimePassword\":\"$otp\"}"
+}
+
+# User token: CRD's @Secured("staff-admin") resolves roles through the OIDC
+# userinfo endpoint, not from the JWT body -- any client that can password-grant
+# works, so we reuse the idam-manage-user skill's test-public-service credentials.
+get_user_token() {
+  [ -n "$ACTOR_EMAIL" ] && [ -n "$ACTOR_PASSWORD" ] \
+    || die "--actor-email and --actor-password are required (a staff-admin user)"
+  [ -f "$SKILL_DIR/_env.sh" ] || die "cannot find _env.sh in $SKILL_DIR (set CRD_IDAM_SKILL_DIR)"
+  local secret
+  secret=$(ENV="$ENVN" bash -c ". '$SKILL_DIR/_env.sh' >/dev/null 2>&1; printf '%s' \"\$SERVICE_SECRET\"") \
+    || die "could not load SERVICE_SECRET from $SKILL_DIR/_env.sh"
+  [ -n "$secret" ] || die "SERVICE_SECRET empty for env $ENVN"
+  curl -s -m 30 -X POST "$IDAM_PUBLIC/o/token" \
+    -d grant_type=password -d client_id=test-public-service \
+    --data-urlencode "client_secret=$secret" \
+    --data-urlencode "username=$ACTOR_EMAIL" \
+    --data-urlencode "password=$ACTOR_PASSWORD" \
+    --data-urlencode "scope=openid profile roles" | jq -r '.access_token // empty'
+}
+
+assert_actor_is_staff_admin() {
+  local roles
+  roles=$(curl -s -m 20 "$IDAM_PUBLIC/o/userinfo" -H "Authorization: Bearer $USER_TOKEN" | jq -r '.roles // [] | join(",")')
+  case ",$roles," in
+    *,staff-admin,*) say "actor $ACTOR_EMAIL has staff-admin (roles: $roles)" ;;
+    *) die "actor $ACTOR_EMAIL is not staff-admin -- every Staff UI endpoint is @Secured(\"staff-admin\"). Roles: ${roles:-none}" ;;
+  esac
+}
+
+crd_get()  { curl -s -m 30 "$CRD$1" -H "Authorization: Bearer $USER_TOKEN" -H "ServiceAuthorization: Bearer $S2S_TOKEN"; }
+lrd_get()  { curl -s -m 30 "$LRD$1" -H "Authorization: Bearer $USER_TOKEN" -H "ServiceAuthorization: Bearer $S2S_TOKEN"; }
+
+mint_tokens() {
+  preflight_vpn
+  say "minting S2S token (xui_webapp) ..."
+  S2S_TOKEN=$(get_s2s_token)
+  case "$S2S_TOKEN" in
+    ey*) : ;;
+    *) die "S2S lease failed: ${S2S_TOKEN:-<empty>}" ;;
+  esac
+  say "minting user token ($ACTOR_EMAIL) ..."
+  USER_TOKEN=$(get_user_token)
+  [ -n "$USER_TOKEN" ] || die "password grant failed for $ACTOR_EMAIL"
+  assert_actor_is_staff_admin
+}
+
+# -------------------------------------------------------------- ref data ---
+# Resolve the four things the Staff UI form makes you pick. Each resolver prints
+# the available options on a miss, so a typo is self-diagnosing.
+resolve_ref_data() {
+  local codes
+  codes=$(service_codes_for "$SERVICE")
+  [ -n "$codes" ] || die "unknown service '$SERVICE' (IA|CIVIL|PRIVATELAW|PUBLICLAW|SSCS|ST_CIC|EMPLOYMENT|DIVORCE|FR|PROBATE|HRS|PCS)"
+  SERVICE_CODE="$codes"
+  SERVICE_NAME=$(printf '%s' "$SERVICE" | tr 'a-z' 'A-Z')
+
+  say "resolving job title '$JOB_TITLE' ..."
+  local jt
+  jt=$(crd_get "/refdata/case-worker/job-title")
+  ROLE_ID=$(printf '%s' "$jt" | jq -r --arg t "$JOB_TITLE" '.job_title[]? | select((.role_description // "") | ascii_downcase == ($t | ascii_downcase)) | .role_id' | head -1)
+  [ -n "$ROLE_ID" ] || {
+    echo "job title '$JOB_TITLE' not found. Available:" >&2
+    printf '%s' "$jt" | jq -r '.job_title[]? | "  \(.role_id)\t\(.role_description)"' >&2
+    exit 4
+  }
+  ROLE_NAME=$(printf '%s' "$jt" | jq -r --arg t "$JOB_TITLE" '.job_title[]? | select((.role_description // "") | ascii_downcase == ($t | ascii_downcase)) | .role_description' | head -1)
+
+  say "resolving user type '$USER_TYPE' ..."
+  local ut
+  ut=$(crd_get "/refdata/case-worker/user-type")
+  USER_TYPE_NAME=$(printf '%s' "$ut" | jq -r --arg t "$USER_TYPE" '.user_type[]? | select((.code // "") | ascii_downcase == ($t | ascii_downcase)) | .code' | head -1)
+  [ -n "$USER_TYPE_NAME" ] || {
+    echo "user type '$USER_TYPE' not found. Available:" >&2
+    printf '%s' "$ut" | jq -r '.user_type[]? | "  \(.id)\t\(.code)"' >&2
+    exit 4
+  }
+
+  say "resolving region '$REGION' ..."
+  local rg
+  rg=$(lrd_get "/refdata/location/regions")
+  REGION_ID=$(printf '%s' "$rg" | jq -r --arg r "$REGION" '.[]? | select((.description // "") | ascii_downcase == ($r | ascii_downcase)) | .region_id' | head -1)
+  [ -n "$REGION_ID" ] || {
+    echo "region '$REGION' not found. Available:" >&2
+    printf '%s' "$rg" | jq -r '.[]? | "  \(.region_id)\t\(.description)"' >&2
+    exit 4
+  }
+  REGION_NAME=$(printf '%s' "$rg" | jq -r --arg r "$REGION" '.[]? | select((.description // "") | ascii_downcase == ($r | ascii_downcase)) | .description' | head -1)
+
+  say "resolving base location '$LOCATION' (service_code=$SERVICE_CODE) ..."
+  local lv
+  lv=$(lrd_get "/refdata/location/court-venues/venue-search?search-string=$(printf '%s' "$LOCATION" | jq -sRr @uri)&service_code=$SERVICE_CODE")
+  # LRD has spelled this field differently across versions; take whichever is present.
+  LOCATION_ID=$(printf '%s' "$lv" | jq -r '[.[]? | (.epimms_id // .epimmsId // .site_id // empty)] | .[0] // empty')
+  LOCATION_NAME=$(printf '%s' "$lv" | jq -r '[.[]? | (.site_name // .court_name // .venue_name // empty)] | .[0] // empty')
+  [ -n "$LOCATION_ID" ] || {
+    echo "no court venue matched '$LOCATION' for service_code=$SERVICE_CODE. Raw response:" >&2
+    printf '%s\n' "$lv" | head -c 2000 >&2
+    exit 4
+  }
+
+  say ""
+  say "  service    : $SERVICE_NAME ($SERVICE_CODE)"
+  say "  job title  : $ROLE_NAME (role_id=$ROLE_ID)"
+  say "  user type  : $USER_TYPE_NAME"
+  say "  region     : $REGION_NAME (region_id=$REGION_ID)"
+  say "  location   : $LOCATION_NAME (location_id=$LOCATION_ID)"
+  say ""
+}
+
+build_payload() {
+  jq -n \
+    --arg email "$EMAIL" --arg first "$FORENAME" --arg last "$SURNAME" \
+    --arg service "$SERVICE_NAME" --arg code "$SERVICE_CODE" \
+    --arg region "$REGION_NAME" --argjson region_id "$REGION_ID" \
+    --argjson role_id "$ROLE_ID" --arg role "$ROLE_NAME" \
+    --arg user_type "$USER_TYPE_NAME" \
+    --argjson location_id "$LOCATION_ID" --arg location "$LOCATION_NAME" \
+    --argjson ts "$TASK_SUPERVISOR" --argjson ca "$CASE_ALLOCATOR" \
+    '{
+      email_id: $email, first_name: $first, last_name: $last,
+      user_type: $user_type,
+      region: $region, region_id: $region_id,
+      staff_admin: true, task_supervisor: $ts, case_allocator: $ca, suspended: false,
+      services: [{ service: $service, service_code: $code }],
+      roles: [{ role_id: $role_id, role: $role, is_primary: true }],
+      base_locations: [{ location_id: $location_id, location: $location, is_primary: true }]
+    }'
+}
+
+# -------------------------------------------------------------- subcommands ---
+case "$CMD" in
+  token)
+    mint_tokens
+    if [ "$JSON_ONLY" = "true" ]; then
+      jq -n --arg s2s "$S2S_TOKEN" --arg user "$USER_TOKEN" '{s2s:$s2s,user:$user}'
+    else
+      echo; echo "ServiceAuthorization: Bearer $S2S_TOKEN"; echo; echo "Authorization: Bearer $USER_TOKEN"
+    fi
+    exit 0 ;;
+
+  lookups)
+    mint_tokens
+    echo "=== user types ==="; crd_get "/refdata/case-worker/user-type" | jq -r '.user_type[]? | "  \(.id)\t\(.code)"'
+    echo "=== job titles ==="; crd_get "/refdata/case-worker/job-title" | jq -r '.job_title[]? | "  \(.role_id)\t\(.role_description)"'
+    echo "=== services (skill groups) ==="; crd_get "/refdata/case-worker/skill" | jq -r '.service_skill[]? | "  \(.id)"'
+    echo "=== regions ==="; lrd_get "/refdata/location/regions" | jq -r '.[]? | "  \(.region_id)\t\(.description)"'
+    exit 0 ;;
+
+  get)
+    [ -n "$EMAIL" ] || die "--email is required"
+    mint_tokens
+    crd_get "/refdata/case-worker/profile/search-by-name?search=$(printf '%s' "$EMAIL" | jq -sRr @uri)" | jq .
+    exit 0 ;;
+esac
+
+# ------------------------------------------------------------ create/profile ---
+[ -n "$EMAIL" ] || die "--email is required"
+case "$EMAIL" in
+  *@justice.gov.uk|*@dwp.gov.uk|*@hmrc.gov.uk|*@hmcts.net|*@dfcni.gov.uk|*@ibca.org.uk|*@cabinetoffice.gov.uk) : ;;
+  *) die "email domain not on CRD's allowlist (justice.gov.uk, dwp.gov.uk, hmrc.gov.uk, hmcts.net, dfcni.gov.uk, ibca.org.uk, cabinetoffice.gov.uk)" ;;
+esac
+
+mint_tokens
+resolve_ref_data
+
+PAYLOAD=$(build_payload)
+
+if [ "$DRY_RUN" = "true" ]; then
+  say "--dry-run: would POST to $CRD/refdata/case-worker/profile"
+  printf '%s\n' "$PAYLOAD"
+  exit 0
+fi
+
+# --- step 1: permanent IDAM account -------------------------------------------
+if [ "$SKIP_IDAM" = "false" ]; then
+  [ -x "$SKILL_DIR/invite-user.sh" ] || die "cannot find invite-user.sh in $SKILL_DIR (set CRD_IDAM_SKILL_DIR)"
+  say "=== step 1/2: permanent IDAM account ==="
+  if [ -n "$PASSWORD" ]; then
+    ENV="$ENVN" "$SKILL_DIR/invite-user.sh" "$EMAIL" "$FORENAME" "$SURNAME" "$ROLES" "$PASSWORD" \
+      || die "invite-user.sh failed -- IDAM account not created, nothing to roll back"
+  else
+    ENV="$ENVN" "$SKILL_DIR/invite-user.sh" "$EMAIL" "$FORENAME" "$SURNAME" "$ROLES" \
+      || die "invite-user.sh failed -- IDAM account not created, nothing to roll back"
+  fi
+  say ""
+else
+  say "=== step 1/2: skipped (--skip-idam) ==="
+fi
+
+# --- step 2: CRD staff profile ------------------------------------------------
+say "=== step 2/2: CRD staff profile ==="
+RESP_FILE=$(mktemp); trap 'rm -f "$RESP_FILE"' EXIT
+CODE=$(curl -s -m 60 -o "$RESP_FILE" -w '%{http_code}' \
+  -X POST "$CRD/refdata/case-worker/profile" \
+  -H "Authorization: Bearer $USER_TOKEN" \
+  -H "ServiceAuthorization: Bearer $S2S_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d "$PAYLOAD")
+
+if [ "$CODE" != "201" ]; then
+  echo "$SELF: CRD returned HTTP $CODE" >&2
+  jq . "$RESP_FILE" 2>/dev/null >&2 || cat "$RESP_FILE" >&2
+  case "$CODE" in
+    403) echo "hint: 403 usually means the actor lost staff-admin, or xui_webapp is not in CRD_S2S_AUTHORISED_SERVICES for $ENVN." >&2 ;;
+    400) echo "hint: 400 is usually validation -- a profile already exists for this email (PROFILE_ALREADY_CREATED), or a primary role/location is missing." >&2 ;;
+  esac
+  if [ "$SKIP_IDAM" = "false" ]; then
+    echo >&2
+    echo "NOTE: step 1 succeeded -- the IDAM account $EMAIL now exists and is activated." >&2
+    echo "      Fix the above and re-run with 'profile' (or --skip-idam) to avoid re-inviting:" >&2
+    echo "        $SELF profile --env $ENVN --email $EMAIL --actor-email $ACTOR_EMAIL --actor-password '<pw>'" >&2
+    echo "      Or remove it:  ENV=$ENVN $SKILL_DIR/delete-user.sh $EMAIL" >&2
+  fi
+  exit 1
+fi
+
+CASE_WORKER_ID=$(jq -r '.case_worker_id // .caseWorkerId // empty' "$RESP_FILE")
+say ""
+say "created."
+say "  email          : $EMAIL"
+say "  case_worker_id : $CASE_WORKER_ID   (this is the IDAM id)"
+say ""
+say "verifying the profile is readable back through the Staff UI's own search ..."
+crd_get "/refdata/case-worker/profile/search-by-id?id=$CASE_WORKER_ID" \
+  | jq -r 'if .case_worker_id then
+             "  ok: \(.first_name) \(.last_name) <\(.email_id)>",
+             "  idam_roles: \((.idam_roles // []) | join(", "))"
+           else "  (search-by-id returned no profile -- check manually)" end' 2>/dev/null \
+  || say "  (could not read the profile back -- the POST still returned 201)"
+
+if [ "$JSON_ONLY" = "true" ]; then
+  jq -n --arg email "$EMAIL" --arg id "$CASE_WORKER_ID" '{email:$email, case_worker_id:$id}'
+fi

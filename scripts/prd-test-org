@@ -48,6 +48,7 @@ USER_EMAIL=""
 USER_ID=""
 FORENAME="Test"
 SURNAME="User"
+ORG_TYPE=""
 ROLES=""
 ROLES_REMOVE=""
 
@@ -67,6 +68,8 @@ Options:
       --org-id <id>        7-char organisation identifier
       --name <name>        organisation name (create); prefix filter (list/delete)
       --email <addr>       superUser email; must NOT be a disposable domain
+      --org-type <type>    create via v2 with this orgType (e.g. LOCALAUTH, SOLICITOR)
+                           — drives the org's organisationProfileIds
       --admin-token <jwt>  prd-admin user token, for approve/delete/list/users
       --status <status>    list filter: PENDING (default) | ACTIVE | REVIEW | ...
       --user-email <addr>  user to invite (add-user) or target (set-roles)
@@ -119,6 +122,7 @@ while [[ $# -gt 0 ]]; do
         --user-id)         USER_ID="$2"; shift 2 ;;
         -r|--roles)        ROLES="$2"; shift 2 ;;
         --remove-roles)    ROLES_REMOVE="$2"; shift 2 ;;
+        --org-type)        ORG_TYPE="$2"; shift 2 ;;
         --forename)        FORENAME="$2"; shift 2 ;;
         --surname)         SURNAME="$2"; shift 2 ;;
         --json)            JSON_OUT=true; shift ;;
@@ -236,7 +240,14 @@ case "$SUBCOMMAND" in
              paymentAccount:[$pba],
              contactInformation:[{addressLine1:"1 Test Street", townCity:"Testville",
                                   postCode:"TE5 7ST", country:"UK"}]}')
-        call POST "$PRD/refdata/external/v1/organisations" "$S2S" "" "$BODY"
+        if [[ -n "$ORG_TYPE" ]]; then
+            # v2 create: orgType drives organisationProfileIds (e.g. LOCALAUTH
+            # -> LOCALAUTH_PROFILE). See PRD's ProfileOrgTypeUtility.
+            BODY=$(printf '%s' "$BODY" | jq -c --arg t "$ORG_TYPE" '. + {orgType:$t, orgAttributes:[]}')
+            call POST "$PRD/refdata/external/v2/organisations" "$S2S" "" "$BODY"
+        else
+            call POST "$PRD/refdata/external/v1/organisations" "$S2S" "" "$BODY"
+        fi
         if $JSON_OUT; then printf '%s\n' "$RESPONSE_BODY"; else
             printf '%s\n' "$RESPONSE_BODY" | jq .
             ok "organisation: $(printf '%s' "$RESPONSE_BODY" | jq -r .organisationIdentifier)"
