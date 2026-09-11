@@ -38,7 +38,8 @@
 #    Confluence dumps, manifest). Regenerable from page frontmatter; not committed.
 /apps/*/docs/.work/
 
-# 7) IDE / OS noise
+# 7) IDE / OS / tool noise
+/.playwright-mcp/
 .DS_Store
 .idea/
 *.iml

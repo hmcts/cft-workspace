@@ -190,6 +190,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Azure Frontdoor Web Application Firewall Debug | afd-waf | `docs/how-to/afd-waf.md` |
 | workspace | how-to | Common pipeline | overview | `docs/how-to/common-pipeline/overview.md` |
 | workspace | how-to | Connect to a non-production PostgreSQL database | connect-to-a-nonprod-database | `docs/how-to/connect-to-a-nonprod-database.md` |
+| workspace | how-to | Connect to a production PostgreSQL database | prod-access-db | `docs/how-to/prod-access-db.md` |
 | workspace | how-to | Create a GitHub Repository | github-repo | `docs/how-to/new-component/github-repo.md` |
 | workspace | how-to | Create App Registrations with Federated Credentials for GitHub Actions | federated-credentials | `docs/how-to/federated-credentials.md` |
 | workspace | how-to | Create a professional organisation for testing | create-test-organisations | `docs/how-to/create-test-organisations.md` |
@@ -257,6 +258,8 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | reference | TypeScript | typescript | `docs/reference/standards/typescript.md` |
 | workspace | reference | `workspace.yaml` schema | manifest-schema | `docs/reference/manifest-schema.md` |
 | workspace | explanation | Cloud Native Platform | cloud-native-platform | `docs/explanation/cloud-native-platform.md` |
+| workspace | explanation | Helm common components, Flux, and preview stacks | helm-common-components | `docs/explanation/helm-common-components.md` |
+| workspace | explanation | Why CFT deploys the way it does — first principles | deployment-first-principles | `docs/explanation/deployment-first-principles.md` |
 | workspace | explanation | Code in the Open | coding-in-the-open | `docs/explanation/principles/coding-in-the-open.md` |
 | workspace | explanation | Continuous delivery | continuous-delivery | `docs/explanation/principles/continuous-delivery.md` |
 | workspace | explanation | DevOps | devops | `docs/explanation/principles/devops.md` |
