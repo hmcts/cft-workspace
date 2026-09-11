@@ -5,6 +5,8 @@ Conceptual background that helps you understand *why* CFT works the way it does.
 ## Platform
 
 - [Cloud Native Platform](cloud-native-platform.md) — what CNP is, the principles behind it, and the infrastructure shape.
+- [Helm common components, Flux, and preview stacks](helm-common-components.md) — how a service chart is composed from the shared `java`/`nodejs`/`ccd` charts, how Jenkins and Flux each deploy it, and what to clean up before merge.
+- [Why CFT deploys the way it does — first principles](deployment-first-principles.md) — the same delivery chain derived from its constraints: each mechanism as problem → forced move → cost, with a symptom-to-cause failure grammar.
 
 ## Engineering principles
 
