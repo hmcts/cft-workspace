@@ -322,3 +322,4 @@ repos:
 
   # ─── platops/ ──────────────────────────────────────────────────────────
   platops/azure-private-dns: { url: hmcts/azure-private-dns }
+  platops/idam-access-config: { url: hmcts/idam-access-config }
