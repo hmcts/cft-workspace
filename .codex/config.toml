@@ -1,6 +1,5 @@
 [mcp_servers.atlassian]
-command = "docker"
-args = ["run", "-i", "--rm", "--env-file", ".claude/.atlassian.env", "ghcr.io/sooperset/mcp-atlassian:latest"]
+url = "https://mcp.atlassian.com/v2/mcp"
 required = false
 
 [mcp_servers.playwright]

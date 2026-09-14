@@ -17,7 +17,7 @@ status: reviewed
 last_reviewed: "2026-05-21T00:00:00Z"
 confluence_checked_at: "2026-05-21T00:00:00Z"
 confluence:
-  - id: "1134527827"
+  - id: "277948766"
     title: "Restrict upload of document by file extension"
     space: "RCCD"
 title: Restrict Document Upload by File Extension

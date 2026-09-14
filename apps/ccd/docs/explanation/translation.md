@@ -14,16 +14,16 @@ status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:
-  - id: "1875863695"
+  - id: "272438161"
     title: "Using Welsh Language Translation"
     space: "RRFM"
-  - id: "1775187467"
+  - id: "290029671"
     title: "Welsh Language Translation Service Operations Guide"
     space: "WLTS"
-  - id: "1576340177"
+  - id: "290029573"
     title: "Welsh Language Translation Service Home"
     space: "WLTS"
-  - id: "1875620232"
+  - id: "276988627"
     title: "Understanding character representation issues with Welsh Translations"
     space: "EXUI"
 title: Translation

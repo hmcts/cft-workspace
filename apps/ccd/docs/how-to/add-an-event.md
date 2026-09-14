@@ -21,26 +21,26 @@ status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
-  - id: "207804327"
+  - id: "277949114"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
     space: "RCCD"
-    last_modified: "2026-06-23 (v157)"
-  - id: "1775332773"
+    last_modified: "2026-06-23T13:46:19.000Z"
+  - id: "280714190"
     title: "CCD-5344 - Validation endpoint data exposure with MidEvent callbacks"
     space: "CCD"
-    last_modified: "v1"
-  - id: "1864476018"
+    last_modified: "2024-07-05T09:25:16.000Z"
+  - id: "268066046"
     title: "Truncated CCD callbacks"
     space: "DATS"
-    last_modified: "v5 (2025-06)"
-  - id: "1438948553"
+    last_modified: "2025-07-25T14:43:25.000Z"
+  - id: "274237085"
     title: "CCD Callback Framework"
     space: "CRef"
-    last_modified: "v3"
-  - id: "1194099763"
+    last_modified: "2020-08-25T12:53:19.000Z"
+  - id: "276857367"
     title: "How-to: Add a new event in CCD (legacy JSON workflow)"
     space: "DIV"
-    last_modified: "v7 (2019)"
+    last_modified: "2020-11-29T17:09:18.000Z"
 title: Add an Event
 diataxis: how-to
 product: ccd

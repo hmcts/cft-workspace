@@ -23,26 +23,26 @@ status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
-  - id: "205906788"
+  - id: "277948568"
     title: "CCD Supported Field Types"
     space: "RCCD"
-    last_modified: "2026-07-29"
-  - id: "1278641313"
+    last_modified: "2026-07-30T14:00:05.000Z"
+  - id: "277948860"
     title: "A Guide to DynamicRadioList and DynamicMultiSelectList Field Types - DRAFT"
     space: "RCCD"
-    last_modified: "unknown"
-  - id: "1460552629"
+    last_modified: "2020-10-30T12:47:20.000Z"
+  - id: "272707878"
     title: "Using DynamicList in CCD callbacks"
     space: "RIA"
-    last_modified: "unknown"
-  - id: "526025284"
+    last_modified: "2020-11-02T16:49:58.000Z"
+  - id: "277952582"
     title: "Address global complex type"
     space: "RCCD"
-    last_modified: "unknown"
-  - id: "554959334"
+    last_modified: "2019-01-02T11:50:31.000Z"
+  - id: "277953289"
     title: "RDM ?? - New Type CaseLink"
     space: "RCCD"
-    last_modified: "unknown"
+    last_modified: "2018-08-06T11:26:40.000Z"
 title: CCD Field Data Types
 diataxis: explanation
 product: ccd

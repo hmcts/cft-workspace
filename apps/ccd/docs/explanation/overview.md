@@ -24,22 +24,22 @@ status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:
-  - id: "1792870568"
+  - id: "276861432"
     title: "Reform CFT CCD architecture and design overview"
     space: "RTA"
-    last_modified: "unknown"
-  - id: "204041440"
+    last_modified: "2025-03-18T09:19:27.000Z"
+  - id: "277938332"
     title: "Reform: Case Management Home"
     space: "RCCD"
-    last_modified: "unknown"
-  - id: "1478703621"
+    last_modified: "2026-09-12T18:14:51.000Z"
+  - id: "279152518"
     title: "Core Case Data (CCD) - a brief overview for Reform MI"
     space: "ADM"
-    last_modified: "unknown"
-  - id: "1446913183"
+    last_modified: "2021-10-25T15:11:10.000Z"
+  - id: "277954460"
     title: "01 CCD SOG - Overview"
     space: "RCCD"
-    last_modified: "unknown"
+    last_modified: "2020-08-26T12:53:55.000Z"
 title: What is CCD?
 diataxis: explanation
 product: ccd

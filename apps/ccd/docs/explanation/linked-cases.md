@@ -16,19 +16,19 @@ status: reviewed
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:
-  - id: "1576339712"
+  - id: "277949137"
     title: "How To Guide - Case Linking"
     space: "RCCD"
-  - id: "1558272584"
+  - id: "277948577"
     title: "Case Linking HLD Version 1.0"
     space: "RCCD"
-  - id: "1558265834"
+  - id: "277948649"
     title: "Case Linking Scope of Delivery"
     space: "RCCD"
-  - id: "1558279400"
+  - id: "277952807"
     title: "API Operation: Get Linked Cases"
     space: "RCCD"
-  - id: "554959334"
+  - id: "277953289"
     title: "RDM ?? - New Type CaseLink"
     space: "RCCD"
 title: Linked Cases

@@ -21,22 +21,22 @@ sources:
 status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence:
-  - id: "1604492994"
+  - id: "273009022"
     title: "RSE CFT Library"
     space: "SSCS"
-    last_modified: "unknown (v41)"
-  - id: "1933968909"
+    last_modified: "2023-04-18T08:41:27.000Z"
+  - id: "268080368"
     title: "Local development environment"
     space: "DATS"
-    last_modified: "2026-06-10 (v25)"
-  - id: "1706197099"
+    last_modified: "2026-08-24T15:54:01.000Z"
+  - id: "276991675"
     title: "Debugging CFTLib internals"
     space: "RET"
-    last_modified: "unknown (v1)"
-  - id: "1933997228"
+    last_modified: "2023-08-07T09:34:58.000Z"
+  - id: "278596393"
     title: "Development Environment Setup"
     space: "FR"
-    last_modified: "unknown (v5)"
+    last_modified: "2026-03-16T13:56:01.000Z"
 confluence_checked_at: 2026-08-20T00:00:00Z
 title: Running with cftlib
 diataxis: tutorials

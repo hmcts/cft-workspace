@@ -25,7 +25,7 @@ ssh -T git@github.com         # confirm SSH
 
 Run Claude Code or Codex from the workspace root so it discovers the shared instructions and workflows. The devcontainer includes both CLIs; authenticate the client you use on its first run.
 
-To give the agent access to Jira, Confluence, and Jenkins, set up the MCP servers — see [how to set up the Atlassian and Jenkins MCP servers](./docs/how-to/set-up-mcp-servers.md). Optional; cross-repo search and the docs skills work without it.
+To give the agent access to Jira, Confluence, and Jenkins, set up the MCP servers — see [how to set up the Atlassian and Jenkins MCP servers](./docs/how-to/set-up-mcp-servers.md). Atlassian is one browser sign-in; Jenkins needs a token. Optional; cross-repo search and the docs skills work without either.
 
 ## Layout
 
@@ -79,7 +79,7 @@ Nothing is enabled by default, and team skills are namespaced (`/pcs:issue-claim
 
 ## MCP
 
-The MCP configuration includes Atlassian (JIRA & Confluence), Jenkins and Playwright. Credentials for the `atlassian` and `jenkins` MCP servers are gitignored and created per-user: [set-up-mcp-servers](./docs/how-to/set-up-mcp-servers.md).
+The MCP configuration includes Atlassian (JIRA & Confluence), Jenkins and Playwright. `atlassian` is Atlassian's hosted server, authenticated per-user by OAuth via `/mcp`; `jenkins` reads a gitignored env file you create yourself: [set-up-mcp-servers](./docs/how-to/set-up-mcp-servers.md).
 
 
 ## Scripts

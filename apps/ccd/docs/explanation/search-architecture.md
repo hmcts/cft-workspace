@@ -32,27 +32,27 @@ status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:
-  - id: "843514186"
+  - id: "277950035"
     title: "CCD ElasticSearch and new search API Design LLD"
     space: "RCCD"
     version: 249
-  - id: "1525481062"
+  - id: "277950430"
     title: "API Operation: Global Search"
     space: "RCCD"
     version: 8
-  - id: "1525465594"
+  - id: "277948706"
     title: "How To Guide - Global Search"
     space: "RCCD"
     version: 55
-  - id: "1487512777"
+  - id: "292225048"
     title: "HLD For Global Search Version 1"
     space: "GLCS"
     version: 76
-  - id: "1392411337"
+  - id: "277949446"
     title: "Internal Search API LLD"
     space: "RCCD"
     version: 95
-  - id: "1945639463"
+  - id: "277953459"
     title: "Elasticsearch and CCD"
     space: "RCCD"
     version: 1

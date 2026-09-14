@@ -53,7 +53,7 @@ If you're not using VS Code, run those steps yourself on the host.
 
 ## 4. Optional: MCP servers
 
-The workspace ships `atlassian` (Jira + Confluence) and `jenkins` MCP servers. Both need credentials you create yourself — see [set up the Atlassian and Jenkins MCP servers](../how-to/set-up-mcp-servers.md). Skip this for now if you only need code search.
+The workspace ships `atlassian` (Jira + Confluence) and `jenkins` MCP servers. Atlassian needs one browser sign-in via `/mcp`; Jenkins needs a token you create yourself — see [set up the Atlassian and Jenkins MCP servers](../how-to/set-up-mcp-servers.md). Skip this for now if you only need code search.
 
 ## 5. First AI-assisted interaction
 

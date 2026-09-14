@@ -16,22 +16,22 @@ status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:
-  - id: "1224769548"
+  - id: "279757811"
     title: "D.2.3e Document Stitching"
     space: "DACS"
-  - id: "1626282109"
+  - id: "273559007"
     title: "EM CCD Orchestrator Workload Model"
     space: "RQA"
-  - id: "1626281237"
+  - id: "273558961"
     title: "Stitching Workload Model"
     space: "RQA"
-  - id: "1478708296"
+  - id: "277951124"
     title: "Docstore- Doc Stitching Interaction"
     space: "RCCD"
-  - id: "1945632872"
+  - id: "268083147"
     title: "Addressing CCD timeouts when stitching multiple documents"
     space: "DATS"
-  - id: "1114964598"
+  - id: "273551462"
     title: "EM DM - Bundling & Stitching"
     space: "RQA"
 title: Stitching

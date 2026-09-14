@@ -11,13 +11,13 @@ sources:
   - cui-ra:config/default.json
 status: draft
 confluence:
-  - id: "1933858855"
+  - id: "282068839"
     title: "CUIYS Onboarding Guide"
-    last_modified: "2026-05-13T00:00:00Z"
+    last_modified: "2026-05-18T10:42:15.000Z"
     space: "CUIRA"
-  - id: "1933858875"
+  - id: "282068792"
     title: "CUIYS Onboarding - Context and Background"
-    last_modified: "unknown"
+    last_modified: "2026-03-04T16:16:54.000Z"
     space: "CUIRA"
 confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
