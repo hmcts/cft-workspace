@@ -21,20 +21,20 @@ status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
-  - id: "1564516230"
+  - id: "280955186"
     title: "Hearing Management Component (HMC)"
     space: "CME"
-  - id: "1958066277"
+  - id: "274254928"
     title: "Hearings Architecture - Main Case vs GA"
     space: "CRef"
-  - id: "1624186077"
+  - id: "274241508"
     title: "HMC Manual Integration - LLD"
     space: "CRef"
-  - id: "1825037149"
+  - id: "272433679"
     title: "Hearings Integration"
     space: "RRFM"
     version: 31
-    last_modified: "2026-08-02"
+    last_modified: "2026-08-14T09:57:14.000Z"
 title: Hearings Integration (HMC)
 diataxis: explanation
 product: ccd

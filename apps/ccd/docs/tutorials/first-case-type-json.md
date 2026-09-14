@@ -21,20 +21,20 @@ status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
-  - id: "688685210"
+  - id: "277949231"
     title: "CCD Case Admin Web User Guide"
     space: "RCCD"
-  - id: "205750327"
+  - id: "277949936"
     title: "CCD - Import Domain - Validation Rules"
     space: "RCCD"
-  - id: "207804327"
+  - id: "277949114"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
     space: "RCCD"
-    last_modified: "2026-06-23"
-  - id: "1063059491"
+    last_modified: "2026-06-23T13:46:19.000Z"
+  - id: "277948626"
     title: "Definition import fails with a \"422 Unprocessible Entity\" error"
     space: "RCCD"
-  - id: "203951529"
+  - id: "277949280"
     title: "CCD - Import Case Definition Domain"
     space: "RCCD"
 title: First Case Type (JSON)

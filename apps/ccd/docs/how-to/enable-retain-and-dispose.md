@@ -28,16 +28,16 @@ status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
-  - id: "1525467847"
+  - id: "277948796"
     title: "Case Retain and Disposal"
     space: "RCCD"
     version: 14
-    last_modified: "v14 (canonical design reference)"
-  - id: "1525469246"
+    last_modified: "2025-10-09T12:34:48.000Z"
+  - id: "277948785"
     title: "Technical Setup Guide: Retain & Dispose Onboarding Configuration"
     space: "RCCD"
     version: 85
-    last_modified: "2026-06-01"
+    last_modified: "2026-06-02T13:20:04.000Z"
 title: Enable Retain and Dispose
 diataxis: how-to
 product: ccd

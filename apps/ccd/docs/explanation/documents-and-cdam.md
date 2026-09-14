@@ -24,31 +24,31 @@ status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
-  - id: "1945644195"
+  - id: "276862705"
     title: "CDAM Architecture"
     space: "RTA"
-    last_modified: "2026-02-27"
+    last_modified: "2026-02-27T14:00:39.000Z"
   - id: "1953044768"
     title: "CCD Case Document Access Management (CDAM) onboarding"
     space: "DATS"
     last_modified: "unknown"
-  - id: "1915164271"
+  - id: "278593977"
     title: "Secure doc store (CDAM) onboarding and gotchas"
     space: "FR"
-    last_modified: "unknown"
-  - id: "1315471928"
+    last_modified: "2026-03-18T14:25:02.000Z"
+  - id: "277948616"
     title: "How To Guide - Case File View (Document Categories)"
     space: "RCCD"
-    last_modified: "2022-06-08"
-  - id: "1958303773"
+    last_modified: "2023-03-21T14:00:19.000Z"
+  - id: "275876526"
     title: "Case Document Uploads Technical Documentation"
     space: "DRDM"
     version: 21
-    last_modified: "2026-05-16"
-  - id: "1456373814"
+    last_modified: "2026-05-19T10:47:47.000Z"
+  - id: "277956242"
     title: "GET /cases/documents/{documentId}/token"
     space: "RCCD"
-    last_modified: "2021-07-14"
+    last_modified: "2021-07-19T13:00:05.000Z"
 title: Documents and CDAM
 diataxis: explanation
 product: ccd

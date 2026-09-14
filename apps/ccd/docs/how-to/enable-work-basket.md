@@ -24,17 +24,17 @@ status: confluence-augmented
 last_reviewed: "2026-08-20T00:00:00Z"
 confluence_checked_at: "2026-08-20T00:00:00Z"
 confluence:
-  - id: "1126761193"
+  - id: "277950297"
     title: "Configuring Workbasket & Search Default Ordering"
-    last_modified: "2019-08"
+    last_modified: "2019-12-06T09:48:27.000Z"
     space: "RCCD"
-  - id: "207804327"
+  - id: "277949114"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
-    last_modified: "2026-06-23"
+    last_modified: "2026-06-23T13:46:19.000Z"
     space: "RCCD"
-  - id: "1057948326"
+  - id: "277949422"
     title: "Per-role CaseTabs, Workbasket and Search"
-    last_modified: "2021-03"
+    last_modified: "2021-03-02T15:18:48.000Z"
     space: "RCCD"
 examples_extracted_from:
   - apps/ccd/ccd-test-definitions/src/main/resources/uk/gov/hmcts/ccd/test_definitions/valid/CCD_BEFTA_JURISDICTION1/BEFTA_CASETYPE_1_1/WorkBasketInputFields.json

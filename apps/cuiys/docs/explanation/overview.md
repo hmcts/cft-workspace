@@ -12,10 +12,10 @@ sources:
   - cui-ra:README.md
 status: draft
 confluence:
-  - id: "1933858875"
+  - id: "282068792"
     title: "CUIYS Onboarding - Context and Background"
     space: "CUIRA"
-  - id: "1712490513"
+  - id: "282068821"
     title: "Microsite workflow overview"
     space: "CUIRA"
 sources_sha:

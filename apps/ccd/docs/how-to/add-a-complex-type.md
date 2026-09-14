@@ -21,25 +21,25 @@ status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
-  - id: "1134527861"
+  - id: "277949758"
     title: "CRUD on Complex Types"
     space: "RCCD"
-  - id: "1454903954"
+  - id: "277949855"
     title: "Configuring Complex type ordering"
     space: "RCCD"
-  - id: "1384842314"
+  - id: "277952843"
     title: "A Guide to using the DefaultValue column on the EventToComplexType tab"
     space: "RCCD"
-  - id: "1457305822"
+  - id: "277949069"
     title: "Retain Hidden Values"
     space: "RCCD"
-  - id: "1457315279"
+  - id: "277949210"
     title: "Default Field Values"
     space: "RCCD"
-  - id: "205906788"
+  - id: "277948568"
     title: "CCD Supported Field Types"
     space: "RCCD"
-    last_modified: "2026-07-29"
+    last_modified: "2026-07-30T14:00:05.000Z"
 title: Add a Complex Type
 diataxis: how-to
 product: ccd

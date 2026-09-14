@@ -20,13 +20,13 @@ sources:
   - cui-ra:config/default.json
 status: draft
 confluence:
-  - id: "1680476343"
+  - id: "282068549"
     title: "Payload Specification"
-    last_modified: "2026-07-01T00:00:00Z"
+    last_modified: "2026-07-31T10:26:46.000Z"
     space: "CUIRA"
-  - id: "1712514145"
+  - id: "282068860"
     title: "Developer Integration Guide"
-    last_modified: "unknown"
+    last_modified: "2026-09-12T18:03:00.000Z"
     space: "CUIRA"
 confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:

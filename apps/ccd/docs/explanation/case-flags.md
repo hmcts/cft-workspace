@@ -19,16 +19,16 @@ status: reviewed
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
 confluence:
-  - id: "1700663346"
+  - id: "289636545"
     title: "Case Flags HLD Version 2.1"
     space: "CF"
-  - id: "1572570790"
+  - id: "277949778"
     title: "How To Guide - Case Flags"
     space: "RCCD"
-  - id: "1702505636"
+  - id: "277951054"
     title: "How To Guide - Case Flags v2.1"
     space: "RCCD"
-  - id: "1540427904"
+  - id: "278894462"
     title: "Expert UI - Low Level Design - Case Flags Field"
     space: "EUI"
 title: Case Flags

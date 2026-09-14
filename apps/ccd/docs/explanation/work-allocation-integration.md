@@ -26,24 +26,24 @@ status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
-  - id: "1457304217"
+  - id: "280040227"
     title: "WA CCD Event Handling NFRs"
     space: "WA"
-  - id: "1478710505"
+  - id: "280040495"
     title: "Task Initiation DMN"
     space: "WA"
-  - id: "1632904760"
+  - id: "276991523"
     title: "Task Configuration repository and Deploying DMNs"
     space: "RET"
-  - id: "1753705635"
+  - id: "280040954"
     title: "Linking Tasks To Case (Event) Data - v2"
     space: "WA"
-  - id: "1958285910"
+  - id: "278593662"
     title: "Consented & Contested FR Work Allocation Configuration"
     space: "FR"
     version: 108
-    last_modified: "2026-07-30"
-  - id: "1457293975"
+    last_modified: "2026-07-30T15:52:18.000Z"
+  - id: "280040820"
     title: "WA Task Management API: POST /task"
     space: "WA"
 title: Work Allocation Integration

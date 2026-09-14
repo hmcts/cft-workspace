@@ -19,24 +19,24 @@ status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence_checked_at: 2026-08-20T00:00:00Z
 confluence:
-  - id: "207804327"
+  - id: "277949114"
     title: "CCD Definition Glossary for Setting up a Service in CCD"
     space: "RCCD"
     version: 157
-    last_modified: "2026-06-23"
-  - id: "1552125154"
+    last_modified: "2026-06-23T13:46:19.000Z"
+  - id: "274238820"
     title: "How to change a State"
     space: "CRef"
     version: 4
-  - id: "859832393"
+  - id: "274923798"
     title: "Case state model (as defined on CCD)"
     space: "ROC"
     version: 24
-  - id: "1525465594"
+  - id: "277948706"
     title: "How To Guide - Global Search"
     space: "RCCD"
     version: 55
-  - id: "1616386673"
+  - id: "280713244"
     title: "CCD Service Operations Guide"
     space: "CCD"
 title: Add a State
