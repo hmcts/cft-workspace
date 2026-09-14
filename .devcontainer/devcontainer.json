@@ -2,6 +2,17 @@
   "name": "cft-workspace",
   "image": "hmctsprod.azurecr.io/cft-workspace/devcontainer:latest",
   "runArgs": ["--network=host", "--privileged"],
+  // Testcontainers starts a reaper sidecar ("Ryuk") and connects back to it on the Docker bridge
+  // gateway, which does not route from inside this container — so every container-backed test fails
+  // with "Could not connect to Ryuk at 172.17.0.1:<port>" in a static initialiser. Disabling it costs
+  // only the automatic cleanup of stray containers.
+  //
+  // This belongs here rather than in any repo's build file: Ryuk works on Jenkins agents, where the
+  // cleanup is load-bearing because agents are long-lived and shared. None of the 35 Testcontainers
+  // usages across the cloned HMCTS repos disables it.
+  "containerEnv": {
+    "TESTCONTAINERS_RYUK_DISABLED": "true"
+  },
   "forwardPorts": [],
   "otherPortsAttributes": {
     "onAutoForward": "ignore"
