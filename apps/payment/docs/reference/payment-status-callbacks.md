@@ -78,12 +78,12 @@ sources_sha:
   "ccpay-service-request-cpo-update-service:src/main/java/uk/gov/hmcts/reform/dtos/requests/CpoUpdateServiceRequest.java": "f9256a429a09119a246a95a54f463e1a099031aa"
   "ccpay-service-request-cpo-update-service:src/main/resources/application.yaml": "a21fecc631d099d3e44146d87d5b7481ab2a8b24"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/CallbackService.java": "a4175ada85e256554b5aec7d53c72dc5a6fff0d2"
-  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/controllers/fees/ServiceRequestUpdateClaimIssuedCallbackController.java": "caee8971ac541af666f32d046a873e986483404a"
+  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/controllers/fees/ServiceRequestUpdateClaimIssuedCallbackController.java": "6942a3258d258dca824dee13c08e44e64b1164f6"
   "probate-back-office:src/main/java/uk/gov/hmcts/probate/controller/PaymentController.java": "1f45bf631f451881fa2c24da0622cc943bf504ac"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/controller/PaymentCallbackController.java": "5e750471ffa40d01398eb1308bfbbd8957903c40"
-  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "2ff0325a65b6f639ca51be662c1ec9bd7665733c"
-  "cnp-flux-config:apps/fees-pay/dead-letter-queue-process/dead-letter-queue-process.yaml": "2ff0325a65b6f639ca51be662c1ec9bd7665733c"
-  "cnp-flux-config:apps/fees-pay/unprocessed-payment-update/unprocessed-payment-update.yaml": "2ff0325a65b6f639ca51be662c1ec9bd7665733c"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "dcd2fd5fccf71609287e2f37ba2290749fb6413a"
+  "cnp-flux-config:apps/fees-pay/dead-letter-queue-process/dead-letter-queue-process.yaml": "f32f518578f860fa2c942bd0b61587ed3246bfa9"
+  "cnp-flux-config:apps/fees-pay/unprocessed-payment-update/unprocessed-payment-update.yaml": "dcd2fd5fccf71609287e2f37ba2290749fb6413a"
   "cnp-flux-config:apps/fees-pay/ccpay-cpo-update-service/prod.yaml": "204f235858ef707acc00eb4ae24c6f72a9de6563"
   "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "9dae82de2ce3d1daf2e9b3e24f16f8a2fc84d8d5"
   "cnp-flux-config:apps/fees-pay/ccpay-callback-function/prod.yaml": "7b22eb2f6fc3bfe636d2eeb4cbb0f7eb46f76bb5"
@@ -332,7 +332,7 @@ Callback paths registered by the consuming services, each declared as a `PUT` ha
 | Service | Callback path | Handler |
 |---|---|---|
 | Probate | `/payment/gor-payment-request-update` | `probate-back-office` `PaymentController.java:31,43` |
-| Civil | `/service-request-update-claim-issued` | `civil-service` `ServiceRequestUpdateClaimIssuedCallbackController.java:29` |
+| Civil | `/service-request-update-claim-issued` | `civil-service` `ServiceRequestUpdateClaimIssuedCallbackController.java:32` |
 | Divorce | `/payment-update` | `nfdiv-case-api` `PaymentCallbackController.java:25,36-40` |
 
 Probate is the only one of the three that nests its handler under a class-level `@RequestMapping("/payment")`, which is why its registered URL carries a path prefix the others do not.

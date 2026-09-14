@@ -18,6 +18,7 @@ sources:
   - ccpay-bubble:express/services/PayhubService.js
   - ccpay-bubble:src/app/components/payment-history/payment-history.component.ts
   - civil-service:src/main/java/uk/gov/hmcts/reform/civil/controllers/fees/ServiceRequestUpdateClaimIssuedCallbackController.java
+  - civil-service:src/main/java/uk/gov/hmcts/reform/civil/advice/ControllerExceptionHandler.java
   - probate-back-office:src/main/java/uk/gov/hmcts/probate/controller/PaymentController.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/controller/PaymentCallbackController.java
   - cnp-flux-config:apps/fees-pay/ccpay-cpo-update-service/prod.yaml
@@ -65,7 +66,8 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-bubble:express/services/PayhubService.js": "cabdc9f68da7170c3a1db77f6374adefbf286c3b"
   "ccpay-bubble:src/app/components/payment-history/payment-history.component.ts": "9b2ce31bba560111cfaca30c6adf8fe541de06cf"
-  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/controllers/fees/ServiceRequestUpdateClaimIssuedCallbackController.java": "caee8971ac541af666f32d046a873e986483404a"
+  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/controllers/fees/ServiceRequestUpdateClaimIssuedCallbackController.java": "6942a3258d258dca824dee13c08e44e64b1164f6"
+  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/advice/ControllerExceptionHandler.java": "6942a3258d258dca824dee13c08e44e64b1164f6"
   "probate-back-office:src/main/java/uk/gov/hmcts/probate/controller/PaymentController.java": "1f45bf631f451881fa2c24da0622cc943bf504ac"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/controller/PaymentCallbackController.java": "5e750471ffa40d01398eb1308bfbbd8957903c40"
   "cnp-flux-config:apps/fees-pay/ccpay-cpo-update-service/prod.yaml": "204f235858ef707acc00eb4ae24c6f72a9de6563"
@@ -204,11 +206,11 @@ The receiving handlers confirm the method and the auth model, and they do not ag
 
 | Service | Handler | Response when the S2S token is rejected |
 | --- | --- | --- |
-| Civil | `PUT /service-request-update-claim-issued` (`ServiceRequestUpdateClaimIssuedCallbackController.java:29,34-50`) | `InternalServerErrorException` -- HTTP 500 |
+| Civil | `PUT /service-request-update-claim-issued` (`ServiceRequestUpdateClaimIssuedCallbackController.java:32,40-63`) | `InvalidTokenException` -- HTTP 401 |
 | Probate | `PUT /payment/gor-payment-request-update` (`PaymentController.java:43-62`) | HTTP 403 when the service is not on the allow-list, HTTP 401 on `InvalidTokenException` |
 | Divorce | `PUT /payment-update` (`PaymentCallbackController.java:36-49`) | No in-handler check; the handler returns `200 OK` once `handleCallback` completes, so rejection depends on framework-level filtering |
 
-Civil wraps its whole handler body in a `catch (Exception)` that rethrows as HTTP 500 (`:42-48`), so an authorisation failure and a genuine processing failure are indistinguishable from the sender's side, and both consume a delivery attempt. Probate registers a second callback path on the same controller, `PUT /payment/caveat-payment-request-update` (`PaymentController.java:65`), so a probate case stuck at the payment stage may be waiting on the caveat handler rather than the grant-of-representation one.
+Civil checks the token *before* entering its `try` block and throws `InvalidTokenException`, which `ControllerExceptionHandler` maps to HTTP 401 (`civil-service:src/main/java/uk/gov/hmcts/reform/civil/advice/ControllerExceptionHandler.java:63-67`). Inside the block it separates transient CCD failures — Feign `GatewayTimeout`, `BadGateway` or `ServiceUnavailable` — into an `UpstreamUnavailableException` answered with HTTP 503 and a `Retry-After: 10` header (`ControllerExceptionHandler.java:49-61`); anything else still becomes HTTP 500 via `InternalServerErrorException` (`:55-61`). So the three failure modes are now distinguishable from the sender's side by status code, but all three are non-2xx and so all three consume a delivery attempt. Probate registers a second callback path on the same controller, `PUT /payment/caveat-payment-request-update` (`PaymentController.java:65`), so a probate case stuck at the payment stage may be waiting on the caveat handler rather than the grant-of-representation one.
 
 ### Common reasons a callback fails to arrive
 

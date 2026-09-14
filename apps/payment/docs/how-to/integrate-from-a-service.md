@@ -90,11 +90,11 @@ sources_sha:
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PciPalPaymentService.java": "cd90241f94938ecec08b8768ce5e2bb4fc4fa5ab"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml": "b8d4f674f4f79c6505b4b4869ee3e96d0925ae3e"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/aat.yaml": "aba3724191bdd2ac64022358054550f863f7e715"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "03f8e5ab1ccdb496e411e1dd710ec1e253759da8"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/ithc.yaml": "fd8a6fa3004fa99ca04b235cc92dda65606a3541"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/perftest.yaml": "fd8a6fa3004fa99ca04b235cc92dda65606a3541"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api-int/demo.yaml": "fd8a6fa3004fa99ca04b235cc92dda65606a3541"
-  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "2ff0325a65b6f639ca51be662c1ec9bd7665733c"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "1f0efdef1eabb8a0a04df64d3ce697eaf8d1090a"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/ithc.yaml": "b69c40b8b6a564eddc644305a0647d80697ddeb0"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/perftest.yaml": "dd6d705d6be20b8906b900a236b692b60e3d008d"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api-int/demo.yaml": "dd6d705d6be20b8906b900a236b692b60e3d008d"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "dcd2fd5fccf71609287e2f37ba2290749fb6413a"
 ---
 
 ## TL;DR
