@@ -21,7 +21,7 @@ sources:
   - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/CreateBookingController.java
   - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/QueryBookingController.java
   - am-judicial-booking-service:src/main/resources/db/migration/V1_1__init_tables.sql
-  - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/DeleteBookingController.java
+  - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/testingsupport/DeleteBookingController.java
   - am-role-assignment-service:src/main/resources/db/migration/V1_6__adding_new_indexes.sql
   - am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ParseRequestService.java
   - am-role-assignment-service:charts/am-role-assignment-service/values.yaml
@@ -78,7 +78,7 @@ confluence:
     space: "AM"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-role-assignment-service:src/main/resources/application.yaml": "eee124f477cde60e39cfdda0ef9014cec11e68ff"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/controller/endpoints/CreateAssignmentController.java": "5a420960cb363b1ca81ad9919d2eba59f564ff17"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ValidationModelService.java": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
   "am-role-assignment-service:src/main/resources/validationrules/core/organisational-role-mapping-common.drl": "683f8db55a52ff5a3f4cfa6dc64c582a3f6e83d8"
@@ -94,7 +94,8 @@ sources_sha:
   "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/CreateBookingController.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
   "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/QueryBookingController.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
   "am-judicial-booking-service:src/main/resources/db/migration/V1_1__init_tables.sql": "910817b922d76c16f7c7a1cdf63105516b36b705"
-  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/DeleteBookingController.java": "1e0e29994093123b06bd2b86b19fd6b8b1e85110"
+  ? "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/testingsupport/DeleteBookingController.java"
+  : "2f9bf5f0360eab0c999cf1b0ac803dbedd4574c6"
   "am-role-assignment-service:src/main/resources/db/migration/V1_6__adding_new_indexes.sql": "b87bc2930c91ddf57d03e1918aa5edf055a5c70f"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ParseRequestService.java": "b570497f596fc184b488c5419d0dd4d3f8ec6e91"
   "am-role-assignment-service:charts/am-role-assignment-service/values.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
@@ -444,7 +445,8 @@ JBS is a small synchronous REST service with a single responsibility: store and 
 |--------|------|---------|----------|
 | POST | `/am/bookings` | Create a booking | 201 |
 | POST | `/am/bookings/query` | Query by user IDs | 200 |
-| DELETE | `/am/bookings/{userId}` | Delete all bookings for user (hidden from Swagger) | 204 |
+| DELETE | `/am/testing-support/bookings/{userId}` | Delete all bookings for user (only registered when `testing.support.enabled`; off in prod) | 204 |
+| DELETE | `/am/bookings/{userId}` | Deprecated alias of the above, hidden from Swagger | 204 |
 
 ### Database
 
@@ -484,9 +486,9 @@ Booking creation and role refresh fail differently, which matters because the se
 
 Bookings are hard-deleted 2 years after they end. `am-role-assignment-batch-service` runs `DELETE from booking b where b.end_time < (current_date - ? ) + '00:00:00'::time` against the JBS database, with the parameter coming from `days: ${DAYS:730}` — `DeleteJudicialExpiredRecords.java:103-107` and `application.yaml:45`. Production pins the same 730 and runs the CronJob at 22:00 daily (`cnp-flux-config:apps/am/am-role-assignment-batch-service/prod.yaml:8,15`). A negative `days` aborts the step rather than deleting everything (`DeleteJudicialExpiredRecords.java:55-58`).
 
-The table has no update path — JBS exposes no `PUT` or `PATCH` — but it is not append-only. `DELETE /am/bookings/{userId}` removes every booking for a user; the controller is annotated `@Hidden` so it does not appear in the published OpenAPI spec, but it is a live route (`am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/DeleteBookingController.java:17-41`). Neither the purge nor that endpoint writes an audit record, so the booking table cannot be treated as its own audit log.
+The table has no update path — JBS exposes no `PUT` or `PATCH` — but it is not append-only. `DELETE /am/testing-support/bookings/{userId}` removes every booking for a user; the controller carries `@ConditionalOnProperty(name = "testing.support.enabled", havingValue = "true")`, so the route only exists where `TESTING_SUPPORT_ENABLED` is on — AAT and preview, not prod (`am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/testingsupport/DeleteBookingController.java:27-38`, `cnp-flux-config:apps/am/am-judicial-booking-service/prod.yaml:14`). Neither the purge nor that endpoint writes an audit record, so the booking table cannot be treated as its own audit log.
 
-<!-- DIVERGENCE: Confluence describes the booking table as immutable, with no update or delete via the API in initial scope, serving as its own audit log. Source has a live (Swagger-hidden) `DELETE /am/bookings/{userId}` and a nightly purge that removes rows outright. Source wins. -->
+<!-- DIVERGENCE: Confluence describes the booking table as immutable, with no update or delete via the API in initial scope, serving as its own audit log. Source has no delete route in prod — the delete controller is gated behind `testing.support.enabled`, which prod sets to `false` — but the nightly purge removes rows outright, so the table is not a durable audit log. Source wins. -->
 
 
 ### S2S authorised callers

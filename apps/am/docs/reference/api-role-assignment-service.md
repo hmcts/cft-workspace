@@ -69,7 +69,7 @@ sources_sha:
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/controller/endpoints/QueryAssignmentController.java": "9baaef158b35973e37e42cf3358043d137d6e3f1"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/QueryRequest.java": "72c5480dccfa2c156bdb38ef4b3f1749fedee045"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/MultipleQueryRequest.java": "351e6d07f42459461fdfe6fb737843342014a138"
-  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-role-assignment-service:src/main/resources/application.yaml": "eee124f477cde60e39cfdda0ef9014cec11e68ff"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/versions/V1.java": "b944c8dc64f6b7467f4aa9c4034ed02a01ac1e92"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/versions/V2.java": "36b22d9e5d3fc28239948efeec5314a9e1981614"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/enums/FeatureFlagEnum.java": "bad95f7ce33c1274c781283dd657fb1575bee6bd"

@@ -80,7 +80,7 @@ sources_sha:
   "am-role-assignment-service:src/main/resources/roleconfig/role_common.json": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
   "am-role-assignment-service:src/main/resources/validationrules/core/conflict-of-interest-global.drl": "ecbc331219eccec01275cfcfd0326507a09f7f86"
   "am-role-assignment-service:src/main/resources/validationrules/ccd/ccd-case-role-validation.drl": "b22c2601ed4603746a832b0b16c18d33a504d283"
-  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-role-assignment-service:src/main/resources/application.yaml": "eee124f477cde60e39cfdda0ef9014cec11e68ff"
   "am-role-assignment-service:charts/am-role-assignment-service/values.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
   "am-role-assignment-service:charts/am-role-assignment-service/values.aat.template.yaml": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
   "am-role-assignment-service:charts/am-role-assignment-service/values.preview.template.yaml": "e869c163161f8b96767a34e45aae0b3cb4644c8c"

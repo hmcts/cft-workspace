@@ -61,7 +61,7 @@ sources_sha:
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/model/Assignment.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/controller/endpoints/CreateAssignmentController.java": "5a420960cb363b1ca81ad9919d2eba59f564ff17"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/controller/endpoints/QueryAssignmentController.java": "9baaef158b35973e37e42cf3358043d137d6e3f1"
-  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-role-assignment-service:src/main/resources/application.yaml": "eee124f477cde60e39cfdda0ef9014cec11e68ff"
   "am-role-assignment-service:src/main/resources/validationrules/core/organisational-role-mapping-common.drl": "683f8db55a52ff5a3f4cfa6dc64c582a3f6e83d8"
   "am-role-assignment-service:src/main/resources/validationrules/ccd/ccd-case-role-validation.drl": "b22c2601ed4603746a832b0b16c18d33a504d283"
   "am-role-assignment-service:src/main/resources/roleconfig/role_common.json": "bad95f7ce33c1274c781283dd657fb1575bee6bd"

@@ -87,7 +87,7 @@ sources_sha:
   "am-role-assignment-service:src/main/resources/META-INF/kmodule.xml": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/config/DroolConfig.java": "d2e8dba140653845b1d8ac5664ed045d04a926cb"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/ValidationModelService.java": "d5ae78f5037cd43a3381296a6b5031086fb6f7a4"
-  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-role-assignment-service:src/main/resources/application.yaml": "eee124f477cde60e39cfdda0ef9014cec11e68ff"
   "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/DroolConfig.java": "5123dc2c5c4d127394df67e80c538e5122088d28"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RequestMappingService.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"

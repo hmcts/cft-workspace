@@ -9,7 +9,7 @@ sources:
   - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/domain/service/common/ParseRequestService.java
   - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/CreateBookingController.java
   - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/QueryBookingController.java
-  - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/DeleteBookingController.java
+  - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/testingsupport/DeleteBookingController.java
   - am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/util/ValidationUtil.java
   - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/JudicialBookingService.java
   - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/JudicialRefreshOrchestrator.java
@@ -70,10 +70,11 @@ confluence:
 confluence_checked_at: "2026-05-13T12:00:00Z"
 sources_sha:
   "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/data/BookingEntity.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
-  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/domain/service/common/ParseRequestService.java": "a0524b1559c3649d1968355a4e74923661921fa2"
+  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/domain/service/common/ParseRequestService.java": "30db36085b3668a8347f869c46d247fe8b665ce5"
   "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/CreateBookingController.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
   "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/QueryBookingController.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
-  "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/DeleteBookingController.java": "1e0e29994093123b06bd2b86b19fd6b8b1e85110"
+  ? "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/controller/endpoints/testingsupport/DeleteBookingController.java"
+  : "2f9bf5f0360eab0c999cf1b0ac803dbedd4574c6"
   "am-judicial-booking-service:src/main/java/uk/gov/hmcts/reform/judicialbooking/util/ValidationUtil.java": "3d9772cc831118b015b4a2ef2561e1d452d39706"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/JudicialBookingService.java": "df884872022dce37def76a71025b1b22e19e2635"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/JudicialRefreshOrchestrator.java": "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
@@ -278,7 +279,7 @@ The retention window is 730 days, from `days: ${DAYS:730}` (`am-role-assignment-
 
 ### Delete endpoint
 
-A `DELETE /am/bookings/{userId}` endpoint exists for per-user cleanup (e.g. offboarding). It returns 204 and is annotated `@Hidden`, so it is live but excluded from the published Swagger spec (`DeleteBookingController.java:17-41`). JBS exposes no `PUT` or `PATCH` on bookings, so a stored booking can be deleted but not amended.
+A `DELETE /am/testing-support/bookings/{userId}` endpoint exists for per-user cleanup. It returns 204, and the whole controller is gated on `@ConditionalOnProperty("testing.support.enabled")` (`DeleteBookingController.java:27-38`), so the route is only registered where `TESTING_SUPPORT_ENABLED` is set — the default is `false` (`am-judicial-booking-service:src/main/resources/application.yaml:127-129`) and prod deploys it as `false` (`cnp-flux-config:apps/am/am-judicial-booking-service/prod.yaml:14`), while AAT and preview set it to `true`. The same controller still serves the older `DELETE /am/bookings/{userId}` path, but that mapping is `@Deprecated(forRemoval = true)` and `@Hidden`, so it is excluded from the published Swagger spec (`DeleteBookingController.java:65-72`). JBS exposes no `PUT` or `PATCH` on bookings, so a stored booking can be deleted but not amended.
 
 ORM has no booking-delete endpoint. Its only `@DeleteMapping` is `/am/testing-support/jobs/{jobId}` (`RefreshJobsController.java:126`), so the `DELETE /am/role-mapping/judicial/bookings/{bookingId}` route documented in Confluence was never built.
 
@@ -292,7 +293,7 @@ ORM has no booking-delete endpoint. Its only `@DeleteMapping` is `/am/testing-su
 | 4 | Inappropriate or long bookings | Business accepted the risk for a tactical mechanism; a configurable upper limit on duration was planned |
 | 5 | Audit | The booking table is the only record of a self-serve booking; rows are retained 730 days and then hard-deleted with no audit trail written |
 
-<!-- DIVERGENCE: Confluence describes the booking table as immutable, with no update or delete in initial scope, serving as its own audit log. Source has a live (Swagger-hidden) `DELETE /am/bookings/{userId}` and a nightly purge that removes rows outright, so the table is neither immutable nor a durable audit log beyond the retention window. Source wins. -->
+<!-- DIVERGENCE: Confluence describes the booking table as immutable, with no update or delete in initial scope, serving as its own audit log. Source has no delete route in prod — the delete controller is gated behind `testing.support.enabled`, which prod sets to `false` — but it does run a nightly purge that removes rows outright, so the table is not a durable audit log beyond the retention window. Source wins. -->
 
 ## NFR: volume estimates
 

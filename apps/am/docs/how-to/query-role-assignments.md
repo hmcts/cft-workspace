@@ -46,7 +46,7 @@ sources_sha:
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/data/RoleAssignmentEntitySpecifications.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/common/PersistenceService.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
   "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/util/ValidationUtil.java": "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
-  "am-role-assignment-service:src/main/resources/application.yaml": "afcdc7d88f685a2246dca216c0aeb0b6a4847506"
+  "am-role-assignment-service:src/main/resources/application.yaml": "eee124f477cde60e39cfdda0ef9014cec11e68ff"
   ? "am-role-assignment-service:src/main/java/uk/gov/hmcts/reform/roleassignment/domain/service/deleteroles/DeleteRoleAssignmentOrchestrator.java"
   : "6a5cedac0abb86f2a378972f7399e43c028dfa6f"
   "am-role-assignment-service:src/main/resources/roleconfig/role_common.json": "bad95f7ce33c1274c781283dd657fb1575bee6bd"
