@@ -7,5 +7,11 @@
   "metadata": {
     "description": "Team-specific Claude Code tooling for the CFT workspace. Shared workspace-wide skills stay in the root .claude/; each entry here is one team's own skills, agents, commands and scripts, held in apps/<product>/.claude/ and installed only by the engineers who want them."
   },
-  "plugins": []
+  "plugins": [
+    {
+      "name": "pcs",
+      "source": "./apps/pcs/.claude",
+      "description": "PCS team workflows: merging master with repo-aware conflict classification, more to follow"
+    }
+  ]
 }
