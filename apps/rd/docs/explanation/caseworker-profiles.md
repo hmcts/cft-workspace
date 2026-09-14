@@ -71,7 +71,7 @@ sources_sha:
   "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/EmailValidator.java": "4e1b1eb7a6954de16d30b3b2fa9670c7b505f985"
   "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java": "3a7fd8f716cd339c00480b4763e3438b7b56c2d0"
   "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/CaseWorkerServiceImpl.java": "db94066701c5d0bb726b863388de328cd8025a60"
-  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/StaffRefDataServiceImpl.java": "db94066701c5d0bb726b863388de328cd8025a60"
+  "rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/StaffRefDataServiceImpl.java": "0e337b718330755fa8a9cc851e7c26b0fdc4f0e9"
 ---
 
 ## TL;DR
@@ -216,7 +216,7 @@ The derivation logic (`CaseWorkerIdamRoleAssociation.java`):
 1. For each user, identify their CRD `role_id` values (from `case_worker_role`) and their `service_code` values (from `case_worker_work_area`).
 2. Look up every `(role_id, service_code)` combination in `case_worker_idam_role_assoc` to get the set of IDAM roles.
 3. Call IDAM to add these roles to the user. Roles are **only added, never removed** by this process (CRD11.2 was withdrawn as too risky for services not yet using WA/Staff Upload).
-4. The role `cwd-user` is added to every user provisioned through CRD, unconditionally and independently of the mapping table — on the spreadsheet path (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/CaseWorkerServiceImpl.java:813`) and on the Staff admin path (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/StaffRefDataServiceImpl.java:314`, `:926`). It is defined as `ROLE_CWD_USER` (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java:128`) and is what marks a user as CRD-onboarded to downstream consumers, so removing it in IDAM detaches the user from CRD without deleting the profile.
+4. The role `cwd-user` is added to every user provisioned through CRD, unconditionally and independently of the mapping table — on the spreadsheet path (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/CaseWorkerServiceImpl.java:813`) and on the Staff admin path (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/StaffRefDataServiceImpl.java:312`, `:935`). It is defined as `ROLE_CWD_USER` (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java:128`) and is what marks a user as CRD-onboarded to downstream consumers, so removing it in IDAM detaches the user from CRD without deleting the profile.
 
 <!-- DIVERGENCE: Confluence "Caseworker Reference Data - High Level Design" (id 1391526853) spells the mandatory role `CWD_user`. Source uses `cwd-user`, hyphenated and lowercase (rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java:128). Source wins. -->
 
