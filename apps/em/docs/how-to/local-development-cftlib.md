@@ -43,7 +43,7 @@ sources_sha:
   "em-annotation-api:src/cftlib/java/uk/gov/hmcts/reform/em/annotation/cftlib/CftLibConfig.java": "ec97bb95c09e500d78f7a95517ed16bb3a6f4d94"
   "em-native-pdf-annotator-app:src/cftlib/java/uk/gov/hmcts/reform/em/npa/redaction/cftlib/CftLibConfig.java": "718ed1a6ce7faba5fa757f444be083486cee5856"
   "em-native-pdf-annotator-app:src/cftlib/resources/docker-compose-local.yml": "a0bc4b6c4879ce836bdc90f57295f746b391d86e"
-  "em-hrs-api:src/cftlib/java/uk/gov/hmcts/reform/em/hrs/cftlib/CftLibConfig.java": "2b91f3dbb6217677d09c5042d3d189c692608179"
+  "em-hrs-api:src/cftlib/java/uk/gov/hmcts/reform/em/hrs/cftlib/CftLibConfig.java": "09d0666eddbb43def7dcdb2cd91574fe21a0835c"
   "em-hrs-api:src/cftlib/resources/docker-compose-local.yml": "02a2b73d70fbc57f454d35f00a04541d9d3bca2d"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "e3587808bd1477ab4a47aa39c0b6ac5468479f7d"
@@ -161,7 +161,7 @@ sources_sha:
    ```
    Secrets are fetched from the `em-hrs-api-aat` Key Vault (secret name: `em-hrs-api-dot-env`). Docker containers are launched -- **Azurite only** (no DM Store, unlike stitching/NPA). The additional database is `emhrs` (`build.gradle`). The HRS API runs on port `8081` (configured via `HRS_API_SERVER_PORT`).
 
-3. `CftLibConfig` provisions multiple test users with HRS-specific roles (`caseworker-hrs`, `caseworker-hrs-searcher`, `cft-ttl-manager`, `caseworker-hrs-systemupdate`). It also configures AM role assignments by looking up the IDAM user ID for the searcher user. The CCD definition imported is `src/functionalTest/resources/CCD_HRS_v1.8-AAT.xlsx`.
+3. `CftLibConfig` provisions multiple test users with HRS-specific roles (`caseworker-hrs`, `caseworker-hrs-searcher`, `cft-ttl-manager`, `caseworker-hrs-systemupdate`). It also configures AM role assignments by looking up the IDAM user ID for the searcher user. The CCD definition imported is `src/functionalTest/resources/CCD_HRS_v1.9-AAT.xlsx`.
 
 4. Key test users (all use password `password`):
    - `hrs.tester@hmcts.net` -- full HRS roles
