@@ -82,7 +82,7 @@ For each page in scope (drafted or later), spawn one `confluence-augmenter` suba
 
 Pages flip to `status: confluence-augmented`. Skips `apps/<product>/docs/README.md` and `apps/<product>/docs/reference/glossary.md` (linker-built).
 
-Requires the Atlassian MCP to be reachable. The agent never writes to Confluence (`READ_ONLY_MODE=true` in `.mcp.json`).
+Requires the Atlassian MCP to be authenticated (`/mcp` → `atlassian`). The hosted server's grant is read-write, so the read-only discipline is the agent's own: it uses `searchConfluence` / `getConfluenceContent` / `executeRead` and never writes.
 
 ### 4. examples
 

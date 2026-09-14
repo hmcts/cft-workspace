@@ -1,7 +1,7 @@
 ---
 name: confluence-augmenter
 description: Verify and enrich one drafted documentation page against HMCTS Confluence. Searches Confluence (optionally space-hinted from the product CLAUDE.md), fetches relevant pages, reconciles claims against source code (ground truth), updates the page, caches Confluence content, flags divergences. Phase 3.5 of docs-generate.
-tools: Read, Edit, Write, Bash, Glob, Grep, mcp__atlassian__confluence_search, mcp__atlassian__confluence_get_page, mcp__atlassian__confluence_get_page_children
+tools: Read, Edit, Write, Bash, Glob, Grep, mcp__atlassian__searchConfluence, mcp__atlassian__getConfluenceContent, mcp__atlassian__executeRead, mcp__atlassian__discover
 model: opus
 ---
 
@@ -40,7 +40,7 @@ awk '/^---[[:space:]]*$/{c++; if(c==2)exit; if(c>0)next} c==1{print}' \
 
 If the product lists preferred spaces (CCD has `[RCCD, EUI, CF]`; WA might list `[WA]`; AM `[AM, RBAC]`), prefer them in your search via the CQL `space = "<KEY>"` clause. If empty or missing, search all spaces.
 
-Issue 2–4 CQL queries via `mcp__atlassian__confluence_search`. Mix:
+Issue 2–4 CQL queries via `mcp__atlassian__searchConfluence`, passing `cloudId: "https://hmcts.atlassian.net"` on every call. Mix:
 - `title ~ "<topic-as-phrase>"` (e.g. `title ~ "case flag"`)
 - `text ~ "<key-term-1>"` (e.g. `text ~ "FlagDetail"`)
 - `text ~ "<key-term-2> AND <key-term-3>"` for compound topics
@@ -57,7 +57,7 @@ Filter to **3–7 most topically relevant**. If the search returns nothing usefu
 
 ### 3. Fetch and cache
 
-For each chosen page, call `mcp__atlassian__confluence_get_page` (request the markdown export). Cache to:
+For each chosen page, call `mcp__atlassian__getConfluenceContent` with `content_format: markdown` and `detail: full`. Cache to:
 
 ```
 apps/<product>/docs/.work/confluence/<page-slug>/<conf-id>.md
@@ -68,7 +68,9 @@ apps/<product>/docs/.work/confluence/<page-slug>/<conf-id>.md
 - `apps/ccd/docs/explanation/case-flags.md` → `explanation-case-flags`
 - `apps/wa/docs/explanation/task-lifecycle.md` → `explanation-task-lifecycle`
 
-Include the Confluence page title and last-modified timestamp at the top of each cache file as a comment block, for `/docs-drift` to read later.
+Include the Confluence page title, `metadata.version.number` and its `createdAt` timestamp at the top of each cache file as a comment block, for `/docs-drift` to read later. The version number is the reliable drift signal; the timestamp is for humans.
+
+To walk a page tree (a canonical parent with per-topic children), use `mcp__atlassian__executeRead` with `name: "getConfluenceContentDescendants"` and `inputs: {contentId, depth: 1}`. Any other operation you need: `discover` first, never guess a name.
 
 ### 4. Reconcile against source
 
@@ -109,6 +111,7 @@ status: confluence-augmented
 confluence:
   - id: "12345678"
     title: "<exact page title>"
+    version: <metadata.version.number>
     last_modified: "<ISO 8601>"
     space: "<space key>"
   - id: "..."
@@ -154,7 +157,7 @@ skipped <path> — <reason>
 
 ## Don't
 
-- Don't write to Confluence. Read-only operations only (`confluence_search`, `confluence_get_page`, `confluence_get_page_children`).
+- Don't write to Confluence. Read-only operations only (`searchConfluence`, `getConfluenceContent`, and `executeRead`) — the MCP grant is read-write, so this is your discipline, not a server-side guardrail. Never `executeWrite` / `executeDestructive`.
 - Don't fetch more than ~10 Confluence pages — pick the most relevant.
 - Don't blindly trust Confluence over source. Source code wins; Confluence informs.
 - Don't replace the existing well-structured prose with raw Confluence HTML-export prose. Integrate, rewriting where needed.

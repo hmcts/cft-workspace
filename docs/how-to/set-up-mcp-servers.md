@@ -7,43 +7,38 @@ audience: both
 ---
 # Set up the Atlassian and Jenkins MCP servers
 
-The workspace declares its MCP servers in [`.mcp.json`](../../.mcp.json), which is committed. Credentials are **not** — each server reads them from a gitignored env file under `.claude/`, which you create yourself from the matching `.example` file.
+The workspace declares its MCP servers in [`.mcp.json`](../../.mcp.json), which is committed.
 
-| Server | Env file | Gives the agent |
-|---|---|---|
-| `atlassian` | `.claude/.atlassian.env` | Jira issues, Confluence pages (used by `/docs-generate`'s augmentation phase and `/docs-drift`) |
-| `jenkins` | `.claude/.jenkins.env` | Build status, console logs, test reports from `build.hmcts.net` |
+| Server | Transport | Credentials | Gives the agent |
+|---|---|---|---|
+| `atlassian` | Remote HTTP (`mcp.atlassian.com`) | Browser OAuth, per-user | Jira issues, Confluence pages (used by `/docs-generate`'s augmentation phase and `/docs-drift`) |
+| `jenkins` | Docker container over stdio | `.claude/.jenkins.env`, gitignored | Build status, console logs, test reports from `build.hmcts.net` |
 
-Both run as Docker containers over stdio, so you need the Docker CLI available (the devcontainer mounts the host socket).
+Only Jenkins needs a local env file, and only Jenkins needs the Docker CLI (the devcontainer mounts the host socket).
 
 ## 1. Atlassian (Jira + Confluence)
 
-HMCTS runs Jira and Confluence **Data Center**, not Cloud. Data Center uses a single Personal Access Token per application — there is no separate API-token-plus-email pairing as on Cloud, so `CONFLUENCE_PERSONAL_TOKEN` and `JIRA_PERSONAL_TOKEN` are the only secrets needed.
+HMCTS Jira and Confluence are on **Atlassian Cloud** (`hmcts.atlassian.net`), so the workspace uses Atlassian's own hosted MCP server rather than a local container. There is nothing to install and no token to create or rotate — authentication is OAuth in the browser against your existing SSO session, and your Atlassian permissions carry over as-is.
 
-Create one token per application. They are separate systems and a token from one will not authenticate against the other:
+```
+/mcp
+```
 
-1. Log in to <https://tools.hmcts.net/jira/>.
-2. Click your **avatar** (top right) → **Profile**.
-3. Select **Personal Access Tokens** in the left sidebar.
-4. **Create token**, name it (e.g. `cft-workspace-mcp`), set an expiry, and copy the value — it is shown only once.
-5. Repeat at <https://tools.hmcts.net/confluence/> for the Confluence token.
+Pick `atlassian`, choose **Authenticate**, and complete the consent screen that opens in your browser. The grant is stored by the client, not in this repo, and survives restarts until it's revoked or expires.
 
-The direct URL, if the sidebar item is hard to find, is <https://tools.hmcts.net/jira/secure/ViewPersonalAccessTokens.jspa> (and the equivalent under `/confluence/`).
-
-Then:
+In Codex the equivalent is:
 
 ```bash
-cp .claude/.atlassian.env.example .claude/.atlassian.env
+codex mcp login atlassian
 ```
 
-Fill in both tokens, leaving the URLs as they are:
+### Site scoping
 
-```
-CONFLUENCE_PERSONAL_TOKEN=<your confluence pat>
-CONFLUENCE_URL=https://tools.hmcts.net/confluence/
-JIRA_PERSONAL_TOKEN=<your jira pat>
-JIRA_URL=https://tools.hmcts.net/jira/
-```
+Tools take a `cloudId`. Pass the site URL directly — `https://hmcts.atlassian.net` — or call `getAccessibleAtlassianResources` once and reuse the UUID it returns. Both forms work; the URL is easier to read in a skill definition.
+
+### Read/write access
+
+The grant is read-write on both Jira and Confluence, and the hosted server has no read-only switch — so an agent *can* comment on an issue, transition it, or edit a page. Workspace skills are written to read only, and nothing should post to Jira or Confluence on your behalf without you asking for it.
 
 ## 2. Jenkins
 
@@ -95,14 +90,20 @@ MCP servers are launched at startup, so restart your client to pick up new serve
 
 That lists the connected servers. To confirm each is genuinely authenticated rather than merely connected, ask for something that requires a live call — for example a Confluence search, or the status of a `pcs-api` build.
 
+The Atlassian OAuth flow needs a browser on the machine running the client. Inside the devcontainer the URL is printed for you to open on the host; the callback is on localhost, which the forwarded port covers.
+
 ## Troubleshooting
 
 - **Jenkins tools fail with `Expecting value: line 3 column 1`** → the container is resolving to the public App Proxy and getting an SSO page. Check `--network host` is present in `.mcp.json`, and that the VPN was connected **before** the devcontainer started (see [connect-via-vpn](connect-via-vpn.md) and the DNS stumble in [getting-started](../tutorials/getting-started.md)).
 - **Jenkins returns `401`** → you used your Entra password rather than an API token, or your username is not the Object ID GUID.
 - **Jenkins returns `403` on a write** → permissions come from the `azureAdMatrix` in `jenkins.yaml`. `DTS CFT Developers` grants read plus `Job/Build` and `Job/Cancel`; admin-only tools such as `run_groovy_script` need `DTS Platform Operations`. Add `--read-only` to the server's args if you would rather the agent could not trigger builds at all.
-- **Atlassian tools return `401`** → the PAT has expired, or a Jira token is being used against Confluence (or vice versa). They are not interchangeable.
+- **Atlassian tools return `401`, or `/mcp` shows the server as needing auth** → the OAuth grant has expired or been revoked. Re-authenticate through `/mcp`; there is no token to edit.
+- **An Atlassian tool fails asking for `cloudId`** → pass `https://hmcts.atlassian.net` (or the UUID from `getAccessibleAtlassianResources`) explicitly. It is never inferred.
+- **An Atlassian operation name is rejected** → only Jira and Confluence basics are exposed as named tools; everything else is reached by `discover` then `executeRead` / `executeWrite`. Don't guess operation names.
 - **A server is missing from `/mcp`** → `.mcp.json` failed to parse, or the client was not restarted. Check with `jq . .mcp.json`.
 
 ## Credential hygiene
 
-`.gitignore` excludes `/.claude/*.env`, so these files are the one place a live production credential sits in plaintext in the workspace. Only that rule keeps them out of a commit. Set an expiry on every token, prefer the narrowest permissions that work, and revoke through the same UI that issued the token if a file is ever staged by accident. Never commit an env file, and never paste a token into a doc, a `.example` file, or a commit message.
+`.gitignore` excludes `/.claude/*.env`, so `.claude/.jenkins.env` is the one place a live credential sits in plaintext in the workspace. Only that rule keeps it out of a commit. Set an expiry on the Jenkins token, prefer the narrowest permissions that work, and revoke through the UI that issued it if the file is ever staged by accident. Never commit an env file, and never paste a token into a doc, a `.example` file, or a commit message.
+
+Atlassian holds no credential here at all now — the OAuth grant lives in the client's own storage. Revoke it from your Atlassian account's connected-apps page rather than by deleting anything in the repo.

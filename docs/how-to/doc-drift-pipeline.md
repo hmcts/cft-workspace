@@ -324,8 +324,8 @@ Not everything is SHA-trackable, and that's by design:
 ```
 
 Only source mode runs weekly. Port mode needs `platops/hmcts.github.io` cloned
-and fetchable; Confluence mode needs the Atlassian MCP, which isn't available
-to a runner.
+and fetchable; Confluence mode needs the Atlassian MCP, whose OAuth grant is
+per-user and interactive, so it isn't available to a runner.
 
 ## See also
 

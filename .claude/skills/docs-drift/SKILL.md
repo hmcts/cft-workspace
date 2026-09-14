@@ -13,7 +13,7 @@ A page can declare its authoritative source in three ways. The skill checks each
 |---|---|---|
 | `sources:` list in frontmatter | source-citation | git SHA of each cited source file vs `sources_sha:` map (reported as `unpinned` if no recorded SHA) |
 | Listed in `docs/.port-manifest.yaml` | port-manifest | `git log <synced_sha>..HEAD -- <upstream-source>` against `platops/hmcts.github.io` |
-| `confluence:` array in frontmatter | Confluence-revision | Current Confluence page revision via MCP vs `confluence_checked_at:` |
+| `confluence:` array in frontmatter | Confluence-revision | Current Confluence page version via MCP vs the entry's cached `version` / `last_modified` |
 
 ## How to invoke
 
@@ -53,7 +53,9 @@ actually accurate, or you'll pin a baseline over real drift. It rewrites frontma
 page bodies are copied verbatim. Pages with unresolvable citations are skipped and listed
 for hand-fixing rather than pinned.
 
-The first three modes are run by `scripts/doc-drift`. The Confluence mode is split: the script lists the candidate pages (with their `confluence_checked_at:` timestamps), and this skill iterates them, calling `mcp__atlassian__confluence_get_page_history` per cached page ID to compare revisions.
+The first three modes are run by `scripts/doc-drift`. The Confluence mode is split: the script lists the candidate pages (with their `confluence_checked_at:` timestamps), and this skill iterates them, comparing the current revision of each cached page ID.
+
+> **Cached IDs predating the Cloud move are dead.** Confluence now lives on `hmcts.atlassian.net`, which reassigned every page ID during migration. A `confluence:` entry carrying a `tools.hmcts.net`-era ID resolves to a 404 no matter what the page's state is, and the title often changed too. Report those as `confluence-restale` (see below) rather than `confluence-removed` — the fix is re-augmentation, not human triage.
 
 ## Procedure
 
@@ -72,14 +74,15 @@ Capture stdout. The script prints sectioned output:
 
 If the user requested `--mode=confluence` (or no `--mode` was set), iterate the pages and for each:
 
-1. Read the page's frontmatter `confluence:` array (each entry has `id`, `title`, `space`, `last_modified`).
-2. For each entry, call `mcp__atlassian__confluence_get_page_history` with the `id` to get the current `latest.created` timestamp.
-3. Compare against the cached `last_modified` (or the page's `confluence_checked_at:` if `last_modified` isn't on the entry).
+1. Read the page's frontmatter `confluence:` array (each entry has `id`, `title`, `space`, `last_modified`, and — if augmented since the Cloud move — `version`).
+2. For each entry, call `mcp__atlassian__executeRead` with `name: "listConfluenceContentVersions"`, `cloudId: "https://hmcts.atlassian.net"` and `inputs: {contentId: <id>, limit: 1}`. The current revision is `results[0].number`, its timestamp `results[0].createdAt`.
+3. Compare on `version` where the entry has one — it's exact. Otherwise fall back to `createdAt` vs the cached `last_modified` (or the page's `confluence_checked_at:` if the entry has no `last_modified`, and treat `last_modified: "unknown"` as no baseline).
 4. Bucket each cached page reference:
    - `current` — Confluence revision unchanged since cached.
    - `confluence-changed` — Confluence has a newer revision; the doc page may need re-augmenting via `/docs-generate <product> --rephase confluence --page <path>`.
-   - `confluence-removed` — page deleted or inaccessible; flag for human review.
-5. If the Atlassian MCP is unavailable, report `unknown` for every Confluence-mode page and continue — don't fail the whole run.
+   - `confluence-restale` — the ID 404s and is a pre-migration Data Center ID. Expected for anything augmented before the Cloud move; re-augment to pick up the Cloud ID.
+   - `confluence-removed` — the ID 404s but was recorded against Cloud; the page really was deleted or your access changed. Flag for human review.
+5. If the Atlassian MCP is unavailable or unauthenticated, report `unknown` for every Confluence-mode page and continue — don't fail the whole run.
 
 ### 3. Produce a unified report
 
@@ -121,6 +124,6 @@ The script exits non-zero when there's actionable drift in port or source modes.
 ## Don't
 
 - Don't fix drift here — only report it. Fixes go through `/docs-generate` (e.g. `--rephase synth` or `--rephase confluence`).
-- Don't write to Confluence. The Atlassian MCP is read-only in this workspace (`READ_ONLY_MODE=true`).
+- Don't write to Confluence. The hosted Atlassian MCP grant is read-write, so nothing stops you but this rule — use read operations only (`searchConfluence`, `getConfluenceContent`, `executeRead`).
 - Don't follow links to non-cited sources. The contract is that `sources:` is the page's verifiable surface.
 - Don't try to refresh ported pages automatically — they need hand-fixing for link/image churn (see `scripts/port-page` and the manual-fixes notes that used to live in `/docs-hmcts-way-drift`'s "How to act on the report" section).
