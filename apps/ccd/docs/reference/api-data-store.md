@@ -77,7 +77,7 @@ sources_sha:
   "service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/ServiceAuthorisationApi.java": "931705928066bd80f800c760c9b252877b522db0"
   "service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/generators/ServiceAuthTokenGenerator.java": "a71a28926ddede4c0d0136bd47506b2f73fdc57e"
   "service-auth-provider-java-client:src/main/java/uk/gov/hmcts/reform/authorisation/generators/TotpGenerator.java": "a71a28926ddede4c0d0136bd47506b2f73fdc57e"
-  "cnp-flux-config:apps/ccd/ccd-case-disposer/prod.yaml": "21e817f95455da6f6b4b85904c4770ca75714008"
+  "cnp-flux-config:apps/ccd/ccd-case-disposer/prod.yaml": "1b8f03a4630e127d41582b81c8532c67894b00b0"
   "cnp-flux-config:apps/money-claims/cmc-s2s/demo.yaml": "354f256227ac3d25f687b696bc83a137b52a1cfa"
   "ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/service/v2/CaseCollectorService.java": "0fe304c9f7bd495b893bb01fb6a93e28c6776056"
   "ccd-case-disposer:src/main/java/uk/gov/hmcts/reform/ccd/data/CaseLinkRepository.java": "0fe304c9f7bd495b893bb01fb6a93e28c6776056"

@@ -39,8 +39,8 @@ title: Hearings Integration (HMC)
 diataxis: explanation
 product: ccd
 sources_sha:
-  "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/controller/ServiceHearingsController.java": "861b9728ec52f484cd67cf52ae535e294d913b47"
-  "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/service/HmcHearingApiService.java": "d50f364f4486ac9670af379ae6a4c07ca9dec465"
+  "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/controller/ServiceHearingsController.java": "3440baea431d709c1d112a7c7a96eeefe67c250d"
+  "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/service/HmcHearingApiService.java": "3440baea431d709c1d112a7c7a96eeefe67c250d"
   "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/jms/listener/HmcHearingsEventTopicListener.java": "d50f364f4486ac9670af379ae6a4c07ca9dec465"
   "sscs-tribunals-case-api:src/main/java/uk/gov/hmcts/reform/sscs/service/HearingsService.java": "6c32d1161fad34100629a45bab17ecd9a953e3bd"
   "hmc-cft-hearing-service:src/main/java/uk/gov/hmcts/reform/hmc/controllers/HearingManagementController.java": "0bc687bf59a5bae74c9d9f3bae397c5f28c5664e"
@@ -106,7 +106,7 @@ HMC and ExUI drive the integration by calling back into the service API. Both en
 | `POST /serviceHearingValues` | Returns a `ServiceHearingValues` payload — all case data HMC needs to create or update a hearing. |
 | `POST /serviceLinkedCases` | Returns cases linked to the given case + hearing pair. |
 
-These are implemented in `ServiceHearingsController` (`ServiceHearingsController.java:36` and `:68`). Mapping from CCD case data to HMC payload fields lives in `helper/mapping/` — e.g. `HearingsRequestMapping`, `HearingsCaseMapping`, `HearingsAutoListMapping`.
+These are implemented in `ServiceHearingsController` (`ServiceHearingsController.java:44` and `:76`). Mapping from CCD case data to HMC payload fields lives in `helper/mapping/` — e.g. `HearingsRequestMapping`, `HearingsCaseMapping`, `HearingsAutoListMapping`.
 
 ### `ServiceHearingValues` shape
 
@@ -125,7 +125,7 @@ Some flags are **derived** from CCD case-flag codes rather than held directly: e
 
 ## Outbound calls to HMC
 
-The service calls HMC via `HmcHearingApi`, a Feign client whose base URL is configured at `${hmc.url}`. `HmcHearingApiService` wraps the client and injects the `HMCTS_DEPLOYMENT_ID` header from `${hmc.deployment-id}` (`HmcHearingApiService.java:26-27`). IDAM bearer tokens and S2S service-auth tokens are added per-request.
+The service calls HMC via `HmcHearingApi`, a Feign client whose base URL is configured at `${hmc.url}`. `HmcHearingApiService` wraps the client and injects the `HMCTS_DEPLOYMENT_ID` header from `${hmc.deployment-id}` (`HmcHearingApiService.java:33-34`). IDAM bearer tokens and S2S service-auth tokens are added per-request.
 
 The HMC API surface, read off the controllers in `hmc-cft-hearing-service` at `origin/master`. Note that the resource paths are **hearing-id-scoped** — only creation and the multi-case reads take no `{id}`:
 

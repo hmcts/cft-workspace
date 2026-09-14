@@ -60,7 +60,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/CaseDetails.java": "aa61dd252c0e9a2607835f1034c7dcf0376eebba"
   "ccd-data-store-api:src/main/resources/application.properties": "a3bd23b7e2a57b903a610b651b7a6f33c1781b15"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
-  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "c18fa4da80b875a5614d6479346015ff75b6d798"
+  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "b0fce4cea53bd12e3cbc810d9d4d590100fb521b"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-confirm/case-edit-confirm.component.ts"
   : "db39163cb7de92af326a333fe7430558a051c135"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-confirm/case-edit-confirm.html": "315741f6698ef3b7d46e49e27742eefae21d0e24"

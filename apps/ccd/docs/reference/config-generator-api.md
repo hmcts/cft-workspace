@@ -66,8 +66,8 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java": "5aac4f32ba9d903d5fde3474938c9afaaee510b8"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
-  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
-  "ccd-config-generator:README.md": "b0543a178722fc99a9a2e900561ecb68a6f6b2e8"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
+  "ccd-config-generator:README.md": "0369912738ba37759a4cc1534260f9bef71d5b8b"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventCaseFieldParser.java": "843130d6c79bef2ad7718def447cf88bedfef23d"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
 ---
@@ -512,9 +512,9 @@ public class MyCaseConfig implements CCDConfig<MyCaseData, State, UserRole> {
 
 ## Ejecting from the SDK
 
-`generateCCDConfig` is a plain `JavaExec` task running `uk.gov.hmcts.ccd.sdk.Main`, whose only output is the directory named by the `ccd.configDir` extension property, registered as a Gradle task output (`CcdSdkPlugin.java:29-48`). That directory holds the same per-sheet JSON the definition store expects, so `ccd-definition-processor`'s `json2xlsx` turns it into an importable spreadsheet with no SDK involvement (`README.md:99-126`). Running the task once and then maintaining the JSON by hand is a supported exit path.
+`generateCCDConfig` is a plain `JavaExec` task running `uk.gov.hmcts.ccd.sdk.Main`, whose only output is the directory named by the `ccd.configDir` extension property, registered as a Gradle task output (`CcdSdkPlugin.java:30-53`). That directory holds the same per-sheet JSON the definition store expects, so `ccd-definition-processor`'s `json2xlsx` turns it into an importable spreadsheet with no SDK involvement (`README.md:129-156`). Running the task once and then maintaining the JSON by hand is a supported exit path.
 
-Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:603-617`).
+Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:633-647`).
 
 ---
 

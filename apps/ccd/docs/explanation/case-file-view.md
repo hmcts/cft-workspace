@@ -74,7 +74,7 @@ sources_sha:
   "libs/ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CaseCategory.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "libs/ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "libs/ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java": "013ed140d477b8ef8ea079619d0b6e0a96d89fa2"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/case-file-view-field.component.ts"
   : "335a72b64bdac28348840ca53fb03c38e4834825"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/case-file-view-field.component.html"
@@ -292,7 +292,7 @@ So a document whose stored `category_id` references a now-deleted category surfa
 
 ## How XUI renders it
 
-CFV lives in `ccd-case-ui-toolkit` under the `palette` component family. It activates when a `ComponentLauncher` field has `display_context_parameter` set to `#ARGUMENT(CaseFileView)`: `PaletteService` resolves that argument and maps `CaseFileView` to `CaseFileViewFieldComponent` for both read and write contexts (`palette.service.ts:62`).
+CFV lives in `ccd-case-ui-toolkit` under the `palette` component family. It activates when a `ComponentLauncher` field has `display_context_parameter` set to `#ARGUMENT(CaseFileView)`: `PaletteService` resolves that argument and maps `CaseFileView` to `CaseFileViewFieldComponent` for both read and write contexts (`palette.service.ts:64`).
 
 <!-- DIVERGENCE: the EUI "Low Level Design - Case File View" (id 1329660520) describes adding a dedicated `CaseFileView` *base field type* to the palette switch. The shipped toolkit instead activates CFV via a generic `ComponentLauncher` field keyed on the `#ARGUMENT(CaseFileView)` display-context parameter (palette.service.ts). The dedicated-field-type design was superseded by the ComponentLauncher mechanism. Source wins. -->
 

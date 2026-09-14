@@ -87,7 +87,7 @@ sources_sha:
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemRequestNoticeOfChange.java": "db56d640f5ad39b385c99da8d543544c0d6a201c"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemApplyNoticeOfChange.java": "9b1337e16b348bdc96f18c2081556a637d86395f"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/client/AssignCaseAccessClient.java": "8c795dc52f33c8ec5c8be87e50de105ca2d94434"
-  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "7ecd3406d5fee931756c2bcfd72921c58085966e"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "447319dbdb7e7fc14b09b833f67e28b939d55dac"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseRoleID.java": "8c795dc52f33c8ec5c8be87e50de105ca2d94434"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java": "331e5ff869da788ba5aad52abafc2fce18aba416"
 ---

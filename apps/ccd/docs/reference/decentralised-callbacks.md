@@ -38,6 +38,8 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java
   - rpx-xui-webapp:api/noc/index.ts
+  - rpx-xui-webapp:api/configuration/uiConfigRouter.ts
+  - rpx-xui-webapp:common/decentralisation/decentralised-casetype.ts
   - rpx-xui-webapp:src/models/environmentConfig.model.ts
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java
 status: confluence-augmented
@@ -98,15 +100,17 @@ sources_sha:
   : "0fe3c2b693c558395d2e6227fe7e6062e782afff"
   "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java": "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java": "303b6617c09391e0700c6ae904b6dc54e119f9c0"
-  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0017__enhance_indexing.sql": "7173ae8de9e9ae1e004042e2a4ecc28b39a6c842"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0019__notify_es_queue_changes.sql": "6ae803d3750d132178091c4fb578c11ce70cedcb"
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0020__prioritise_live_es_queue_updates.sql"
   : "303b6617c09391e0700c6ae904b6dc54e119f9c0"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/persistence/CasePointerRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
-  "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
-  "rpx-xui-webapp:src/models/environmentConfig.model.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:api/noc/index.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "591365f3170a30b2459f2135d9a9bbb2f14f6417"
+  "rpx-xui-webapp:common/decentralisation/decentralised-casetype.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "rpx-xui-webapp:src/models/environmentConfig.model.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/controller/NoticeOfChangeController.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
 ---
 
@@ -421,7 +425,7 @@ Same cross-validation of `caseReference` / `caseTypeId` as the list endpoint. Re
 `/ccd-persistence/*` is not the only contract a decentralised service can be asked to serve. If
 the case type is listed in ExUI's `DECENTRALISED_CASE_TYPE_CONFIG` with a `nocBaseUrl`, ExUI's
 Node BFF forwards two of the three NoC calls to the **service** instead of to
-`aac-manage-case-assignment` (`rpx-xui-webapp:api/noc/index.ts:34-80`):
+`aac-manage-case-assignment` (`rpx-xui-webapp:api/noc/index.ts:30-67`):
 
 | ExUI BFF route | Forwarded to | Path appended to the base URL |
 |---|---|---|
@@ -443,9 +447,14 @@ Two consequences worth knowing:
   response and stores it in the session under `nocCaseTypesByCaseId`; the other two routes resolve
   `nocBaseUrl` from that cache. A `verify-noc-answers` or `noc-requests` call whose session has no
   cached case type falls back to AAC, whatever the config says.
-- **`nocBaseUrl` is BFF-only.** The browser-side `DecentralisedCaseTypeConfig` interface declares
-  just `webUrl` (`rpx-xui-webapp:src/models/environmentConfig.model.ts:6-10`); `nocBaseUrl` is typed
-  locally in `api/noc/index.ts` and never reaches the Angular app.
+- **`nocBaseUrl` is a BFF concern by convention only.** The map has two interfaces over it:
+  `BackendDecentralisedCaseType` declares `nocBaseUrl` and `FrontendDecentralisedCaseType` declares
+  `webUrl` (`rpx-xui-webapp:common/decentralisation/decentralised-casetype.ts`), with only the
+  frontend shape typed into Angular's `EnvironmentConfig`
+  (`rpx-xui-webapp:src/models/environmentConfig.model.ts:24`). The split is a typing convention, not
+  a filter — `uiConfigRouter` serves the whole map to the browser
+  (`rpx-xui-webapp:api/configuration/uiConfigRouter.ts:72`), so a `nocBaseUrl` is visible there even
+  though no Angular code reads it. Treat it as public.
 
 Prefix matching and `%s` templating work exactly as for `webUrl` — see
 [Decentralise a service, step 10](../how-to/decentralise-a-service.md#10-optional-exui-decentralised-journeys).
@@ -568,7 +577,7 @@ The centralised Logstash never re-indexes decentralised case pointers — pointe
 
 | Aspect | Value | Source |
 |---|---|---|
-| Enabled by | `ccd { runtimeIndexing = true }`; otherwise `cftlib`-only | `CcdSdkPlugin.java:85-92` |
+| Enabled by | `implementation 'com.github.hmcts:ccd-runtime-indexing'` (or the deprecated `ccd { runtimeIndexing = true }`); otherwise `cftlib`-only | `CcdSdkPlugin.java:87-93` |
 | Bean gate | `ccd.sdk.decentralised.es-indexer.enabled` (default on) | `DecentralisedESIndexer.java:47-50` |
 | Cluster | `ELASTIC_SEARCH_HOSTS` (comma-separated) | `DecentralisedESIndexer.java:82` |
 | Queue | `ccd.es_queue`, keyed on `reference`, upserted by an `after insert or update` trigger on `ccd.case_data` | `V0020__prioritise_live_es_queue_updates.sql` |
@@ -607,13 +616,15 @@ On `POST /ccd-persistence/cases`:
 
 `DecentralisedFlywayAutoConfiguration` runs SDK Flyway migrations from `classpath:dataruntime-db/migration` in schema `ccd` before application migrations. It is `@ConditionalOnMissingBean(FlywayMigrationStrategy.class)`. `DecentralisedDataConfiguration` imports it via `@ImportAutoConfiguration`; the bean lived on that class until the split.
 
-The `build.gradle` opt-in:
+The `build.gradle` opt-in is a dependency declaration — the plugin imports the `ccd-sdk-bom` platform, so no version is needed:
 
 ```groovy
-ccd {
-    decentralised = true
+dependencies {
+    implementation 'com.github.hmcts:decentralised-runtime'
 }
 ```
+
+The older `ccd { decentralised = true }` flag still pulls the same module in, but it now logs a deprecation warning during Gradle configuration telling you to declare the dependency instead (`CcdSdkPlugin.java:154-158`, `:172-175`).
 
 ---
 

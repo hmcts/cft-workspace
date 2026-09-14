@@ -70,7 +70,7 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/FlagVisibility.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/definition/FieldTypeDefinition.java": "5daf60c31eeb61da276722c2639fa50d279a26a8"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/FieldTypeUtils.java": "9d405159ce9faf660a7b9f35558a9727e4d56892"
-  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "7ecd3406d5fee931756c2bcfd72921c58085966e"
+  "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "447319dbdb7e7fc14b09b833f67e28b939d55dac"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/model/PartyFlags.java": "acdc7d611fe8457205536e12e8fae907fa04282d"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerCreateCaseFlag.java": "1c9413a213871f149b50f20eabed0669c370f758"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerManageCaseFlag.java": "1c9413a213871f149b50f20eabed0669c370f758"
@@ -197,7 +197,7 @@ which splits the tab's flags into the case-level table (`:98-99`) and the party-
 (`:64-65`) purely by comparing against that string. A case-level container named anything else
 is rendered as a party with a blank name.
 
-NFDiv (`CaseData.java:419-431`) keeps the case-level `Flags` directly on the root class and uses a `@JsonUnwrapped` `PartyFlags` holder for the party-level instances:
+NFDiv (`CaseData.java:423-435`) keeps the case-level `Flags` directly on the root class and uses a `@JsonUnwrapped` `PartyFlags` holder for the party-level instances:
 
 ```java
 @CCD(label = "Launch the Flags screen",

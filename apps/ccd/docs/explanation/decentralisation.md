@@ -99,7 +99,7 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java": "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java": "303b6617c09391e0700c6ae904b6dc54e119f9c0"
-  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0008.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql"
   : "85f32117928bda311dd7c752f185ba9cd47c7464"
@@ -112,8 +112,8 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseEventTransactionCoordinator.java": "dd278838230209d05a9b0a91b883b18d0fb0c9c6"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "72ce2f858c011ea3d7b02d750794d50e4d876c7c"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "62adf6c0f59736d77421502957079bc4551eeba1"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "1d626d75c816fc34fd7b73e6e3633749ffaeb9a6"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "ea9b6604f04086472937e4df3cafb31a03b3f79f"
 ---
 
 # Decentralisation
@@ -401,6 +401,17 @@ ccd {
 
 Setting `decentralised = true` pulls in the `decentralised-runtime` dependency and wires `ServicePersistenceController` automatically (`build.gradle` in pcs-api). The service does **not** write this controller itself. `runtimeIndexing` is the separate opt-in for the SDK's Elasticsearch indexer — see [Opting in](#opting-in).
 
+Both flags are now deprecated. The plugin imports a `ccd-sdk-bom` platform into `implementation`, `configGeneration` and (when the cftlib plugin is applied) `cftlibImplementation`, so the same modules can be declared as ordinary version-less dependencies instead (`CcdSdkPlugin.java:38-41`, `:124-127`):
+
+```groovy
+dependencies {
+    implementation 'com.github.hmcts:decentralised-runtime'
+    implementation 'com.github.hmcts:ccd-runtime-indexing'   // or cftlibImplementation for local-only
+}
+```
+
+The flags still work — the plugin adds the same dependencies for them — but each setter logs `ccd.<flag> is deprecated. Remove this flag and declare … in dependencies when needed; the CCD SDK BOM supplies the version.` during Gradle configuration (`CcdSdkPlugin.java:154-170`, `:172-175`).
+
 ### 2. Implement `CaseView`
 
 ```java
@@ -477,9 +488,9 @@ The earlier design called for each adopting service to provision its own dedicat
 
 ### Opting in
 
-`ccd { runtimeIndexing = true }` in the service's `build.gradle` adds `com.github.hmcts:ccd-runtime-indexing` to `implementation`; with it left `false` the same artefact is added only to `cftlibImplementation`, so the indexer runs in local/cftlib runs but not in the deployed service (`CcdSdkPlugin.java:85-92`). The bean itself is additionally gated on `ccd.sdk.decentralised.es-indexer.enabled`, which defaults to on (`DecentralisedESIndexer.java:47-50`). The target cluster comes from `ELASTIC_SEARCH_HOSTS` (comma-separated, defaults to `http://localhost:9200`).
+`ccd { runtimeIndexing = true }` in the service's `build.gradle` adds `com.github.hmcts:ccd-runtime-indexing` to `implementation`; with it left `false` the same artefact is added only to `cftlibImplementation`, so the indexer runs in local/cftlib runs but not in the deployed service. Declaring `implementation 'com.github.hmcts:ccd-runtime-indexing'` directly has the same effect and is the non-deprecated route — the plugin skips the `cftlibImplementation` fallback when the module is already on the runtime classpath (`CcdSdkPlugin.java:87-93`, `:118-122`). The bean itself is additionally gated on `ccd.sdk.decentralised.es-indexer.enabled`, which defaults to on (`DecentralisedESIndexer.java:47-50`). The target cluster comes from `ELASTIC_SEARCH_HOSTS` (comma-separated, defaults to `http://localhost:9200`).
 
-PCS sets `runtimeIndexing` from an env check so it can be switched off when the service runs without the CCD stack (`apps/pcs/pcs-api/build.gradle:99-105`).
+PCS sets `runtimeIndexing` from an env check so it can be switched off when the service runs without the CCD stack (`apps/pcs/pcs-api/build.gradle:102-106`).
 
 ### The queue is trigger-driven; the document body is not
 

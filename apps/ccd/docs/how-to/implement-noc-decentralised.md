@@ -21,6 +21,8 @@ sources:
   - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/CaseRoleAssignmentService.java
   - pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/service/LegalRepresentativePartyLinkService.java
   - rpx-xui-webapp:api/noc/index.ts
+  - rpx-xui-webapp:common/decentralisation/decentralised-redirect.util.ts
+  - rpx-xui-webapp:common/decentralisation/decentralised-casetype.ts
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/NoticeOfChangeQuestions.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/ChallengeQuestionValidator.java
 provenance:
@@ -49,7 +51,9 @@ sources_sha:
   "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/task/NocAccessChangeTaskComponent.java": "c6d41a4bdd6e7b5eac66292242083b386a20ab21"
   "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/CaseRoleAssignmentService.java": "b5f50950e956f4a18b5c5da104818ee9a1a3a97f"
   "pcs-api@noc-xui-native-pcs:src/main/java/uk/gov/hmcts/reform/pcs/service/LegalRepresentativePartyLinkService.java": "86ff16a381cf54f545d326faa779473f97465c17"
-  "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:api/noc/index.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "rpx-xui-webapp:common/decentralisation/decentralised-redirect.util.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "rpx-xui-webapp:common/decentralisation/decentralised-casetype.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/service/noc/NoticeOfChangeQuestions.java": "868a0ec2fccb8b0f66a70164b740497bbe8635ad"
   ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/ChallengeQuestionValidator.java"
   : "6ad5468e76b9ce8c56d74d619b2b5c79cdee63e9"
@@ -374,14 +378,15 @@ variable (`config/custom-environment-variables.json`, `__format: json`). It defa
 }
 ```
 
-How the lookup works (`api/noc/index.ts`):
+How the lookup works (`api/noc/index.ts` for the routing, `common/decentralisation/decentralised-redirect.util.ts` for the matching):
 
 1. **The questions call is what teaches XUI the case type.** `getNoCQuestions` goes to AAC, then
    caches `data.questions[0].case_type_id` in the Express session under `nocCaseTypesByCaseId`,
    keyed by case id.
 2. **Verify and submit read that cache.** `getNoCBaseUrl(body.case_id, req)` looks up the cached
    case type; if the session holds nothing for that case id, it returns the AAC URL.
-3. **Keys are matched as case-insensitive prefixes, longest first.** `getConfiguredCaseType` keeps
+3. **Keys are matched as case-insensitive prefixes, longest first.** `getConfiguredCaseType` (in
+   `decentralised-redirect.util.ts`) keeps
    every configured key that the lower-cased case type *starts with*, then sorts by descending key
    length — so a key `PCS` matches case type `PCSPossessions`, and a more specific key wins over a
    shorter one.
@@ -395,9 +400,15 @@ How the lookup works (`api/noc/index.ts`):
 > in that same session gets AAC rather than your service. Functional tests or `curl` runs against
 > the endpoints must fetch questions first, or they will silently exercise the wrong backend.
 
-The same config map also carries a `webUrl` for the Angular side (`DecentralisedCaseTypeConfig` in
-`src/models/environmentConfig.model.ts`, consumed by `decentralised-redirect.service.ts`);
-`nocBaseUrl` is the NoC-specific field.
+The same config map also carries a `webUrl` for the Angular side. The two halves are separate
+interfaces over one map: `BackendDecentralisedCaseType` declares `nocBaseUrl` and
+`FrontendDecentralisedCaseType` declares `webUrl` (`common/decentralisation/decentralised-casetype.ts`),
+with the frontend shape reaching Angular as
+`decentralisedCaseTypeConfig?: CaseTypeMap<FrontendDecentralisedCaseType>`
+(`src/models/environmentConfig.model.ts:24`, consumed by
+`src/decentralisation/decentralised-redirect.service.ts`). The split is a typing convention, not a
+filter — `uiConfigRouter` passes the whole map to the browser, so `nocBaseUrl` values are visible
+there too.
 
 ---
 

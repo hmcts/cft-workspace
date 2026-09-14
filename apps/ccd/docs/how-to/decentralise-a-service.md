@@ -23,7 +23,7 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/DelegatingSupplementaryDataUpdateOperation.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java
-  - rpx-xui-webapp:src/cases/utils/decentralised-redirect.util.ts
+  - rpx-xui-webapp:common/decentralisation/decentralised-redirect.util.ts
   - rpx-xui-webapp:api/noc/index.ts
   - rpx-xui-webapp:config/custom-environment-variables.json
   - rpx-xui-webapp:src/cases/components/case-task/case-task.component.ts
@@ -69,7 +69,7 @@ sources_sha:
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql"
   : "85f32117928bda311dd7c752f185ba9cd47c7464"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2a5833f94c41ffd6e32f473deaf910fc2ecc2a53"
-  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "170e56f9b110dcdac1efe311d1ec8e4ead7c9b07"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventPayload.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
@@ -80,12 +80,12 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java": "e3fca30b92506584a590ae203811d60202129d2d"
   ? "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/supplementarydata/DelegatingSupplementaryDataUpdateOperation.java"
   : "e492e2aceaf88592e102b0363fddaa50ca4fc278"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "72ce2f858c011ea3d7b02d750794d50e4d876c7c"
-  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "62adf6c0f59736d77421502957079bc4551eeba1"
-  "rpx-xui-webapp:src/cases/utils/decentralised-redirect.util.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
-  "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
-  "rpx-xui-webapp:src/cases/components/case-task/case-task.component.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "1d626d75c816fc34fd7b73e6e3633749ffaeb9a6"
+  "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "ea9b6604f04086472937e4df3cafb31a03b3f79f"
+  "rpx-xui-webapp:common/decentralisation/decentralised-redirect.util.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "rpx-xui-webapp:api/noc/index.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:src/cases/components/case-task/case-task.component.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/VerifyNoCAnswersRequest.java": "dfa7debe58dc4710124070b6a29448dfda6fce67"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeRequest.java": "dfa7debe58dc4710124070b6a29448dfda6fce67"
 ---
@@ -96,7 +96,7 @@ sources_sha:
 
 - In decentralised mode the service owns its own database; CCD stores only an immutable case-pointer (`reference`, `case_type_id`, `jurisdiction`) and delegates all case reads and writes to the service's `/ccd-persistence/*` REST endpoints.
 - The SDK's `decentralised-runtime` module auto-registers `ServicePersistenceController` at `/ccd-persistence` -- you do not write that controller.
-- Enable with `ccd { decentralised = true }` in `build.gradle`, implement `CaseView<T, S>`, and use `configureDecentralised(DecentralisedConfigBuilder)` for events with in-process handlers.
+- Enable by declaring `implementation 'com.github.hmcts:decentralised-runtime'` in `build.gradle` (the older `ccd { decentralised = true }` flag still works but is deprecated), implement `CaseView<T, S>`, and use `configureDecentralised(DecentralisedConfigBuilder)` for events with in-process handlers.
 - Each decentralised event uses a typed `Submit<T, S>` handler receiving `EventPayload<T, S>` and replaces the `AboutToSubmit` and `Submitted` webhook callbacks (they are suppressed by `CallbackInvoker` for decentralised case types).
 - The SDK also handles event message publishing via the Transactional Outbox Pattern (`message_queue_candidates` table) and Elasticsearch indexing via `es_queue`.
 - PCS (`apps/pcs/pcs-api`) is the canonical production reference; CIC (Criminal Injuries Compensation) is the second live adopter. See [Decentralisation explanation](../explanation/decentralisation.md) for architecture.
@@ -116,26 +116,33 @@ sources_sha:
 
 ### 1. Enable decentralised mode in Gradle
 
-In `build.gradle`, set `decentralised = true` inside the `ccd { }` block:
+In `build.gradle`, declare the SDK runtime modules as dependencies. The `ccd-config-generator`
+plugin imports a `com.github.hmcts:ccd-sdk-bom` platform into `implementation`,
+`configGeneration` and `cftlibImplementation`, so you do not write a version
+(`CcdSdkPlugin.java:38-41`, `:124-127`):
 
 ```groovy
-ccd {
-    decentralised   = true
-    runtimeIndexing = true   // run the Elasticsearch indexer in-process
+dependencies {
+    implementation 'com.github.hmcts:decentralised-runtime'
+    implementation 'com.github.hmcts:ccd-runtime-indexing'   // in-process Elasticsearch indexer
 }
 ```
 
-This causes the plugin to pull in the `decentralised-runtime` dependency and wire
-`ServicePersistenceController` automatically (`build.gradle` in pcs-api).
+This causes the plugin to wire `ServicePersistenceController` automatically.
 
-> `runtimeIndexing` is separate from `decentralised` -- it controls whether the SDK's
-> `ccd-runtime-indexing` module (the in-process Elasticsearch indexer) is added to
-> `implementation` and so runs in the deployed service. Left `false`, the same artefact is
-> added only to `cftlibImplementation`, so the indexer runs under cftlib but not in the
-> deployed service (`CcdSdkPlugin.java:85-92`). Decentralised case types have no Logstash
-> pipeline, so a deployed service that needs search must enable it. PCS drives it from an env
-> check so it can be switched off when running without the CCD stack
-> (`apps/pcs/pcs-api/build.gradle:99-105`).
+> `ccd-runtime-indexing` is separate from `decentralised-runtime` -- on `implementation` the
+> in-process Elasticsearch indexer runs in the deployed service; put it on
+> `cftlibImplementation` instead and it runs under cftlib only. If you declare neither, the
+> plugin adds it to `cftlibImplementation` for you (`CcdSdkPlugin.java:87-93`, `:118-122`).
+> Decentralised case types have no Logstash pipeline, so a deployed service that needs search
+> must have it on `implementation`.
+
+> **The older `ccd { decentralised = true; runtimeIndexing = true }` flags still work** — the
+> plugin adds the same dependencies for them — but each setter now logs a deprecation warning
+> during Gradle configuration telling you to declare the dependency instead
+> (`CcdSdkPlugin.java:154-170`, `:172-175`). PCS still uses the flags, driving `runtimeIndexing`
+> from an env check so it can be switched off when running without the CCD stack
+> (`apps/pcs/pcs-api/build.gradle:102-106`).
 
 ---
 
@@ -381,7 +388,7 @@ DECENTRALISED_CASE_TYPE_CONFIG={
 
 The env var is parsed as JSON into the config key `decentralisedCaseTypeConfig`, which defaults
 to `{}` — so services that do not opt in are unaffected
-(`rpx-xui-webapp:config/custom-environment-variables.json:144-147`, `config/default.json:121`).
+(`rpx-xui-webapp:config/custom-environment-variables.json:144-147`, `config/default.json:125`).
 
 **Matching is by case-type prefix, not exact case type.** Both the browser-side redirect and the
 Node BFF's NoC routing lowercase the configured keys and the incoming case type, keep every key
@@ -431,7 +438,7 @@ Both payloads are `{ case_id, answers[] }`, with `case_id` a 16-digit Luhn-check
 One trap: ExUI learns the case type from the `noc-questions` **response** and caches it in the
 session under `nocCaseTypesByCaseId`. `verify-noc-answers` and `noc-requests` resolve `nocBaseUrl`
 from that cache, so a request that arrives without the questions call having happened in the same
-session falls back to AAC (`rpx-xui-webapp:api/noc/index.ts:63-80,89-113`).
+session falls back to AAC (`rpx-xui-webapp:api/noc/index.ts:58-67,74-97`).
 
 Your service must make the NoC decision server-side: authenticate the user, check their
 organisation membership, and trust nothing from the client beyond the case reference and the

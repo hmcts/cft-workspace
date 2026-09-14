@@ -88,7 +88,7 @@ sources_sha:
   "rpx-xui-webapp:src/search/enums/search-form-error-message.enum.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/search/services/search.service.ts": "8577c8c217f3e58ec34ce4efde89c468268befb7"
   "rpx-xui-webapp:api/globalSearch/index.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:src/app/app.routes.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts": "46113db85da141a989d239a95168a3588512ca88"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/launch-darkly.service.ts": "25f44bb18010b28961e6ac3d51ba9142178a558f"
@@ -365,11 +365,11 @@ A `200` response containing your case in `results[]` confirms indexing and retri
 - **Minimum search criteria**: at least one `CCDJurisdictionId` or `CCDCaseTypeId` must be supplied (`SearchCriteriaValidator.java:15-16`). The ExUI search form additionally requires at least one populated field other than the Services drop-down, failing with "Enter information in at least one field" (`rpx-xui-webapp:src/search/utils/search-validators.ts:115-126`, `rpx-xui-webapp:src/search/enums/search-form-error-message.enum.ts:8`).
 
 <!-- DIVERGENCE: Confluence HLD says "Need to apply the std Postcode Regex" for postCode, but ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/search/global/Party.java:19 shows no @Pattern annotation on postCode. Source wins. -->
-<!-- DIVERGENCE: Confluence asserts ExUI enforces a two-parameter minimum and that the service filter is a Launch Darkly toggle. Source: the form validator requires exactly one populated field outside the Services drop-down (rpx-xui-webapp:src/search/utils/search-validators.ts:115-126), and the service list is a config value, not a flag (rpx-xui-webapp:config/default.json:118). Source wins. -->
+<!-- DIVERGENCE: Confluence asserts ExUI enforces a two-parameter minimum and that the service filter is a Launch Darkly toggle. Source: the form validator requires exactly one populated field outside the Services drop-down (rpx-xui-webapp:src/search/utils/search-validators.ts:115-126), and the service list is a config value, not a flag (rpx-xui-webapp:config/default.json:122). Source wins. -->
 
 ### How ExUI narrows the search
 
-The Services drop-down is not a feature flag. It offers "All" plus the intersection of the `globalSearchServices` config value — `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC` by default, overridden per environment by `GLOBAL_SEARCH_SERVICES` — with the `orgServices` list from Location Reference Data, cached on the user's session (`rpx-xui-webapp:config/default.json:118`, `rpx-xui-webapp:api/globalSearch/index.ts:24-44,66-80`). A service missing from that config value cannot be selected however its case types are configured, and a service present in the config but absent from Reference Data resolves to no name.
+The Services drop-down is not a feature flag. It offers "All" plus the intersection of the `globalSearchServices` config value — `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC` by default, overridden per environment by `GLOBAL_SEARCH_SERVICES` — with the `orgServices` list from Location Reference Data, cached on the user's session (`rpx-xui-webapp:config/default.json:122`, `rpx-xui-webapp:api/globalSearch/index.ts:24-44,66-80`). A service missing from that config value cannot be selected however its case types are configured, and a service present in the config but absent from Reference Data resolves to no name.
 
 Launch Darkly gates the feature one level up: the `/search` route is guarded by the `feature-global-search` flag (`rpx-xui-webapp:src/app/app.routes.ts:212-221`), which is read once per navigation and **defaults to enabled** when Launch Darkly cannot be reached (`rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts:28-34`, `rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/launch-darkly.service.ts:27-31`). Turning the flag off redirects to `/`; it does not affect `POST /globalSearch` itself, which stays reachable to any authorised caller.
 
