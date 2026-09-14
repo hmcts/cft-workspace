@@ -55,3 +55,24 @@
 # 8) Local MD files
 
 *.local.md
+
+# 9) The deed-poll programme's clones
+#
+# Four independently-cloned repos, ignored for the same reason apps/, libs/ and platops/ are: their
+# contents belong in their own VCS history, never this one.
+
+deed-poll-admin
+
+deed-poll-web
+
+deed-poll-api
+
+deed-poll-infra
+
+.devcontainer/claudeinit.sh
+
+# Redundant since #14 put ralphex in the image, but kept ignored rather than unignored: the directory is
+# still on disk and is still what /usr/local/bin/ralphex resolves to in an already-running container.
+# Delete the directory, and this line, after the next devcontainer rebuild.
+.devcontainer/local-bin/
+
