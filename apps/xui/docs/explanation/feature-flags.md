@@ -68,9 +68,9 @@ confluence:
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
-  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
-  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:api/configuration/references.ts": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "591365f3170a30b2459f2135d9a9bbb2f14f6417"
   "rpx-xui-webapp:src/main.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
   "rpx-xui-webapp:src/app/app.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/app/containers/app/app.component.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
@@ -79,12 +79,12 @@ sources_sha:
   "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "bd8ca70c5a5bc5d087d05798e351d9c013d4ecf8"
   "rpx-xui-webapp:src/app/shared/services/mc-launch-darkly-service.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/app/app.routes.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
   "rpx-xui-webapp:src/app/shared/services/environment.service.ts": "6c90fbc6b38434ad2f933356651b41f6ec813c64"
   "rpx-xui-webapp:src/app/directives/feature-toggle/feature-toggle.directive.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
-  "rpx-xui-webapp:package.json": "3247d8de307486566a4f58879858242aec5e13b8"
+  "rpx-xui-webapp:package.json": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/launch-darkly.service.ts": "25f44bb18010b28961e6ac3d51ba9142178a558f"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.service.ts": "6532e170c4c925fca8df630bc87efc2becfdbab0"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts": "46113db85da141a989d239a95168a3588512ca88"
@@ -119,7 +119,7 @@ Feature flags support trunk-based development by allowing incomplete features to
 
 ## Server-side BFF flags
 
-All BFF flags live under `feature.*` in `config/default.json:158-176` and are accessed via `showFeature(ref)` from `api/configuration/index.ts`. Those with an env var are set as JSON-encoded boolean strings (`"true"` / `"false"`) because `custom-environment-variables.json` declares `__format: "json"` for each; two (`roleEnabled`, `caseworkerRefEnabled`) are not mapped to env vars at all and can only be changed in `default.json`.
+All BFF flags live under `feature.*` in `config/default.json:163-181` and are accessed via `showFeature(ref)` from `api/configuration/index.ts`. Those with an env var are set as JSON-encoded boolean strings (`"true"` / `"false"`) because `custom-environment-variables.json` declares `__format: "json"` for each; two (`roleEnabled`, `caseworkerRefEnabled`) are not mapped to env vars at all and can only be changed in `default.json`.
 
 | Flag key (config path) | Env var | Default | Purpose |
 |---|---|---|---|
@@ -141,7 +141,7 @@ All BFF flags live under `feature.*` in `config/default.json:158-176` and are ac
 | `feature.roleEnabled` | _(none)_ | `false` | Role endpoints |
 | `feature.caseworkerRefEnabled` | _(none)_ | `false` | Caseworker Reference Data endpoints |
 
-These flags default to safe production values in `default.json`. Deployed environments override them via Helm `values.*.template.yaml` — there are no per-environment JSON config files (`api/configuration/references.ts:121-139`).
+These flags default to safe production values in `default.json`. Deployed environments override them via Helm `values.*.template.yaml` — there are no per-environment JSON config files (`api/configuration/references.ts:123-141`).
 
 One entry that looks like a flag is not one. `FEATURE_QUERY_IDAM_SERVICE_OVERRIDE` /
 `queryIdamServiceOverride` is exported from `references.ts` and mapped in

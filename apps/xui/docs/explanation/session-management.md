@@ -66,10 +66,10 @@ sources_sha:
   "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/timeout-notifications/timeout-notifications.service.ts": "e9487c78c450369bcdc2039fcae52eb6eb115351"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/components/hmcts-session-dialog/hmcts-session-dialog.component.ts": "4b63706d8c0e056720db07da0a650825d287fae0"
-  "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/auth/index.ts": "d984fb0c8c433578b99d01360d669b40996a8316"
   "rpx-xui-webapp:api/user/index.ts": "4cce21b1bcf137df04e9305a455e8c88bbafabb4"
   "rpx-xui-webapp:src/app/containers/app/app.component.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:src/app/app.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-node-lib:src/common/util/contentSecurityPolicy.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
@@ -111,19 +111,19 @@ The BFF is the OIDC relying party. It calls `xuiNode.configure({ session: {...},
 
 After successful OIDC token exchange, the `verifyLogin` method checks the user's roles against `allowRolesRegex` (configured as `loginRoleMatcher` in `config/default.json`, defaulting to `"caseworker"`). If no role matches, the middleware emits `AUTHENTICATE_ACCESS_DENIED` and then calls `accessDenied`, which logs the user out (`rpx-xui-node-lib:src/auth/models/strategy.class.ts:531-542`). Note the order in `verifyLogin`: `req.logIn(user, ...)` has already succeeded before the role check runs (`:525`), so the session is created and then torn down rather than never created.
 
-There is a second ordering trap in the same method. When no listener is registered for `AUTHENTICATE_SUCCESS`, `verifyLogin` redirects to `/` itself instead of emitting (`:544-552`), so the BFF's cookie-setting `successCallback` never runs. Manage Cases avoids it only because `xuiNode.on(AUTH.EVENT.AUTHENTICATE_SUCCESS, successCallback)` is registered at module load (`rpx-xui-webapp:api/auth/index.ts:104`).
+There is a second ordering trap in the same method. When no listener is registered for `AUTHENTICATE_SUCCESS`, `verifyLogin` redirects to `/` itself instead of emitting (`:544-552`), so the BFF's cookie-setting `successCallback` never runs. Manage Cases avoids it only because `xuiNode.on(AUTH.EVENT.AUTHENTICATE_SUCCESS, successCallback)` is registered at module load (`rpx-xui-webapp:api/auth/index.ts:108`).
 
 Key configuration:
 
 | Parameter | Value | Source |
 |---|---|---|
-| Client ID | `xuiwebapp` | `config/default.json:81` |
-| Discovery endpoint | `${SERVICES_IDAM_LOGIN_URL}/o/.well-known/openid-configuration` | `api/auth/index.ts:144` |
-| Callback URL | `/oauth2/callback` | `config/default.json:84` |
-| Token auth method | `client_secret_post` | `api/auth/index.ts:151` |
-| SSO logout URL | `${idamWebUrl}/o/endSession` | `api/auth/index.ts:154` |
+| Client ID | `xuiwebapp` | `config/default.json:85` |
+| Discovery endpoint | `${SERVICES_IDAM_LOGIN_URL}/o/.well-known/openid-configuration` | `api/auth/index.ts:148` |
+| Callback URL | `/oauth2/callback` | `config/default.json:88` |
+| Token auth method | `client_secret_post` | `api/auth/index.ts:155` |
+| SSO logout URL | `${idamWebUrl}/o/endSession` | `api/auth/index.ts:158` |
 
-On successful authentication, the `AUTHENTICATE_SUCCESS` event fires. The BFF's `successCallback` sets two cookies (`__auth__` for the access token, `__userid__` for the user ID), both `sameSite: 'strict'` and `httpOnly: true`, with `secure` driven by `FEATURE_SECURE_COOKIE_ENABLED`, then redirects to `/` unless the call is a silent token refresh, in which case it falls through to `next()` (`rpx-xui-webapp:api/auth/index.ts:53-70`).
+On successful authentication, the `AUTHENTICATE_SUCCESS` event fires. The BFF's `successCallback` sets two cookies (`__auth__` for the access token, `__userid__` for the user ID), both `sameSite: 'strict'` and `httpOnly: true`, with `secure` driven by `FEATURE_SECURE_COOKIE_ENABLED`, then redirects to `/` unless the call is a silent token refresh, in which case it falls through to `next()` (`rpx-xui-webapp:api/auth/index.ts:53-74`).
 
 ## Token exchange and S2S
 
@@ -194,7 +194,7 @@ The last entry with pattern `"."` acts as the catch-all default (480 minutes = 8
 | `-solicitor` | 50 min | 10 min | 40 min |
 | `.` (catch-all / caseworkers) | 480 min (8 hr) | 10 min | 470 min |
 
-<!-- DIVERGENCE: Confluence (page 1211990378) says solicitors get 60 minutes and DWP/Home Office get 15 minutes. Source (rpx-xui-webapp:config/default.json:195-216) shows solicitors get 50 minutes, DWP gets 30 minutes, and Home Office gets 240 minutes. Source wins. -->
+<!-- DIVERGENCE: Confluence (page 1211990378) says solicitors get 60 minutes and DWP/Home Office get 15 minutes. Source (rpx-xui-webapp:config/default.json:203-223) shows solicitors get 50 minutes, DWP gets 30 minutes, and Home Office gets 240 minutes. Source wins. -->
 
 **Information Assurance design intent** (from Confluence): The original IA recommendation was 8 hours for internal users, 1 hour for solicitors, and 15 minutes for DWP/Home Office. Deployed values differ as shown above, reflecting operational adjustments made since the original design.
 

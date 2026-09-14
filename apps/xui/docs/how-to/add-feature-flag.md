@@ -55,11 +55,11 @@ confluence:
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
-  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:api/configuration/references.ts": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:api/configuration/index.ts": "e6b48e7df696e4f542dcd45e9840f7645babd613"
-  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "591365f3170a30b2459f2135d9a9bbb2f14f6417"
   "rpx-xui-webapp:src/app/app.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/app/app.routes.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
   "rpx-xui-webapp:src/app/containers/app/app.component.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
@@ -276,7 +276,7 @@ In `api/configuration/references.ts`, add a constant for the short config path (
 export const FEATURE_MY_FEATURE_ENABLED = 'myFeatureEnabled';
 ```
 
-<!-- DIVERGENCE: Confluence "Launch Darkly Implementation" page (1191576311) implies reference constants include the full dotted path, but rpx-xui-webapp:api/configuration/references.ts:119-136 shows they use only the short name (e.g. 'secureCookieEnabled', 'docsEnabled'). The showFeature() function in api/configuration/index.ts:30 prepends 'feature.' internally. Source wins. -->
+<!-- DIVERGENCE: Confluence "Launch Darkly Implementation" page (1191576311) implies reference constants include the full dotted path, but rpx-xui-webapp:api/configuration/references.ts:123-141 shows they use only the short name (e.g. 'secureCookieEnabled', 'docsEnabled'). The showFeature() function in api/configuration/index.ts:30 prepends 'feature.' internally. Source wins. -->
 
 ### 4. Read the flag in BFF code
 

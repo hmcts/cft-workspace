@@ -75,12 +75,12 @@ confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit/case-edit.component.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-edit-page/case-edit-page.component.ts"
-  : "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  : "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/case-create/case-create.component.ts": "db39163cb7de92af326a333fe7430558a051c135"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.ts": "b239d2859f3c5ec11025a5597f8e639806521c36"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read.component.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/services/cases.service.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-editor/services/wizard-page-field-to-case-field.mapper.ts"
   : "a0696744cf3ccae9aacbb31b40f99e2e69fc2655"
@@ -91,7 +91,7 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/condition.peg.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "1a897e8ee004b009cea34182c5cbea4e28519688"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "6fda093087d590850bedf0562dabd10be4b4ceb2"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.html": "7f1b0d12f0af5a80788e266558817af09930cd4f"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.scss": "4fda645087ccabf7c77b2902b1106efc9ed9415b"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read-label.html": "5dbc31c8259c5f503b00b65476552b726b6dfd1c"
@@ -103,8 +103,8 @@ sources_sha:
   "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "eed279a4dd5502643063241d86c2911799acac38"
   "rpx-xui-webapp:src/app/providers/providers.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/cases/cases.module.ts": "496d74f0b1a66c9aae6e057558642f2f447e59d9"
-  "rpx-xui-webapp:package.json": "3247d8de307486566a4f58879858242aec5e13b8"
-  "civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn": "7b8e953f91f63dad2f50124a634989bd472d22b2"
+  "rpx-xui-webapp:package.json": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn": "3e1c62f5eeccd4611bcb0c203e8201b391ebc259"
   "civil-wa-task-configuration:src/main/resources/wa-task-configuration-civil-civil.dmn": "2a3ab1dec2ad1bbd323512eecf40646f4d3244cf"
 ---
 
@@ -177,7 +177,7 @@ The `FieldTypeEnum` union defines all supported types (`field-type-enum.model.ts
 | Document | `Document` |
 | Address | `AddressGlobal`, `AddressGlobalUK`, `AddressUK` |
 | Display-only | `Label`, `CasePaymentHistoryViewer`, `CaseHistoryViewer` |
-| Extensible | `ComponentLauncher`, `WaysToPay`, `Organisation`, `JudicialUser` |
+| Extensible | `ComponentLauncher`, `WaysToPay`, `Organisation`, `JudicialUser`, `StaffUser` |
 | Case flags | `Flags`, `FlagDetail`, `FlagLauncher`, `CaseFlag` |
 
 `RichTextArea` is the newest of these and is the only type that can reject its own content on
@@ -190,7 +190,7 @@ the text will not clear it.
 
 ### ComponentLauncher extensibility
 
-The `ComponentLauncher` field type uses `display_context_parameter` with `#ARGUMENT(...)` to select a sub-component. The `PaletteService.getComponentLauncherComponent()` method extracts the argument value, filters out standard `DisplayContextParameter` values (`READ`, `CREATE`, `UPDATE`), and looks up the remainder in `componentLauncherRegistry` (`palette.service.ts:138-154`, registry at `:61-65`).
+The `ComponentLauncher` field type uses `display_context_parameter` with `#ARGUMENT(...)` to select a sub-component. The `PaletteService.getComponentLauncherComponent()` method extracts the argument value, filters out standard `DisplayContextParameter` values (`READ`, `CREATE`, `UPDATE`), and looks up the remainder in `componentLauncherRegistry` (`palette.service.ts:142-158`, registry at `:63-67`).
 
 The registry maps:
 
@@ -200,7 +200,7 @@ The registry maps:
 | `LinkedCases` | `WriteLinkedCasesFieldComponent` | `ReadLinkedCasesFieldComponent` | Manages its own internal multi-step flow (intro, add/remove links, custom CYA) |
 | `QueryManagement` | `ReadQueryManagementFieldComponent` | `ReadQueryManagementFieldComponent` | Read component used for both modes; manages query raise/respond flow internally |
 
-If the `#ARGUMENT(...)` value does not match any registry key, `UnsupportedFieldComponent` is returned (silent fallback). Omitting `#ARGUMENT(...)` altogether does not fall back: the extraction indexes the regex match without a null guard (`palette.service.ts:141`), so a `ComponentLauncher` field whose `display_context_parameter` is missing or carries no `#ARGUMENT(...)` throws a `TypeError` while the field is being created rather than rendering nothing.
+If the `#ARGUMENT(...)` value does not match any registry key, `UnsupportedFieldComponent` is returned (silent fallback). Omitting `#ARGUMENT(...)` altogether does not fall back: the extraction indexes the regex match without a null guard (`palette.service.ts:145`), so a `ComponentLauncher` field whose `display_context_parameter` is missing or carries no `#ARGUMENT(...)` throws a `TypeError` while the field is being created rather than rendering nothing.
 
 **CCD definition pattern for ComponentLauncher**: Services define a field of type `ComponentLauncher` on a tab or event. The `display_context_parameter` in `CaseEventToFields` or `ComplexTypes` must include `#ARGUMENT(<ComponentName>)`. The argument can be combined with standard display context parameters comma-separated (e.g. `#ARGUMENT(LinkedCases,CREATE)`); the standard entries are stripped and only the custom component name is used for registry lookup.
 
@@ -212,8 +212,8 @@ Work Allocation task creation is service-side configuration rather than toolkit 
 
 ### Notable behaviours
 
-- Unknown field types fall through to `UnsupportedFieldComponent` which renders nothing silently -- fields do not throw (`palette.service.ts:133-134`).
-- `Complex` type has a nested switch on `field_type.id` to distinguish `AddressGlobalUK`/`AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser` from generic complex rendering (`palette.service.ts:99-114`).
+- Unknown field types fall through to `UnsupportedFieldComponent` which renders nothing silently -- fields do not throw (`palette.service.ts:137-138`).
+- `Complex` type has a nested switch on `field_type.id` to distinguish `AddressGlobalUK`/`AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser`, `StaffUser` from generic complex rendering (`palette.service.ts:101-118`).
 - `FieldReadComponent` defers dynamic component creation with `Promise.resolve(null).then(...)` to allow label interpolation to complete first; the field container is empty during the synchronous render pass (`field-read.component.ts:33-42`).
 - `AddressGlobal` appears in `FieldTypeEnum` but is NOT handled in the `PaletteService` switch -- it falls through to `UnsupportedFieldComponent`. Only `AddressGlobalUK`/`AddressUK` are routed to `WriteAddressFieldComponent` via the Complex branch.
 
@@ -340,7 +340,7 @@ Version pinning is exact (not caret/tilde) because SRT validates a specific vers
 
 `projects/ccd-case-ui-toolkit/package.json` is the manifest ng-packagr publishes, and it declares **only** peer dependencies — no runtime `dependencies` block at all. The peers cover the Angular 20 framework packages and NgRx 20, plus `rxjs`, `moment`, `underscore`, `ngx-chips`, `ngx-editor`, `ngx-markdown`, `ngx-pagination`, the ProseMirror packages and `rpx-xui-translation`. `@angular/cdk` and `@angular/material` are peers on their own earlier major lines (17 and 16), not on 20, so a consuming app has to satisfy both generations at once (`projects/ccd-case-ui-toolkit/package.json:4-37`).
 
-`@hmcts/media-viewer`, `@hmcts/ccpay-web-component` and `@edium/fsm` are not declared by the published package in any form, even though library code imports them. Consuming apps install them directly and choose their own versions — `rpx-xui-webapp` lists all three in its own `dependencies` (`rpx-xui-webapp:package.json:118-122`) — which means a version skew between the app and what the toolkit was built against surfaces as a runtime error, not an install-time conflict.
+`@hmcts/media-viewer`, `@hmcts/ccpay-web-component` and `@edium/fsm` are not declared by the published package in any form, even though library code imports them. Consuming apps install them directly and choose their own versions — `rpx-xui-webapp` lists all three in its own `dependencies` (`rpx-xui-webapp:package.json:120-124`) — which means a version skew between the app and what the toolkit was built against surfaces as a runtime error, not an install-time conflict.
 
 ## Local development with the toolkit
 

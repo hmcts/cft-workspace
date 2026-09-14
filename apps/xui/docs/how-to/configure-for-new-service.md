@@ -54,11 +54,11 @@ confluence:
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
-  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:api/configuration/references.ts": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "bd8ca70c5a5bc5d087d05798e351d9c013d4ecf8"
   "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
@@ -85,7 +85,7 @@ sources_sha:
 - Adding a new downstream service to `rpx-xui-webapp` requires a config entry, a config reference constant, a proxy route, and (optionally) a Helm values override.
 - The proxy rule must be registered in `api/proxy.config.ts` and called via `initProxy` (`api/application.ts:129`), which runs before `bodyParser` (`:131-132`).
 - The BFF automatically attaches `Authorization` and `ServiceAuthorization` headers to proxied requests via `authInterceptor` (`api/lib/middleware/proxy.ts:119`).
-- The S2S microservice name for all XUI webapp calls is `xui_webapp` (`config/default.json:116`).
+- The S2S microservice name for all XUI webapp calls is `xui_webapp` (`config/default.json:120`).
 - Proxy routes use prefix-based subtree forwarding; all path suffixes under the prefix are forwarded to the downstream service.
 - Beyond adding a proxy route, full service onboarding may also require LaunchDarkly flag updates, `serviceRefDataMapping` entries, jurisdiction list updates, and Manage Organisation role configuration.
 
@@ -218,7 +218,7 @@ SERVICES_MY_NEW_SERVICE_API_URL: http://my-new-service-{{ .Values.global.environ
 
 ### 7. Ensure S2S trust is configured
 
-The downstream service must accept S2S tokens from `xui_webapp`. Confirm that the downstream service's S2S configuration includes `xui_webapp` in its list of allowed microservices. The S2S microservice name is set at `config/default.json:116`:
+The downstream service must accept S2S tokens from `xui_webapp`. Confirm that the downstream service's S2S configuration includes `xui_webapp` in its list of allowed microservices. The S2S microservice name is set at `config/default.json:120`:
 
 ```json
 {
@@ -237,7 +237,7 @@ If your service introduces a new CCD jurisdiction (not just a new downstream API
 | `globalSearchServices` | Jurisdictions included in global search results | `GLOBAL_SEARCH_SERVICES` |
 | `staffSupportedJurisdictions` | Jurisdictions visible in staff admin UI | `STAFF_SUPPORTED_JURISDICTIONS` |
 
-Current values (`config/default.json:118-122`):
+Current values (`config/default.json:122-127`):
 
 ```json
 {

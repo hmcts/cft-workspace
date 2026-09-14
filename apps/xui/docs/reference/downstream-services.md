@@ -17,6 +17,7 @@ sources:
   - rpx-xui-webapp:api/hearings/services.index.ts
   - rpx-xui-webapp:api/hearings/models/serviceHearingValues.model.ts
   - rpx-xui-webapp:api/noc/index.ts
+  - rpx-xui-webapp:common/decentralisation/decentralised-redirect.util.ts
   - rpx-xui-webapp:api/noc/models/noCQuestion.interface.ts
   - rpx-xui-webapp:api/noc/errorCodeConverter.ts
   - rpx-xui-webapp:src/noc/store/effects/noc.effects.ts
@@ -48,9 +49,9 @@ confluence:
     space: "EUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
-  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:api/configuration/references.ts": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:api/routes.ts": "8577c8c217f3e58ec34ce4efde89c468268befb7"
   "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
@@ -59,7 +60,8 @@ sources_sha:
   "rpx-xui-webapp:api/workAllocation/routes.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-webapp:api/hearings/services.index.ts": "e4f7e5a99239c9a585927332382aa87dae93b797"
   "rpx-xui-webapp:api/hearings/models/serviceHearingValues.model.ts": "e4f7e5a99239c9a585927332382aa87dae93b797"
-  "rpx-xui-webapp:api/noc/index.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
+  "rpx-xui-webapp:api/noc/index.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "rpx-xui-webapp:common/decentralisation/decentralised-redirect.util.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
   "rpx-xui-webapp:api/noc/models/noCQuestion.interface.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:api/noc/errorCodeConverter.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/noc/store/effects/noc.effects.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
@@ -244,7 +246,7 @@ Each jurisdiction also specifies `caseTypes` in config — used to match which s
 | IDAM Login (web) | `services.idam.idamLoginUrl` (`SERVICES_IDAM_LOGIN_URL`) | OIDC login redirect |
 | S2S Provider | `services.s2s` (`SERVICE_S2S_PATH`) | Service-to-service token lease |
 
-IDAM client ID: `xuiwebapp`. S2S microservice name: `xui_webapp` (`rpx-xui-webapp:config/default.json:116`).
+IDAM client ID: `xuiwebapp`. S2S microservice name: `xui_webapp` (`rpx-xui-webapp:config/default.json:120`).
 
 ## Manage Organisations (rpx-xui-manage-organisations)
 
@@ -299,16 +301,16 @@ The BFF's `/noc` routes drive three operations (`rpx-xui-webapp:api/noc/index.ts
 2. **Verify answers** — `POST {base}/noc/verify-noc-answers` with the browser's body forwarded unchanged.
 3. **Submit the request** — `POST {base}/noc/noc-requests`, again forwarding the body. The response's `approval_status` is the only field the SPA reads: `PENDING` routes to the "pending" success page and anything else to the "approved" one (`rpx-xui-webapp:src/noc/store/effects/noc.effects.ts:66-71`). AAC's enum is `PENDING | APPROVED | REJECTED` (`aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeResponse.java`).
 
-`{base}` is not always AAC. Step 1 always goes to `services.ccd.caseAssignmentApi`, and the `case_type_id` from the first question is cached in the Express session under `nocCaseTypesByCaseId`. Steps 2 and 3 then look that case type up in `decentralisedCaseTypeConfig`, matching the longest configured prefix case-insensitively, and use its `nocBaseUrl` if one is set — so a decentralised case type takes verification and submission away from AAC while question-fetching stays behind (`rpx-xui-webapp:api/noc/index.ts:63-121`). The lookup depends on the session entry, so a submission that arrives without the preceding question fetch on the same session falls back to AAC regardless of configuration.
+`{base}` is not always AAC. Step 1 always goes to `services.ccd.caseAssignmentApi`, and the `case_type_id` from the first question is cached in the Express session under `nocCaseTypesByCaseId`. Steps 2 and 3 then look that case type up in `decentralisedCaseTypeConfig`, matching the longest configured prefix case-insensitively, and use its `nocBaseUrl` if one is set — so a decentralised case type takes verification and submission away from AAC while question-fetching stays behind (`rpx-xui-webapp:api/noc/index.ts:58-67`, `rpx-xui-webapp:common/decentralisation/decentralised-redirect.util.ts:18-53`). The lookup depends on the session entry, so a submission that arrives without the preceding question fetch on the same session falls back to AAC regardless of configuration.
 
 Errors come back from the downstream as free-text messages, and the BFF derives a stable code from the message before passing it on — `case-not-found`, `case-id-invalid`, `noc-in-progress`, `answers-not-identify-litigant`, `answers-not-matched-any-litigant`, `multiple-noc-requests-on-case`, `multiple-noc-requests-on-user`, `has-represented`, `no-org-policy`, `insufficient-privileges` and others, defaulting to `generic-error` (`rpx-xui-webapp:api/noc/errorCodeConverter.ts`). Because the mapping is substring matching on the message text, a wording change downstream silently degrades every affected error to `generic-error`.
 <!-- DIVERGENCE: Confluence "Notice of Change - Case Access API Specification" describes the operations as taking a `caseReference` input, returning questions shaped `{questionId, label, type}`, accepting an optional `requestReason` capped at 1024 characters plus an `actionDescription`, and returning `resultType: AUTO_APPROVED | MANUAL_APPROVAL | AUTO_REJECTED`. Source uses `case_id`, the `NoCQuestion` shape above, no `requestReason`/`actionDescription` handling in the BFF, and `approval_status: PENDING | APPROVED | REJECTED`. Source wins. -->
 
 ## Known configuration quirks
 
-- `services.prd.judicialApi` defaults to an **AAT** URL (`rd-judicial-api-aat`) in `rpx-xui-webapp:config/default.json:69` — overridden by Helm in production.
-- `services.prd.commondataApi` defaults to an **AAT** URL (`rd-commondata-api-aat`) in `rpx-xui-webapp:config/default.json:70`.
-- `services.prd.locationApi` defaults to a **demo** URL (`rd-location-ref-api-demo`) in `rpx-xui-webapp:config/default.json:68`. A separate `services.locationref.api` (pointing to prod) is used for the proxy route.
+- `services.prd.judicialApi` defaults to an **AAT** URL (`rd-judicial-api-aat`) in `rpx-xui-webapp:config/default.json:73` — overridden by Helm in production.
+- `services.prd.commondataApi` defaults to an **AAT** URL (`rd-commondata-api-aat`) in `rpx-xui-webapp:config/default.json:74`.
+- `services.prd.locationApi` defaults to a **demo** URL (`rd-location-ref-api-demo`) in `rpx-xui-webapp:config/default.json:72`. A separate `services.locationref.api` (pointing to prod) is used for the proxy route.
 - Manage Organisations references `ccd-data-store-api` in config (`services.ccdDataApi`) but does not call it directly — all CCD-related queries route through the AAC proxy path.
 - `services.hearings.employment.serviceApi` is configured but Employment is **not** in the default `hearingsJurisdictions` activation list (`SSCS,PRIVATELAW,CIVIL,IA`).
 - The API root router mounts `/locations` twice (`rpx-xui-webapp:api/routes.ts:54`, `:63`), leaving the second mount unreachable.

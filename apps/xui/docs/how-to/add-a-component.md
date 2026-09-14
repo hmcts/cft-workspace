@@ -53,16 +53,16 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/public-api.ts": "d8781265f59485c3c9545882f6019114fadf3bd0"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/ng-package.json": "28beefe025ff4a81ca74779ef804b668ab9e0907"
   "ccd-case-ui-toolkit:angular.json": "d1ab32c3066c97424724ff6690e4cc2ec1ed2c54"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.module.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "b436972c4d5af5a2873a96bfcfae8c5d32db7762"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.module.ts": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/field-type-enum.model.ts": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write.component.ts": "7f1b0d12f0af5a80788e266558817af09930cd4f"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-read.component.ts": "5dbc31c8259c5f503b00b65476552b726b6dfd1c"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write-journey.component.ts"
   : "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
   "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "1a897e8ee004b009cea34182c5cbea4e28519688"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "6fda093087d590850bedf0562dabd10be4b4ceb2"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/markdown/markdown-component.module.ts": "315741f6698ef3b7d46e49e27742eefae21d0e24"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/journey/multipage-component-state.service.ts": "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
 ---
@@ -158,10 +158,10 @@ export class PaletteModule {}
 ```
 
 Multi-page features follow the same route. Case File View, Linked Cases and Query Management each
-declare every one of their sub-components directly in `palette.module.ts` (`:234-240`, `:260-266`,
-`:269`) and register their feature services in that module's `providers` array (`:375-378`). The
+declare every one of their sub-components directly in `palette.module.ts` (`:237-243`, `:263-269`,
+`:272`) and register their feature services in that module's `providers` array (`:378-381`). The
 only palette sub-directory with its own NgModule is `markdown`
-(`.../palette/markdown/markdown-component.module.ts`, imported at `palette.module.ts:325`), and it
+(`.../palette/markdown/markdown-component.module.ts`, imported at `palette.module.ts:328`), and it
 exists to wrap a third-party dependency rather than to encapsulate a feature.
 
 State shared between the sub-components of a journey goes through an injected service, not a store:
@@ -198,7 +198,7 @@ export type FieldTypeEnum =
   | 'MyNewFieldType';
 ```
 
-The current supported types in the switch statement are: `Text`, `Postcode`, `TextArea`, `RichTextArea`, `Number`, `YesOrNo`, `Email`, `PhoneUK`, `Date`, `DateTime`, `MoneyGBP`, `DynamicList`, `FixedList`, `DynamicRadioList`, `DynamicMultiSelectList`, `FixedRadioList`, `Complex` (with sub-dispatch for `AddressGlobalUK`, `AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser`), `Collection`, `MultiSelectList`, `Document`, `Label`, `CasePaymentHistoryViewer`, `CaseHistoryViewer`, `WaysToPay`, `ComponentLauncher`, and `FlagLauncher`.
+The current supported types in the switch statement are: `Text`, `Postcode`, `TextArea`, `RichTextArea`, `Number`, `YesOrNo`, `Email`, `PhoneUK`, `Date`, `DateTime`, `MoneyGBP`, `DynamicList`, `FixedList`, `DynamicRadioList`, `DynamicMultiSelectList`, `FixedRadioList`, `Complex` (with sub-dispatch for `AddressGlobalUK`, `AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser`, `StaffUser`), `Collection`, `MultiSelectList`, `Document`, `Label`, `CasePaymentHistoryViewer`, `CaseHistoryViewer`, `WaysToPay`, `ComponentLauncher`, and `FlagLauncher`.
 
 If the field type is not registered, `PaletteService` returns `UnsupportedFieldComponent` and the field renders as blank with no error.
 

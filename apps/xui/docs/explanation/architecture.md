@@ -53,14 +53,14 @@ confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
   "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
-  "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/auth/index.ts": "d984fb0c8c433578b99d01360d669b40996a8316"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:api/lib/middleware/auth.ts": "3b6d926b78e0815e477c8938d564099e392a8c94"
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
-  "rpx-xui-webapp:charts/xui-webapp/values.yaml": "69fa77d263137c54c33a0bddfd86586ba585e63c"
-  "rpx-xui-webapp:charts/xui-webapp/Chart.yaml": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:charts/xui-webapp/values.yaml": "6ae33684c8e169add0b98858628a065e9518888c"
+  "rpx-xui-webapp:charts/xui-webapp/Chart.yaml": "6ae33684c8e169add0b98858628a065e9518888c"
   "rpx-xui-webapp:Dockerfile": "1eea34a7ae5eeb5c43d14b0e1a3a3a16adfb6f9d"
-  "rpx-xui-webapp:infrastructure/main.tf": "5376993d7f1f693f22ab014158974ad412abc4cc"
+  "rpx-xui-webapp:infrastructure/main.tf": "6ae33684c8e169add0b98858628a065e9518888c"
   "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
   "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "e30a86772d25ac208bf938e78ef2c7308c9cdd3a"
   "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
@@ -139,13 +139,13 @@ sequenceDiagram
 
 | Setting | Value | Source |
 |---------|-------|--------|
-| IDAM client ID | `xuiwebapp` | `config/default.json:81` |
-| S2S microservice name | `xui_webapp` | `config/default.json:116` |
-| Discovery endpoint | `${SERVICES_IDAM_LOGIN_URL}/o/.well-known/openid-configuration` | `api/auth/index.ts:144` |
-| Token auth method | `client_secret_post` | `api/auth/index.ts:151` |
-| OAuth2 scopes requested | `openid profile roles manage-user create-user search-user` | `api/auth/index.ts:132`, `:149` |
-| OAuth2 callback path | `/oauth2/callback` | `config/default.json:84` |
-| SSO logout URL | `${idamWebUrl}/o/endSession` | `api/auth/index.ts:154` |
+| IDAM client ID | `xuiwebapp` | `config/default.json:85` |
+| S2S microservice name | `xui_webapp` | `config/default.json:120` |
+| Discovery endpoint | `${SERVICES_IDAM_LOGIN_URL}/o/.well-known/openid-configuration` | `api/auth/index.ts:148` |
+| Token auth method | `client_secret_post` | `api/auth/index.ts:155` |
+| OAuth2 scopes requested | `openid profile roles manage-user create-user search-user` | `api/auth/index.ts:136`, `:153` |
+| OAuth2 callback path | `/oauth2/callback` | `config/default.json:88` |
+| SSO logout URL | `${idamWebUrl}/o/endSession` | `api/auth/index.ts:158` |
 
 The `xuiwebapp` client requests the IDAM user-administration scopes (`manage-user`, `create-user`, `search-user`) alongside the sign-in scopes, so the access token minted for an ExUI session carries them too.
 
@@ -350,6 +350,7 @@ Secrets are mounted from the `rpx` Key Vault at `/mnt/secrets/rpx` via `@hmcts/p
 | `mc-s2s-client-secret` | S2S TOTP secret for `xui_webapp` |
 | `mc-idam-client-secret` | IDAM OAuth2 client secret |
 | `webapp-redis6-connection-string` | Redis connection (aliased to `webapp-redis-connection-string`) |
+| `webapp-managed-redis-connection-string` | Azure Managed Redis connection; mounted ahead of the cutover, not yet read by the BFF |
 | `launch-darkly-client-id` | LaunchDarkly SDK key |
 | `system-user-name` / `system-user-password` | System user for background operations |
 | `mc-session-secret` | Express session signing secret |
@@ -363,7 +364,7 @@ The rest are conditional. Work Allocation task management, caseworker reference 
 
 Application monitoring uses App Insights and Dynatrace.
 
-ExUI persists nothing of its own. `infrastructure/main.tf` provisions an Azure Cache for Redis instance (`rpx-xui-webapp:infrastructure/main.tf:36-51`), Application Insights, a resource group and Key Vault secrets — there is no database module in the stack. Session state lives in that Redis cache, case data in CCD, and documents in DM Store behind CDAM, so nothing but the session survives a pod restart.
+ExUI persists nothing of its own. `infrastructure/main.tf` provisions two Redis caches, Application Insights, a resource group and Key Vault secrets — there is no database module in the stack. The legacy `redis6-cache` module (`cnp-module-redis`, Redis 6, private endpoint) is what the BFF actually uses (`rpx-xui-webapp:infrastructure/main.tf:47-62`); alongside it a `managed_redis` module provisions an Azure Managed Redis instance — clustered (`clustering_policy = "EnterpriseCluster"`), private-endpoint only, with 6-hourly RDB persistence — deployed "alongside the legacy cache until the application cutover has completed" (`:66-88`). Both write their connection strings into the shared Key Vault (`:30-40`), but `REDIS_CLOUD_URL` still points at the legacy secret, so raising or retiring the managed instance is an infrastructure change that does not by itself move session traffic. Session state lives in the Redis cache, case data in CCD, and documents in DM Store behind CDAM, so nothing but the session survives a pod restart.
 
 ### Shuttering
 

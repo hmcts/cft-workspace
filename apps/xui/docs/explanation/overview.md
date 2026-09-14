@@ -49,11 +49,11 @@ confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
   "rpx-xui-webapp:api/application.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:src/app/app.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/app/app.routes.ts": "685c337458fc9d077acb937cd0acd9adf818c472"
   "rpx-xui-webapp:api/activityTracker/index.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts": "bd8ca70c5a5bc5d087d05798e351d9c013d4ecf8"
 ---

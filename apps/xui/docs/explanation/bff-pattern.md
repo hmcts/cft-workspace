@@ -66,13 +66,13 @@ sources_sha:
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:api/lib/middleware/auth.ts": "3b6d926b78e0815e477c8938d564099e392a8c94"
-  "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
-  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:api/auth/index.ts": "d984fb0c8c433578b99d01360d669b40996a8316"
+  "rpx-xui-webapp:api/configuration/references.ts": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:api/configuration/index.ts": "e6b48e7df696e4f542dcd45e9840f7645babd613"
   "rpx-xui-webapp:api/lib/proxy.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
   "rpx-xui-webapp:api/lib/http/index.ts": "55079aab2a3d290fb54432007a9ee7c73183e447"
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
   "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "e30a86772d25ac208bf938e78ef2c7308c9cdd3a"
   "rpx-xui-node-lib:src/auth/models/strategy.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
@@ -221,7 +221,7 @@ The library is an `EventEmitter`, and each middleware layer declares the events 
 - S2S (`rpx-xui-node-lib:src/auth/s2s/s2s.constants.ts:2-5`) — `s2s.authenticate.success`, `s2s.authenticate.failure`.
 - Session store (`rpx-xui-node-lib:src/session/session.constants.ts:2-5`) — `redisStore.ClientReady`, `redisStore.ClientError`.
 
-Manage Cases subscribes to the three auth events (`rpx-xui-webapp:api/auth/index.ts:104-106`) to set the IDAM cookies on success, log failures, and raise an AppInsights event when a user is denied for having no matching role; and to both Redis events (`rpx-xui-webapp:api/health/index.ts:80`, `:93`) to pass the client to the cache layer and add a `redis` health check.
+Manage Cases subscribes to the three auth events (`rpx-xui-webapp:api/auth/index.ts:108-110`) to set the IDAM cookies on success, log failures, and raise an AppInsights event when a user is denied for having no matching role; and to both Redis events (`rpx-xui-webapp:api/health/index.ts:80`, `:93`) to pass the client to the cache layer and add a `redis` health check.
 
 Subscription order is load-bearing. `proxyEvents` forwards an event only if `this.listenerCount(event)` is already non-zero at the moment the middleware layer is configured (`rpx-xui-node-lib:src/common/models/xuiNode.class.ts:102-109`), and that happens inside `xuiNode.configure()`. An `xuiNode.on(...)` registered after `configure()` resolves is never wired to the emitting middleware and fires silently. Manage Cases stays on the right side of this: the auth listeners are registered at module scope, and `health.addReformHealthCheck(app)` runs at `api/application.ts:123`, both before `getXuiNodeMiddleware()` calls `configure()` at `:125`.
 

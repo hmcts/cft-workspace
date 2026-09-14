@@ -53,12 +53,12 @@ confluence:
     space: "EXUI"
 confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
-  "rpx-xui-webapp:config/default.json": "1fd121d96abdb6316b6d7bf7b918842b20e976db"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "69fa77d263137c54c33a0bddfd86586ba585e63c"
-  "rpx-xui-webapp:api/configuration/references.ts": "69fa77d263137c54c33a0bddfd86586ba585e63c"
+  "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:api/configuration/references.ts": "c081dae2e1952ed73592db1779103ffc2c7a199e"
   "rpx-xui-webapp:api/configuration/index.ts": "e6b48e7df696e4f542dcd45e9840f7645babd613"
-  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "28b9601a35fef875ae46fced731f4ce7fa73c143"
-  "rpx-xui-webapp:api/auth/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/configuration/uiConfigRouter.ts": "591365f3170a30b2459f2135d9a9bbb2f14f6417"
+  "rpx-xui-webapp:api/auth/index.ts": "d984fb0c8c433578b99d01360d669b40996a8316"
   "rpx-xui-webapp:api/proxy.config.ts": "92150834ffc7287a621486b07398fe147fbadad3"
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:src/app/app.constants.ts": "2e29d1848469082fd2b49a33461aefef7c37d779"
@@ -84,10 +84,11 @@ sources_sha:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `environment` | string | _(varies)_ | Logical environment name; overridden by `NODE_CONFIG_ENV` |
-| `microservice` | string | `xui_webapp` | S2S microservice name used for token lease (`config/default.json:116`) |
+| `microservice` | string | `xui_webapp` | S2S microservice name used for token lease (`config/default.json:120`) |
 | `protocol` | string | `https` | Protocol for constructing callback URLs |
 | `dynatraceCdn` | string | `""` (empty) | URL of the Dynatrace RUM agent script; empty disables injection (see [Dynatrace](#dynatrace)) |
 | `decentralisedCaseTypeConfig` | object | `{}` (empty) | Per-case-type decentralisation settings, served to the browser (see [Decentralised case types](#decentralised-case-types)) |
+| `decentralisedServiceMap` | object | `{}` (empty) | Per-service decentralisation settings, also served to the browser (see [Decentralised case types](#decentralised-case-types)) |
 
 ## Cookies
 
@@ -276,6 +277,7 @@ The Angular SPA fetches configuration at bootstrap from `GET /external/config/ui
 | `substantiveEnabled` | `feature.substantiveRoleEnabled` | Substantive role flag |
 | `paymentReturnUrl` | `services.payment_return_url` | Payment outcome return URL |
 | `decentralisedCaseTypeConfig` | `decentralisedCaseTypeConfig` | Per-case-type decentralisation settings (see [Decentralised case types](#decentralised-case-types)) |
+| `decentralisedServiceMap` | `decentralisedServiceMap` | Per-service decentralisation settings (see [Decentralised case types](#decentralised-case-types)) |
 | `waWorkflowApi` | `services.waWorkflowApi` | WA Workflow API URL |
 | `judicialBookingApi` | `services.judicialBookingApi` | AM Judicial Booking URL |
 | `headerConfig` | (computed) | Menu/navigation config (varies by environment) |
@@ -296,6 +298,11 @@ a place for anything sensitive.
 Because it is a JSON-format env var, `DECENTRALISED_CASE_TYPE_CONFIG` must be a JSON-encoded
 string in Helm values, with the same escaping constraint as `SERVICE_REF_DATA_MAPPING` (see
 [Gotchas](#gotchas)).
+
+A companion key `decentralisedServiceMap` (`DECENTRALISED_SERVICE_MAP`, `__format: "json"`) is
+keyed by service rather than by case type. It also defaults to `{}` and is also passed straight
+through into the `/external/config/ui` payload, so the same "nothing sensitive" and JSON-encoding
+rules apply.
 
 ## Dynatrace
 
@@ -434,7 +441,7 @@ Secrets are mounted from AKS Key Vault via `@hmcts/properties-volume` and access
 |----------|------|---------|
 | `getConfigValue<T>(ref)` | `api/configuration/index.ts` | Type-safe config lookup by reference key |
 | `showFeature(feature)` | `api/configuration/index.ts` | Boolean check for feature flags |
-| Config path constants | `api/configuration/references.ts:119-136` | All `const` keys used throughout the BFF |
+| Config path constants | `api/configuration/references.ts:121-138` | All `const` keys used throughout the BFF |
 
 ## Gotchas
 
