@@ -17,6 +17,7 @@
       "Bash(./scripts/grep*)",
       "Bash(./scripts/index*)",
       "Bash(./scripts/add-repo*)",
+      "Bash(./scripts/cft-whois*)",
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)",
