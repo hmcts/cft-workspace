@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Identify the human behind an HMCTS GitHub login — or find the login for a
-# person. Answers "who is https://github.com/ashleighB31?".
+# person. Answers "who is https://github.com/janeSmith42?".
 #
 # Most HMCTS engineers leave their GitHub profile blank, so the profile alone
 # usually names nobody. The identifying signal is the git author email on their
@@ -36,11 +36,11 @@ Options:
   -h, --help          this help
 
 Examples:
-  scripts/cft-whois ashleighB31
-  scripts/cft-whois https://github.com/ashleighB31
-  scripts/cft-whois Ashleigh.Brennan@justice.gov.uk
-  scripts/cft-whois "Ashleigh Brennan"
-  scripts/cft-whois --json ashleighB31 | jq .emails
+  scripts/cft-whois janeSmith42
+  scripts/cft-whois https://github.com/janeSmith42
+  scripts/cft-whois Jane.Smith@justice.gov.uk
+  scripts/cft-whois "Jane Smith"
+  scripts/cft-whois --json janeSmith42 | jq .emails
 EOF
 }
 

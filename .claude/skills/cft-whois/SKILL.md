@@ -9,11 +9,11 @@ Resolve an HMCTS GitHub login to a real person — or a person to their login �
 
 ## When to use
 
-- "Who is https://github.com/ashleighB31?"
-- "Which HMCTS user is `dharmendrak`?"
-- "What team is `kruncher` on?"
+- "Who is https://github.com/janeSmith42?"
+- "Which HMCTS user is `jsmith-moj`?"
+- "What team is `pbaker7` on?"
 - "Who owns this commit / who should I ask about this PR?"
-- Reverse: "What's the GitHub handle for Ashleigh Brennan?", "Who commits as `x.y@justice.gov.uk`?"
+- Reverse: "What's the GitHub handle for Jane Smith?", "Who commits as `x.y@justice.gov.uk`?"
 
 ## When NOT to use
 
@@ -27,7 +27,7 @@ public email. `gh api users/<login>` alone will usually tell you nothing.
 
 The identifying signal is the **git author email on their commits**, which is
 nearly always a work address (`first.last@justice.gov.uk`, `@hmcts.net`, or a
-supplier domain like `@kainos.com`). The script reads that and derives a name
+supplier's own domain). The script reads that and derives a name
 from it when the profile is empty. A supplier domain appearing alongside a
 `justice.gov.uk` one is the normal contractor pattern, not an anomaly — report
 both, since "who employs them" is often the real question.
@@ -38,10 +38,10 @@ both, since "who employs them" is often the real question.
 
 | Form | Example | How it resolves |
 |---|---|---|
-| Login | `ashleighB31` | direct |
-| URL or `@handle` | `https://github.com/ashleighB31`, `@ashleighB31` | stripped to the login |
-| Work email | `Ashleigh.Brennan@justice.gov.uk` | org-scoped commit search → login |
-| Full name | `"Ashleigh Brennan"` | git author name, then profile-name search |
+| Login | `janeSmith42` | direct |
+| URL or `@handle` | `https://github.com/janeSmith42`, `@janeSmith42` | stripped to the login |
+| Work email | `Jane.Smith@justice.gov.uk` | org-scoped commit search → login |
+| Full name | `"Jane Smith"` | git author name, then profile-name search |
 
 Quote names containing spaces. Logins are case-insensitive; the script prints
 GitHub's canonical spelling.
@@ -65,7 +65,7 @@ strangers who share the name. Prefer a login or work email when you have one.
 
 2. **Read the output and answer the question that was actually asked.** The
    script prints everything it found; the user usually wants one line of it
-   ("this is Ashleigh Brennan, a Kainos contractor on the CPP platform teams").
+   ("this is Jane Smith, a supplier contractor on the CPP platform teams").
    Lead with the name and employer, then the teams, then the activity.
 
 3. **If the name came out `unknown`**, say so plainly rather than guessing. It
@@ -87,8 +87,8 @@ strangers who share the name. Prefer a login or work email when you have one.
 Report the script's findings compactly. A good answer:
 
 ```
-ashleighB31 is Ashleigh Brennan — a Kainos contractor (also commits under
-Ashleigh.Brennan@justice.gov.uk).
+janeSmith42 is Jane Smith — a contractor at supplier.example (also commits
+under Jane.Smith@justice.gov.uk).
 
   HMCTS org member, 4 teams: cpp-development, cpp-development-idam,
   platform-operations, all-org-members
