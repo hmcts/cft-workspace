@@ -1,5 +1,5 @@
 ---
-name: env-start
+name: start-env
 description: Start (or stop) a CFT environment outside the auto-shutdown schedule, via the manual dispatch on hmcts/auto-shutdown. Use when the user asks "start AAT out of hours", "AAT is shut down, can you bring it up", "wake up demo", "I need staging tonight", "turn AAT back off".
 ---
 
