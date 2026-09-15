@@ -49,6 +49,7 @@ Companion skills:
 - **`/cft-create-test-user <what>`** — creates IDAM test users, roles and OAuth clients in a non-prod environment. Wraps `scripts/idam-test-user`, which encodes the per-environment gotchas (AAT's 3h cleanup, RD's email-domain validation, role prerequisites).
 - **`/cft-manage-test-org <what>`** — creates/approves/deletes professional organisations and manages their users and PUI roles. Wraps `scripts/prd-test-org`; its `check` subcommand reports whether a microservice can create and/or approve, which is the usual blocker.
 - **`/cft-role-assignment <what>`** — creates, queries and deletes AM role assignments (the runtime half of "why can't this user see tasks"). Wraps `scripts/am-role-assignment`.
+- **`/cft-whois <login|url|email|name>`** — identifies the human behind an HMCTS GitHub login, or finds the login for a person. Wraps `scripts/cft-whois`; reads the git author email on their commits, because most HMCTS GitHub profiles are blank.
 - **`/docs-generate <product>`** — generates or refreshes a product's Diátaxis docs (CCD's pipeline, generalised). Includes a Confluence-augmentation phase.
 - **`/docs-drift`** — checks every doc page for drift across three modes (source citations, port manifest for root docs, Confluence revisions).
 

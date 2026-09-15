@@ -1,0 +1,319 @@
+#!/usr/bin/env bash
+# Identify the human behind an HMCTS GitHub login — or find the login for a
+# person. Answers "who is https://github.com/ashleighB31?".
+#
+# Most HMCTS engineers leave their GitHub profile blank, so the profile alone
+# usually names nobody. The identifying signal is the git author email on their
+# commits, which is nearly always a work address (justice.gov.uk, hmcts.net, or
+# a supplier domain). This script reads that, plus org and team membership and
+# where the person actually lands changes.
+#
+# Accepts a login, an @login, a github.com URL, a work email, or a full name.
+# Email and name inputs resolve in reverse via org-scoped commit search.
+#
+# Requires: gh (authenticated) and jq. No VPN, no Azure, no database.
+
+source "$(dirname "$0")/lib/_common.sh"
+
+ORG="${CFT_WHOIS_ORG:-hmcts}"
+SAMPLE=100
+JSON_OUT=false
+QUERY=""
+
+usage() {
+    sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+    cat <<'EOF'
+
+Usage:
+  scripts/cft-whois <login | @login | github-url | email | "Full Name">
+
+Options:
+      --org <org>     GitHub org to scope membership/activity to
+                      (default: hmcts, or $CFT_WHOIS_ORG)
+      --sample <n>    commits/PRs to sample for email and repo stats
+                      (default: 100, the API maximum per page)
+      --json          machine-readable output
+  -h, --help          this help
+
+Examples:
+  scripts/cft-whois ashleighB31
+  scripts/cft-whois https://github.com/ashleighB31
+  scripts/cft-whois Ashleigh.Brennan@justice.gov.uk
+  scripts/cft-whois "Ashleigh Brennan"
+  scripts/cft-whois --json ashleighB31 | jq .emails
+EOF
+}
+
+while (( $# )); do
+    case "$1" in
+        --org)    ORG="${2:?--org needs a value}"; shift 2 ;;
+        --sample) SAMPLE="${2:?--sample needs a value}"; shift 2 ;;
+        --json)   JSON_OUT=true; shift ;;
+        -h|--help) usage; exit 0 ;;
+        -*)       die "unknown option: $1 (see --help)" ;;
+        *)        [[ -n "$QUERY" ]] && die "only one query at a time (got '$QUERY' and '$1')"
+                  QUERY="$1"; shift ;;
+    esac
+done
+
+[[ -n "$QUERY" ]] || { usage; exit 1; }
+command -v gh >/dev/null || die "gh not on PATH"
+command -v jq >/dev/null || die "jq not on PATH"
+gh auth status >/dev/null 2>&1 || die "gh is not authenticated — run: gh auth login"
+
+# --- API helpers -----------------------------------------------------------
+# Every wrapper yields "null" on failure so that one 403 on a search endpoint
+# degrades a section rather than aborting the whole lookup. The output is
+# discarded rather than passed through on failure: gh prints the error body to
+# stdout as well as exiting non-zero, and `gh api || printf null` would emit
+# both, producing malformed JSON that every downstream jq then reads as empty.
+
+api() {
+    local out
+    if out=$(gh api "$@" 2>/dev/null); then printf '%s' "$out"; else printf 'null'; fi
+}
+
+# search <endpoint> <query> [extra gh args...]
+search() {
+    local ep="$1" q="$2" out; shift 2
+    if out=$(gh api -X GET "search/$ep" -f q="$q" "$@" 2>/dev/null); then
+        printf '%s' "$out"
+    else
+        printf 'null'
+    fi
+}
+
+# --- resolve the query to a login ------------------------------------------
+
+# Strip URL, trailing path and a leading @ from whatever the user pasted.
+strip_handle() {
+    local c="$1"
+    c="${c#http://}"; c="${c#https://}"; c="${c#www.}"; c="${c#github.com/}"
+    c="${c%%/*}"; c="${c%%\?*}"; c="${c#@}"
+    printf '%s' "$c"
+}
+
+LOGIN=""
+RESOLVED_VIA="direct"
+CAND="$(strip_handle "$QUERY")"
+
+if [[ "$CAND" == *@*.* ]]; then
+    # An email address. Org-scoped commit search maps it back to a login.
+    RESOLVED_VIA="commit email"
+    LOGIN=$(search commits "author-email:$CAND org:$ORG" -f per_page=1 \
+        | jq -r '.items[0].author.login // empty')
+    [[ -n "$LOGIN" ]] || die "no $ORG commits found authored by <$CAND>.
+That email may not be the git author address, or the person commits elsewhere."
+elif [[ "$CAND" == *" "* ]]; then
+    # A person's name. Try the git author name first — it is org-scoped, so it
+    # cannot collide with a namesake outside HMCTS.
+    RESOLVED_VIA="commit author name"
+    LOGIN=$(search commits "author-name:\"$CAND\" org:$ORG" -f per_page=1 \
+        | jq -r '.items[0].author.login // empty')
+    if [[ -z "$LOGIN" ]]; then
+        # Profile-name search is GLOBAL — search/users has no org: qualifier —
+        # so every candidate must be membership-checked before it is trusted.
+        # Skipping this names a random GitHub namesake with total confidence,
+        # which is the one failure mode worse than finding nobody.
+        RESOLVED_VIA="GitHub profile name, confirmed $ORG member"
+        rejected=""
+        while IFS= read -r cand; do
+            [[ -n "$cand" ]] || continue
+            if gh api "orgs/$ORG/members/$cand" --silent 2>/dev/null; then
+                LOGIN="$cand"; break
+            fi
+            rejected+="${rejected:+, }$cand"
+        done < <(search users "$CAND in:name type:user" -f per_page=10 \
+                    | jq -r '(.items // [])[].login')
+        if [[ -z "$LOGIN" && -n "$rejected" ]]; then
+            die "no $ORG member is named \"$CAND\".
+Nobody commits to $ORG under that git author name, and these GitHub users match
+the name but are not $ORG members: $rejected
+If one of them is the person you mean, look them up by login directly."
+        fi
+    fi
+    [[ -n "$LOGIN" ]] || die "could not resolve \"$CAND\" to a GitHub login.
+Nobody commits to $ORG under that git author name and no profile matches it."
+else
+    LOGIN="$CAND"
+fi
+
+PROFILE=$(api "users/$LOGIN")
+# GitHub is case-insensitive on logins; adopt the canonical spelling. A missing
+# .login also covers a malformed or error response, not just a 404.
+CANONICAL=$(jq -r '.login // empty' <<<"$PROFILE" 2>/dev/null || true)
+[[ -n "$CANONICAL" ]] || die "no such GitHub user: $LOGIN"
+LOGIN="$CANONICAL"
+
+# --- gather ----------------------------------------------------------------
+
+# Org membership: 204 = member, 404 = not (or not visible to this token).
+MEMBERSHIP="not a member"
+if gh api "orgs/$ORG/members/$LOGIN" --silent 2>/dev/null; then
+    MEMBERSHIP=$(api "orgs/$ORG/memberships/$LOGIN" | jq -r '.role // "member" | ascii_upcase')
+fi
+
+# Teams, filtered server-side by member. One request, no admin scope needed.
+TEAMS=$(gh api graphql -f org="$ORG" -f user="$LOGIN" -f query='
+  query($org:String!,$user:String!){
+    organization(login:$org){
+      teams(first:100, userLogins:[$user]){ totalCount nodes{ slug } }
+    }
+  }' 2>/dev/null | jq -c '.data.organization.teams // null' || printf 'null')
+
+# Git identities from their commits — the part that actually names people.
+COMMITS=$(search commits "author:$LOGIN org:$ORG" -f per_page="$SAMPLE" -f sort=author-date -f order=desc)
+COMMIT_TOTAL=$(jq -r '.total_count // 0' <<<"$COMMITS")
+EMAILS=$(jq -c '
+    [ (.items // [])[].commit.author
+      | select(.email != null)
+      | select(.email | test("users\\.noreply\\.github\\.com$|^$") | not)
+      | {name: .name, email: .email} ]
+    | group_by(.email | ascii_downcase)
+    | map({email: .[0].email, name: .[0].name, commits: length})
+    | sort_by(-.commits)
+' <<<"$COMMITS")
+
+# Merged PRs and the repositories they land in.
+PRS=$(search issues "author:$LOGIN org:$ORG is:pr is:merged" -f per_page="$SAMPLE" -f sort=updated -f order=desc)
+PR_TOTAL=$(jq -r '.total_count // 0' <<<"$PRS")
+REPOS=$(jq -c '
+    [ (.items // [])[].repository_url | sub(".*/"; "") ]
+    | group_by(.) | map({repo: .[0], prs: length}) | sort_by(-.prs)
+' <<<"$PRS")
+
+# --- derive a human name ---------------------------------------------------
+# Priority: GitHub profile name, then a commit author name that looks like a
+# real name, then the local-part of a work email (first.last@ is the HMCTS and
+# supplier convention, so this resolves most blank profiles).
+
+titlecase() { sed -E 's/(^|[^[:alpha:]])([[:alpha:]])/\1\u\2/g' <<<"$1"; }
+
+NAME=$(jq -r '.name // empty' <<<"$PROFILE")
+NAME_SOURCE="GitHub profile"
+
+if [[ -z "$NAME" ]]; then
+    NAME=$(jq -r --arg l "$LOGIN" '
+        [ .[] | select(.name != null)
+              | select(.name | test("\\s"))
+              | select(.name | ascii_downcase != ($l | ascii_downcase)) ][0].name // empty
+    ' <<<"$EMAILS")
+    [[ -n "$NAME" ]] && NAME_SOURCE="git commit author name"
+fi
+
+if [[ -z "$NAME" ]]; then
+    local_part=$(jq -r '[.[] | select(.email | test("\\."))][0].email // empty' <<<"$EMAILS")
+    local_part="${local_part%%@*}"
+    if [[ "$local_part" == *.* || "$local_part" == *_* ]]; then
+        NAME=$(titlecase "$(tr '._-' '  ' <<<"$local_part" | tr -s ' ')")
+        NAME_SOURCE="derived from commit email"
+    fi
+fi
+
+# Employer, inferred from the email domains they commit under. A justice.gov.uk
+# address says the account has an MoJ identity; a supplier domain alongside it
+# says contractor, which is the common HMCTS case.
+employer_for() {
+    case "${1,,}" in
+        justice.gov.uk|*.justice.gov.uk) printf 'MoJ / HMCTS (justice.gov.uk)' ;;
+        hmcts.net)                       printf 'HMCTS (hmcts.net)' ;;
+        *)                               printf '%s' "$1" ;;
+    esac
+}
+
+DOMAINS=$(jq -r '[.[].email | sub("^.*@"; "") | ascii_downcase] | unique | .[]' <<<"$EMAILS")
+EMPLOYERS=""
+while IFS= read -r d; do
+    [[ -n "$d" ]] || continue
+    EMPLOYERS+="${EMPLOYERS:+, }$(employer_for "$d")"
+done <<<"$DOMAINS"
+
+# --- render ----------------------------------------------------------------
+
+if $JSON_OUT; then
+    jq -n \
+        --arg login "$LOGIN" --arg name "$NAME" --arg name_source "$NAME_SOURCE" \
+        --arg org "$ORG" --arg membership "$MEMBERSHIP" --arg resolved_via "$RESOLVED_VIA" \
+        --arg employers "$EMPLOYERS" \
+        --argjson profile "$PROFILE" --argjson teams "${TEAMS:-null}" \
+        --argjson emails "$EMAILS" --argjson repos "$REPOS" \
+        --argjson pr_total "$PR_TOTAL" --argjson commit_total "$COMMIT_TOTAL" \
+        '{
+          login: $login,
+          name: (if $name == "" then null else $name end),
+          name_source: (if $name == "" then null else $name_source end),
+          resolved_via: $resolved_via,
+          employers: (if $employers == "" then [] else ($employers | split(", ")) end),
+          emails: $emails,
+          org: $org,
+          membership: $membership,
+          teams: [ ($teams.nodes // [])[].slug ],
+          activity: { merged_prs: $pr_total, commits: $commit_total, repos: $repos },
+          profile: {
+            name: $profile.name, company: $profile.company, email: $profile.email,
+            bio: $profile.bio, location: $profile.location, type: $profile.type,
+            public_repos: $profile.public_repos, created_at: $profile.created_at,
+            html_url: $profile.html_url
+          }
+        }'
+    exit 0
+fi
+
+row() { printf '    %-14s %s\n' "$1" "$2"; }
+
+printf '\n%s%s%s' "$C_BOLD" "$LOGIN" "$C_RESET"
+[[ -n "$NAME" ]] && printf ' — %s%s%s' "$C_BOLD" "$NAME" "$C_RESET"
+printf '\n    %shttps://github.com/%s%s\n' "$C_DIM" "$LOGIN" "$C_RESET"
+[[ "$RESOLVED_VIA" != direct ]] && printf '    %sresolved from your query via %s%s\n' "$C_DIM" "$RESOLVED_VIA" "$C_RESET"
+
+printf '\n  %sIdentity%s\n' "$C_BLUE" "$C_RESET"
+if [[ -n "$NAME" ]]; then
+    row "Name" "$NAME $C_DIM($NAME_SOURCE)$C_RESET"
+else
+    row "Name" "${C_YELLOW}unknown${C_RESET} — blank profile and no named commits"
+fi
+
+if [[ "$(jq -r 'length' <<<"$EMAILS")" -gt 0 ]]; then
+    first=true
+    while IFS=$'\t' read -r email commits; do
+        label=$( $first && printf 'Emails' || printf '' ); first=false
+        noun=$( (( commits == 1 )) && printf 'commit' || printf 'commits' )
+        row "$label" "$(printf '%-38s %s%s %s%s' "$email" "$C_DIM" "$commits" "$noun" "$C_RESET")"
+    done < <(jq -r '.[] | [.email, .commits] | @tsv' <<<"$EMAILS")
+else
+    row "Emails" "${C_DIM}none visible (no commits sampled, or all GitHub-private)${C_RESET}"
+fi
+[[ -n "$EMPLOYERS" ]] && row "Employer" "$EMPLOYERS"
+
+company=$(jq -r '.company // empty' <<<"$PROFILE")
+[[ -n "$company" ]] && row "Profile says" "$company"
+row "Account" "$(jq -r '"created " + (.created_at | split("T")[0]) + ", " + (.public_repos|tostring) + " public repos, type " + .type' <<<"$PROFILE")"
+
+printf '\n  %s%s org%s\n' "$C_BLUE" "$ORG" "$C_RESET"
+if [[ "$MEMBERSHIP" == "not a member" ]]; then
+    row "Membership" "${C_YELLOW}not a member${C_RESET} (or not visible to your token)"
+else
+    row "Membership" "$MEMBERSHIP"
+fi
+team_count=$(jq -r '.totalCount // 0' <<<"${TEAMS:-null}")
+if [[ "$team_count" -gt 0 ]]; then
+    row "Teams ($team_count)" "$(jq -r '[.nodes[].slug] | sort | join(", ")' <<<"$TEAMS")"
+else
+    row "Teams" "${C_DIM}none visible${C_RESET}"
+fi
+
+printf '\n  %sActivity in %s%s\n' "$C_BLUE" "$ORG" "$C_RESET"
+row "Merged PRs" "$PR_TOTAL"
+row "Commits" "$COMMIT_TOTAL"
+if [[ "$(jq -r 'length' <<<"$REPOS")" -gt 0 ]]; then
+    first=true
+    while IFS=$'\t' read -r repo prs; do
+        label=$( $first && printf 'Top repos' || printf '' ); first=false
+        row "$label" "$(printf '%s%3s%s  %s' "$C_DIM" "$prs" "$C_RESET" "$repo")"
+    done < <(jq -r '.[:8][] | [.repo, .prs] | @tsv' <<<"$REPOS")
+    if (( PR_TOTAL > SAMPLE )); then
+        printf '    %-14s %sfrom the %s most recently updated of %s merged PRs%s\n' \
+            "" "$C_DIM" "$SAMPLE" "$PR_TOTAL" "$C_RESET"
+    fi
+fi
+printf '\n'
