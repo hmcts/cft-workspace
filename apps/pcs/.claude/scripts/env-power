@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+# Start or stop a CFT environment outside the auto-shutdown schedule.
+#
+# Usage: env-power <start|stop> <env> [--area CFT|SDS] [--yes] [--dry-run] [--watch]
+#
+# Dispatches the Manual Start / Stop workflow on hmcts/auto-shutdown. That
+# workflow powers the AKS clusters, application gateways, Postgres and MySQL
+# flexible servers, VMs and VM scale sets tagged for one environment and one
+# business area — every product in it, not just PCS.
+#
+# `start` refuses to run without --yes, because the bill lands on the whole
+# business area and the timing decides how long it runs for.
+# Background: docs/how-to/auto-shutdown.md
+
+set -euo pipefail
+
+REPO="hmcts/auto-shutdown"
+WORKFLOW="manual-start-stop.yaml"
+REF="master"
+
+MODE=""
+ENV_ARG=""
+AREA="CFT"
+ASSUME_YES=0
+DRY_RUN=0
+WATCH=0
+
+if [[ -t 2 && -z "${NO_COLOR:-}" ]]; then
+    C_BOLD=$'\033[1m'; C_DIM=$'\033[2m'; C_YEL=$'\033[33m'; C_RED=$'\033[31m'; C_RESET=$'\033[0m'
+else
+    C_BOLD=""; C_DIM=""; C_YEL=""; C_RED=""; C_RESET=""
+fi
+
+log()  { printf '%s\n' "$*" >&2; }
+err()  { printf '%s%s%s\n' "$C_RED" "$*" "$C_RESET" >&2; }
+die()  { err "$*"; exit 1; }
+
+usage() {
+    cat >&2 <<'EOF'
+usage: env-power <start|stop> <env> [--area CFT|SDS] [--yes] [--dry-run] [--watch]
+
+  start | stop   what to do with the environment's resources
+  <env>          aat | staging | preview | dev | demo | ithc |
+                 perftest | test | sandbox | ptl | ptlsbox
+
+  --area         business area (default CFT; SDS for Cross-Cutting)
+  --yes          acknowledge the cost impact — required for start
+  --dry-run      print the dispatch command and exit
+  --watch        follow the workflow run to completion
+
+Starts and stops every matching resource in that environment and business
+area. Not scoped to PCS. See docs/how-to/auto-shutdown.md.
+EOF
+}
+
+# The workflow's SELECTED_ENV is a choice input, so these strings have to match
+# its options exactly — spaces and slashes included.
+resolve_env() {
+    case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+        aat|staging|stg)   echo "AAT / Staging" ;;
+        preview|dev)       echo "Preview / Dev" ;;
+        perftest|test)     echo "Test / Perftest" ;;
+        demo)              echo "Demo" ;;
+        ithc)              echo "ITHC" ;;
+        sandbox|sbox)      echo "Sandbox" ;;
+        ptl)               echo "PTL" ;;
+        ptlsbox)           echo "PTLSBOX" ;;
+        prod|production)
+            die "there is no auto-shutdown on production, and this script will not touch it." ;;
+        *)
+            err "unknown environment: $1"
+            log "valid: aat, staging, preview, dev, demo, ithc, perftest, test, sandbox, ptl, ptlsbox"
+            exit 2 ;;
+    esac
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)  usage; exit 0 ;;
+        --area)     AREA="${2:-}"; [[ -n "$AREA" ]] || { err "--area needs a value"; exit 2; }; shift 2 ;;
+        --yes|-y)   ASSUME_YES=1; shift ;;
+        --dry-run)  DRY_RUN=1; shift ;;
+        --watch)    WATCH=1; shift ;;
+        -*)         err "unknown flag: $1"; usage; exit 2 ;;
+        *)
+            if [[ -z "$MODE" ]]; then MODE="$1"
+            elif [[ -z "$ENV_ARG" ]]; then ENV_ARG="$1"
+            else err "unexpected argument: $1"; usage; exit 2
+            fi
+            shift ;;
+    esac
+done
+
+[[ -n "$MODE" && -n "$ENV_ARG" ]] || { usage; exit 2; }
+[[ "$MODE" == "start" || "$MODE" == "stop" ]] || { err "mode must be start or stop, got: $MODE"; exit 2; }
+[[ "$AREA" == "CFT" || "$AREA" == "SDS" ]] || { err "area must be CFT or SDS, got: $AREA"; exit 2; }
+
+SELECTED_ENV="$(resolve_env "$ENV_ARG")"
+
+# When the sweep that undoes this start will next run. Shutdown fires every day
+# at 20:00 and 23:00 (Postgres 15 minutes later); auto-start only runs Mon-Fri
+# at ~06:00, so a weekend start has no morning counterpart to hide behind.
+sweep_note() {
+    local hour dow next hours
+    hour=$(date +%-H)
+    dow=$(date +%u)
+
+    if   (( hour < 20 )); then next="20:00 today";     hours=$(( 20 - hour ))
+    elif (( hour < 23 )); then next="23:00 today";     hours=$(( 23 - hour ))
+    else                       next="20:00 tomorrow";  hours=$(( 44 - hour ))
+    fi
+
+    log "  Next shutdown sweep: ${C_BOLD}${next}${C_RESET} — roughly ${hours}h from now."
+    if (( hour >= 20 && hour < 23 )); then
+        log "  ${C_DIM}A start now is undone by the 23:00 sweep. Past 23:00 it holds until 20:00 tomorrow.${C_RESET}"
+    fi
+    if (( hour >= 23 )) && (( dow == 5 || dow == 6 || dow == 7 )); then
+        log "  ${C_DIM}It is the weekend — nothing else is using this environment for those hours.${C_RESET}"
+    fi
+}
+
+cost_banner() {
+    log ""
+    log "${C_YEL}${C_BOLD}Cost impact of starting ${SELECTED_ENV} (${AREA})${C_RESET}"
+    log "  This powers on ${C_BOLD}every${C_RESET} AKS cluster, application gateway, Postgres and"
+    log "  MySQL flexible server, VM and VM scale set tagged for this environment"
+    log "  and business area — the whole of ${AREA}, not only PCS."
+    sweep_note
+    log "  ${C_DIM}Stop it yourself when you're done: env-power stop ${ENV_ARG}${C_RESET}"
+    log ""
+}
+
+command -v gh >/dev/null 2>&1 || die "gh not on PATH — install the GitHub CLI."
+
+if [[ "$MODE" == "start" && $ASSUME_YES -eq 0 ]]; then
+    cost_banner
+    err "re-run with --yes once you've confirmed the cost impact."
+    exit 2
+fi
+
+DISPATCH=(gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$REF"
+          -f "SELECTED_MODE=$MODE" -f "SELECTED_AREA=$AREA" -f "SELECTED_ENV=$SELECTED_ENV")
+
+if [[ $DRY_RUN -eq 1 ]]; then
+    [[ "$MODE" == "start" ]] && cost_banner
+    log "${C_DIM}dry run — would dispatch:${C_RESET}"
+    printf '%q ' "${DISPATCH[@]}" >&2
+    log ""
+    exit 0
+fi
+
+gh auth status >/dev/null 2>&1 || die "gh is not authenticated — run: gh auth login"
+
+# Dispatching needs push on the repo and the workflow scope on the token. Both
+# fail late and opaquely, so check them here.
+if [[ "$(gh api "repos/$REPO" --jq '.permissions.push' 2>/dev/null)" != "true" ]]; then
+    die "your token can't dispatch workflows on $REPO. Ask in #platops-help, or use the UI:
+  https://github.com/$REPO/actions/workflows/$WORKFLOW"
+fi
+
+[[ "$MODE" == "start" ]] && cost_banner
+
+before=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" --limit 1 --json databaseId --jq '.[0].databaseId // 0')
+
+log "Dispatching ${MODE} for ${SELECTED_ENV} (${AREA})…"
+"${DISPATCH[@]}"
+
+# workflow_dispatch returns no run id, so wait for a run newer than the one that
+# was newest before we asked.
+run_id=""
+for _ in $(seq 1 15); do
+    sleep 2
+    latest=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" --limit 1 --json databaseId --jq '.[0].databaseId // 0')
+    if [[ "$latest" != "$before" ]]; then run_id="$latest"; break; fi
+done
+
+if [[ -z "$run_id" ]]; then
+    log "Dispatched, but the run hasn't appeared yet. Check:"
+    log "  https://github.com/$REPO/actions/workflows/$WORKFLOW"
+    exit 0
+fi
+
+log "Run: https://github.com/$REPO/actions/runs/$run_id"
+
+if [[ $WATCH -eq 1 ]]; then
+    gh run watch "$run_id" --repo "$REPO" --exit-status || true
+fi
+
+if [[ "$MODE" == "start" ]]; then
+    log ""
+    log "A green run means the start was ${C_BOLD}requested${C_RESET} — az aks start is fired with"
+    log "--no-wait. Nodes take several minutes, pods and ingress longer."
+fi
