@@ -1,0 +1,6 @@
+{
+  "name": "pcs",
+  "description": "PCS team workflows: merging master with repo-aware conflict classification, more to follow",
+  "version": "0.1.0",
+  "author": { "name": "PCS team" }
+}
