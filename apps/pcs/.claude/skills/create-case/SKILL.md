@@ -37,6 +37,9 @@ To act on a case that already exists, use `/pcs:manage-case` instead.
   payloads, not a general-purpose builder. Add a payload to `submitCase.api.data.ts` in
   either repo and it appears in `--list` with no change to this tooling. Do not hand-edit a
   payload through this script.
+- **A document-bearing fixture against `local`** — cftlib runs no document store, and CCD
+  calls CDAM to check every document it is given. The script refuses up front. `--list`
+  reports a `DOCS` count per fixture; 15 of the 30 are document-free and work locally.
 - **`CASE_ISSUED` or beyond on ithc** — the fee-payment endpoints live on pcs-api's
   testing-support controller, and `ENABLE_TESTING_SUPPORT` is not set in
   `platops/cnp-flux-config/apps/pcs/pcs-api/ithc.yaml`. The script refuses. Ask for
@@ -85,7 +88,11 @@ To act on a case that already exists, use `/pcs:manage-case` instead.
    ${CLAUDE_PLUGIN_ROOT}/scripts/create-case local web/wales/base PENDING_CASE_ISSUED
    ```
    `local` needs the cftlib stack up (`./gradlew bootWithCCD` in `apps/pcs/pcs-api`) but no
-   VPN and no secrets, which makes it the cheapest environment to iterate in.
+   VPN and no secrets, which makes it the cheapest environment to iterate in. Two things
+   about it are worth knowing: pcs-api's own `/health` reports `DOWN` whenever `sendLetter`
+   is unreachable, which is normal and harmless there; and the stack is only ready once the
+   log has counted down to `Cftlib application … is ready … 0 remaining`, because the CCD
+   definition is imported after every app reports in.
 
 6. **Read a failure as the script frames it.** A `422` is the fixture drifting from the
    deployed CCD definition, not a broken environment — the callback body names the field.

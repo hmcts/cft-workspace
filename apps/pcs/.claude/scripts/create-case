@@ -107,6 +107,7 @@ fi
 resolve_env "$ENV_ARG"
 apply_case_type_suffix "$SUFFIX"
 export PCS_ENV_LABEL="$ENV_LABEL"
+export PCS_ENV_KIND="$ENV_KIND"
 
 STATE_NORM="$(printf '%s' "$STATE" | tr '[:lower:]-' '[:upper:]_')"
 

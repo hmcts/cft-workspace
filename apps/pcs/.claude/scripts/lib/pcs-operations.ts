@@ -54,6 +54,14 @@ export interface Operation {
   /** Whether it needs pcs-api's /testing-support endpoints, absent on ithc. */
   testingSupport: boolean;
   summary: string;
+  /**
+   * Argument checks that need no network, run during --check.
+   *
+   * Without this a typo is only caught after the wrapper has demanded the VPN and an
+   * Azure login, and the server's rejection is then translated as though it were an
+   * environment fault.
+   */
+  validate?: (args: string[]) => void;
   run: (ctx: OperationContext) => Promise<Record<string, unknown>>;
 }
 
@@ -67,6 +75,20 @@ function requiredArg(ctx: OperationContext, index: number, what: string): string
 
 function countOf(value: unknown): number {
   return Array.isArray(value) ? value.length : 0;
+}
+
+/**
+ * The state set-state will move to. Shared by its validate and run, so a typo is
+ * rejected offline and the same answer is used for the event — an invalid
+ * CaseStateOption otherwise comes back as a 422 or 5xx that the wrapper would
+ * diagnose as fixture drift or a shut-down environment.
+ */
+function targetStateFrom(args: string[]): string {
+  if (!args[0]) usageError('this operation needs a target state.');
+  const target = normaliseState(args[0]);
+  const rejection = rejectState(target, 'change');
+  if (rejection) usageError(rejection);
+  return target;
 }
 
 /** Drop keys whose value carries no information, so a blank is not read as data. */
@@ -322,14 +344,9 @@ const progression: Record<string, Operation> = {
     actor: 'admin',
     testingSupport: false,
     summary: `move the case to another state — set-state <${ADVANCED_STATES.join('|')}>`,
+    validate: targetStateFrom,
     async run(ctx) {
-      const target = normaliseState(requiredArg(ctx, 0, 'a target state'));
-
-      // Validated here rather than left to the server: an invalid CaseStateOption
-      // comes back as a 422 or 5xx that the wrapper would then diagnose as fixture
-      // drift or a shut-down environment, neither of which is true of a typo.
-      const rejection = rejectState(target, 'change');
-      if (rejection) usageError(rejection);
+      const target = targetStateFrom(ctx.args);
 
       const moved = await fireEvent({
         instance: ctx.ccd(),

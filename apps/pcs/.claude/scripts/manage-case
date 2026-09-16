@@ -113,11 +113,17 @@ resolve_env "$ENV_ARG"
 # the failure messages.
 apply_case_type_suffix ""
 export PCS_ENV_LABEL="$ENV_LABEL"
+export PCS_ENV_KIND="$ENV_KIND"
 
-# Resolve the operation first: it is a pure lookup, and it also reports which user
-# the operation acts as and whether it needs testing-support, both of which decide
-# what has to be set up below.
-build_runner_cmd "$RUNNER" --check --operation "$OPERATION"
+# Resolve the operation first. It reports which user the operation acts as and
+# whether it needs testing-support, both of which decide what has to be set up below
+# — and it validates the case reference and the operation's own arguments, so a typo
+# fails here rather than after the VPN check and the Key Vault round trip.
+CHECK_ARGS=(--check --operation "$OPERATION" --case "$CASE_REF")
+for arg in "${OP_ARGS[@]}"; do
+    CHECK_ARGS+=(--arg "$arg")
+done
+build_runner_cmd "$RUNNER" "${CHECK_ARGS[@]}"
 run_runner_query
 CHECK="$RUNNER_RESULT"
 

@@ -109,9 +109,15 @@ resolve_env_local() {
     export IDAM_TESTING_SUPPORT_URL="http://localhost:5062"
     export S2S_URL="http://localhost:8489/testing-support/lease"
 
-    # cftlib runs no dm-store, so document-bearing fixtures cannot resolve locally.
-    # Point at AAT as the suites do, so at least the URL is well formed.
-    apply_dm_store "http://dm-store-aat.service.core-compute-aat.internal"
+    # The local CCD data-store validates document URLs against
+    # ccd.document.url.pattern, which bootWithCCD leaves at the upstream default —
+    # and that only accepts dm-store:8080. Pointing at AAT's dm-store makes every
+    # document-bearing fixture fail validation, so use the host the pattern expects.
+    #
+    # Nothing is fetched: DocumentValidator only matches the URL, so the documents
+    # themselves need not exist locally. The references are dangling, which is fine
+    # for exercising case data.
+    apply_dm_store "http://dm-store:8080"
 
     # bootWithCCD sets ENABLE_TESTING_SUPPORT=true for every CftlibExec task.
     TESTING_SUPPORT=1
@@ -587,12 +593,23 @@ translate_failure() {
             # 500 from pcs-api's own persistence callback — the environment is fine
             # and the payload is at fault. Only a 502 without that signature means
             # the service is unreachable.
-            if printf '%s' "$result" | grep -q 'ccd-persistence'; then
+            if printf '%s' "$result" | grep -qi 'CDAM'; then
+                warn "CCD could not verify the documents in this payload."
+                log "It calls CDAM for every document it is given, and the fixtures reference"
+                log "pre-existing uploads by hard-coded UUID. Either those documents have been"
+                log "reaped from this environment's document store, or the environment has none"
+                log "— which is the case locally."
+                log "Pick a fixture with 0 in the DOCS column of --list."
+            elif printf '%s' "$result" | grep -q 'ccd-persistence'; then
                 warn "pcs-api's persistence callback failed on this event."
                 log "CCD reports 502 because the call it makes to pcs-api returned 500, so"
                 log "this is the submitted data, not ${ENV_LABEL} being down. Check pcs-api's"
-                log "logs for the stack trace:"
-                log "  az webapp log tail  (or the pcs-api pod logs in ${ENV_LABEL})"
+                log "logs for the stack trace."
+            elif [[ "$ENV_KIND" == "local" ]]; then
+                warn "something in the local stack is not answering."
+                log "All ten cftlib apps have to be up before the CCD definition is imported."
+                log "Check the bootWithCCD output, and note that pcs-api's own /health reports"
+                log "DOWN whenever sendLetter is unreachable, which is normal locally."
             elif [[ "$ENV_KIND" == "preview" ]]; then
                 warn "the preview pod is asleep, or the PR environment has been torn down."
                 log "Preview is destroyed nightly rather than stopped — re-run the PR build."

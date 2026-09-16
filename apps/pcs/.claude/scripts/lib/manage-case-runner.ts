@@ -104,7 +104,12 @@ async function main(): Promise<void> {
 
   // The wrapper asks for this before setting anything up: it needs to know which user
   // to fetch secrets for, and whether the environment serves /testing-support.
+  //
+  // It is also where the arguments are checked, so a typo fails offline rather than
+  // after the VPN and Key Vault round trips.
   if (args.check) {
+    if (args.caseRef) normaliseCaseRef(args.caseRef);
+    operation.validate?.(args.operationArgs);
     emit({
       ok: true,
       operation: args.operation,

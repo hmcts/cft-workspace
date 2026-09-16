@@ -145,6 +145,19 @@ async function main(): Promise<void> {
   const fixture = findFixture(fixtures, args.fixture);
   const plan = planFor(args.state);
 
+  // Refused here rather than at submit: cftlib runs no document store, and CCD asks
+  // CDAM about every document it is given, so a document-bearing fixture fails after
+  // the case has already been created. --list reports the count per fixture.
+  if (fixture.documents > 0 && process.env.PCS_ENV_KIND === 'local') {
+    usageError(
+      `${fixture.id} carries ${fixture.documents} document reference(s), which the local stack cannot accept.`,
+      '',
+      'cftlib has no document store, and CCD calls CDAM to check every document it',
+      'is given — so this fails after the case has been created, not before.',
+      'Pick a fixture with 0 in the DOCS column of --list, or use a real environment.',
+    );
+  }
+
   // Resolution is a pure disk read, so a typo fails here rather than after the
   // wrapper has asked for the VPN and an Azure login.
   if (args.check) {

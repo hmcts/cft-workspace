@@ -24,6 +24,14 @@ export interface Fixture {
   source: string;
   claimantType: string;
   fields: number;
+  /**
+   * How many document references the payload carries.
+   *
+   * Non-zero means the fixture needs a document store holding those exact UUIDs,
+   * which rules it out locally: cftlib has no dm-store, and CCD asks CDAM about
+   * every document it is given.
+   */
+  documents: number;
   payload: Record<string, unknown>;
 }
 
@@ -111,6 +119,26 @@ function claimantTypeOf(payload: Record<string, unknown>): string {
   return claimantType?.value?.code ?? '';
 }
 
+/**
+ * Count document references anywhere in the payload.
+ *
+ * A CCD Document is recognised by its document_url, whatever it is nested under —
+ * the fixtures put them in notice_Documents, tenancy_TenancyLicenceDocuments,
+ * rentArrears_StatementDocuments, walesDocs_*, additionalDocuments[].document and
+ * more, so matching on key names would miss some.
+ */
+function countDocuments(value: unknown): number {
+  if (Array.isArray(value)) {
+    return value.reduce<number>((total, item) => total + countDocuments(item), 0);
+  }
+  if (typeof value !== 'object' || value === null) return 0;
+
+  const record = value as Record<string, unknown>;
+  if (typeof record.document_url === 'string') return 1;
+
+  return Object.values(record).reduce<number>((total, item) => total + countDocuments(item), 0);
+}
+
 export function discoverFixtures(): Fixture[] {
   const found: Fixture[] = [];
 
@@ -136,6 +164,7 @@ export function discoverFixtures(): Fixture[] {
         source: source.label,
         claimantType: claimantTypeOf(value),
         fields: Object.keys(value).length,
+        documents: countDocuments(value),
         payload: value,
       });
     }
@@ -208,7 +237,7 @@ export function resolveFixture(fixtures: Fixture[], query: string): Fixture {
 export function formatFixtureTable(fixtures: Fixture[]): string {
   const width = Math.max(2, ...fixtures.map(f => f.id.length));
   const lines = [
-    `${'ID'.padEnd(width)}  COUNTRY  FIELDS  CLAIMANT TYPE                      SOURCE CONST`,
+    `${"ID".padEnd(width)}  COUNTRY  FIELDS  DOCS  CLAIMANT TYPE                      SOURCE CONST`,
   ];
   for (const f of fixtures) {
     lines.push(
@@ -216,6 +245,7 @@ export function formatFixtureTable(fixtures: Fixture[]): string {
         f.id.padEnd(width),
         f.country.padEnd(7),
         String(f.fields).padStart(6),
+        String(f.documents).padStart(4),
         (f.claimantType || '-').padEnd(34),
         f.constName,
       ].join('  '),
