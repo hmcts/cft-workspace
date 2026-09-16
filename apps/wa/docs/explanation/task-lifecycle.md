@@ -29,7 +29,7 @@ sources:
   - wa-task-configuration-template:src/main/resources/wa-task-cancellation-wa-wacasetype.dmn
   - wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java
-status: reviewed
+status: draft
 examples_extracted_from:
   - apps/wa/wa-task-management-api/src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/CFTTaskState.java
   - apps/wa/wa-task-management-api/src/main/resources/application.yaml
@@ -259,6 +259,8 @@ The most important job for lifecycle reliability. It detects tasks that failed t
 2. For each task, fetches process variables via `GET /task/{id}/variables`.
 3. Posts `InitiateTaskRequest(INITIATION, attributes)` to `POST /task/{id}/initiation` on `wa-task-management-api`.
 4. Failures are caught per-task, logged, and collected in a `GenericJobReport`; the job continues with remaining tasks (`InitiationJobService.java:96-104`).
+
+This recovery works safely with no in-memory retry queue because `cftTaskState` is written inside Camunda's own task-creation transaction and only advances past `unconfigured` on a successful initiation call. The job recomputes which tasks still need initiating by querying Camunda on each run rather than tracking in-flight attempts, so restarting `wa-task-monitor` loses no pending work.
 
 Configuration: `INITIATION_CAMUNDA_MAX_RESULTS` (default `100`), `INITIATION_TIME_LIMIT_FLAG` (default `true`), `INITIATION_TIME_LIMIT` (default `120` minutes).
 
