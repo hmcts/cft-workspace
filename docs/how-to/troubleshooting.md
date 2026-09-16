@@ -148,6 +148,10 @@ Find your Slack ID by clicking on `View profile` within the Slack app, then clic
 
 Update your GitHub to Slack user mapping by following [Slack onboarding](../tutorials/cnp-onboarding/person-slack.md#github-to-slack-mapping) and try running the pipeline again.
 
+### Pushing to a PR while its build is running wastes a build, not just a build slot
+
+A new push does not cancel the build already running for the previous commit. The CNP pipeline serialises preview deploys on a per-PR lock (`Trying to acquire lock on [Resource: <product>-aat-deploy]`), so the new build queues behind the old one rather than replacing it — and if you push again before either finishes, a third build queues too. Only the build for your current head commit's result matters, so batch fixes into one push per PR per cycle rather than pushing after each small change; check `gh api repos/<org>/<repo>/commits/<sha>/statuses` or the Jenkins job's build list directly, since a superseded build that finishes with a real result never posts a commit status and can be missed entirely.
+
 ### Sandbox Jenkins is not automatically picking up my changes
 
 Because we have a prod and sandbox Jenkins instance, sometimes your pushes to master may be picked up by prod Jenkins instead.
@@ -225,6 +229,10 @@ kubectl get pod -n <namespace> <pod> -o jsonpath='{.status.containerStatuses[0].
 ```
 
 For history, Container Insights (`oms_agent`) is only enabled on perftest and prod — but `kube-prometheus-stack` runs on every CFT cluster and scrapes cAdvisor via the kubelet `ServiceMonitor` regardless of any chart's own `prometheus.enabled`, so `container_memory_working_set_bytes` is available for 30 days on AAT too. AAT is two clusters with a Prometheus each; only one runs Grafana, and that Grafana has both wired in as datasources.
+
+### Preview pod is healthy but the pipeline's startup checker still fails
+
+Every pod reaches `condition met`, then the pipeline's startup checker fails anyway with no HTTP status logged, just a private-DNS record for the PR's hostname being created seconds before the check runs (`the resource record '...' does not exist` followed immediately by `Registering DNS for ... with ttl = 300`). This is a DNS-propagation race, not an application problem — the checker (from the shared `cnp-jenkins-library`) can hit the hostname before the new A record has propagated, and its retry budget isn't reliable against a cold record (it may log only one attempt before giving up). Retriggering the build is the practical fix; re-reading the app logs as the checker's error message suggests will not show anything, since the app was never unhealthy.
 
 ### ACR tag dates are not build times
 
