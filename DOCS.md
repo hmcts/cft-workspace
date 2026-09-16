@@ -196,6 +196,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Database infrastructure | database-infrastructure | `docs/how-to/database-infrastructure.md` |
 | workspace | how-to | ElasticSearch | elasticsearch | `docs/how-to/new-component/elasticsearch.md` |
 | workspace | how-to | Environment schedule | auto-shutdown | `docs/how-to/auto-shutdown.md` |
+| workspace | how-to | Expose a service on private DNS only | private-dns | `docs/how-to/path-to-live/private-dns.md` |
 | workspace | how-to | External IP addresses (Egress) | external-ip-addresses | `docs/how-to/external-ip-addresses.md` |
 | workspace | how-to | Feature flags | feature-flags | `docs/how-to/new-component/feature-flags.md` |
 | workspace | how-to | Flyway database migration | flyway-database-migrations | `docs/how-to/flyway-database-migrations.md` |
