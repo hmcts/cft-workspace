@@ -24,8 +24,8 @@ sources:
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeResponse.java
   - rpx-xui-manage-organisations:config/default.json
   - rpx-xui-manage-organisations:api/configuration/references.ts
-status: reviewed
-last_reviewed: "2026-05-13T00:00:00Z"
+  - rpx-xui-webapp:api/documents/index.ts
+status: draft
 confluence:
   - id: "276989023"
     title: "Proxy Configuration on Manage Case"
@@ -207,6 +207,8 @@ Each jurisdiction also specifies `caseTypes` in config — used to match which s
 | EM Doc Assembly | `services.em_docassembly_api` (`SERVICES_EM_DOCASSEMBLY_API_URL`) | `/doc-assembly` | Document generation/assembly (rewritten to `/api/*`) |
 | EM Markup/NPA | `services.markup_api` (`SERVICES_MARKUP_API_URL`) | `/api/markups`, `/api/redaction` | Redaction and markup |
 | EM ICP | `services.icp_api` (`SERVICES_ICP_API_URL`) | `/icp` | In-court presentation; WebSocket proxy (`ws:true`) |
+
+The `/documents` route handler also enforces its own per-session upload throttle, independent of CDAM or DM Store: a `POST` within `INITIAL_TIMEOUT_PERIOD` (5s) of the previous upload in the same session gets a 429, and each further rate-limited hit doubles the window up to `MAX_TIMEOUT_PERIOD` (180s) (`rpx-xui-webapp:api/documents/index.ts`). CDAM and DM Store have no rate-limiting of their own on this path. The throttle is keyed on `req.session`, so parallel test workers with separate sessions never collide with each other.
 
 ### Reference Data
 
