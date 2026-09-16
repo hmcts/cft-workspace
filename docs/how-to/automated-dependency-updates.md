@@ -61,6 +61,16 @@ Depending on your project's test coverage, you can use one of the following pres
 }
 ```
 
+Prefer one of these two presets over writing your own `packageRules`. A hand-rolled config that
+sets `"automerge": true` at the top level and then tries to carve out an exception for majors by
+scoping `automerge: false` to specific packages (e.g. `matchPackageNames: ["node"]`) will still
+auto-merge every *other* package's major bump — Renovate applies `packageRules` in order with
+last-match-wins, so a package-specific rule doesn't act as a general major-version guard. If you
+must write custom rules, add an explicit catch-all `matchUpdateTypes: ["major"]` rule with
+`automerge: false` as the last entry. A major dependency bump can pass every CI check and still
+break the app at runtime (e.g. a plugin changing its default output layout) with no compile error
+to catch it, so this is not a theoretical risk.
+
 [renovate-approve](https://github.com/apps/renovate-approve) will automatically approve pull requests from renovate, so you don't need to worry about approving them.
 
 Make sure you [enable auto-merge on the repository settings](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request#enabling-auto-merge):
