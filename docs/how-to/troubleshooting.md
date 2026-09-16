@@ -152,6 +152,8 @@ Update your GitHub to Slack user mapping by following [Slack onboarding](../tuto
 
 A new push does not cancel the build already running for the previous commit. The CNP pipeline serialises preview deploys on a per-PR lock (`Trying to acquire lock on [Resource: <product>-aat-deploy]`), so the new build queues behind the old one rather than replacing it — and if you push again before either finishes, a third build queues too. Only the build for your current head commit's result matters, so batch fixes into one push per PR per cycle rather than pushing after each small change; check `gh api repos/<org>/<repo>/commits/<sha>/statuses` or the Jenkins job's build list directly, since a superseded build that finishes with a real result never posts a commit status and can be missed entirely.
 
+Manually stopping a superseded build in Jenkins is worse than leaving it queued: the abort posts an `ERROR`/`ABORTED` GitHub commit status for the PR, and that can land after — and overwrite — a newer, still-running build's status for the current head commit. `gh pr view --json statusCheckRollup` then reports the PR as failed even though a relevant build is still in progress. Read the Jenkins build directly (build number and its `building` flag) rather than trusting the GitHub status rollup when a stop/retrigger race is possible.
+
 ### Sandbox Jenkins is not automatically picking up my changes
 
 Because we have a prod and sandbox Jenkins instance, sometimes your pushes to master may be picked up by prod Jenkins instead.
@@ -215,6 +217,10 @@ A CCD-based preview/PR deploy routinely logs Helm's `coalesce.go: warning: canno
 Every PR preview namespace for a product gets its own database on one small shared flexible server. When idle JDBC pool connections accumulate across many previews — a `*_MIN_IDLE` setting that keeps connections open on an otherwise-idle release, or a scheduler thread count that keeps the pool fully warm — the server approaches `max_connections` and its control-plane API starts failing. New PRs then can't get a database created at all, and pods crashloop on `FATAL: database "..." does not exist` or a Hikari connection timeout, even though the failing PR's own Helm values are correct.
 
 Check connection counts against `max_connections` and look for oversized `*_MIN_IDLE` settings rather than raising the server's limit. `*_MAX_POOL_SIZE` is only a ceiling on connections drawn during active load, not a reservation — raising it doesn't by itself add to what an idle release holds open across dozens of concurrent previews.
+
+### Raising E2E parallelism against a CCD-backed preview exhausts the Hikari pool, not CPU
+
+Increasing Playwright (or similar) worker count against a single preview release without also raising `DATA_STORE_DB_MAX_POOL_SIZE`/`DEFINITION_STORE_DB_MAX_POOL_SIZE` causes CCD's data-store/definition-store Hikari pools to saturate (logged as `total=N, active=N, waiting=M`) even though the pod's CPU and memory usage stay well under its request. This looks like a compute-bound ceiling but is actually a connection-pool ceiling — worker count and pool size both need raising together, roughly in proportion, to get a real parallelism gain.
 
 ### OOMKilled despite a generous memoryLimits
 

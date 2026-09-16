@@ -24,6 +24,7 @@ sources:
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/RoleToAccessProfilesValidator.java
   - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/UserRoleController.java
   - ccd-config-generator:sdk/ccd-definition-converter/src/main/java/uk/gov/hmcts/ccd/sdk/converter/link/DefaultDefinitionLinker.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/WizardPageParser.java
 status: confluence-augmented
 confluence:
   - id: "277949114"
@@ -202,6 +203,8 @@ Controls per-element display within complex-type fields when `DisplayContext=COM
 | `Publish` | No | Boolean; publish element to message queue |
 | `PublishAs` | No | Alias (max 70) |
 | `LiveFrom` / `LiveTo` | No | |
+
+`WizardPageParser` reads `PageLabel`, `PageDisplayOrder` and `PageFieldDisplayOrder` only from the `CaseEventToFields` sheet. The same column names on this sheet are not mapped to anything and are silently ignored — no validation error, no effect on the imported definition.
 
 Rows on this sheet override display metadata and ordering for elements that already belong to the complex type; they do not select which elements appear. Data store hands the rows to `CompoundFieldOrderService.sortNestedFieldsFromCaseEventComplexFields()`, which promotes the children that carry a `FieldDisplayOrder` and appends every remaining child in definition order (`CompoundFieldOrderService.java:32-48`, `:77-80`, `:100-105`), reached from `CaseViewFieldBuilder.java:74-80`. Leaving an element off the sheet leaves it on the form in its definition position; hiding it takes a `FieldShowCondition` or withholding read access on the sub-field via `AuthorisationComplexType`.
 
