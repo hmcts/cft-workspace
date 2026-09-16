@@ -89,6 +89,8 @@ End to end process:
     - updating the github flux repo with the new image name
 13. Flux will see new changes and deploy new pod
 
+Step 2 above happens regardless of whether the PR is marked as a draft — the GitHub Branch Source plugin indexes and builds every open PR the same way, so a draft PR still gets the full image build, Helm deploy and automated test run. Marking a PR ready for review doesn't itself trigger anything either. To hold a PR back from building, use `[skip ci]` in the commit message.
+
 More information on how Jenkins works can be found on the [jenkins-agents](jenkins-agents.md) page.
 
 ### Finding your pipeline
@@ -130,6 +132,11 @@ To build infrastructure in demo, you will need to create a branch called "demo".
 
 If your infrastructure pipeline requires the use of a Key Vault to build, and the Key Vault is also itself being built in the pipeline, then it is common for the first deployment to fail. Just rebuild the pipeline.
 
+### Team secrets in custom hooks
+
+`sectionDeployToAKS` and `sectionNightlyTests` call `withTeamSecrets` for you, but a custom hook such as `afterSuccess('<stage>')` does not get team vault secrets automatically. This matters for branches like `perftest` and `demo`, which are deployed by flux rather than by the pipeline and so never reach `sectionDeployToAKS` at all.
+
+To read team secrets inside such a hook, capture `pipelineConf = config` at the top level of `withPipeline`, build an `AppPipelineConfig` with its own `vaultSecrets` map, and call `withTeamSecrets(vaultConfig, environment) { ... }` explicitly — it already iterates every vault in the map, so there's no need to recurse yourself. Whether you also need a `withSubscription` wrapper around it depends on which agent the hook runs on: on the primary agent (for example a `checkout` hook) `withTeamSecrets` has nothing to authenticate with, so you do; on an environment agent (a stage token suffixed `:<environment>`, such as `dbmigrate:perftest`) it authenticates itself via that environment's managed identity, so wrapping it in `withSubscription` is redundant.
 
 ### Troubleshooting build issues
 
