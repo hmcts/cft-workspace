@@ -304,6 +304,8 @@ The `FieldCollectionBuilder.complex()` method detects `@JsonUnwrapped` fields an
 
 `@JsonUnwrapped` prefixes compose across multiple levels of nesting: a class reached via `@JsonUnwrapped(prefix = "section")` that itself holds a field marked `@JsonUnwrapped(prefix = "party")` produces flat ids like `sectionPartyName`, with the inner prefix capitalised and concatenated onto the outer one. This makes it safe to build a shared nested type (e.g. a common "party" class reused under several sections) without a data migration, as long as the composed prefix is what's already on the case in production — verified by decompiling the field ids a real `generateCCDConfig` run produces.
 
+The composed id is not checked against CCD's 70-character `CaseField` id cap (see [json-definition-format](../reference/json-definition-format.md#id-format-rules)) anywhere in this chain — `generateCCDConfig` will happily emit an over-length id from a few levels of nesting on a long-named leaf field. The failure only surfaces at import, and if it reaches the database layer rather than the definition store's own spreadsheet-column validation, it comes back as a raw `value too long for type character varying(70)` batch-insert error with no reference to the offending field id or the Java source that produced it.
+
 ---
 
 ## `addPreEventHook` (migration hooks)
