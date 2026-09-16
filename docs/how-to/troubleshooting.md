@@ -152,6 +152,7 @@ If this happens, simply run the master build manually on sandbox jenkins.
     - There is not enough space in the cluster to fit in a new pod.
     - Pod is scheduled, but fails to pass readiness (`/health/readiness`) or  liveness (`/health/liveness`) checks.
     - A misconfigured environment variable, example - incorrect URL of a dependent service.
+    - The product's shared preview PostgreSQL flexible server has run out of connections. Every PR preview namespace for a product gets its own database(s) on one small shared flexible server; if idle JDBC pool connections build up across many PR previews (for example because a scheduler thread count matches the pool size and keeps it fully warm, or a per-service `*_MAX_POOL_SIZE` is set far above what the service needs), the server can approach `max_connections` and its control-plane API starts failing. New PRs then can't get a database created at all, and pods crashloop on `FATAL: database "..." does not exist` or a Hikari connection-timeout — even though the failing PR's own Helm values are correct. Check actual connection counts against `max_connections` on the shared server, and look for oversized pool settings, rather than raising the server's connection limit to mask it.
 
 - Below are some handy kubectl commands to debug the issues
 
