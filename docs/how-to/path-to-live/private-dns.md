@@ -7,7 +7,7 @@ audience: both
 ---
 # Expose a service on private DNS only
 
-Some services should be reachable from the HMCTS network but never from the internet — internal tooling, admin UIs, gateways holding credentials for something expensive. This page covers that case.
+Some services should be reachable from the HMCTS network but never from the internet — internal tooling, admin interfaces, dashboards, APIs with no external consumers. This page covers that case.
 
 It is the mirror image of [Public DNS](public-dns.md) and [Front Door](front-door.md): you deliberately **do not** create a front door CNAME or a `frontends` entry, and the hostname resolves only inside the private zone. Everything else still applies, because the traffic path in front of your pods is the same one every backend service uses.
 
@@ -17,10 +17,10 @@ This page is workspace-owned. [Load balancer configuration](load-balancer-config
 
 ```
 client on the network
-  → <app>.aat.platform.hmcts.net          A record, private zone only
-  → 10.10.161.101                          internal application gateway (TLS terminated here)
-  → HTTP :80 to 10.10.143.250 / 10.10.159.250   both cluster traefiks, health probed
-  → your Ingress (host <app>.aat.platform.hmcts.net)
+  → <hostname>.aat.platform.hmcts.net             A record, private zone only
+  → 10.10.161.101                                 internal application gateway, terminates TLS
+  → HTTP :80 to 10.10.143.250 / 10.10.159.250     both cluster traefiks, health probed
+  → your Ingress, host <hostname>.aat.platform.hmcts.net
   → your Service
 ```
 
@@ -33,34 +33,33 @@ In [`azure-platform-terraform`](https://github.com/hmcts/azure-platform-terrafor
 There are two gateways in the file and **the first one is closed** — it carries a five-line `DO NOT ADD ANY MORE SERVICES TO THIS GATEWAY CONFIGURATION ABOVE, USE THE ONE BELOW THIS WARNING` banner. In `stg` the closed gateway holds 98 apps on `10.10.161.100`; the open one holds 50 on `10.10.161.101`. Add to the second, and note its private IP — you need it in step 2.
 
 ```yaml
-      - product: dtsse
-        component: litellm-proxy
+      - product: <product>
+        component: <component>
         ssl_enabled: true
-        host_name_prefix: litellm
+        host_name_prefix: <hostname>
         health_path_override: /healthz
-        request_timeout: 900
 ```
 
 The options are all defined in [`terraform-module-application-backend`](https://github.com/hmcts/terraform-module-application-backend):
 
 | Option | Default | When you need it |
 |---|---|---|
-| `ssl_enabled` | `false` | Sets the listener and probe host to `<name>.<env>.platform.hmcts.net` instead of `<name>-<env>.service.core-compute-<env>.internal`. Set it when humans reach the service by that hostname. |
-| `host_name_prefix` | `<product>-<component>` | Overrides the hostname. Without it, `product: dtsse` + `component: litellm-proxy` gives `dtsse-litellm-proxy.aat.platform.hmcts.net`. |
+| `ssl_enabled` | `false` | Sets the listener and probe host to `<hostname>.<env>.platform.hmcts.net` instead of `<hostname>-<env>.service.core-compute-<env>.internal`. Set it when people reach the service by that hostname. |
+| `host_name_prefix` | `<product>-<component>` | Overrides the hostname. Leave it out and the hostname is your product and component joined with a hyphen, which is usually longer than you want people to type. |
 | `health_path_override` | `/health/liveness` | Any service that doesn't serve that exact path — otherwise the probe fails and the gateway marks every backend unhealthy. |
 | `request_timeout` | **`30`** | Anything that can take longer than 30 seconds to respond. |
 | `cookie_based_affinity` | `Disabled` | Stateful UIs. |
 
 **`request_timeout` is the one that bites.** The default is 30 seconds, and it applies to the whole response, so any long-running request or streamed response is severed mid-flight with no useful error. `prod` already carries a 600s entry for this reason.
 
-Merging this also creates `<product>-<component>-<env>.service.core-compute-<env>.internal` pointing at the gateway, via the `cftapps_private_dns` component. That record is generated — do not add it by hand. It is the name other services use for service-to-service calls, which is why so much flux config contains `http://<app>-<env>.service.core-compute-<env>.internal` URLs.
+Merging this also creates `<product>-<component>-<env>.service.core-compute-<env>.internal` pointing at the gateway, via the `cftapps_private_dns` component. That record is generated — do not add it by hand. It is the name other services use for service-to-service calls, which is why so much flux config contains `http://<product>-<component>-<env>.service.core-compute-<env>.internal` URLs.
 
 ## 2. Add the private DNS record
 
 The record humans use is **not** generated. In [`azure-private-dns`](https://github.com/hmcts/azure-private-dns), add an `A` record under the `A:` key (capital A — the CNAME section below it is lowercase `cname:`) in `environments/<env>/<zone>.yml`. For AAT that is `environments/staging/aat-platform-hmcts-net.yml`:
 
 ```yaml
-  - name: litellm
+  - name: <hostname>
     record:
     - 10.10.161.101
     ttl: 300
@@ -77,7 +76,7 @@ Your `HelmRelease` in [`cnp-flux-config`](https://github.com/hmcts/cnp-flux-conf
 ```yaml
   values:
     nodejs:
-      ingressHost: litellm.aat.platform.hmcts.net
+      ingressHost: <hostname>.aat.platform.hmcts.net
 ```
 
 **Do not enable the traefik TLS router for it.** The gateway terminates TLS with the environment wildcard certificate and connects to the backend over **plain HTTP on port 80** — both the probe and the backend HTTP settings are `protocol = "Http"`. If the ingress only has a TLS router, the gateway's requests and its health probe both go unmatched and every backend reports unhealthy.
@@ -97,8 +96,8 @@ None of that applies to an ordinary stateless service, where per-cluster hostnam
 Resolution only works from the network, and a VPN split-tunnel or a devcontainer started before the VPN connected will both give you `NXDOMAIN` — see [Connect via VPN](../connect-via-vpn.md).
 
 ```bash
-dig +short litellm.aat.platform.hmcts.net          # expect the gateway private IP
-curl -sv https://litellm.aat.platform.hmcts.net/healthz
+dig +short <hostname>.aat.platform.hmcts.net       # expect the gateway private IP
+curl -sv https://<hostname>.aat.platform.hmcts.net/
 ```
 
 If DNS resolves and TLS completes but every request returns 502, the gateway has no healthy backend — check the probe path and the ingress host match what step 1 configured, and that the ingress is not TLS-only.
