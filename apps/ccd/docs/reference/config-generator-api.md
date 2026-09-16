@@ -5,7 +5,10 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Field.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/CCDDefinitionGenerator.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigResolver.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/HasRole.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCD.java
@@ -19,6 +22,7 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Start.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseFieldGenerator.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java
   - ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java
   - ccd-config-generator:README.md
@@ -204,6 +208,7 @@ All field methods accept a typed property getter (`TypedPropertyGetter<T, ?>` i.
 | `label(String id, String value, String showCond, boolean showSummary)` | ReadOnly | Param | Label with CYA visibility control. |
 | `complex(getter)` | Complex | Yes | Begin nested complex type builder; returns `FieldCollectionBuilder<U,...>`. |
 | `list(getter)` | - | Yes | Begin collection (`ListValue<U>`) builder. |
+| `defaultValue(String)` | - | - | Sets the most-recently-added field's `DefaultValue` to a raw string, verbatim. Distinct from the typed `defaultValue` carried by `mandatory(getter, showCondition, defaultValue, label, hint)`; works on a member inside a `.complex(...)` scope as well as a top-level field. |
 | `done()` | - | - | Return to parent builder (exits complex/list context). |
 
 Labels support markdown-style headings (`"## Section Title"`). The two- and three-argument overloads hard-code `showSummary(false)` (`FieldCollection.java:469-482`); only the four-argument form lets a label reach the CYA page, by passing the flag straight through (`:484-493`).
@@ -250,6 +255,15 @@ Example:
 )
 private ApplicationType applicationType;
 ```
+
+**Two type-inference gaps to know about before reaching for `typeOverride`.** The generator infers
+`MultiSelectList` only when the field's declared type is `Set<E>` with `E` an enum
+(`CaseFieldGenerator.resolveCollectionType`) — a `List<E>` of the same enum is emitted as a plain
+`Collection`, not `MultiSelectList`, with no error. And numeric inference
+(`CaseFieldGenerator.resolveSimpleType`) covers `int`/`long`/`float`/`double` and their boxed forms
+but not `BigDecimal`, which falls through to the default inferred type rather than `Number`. Both
+are worked around with an explicit `typeOverride`, but the silent fallback is easy to miss because
+the generator doesn't warn.
 
 ---
 
@@ -452,6 +466,15 @@ public enum UserRole implements HasRole {
 ## `CCDConfig<T, S, R extends HasRole>`
 
 Marker interface implemented by service teams. Spring discovers all beans implementing it.
+
+Every `CCDConfig` bean is injected into `CCDDefinitionGenerator` as a list; each bean's
+`configure(builder)` runs against a builder shared with every other bean whose `caseDataClass` and
+`groupingKey()` match. By default `groupingKey()` returns a constant, so **all configs sharing a
+case data class are merged into one case type** — this is how most services split events, tabs and
+permissions across many `@Component` classes while still emitting a single definition. A service
+that needs two independent case types from one case data class (for example two definitions built
+from largely-shared fields) must override `groupingKey()` on each config to return a distinct value
+per case type; otherwise their events silently collapse into a single case type at generation time.
 
 ```java
 @Component
