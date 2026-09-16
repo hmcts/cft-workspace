@@ -23,6 +23,7 @@ sources:
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/CategoryValidator.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/RoleToAccessProfilesValidator.java
   - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/UserRoleController.java
+  - ccd-config-generator:sdk/ccd-definition-converter/src/main/java/uk/gov/hmcts/ccd/sdk/converter/link/DefaultDefinitionLinker.java
 status: confluence-augmented
 confluence:
   - id: "277949114"
@@ -119,8 +120,8 @@ Sheet name: `CaseEvent` | DB table: `event`
 | `CaseTypeID` | Yes | FK to parent case type |
 | `Description` | No | `varchar(100)` |
 | `DisplayOrder` | No | Numeric; display ordering for event list |
-| `PreConditionState(s)` | No | Comma-separated state IDs; `*` means any state. Empty means event creates a case. |
-| `PostConditionState` | No | Target state after event; `*` keeps current state |
+| `PreConditionState(s)` | No | State IDs, separated by `;` or `,`; `*` means any state. Empty means event creates a case. Each entry may carry an optional `(showCondition)` predicate and a `:priority` suffix, e.g. `appealStartedByAdmin(isAdmin!="" AND isAdmin="Yes"):2;appealStarted` — strip that decoration before treating the segment as a bare state `ID`. |
+| `PostConditionState` | No | Target state after event; `*` keeps current state. Can use the same decorated, `;`/`,`-separated syntax as `PreConditionState(s)` to express conditional or multiple candidate post-states. |
 | `SecurityClassification` | No | |
 | `Publish` | No | Boolean; if `Yes`/`True`, event is published to CCD message queue |
 | `ShowSummary` | No | Boolean (`Y`/`N`/empty). `Y` shows Check Your Answers page. |
@@ -535,8 +536,8 @@ Source: `SheetName.java:32`, `ColumnName.java:99–103`, `RoleToAccessProfilesVa
 
 - `CaseField.CaseTypeID` must match a CaseType `ID`
 - `CaseField.FieldType` must be a known base type, or match a ComplexTypes `ID`, or match a FixedLists `ID`
-- `CaseEvent.PreConditionState(s)` values must match State `ID` values (or be empty/`*`)
-- `CaseEvent.PostConditionState` must match a State `ID` (or `*`)
+- `CaseEvent.PreConditionState(s)` values must match State `ID` values once any `(showCondition)`/`:priority` decoration and `;`/`,` separators are stripped (or be empty/`*`)
+- `CaseEvent.PostConditionState` must match a State `ID` under the same decoration rules (or `*`)
 - `CaseEventToFields.CaseFieldID` must match CaseField `ID` for the same CaseTypeID
 - `CaseTypeTab.CaseFieldID` must match CaseField `ID` or be a metadata field name
 
