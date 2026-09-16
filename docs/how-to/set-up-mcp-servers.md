@@ -1,11 +1,11 @@
 ---
-title: Set up the Atlassian and Jenkins MCP servers
+title: Set up the workspace's MCP servers
 topic: set-up-mcp-servers
 diataxis: how-to
 product: workspace
 audience: both
 ---
-# Set up the Atlassian and Jenkins MCP servers
+# Set up the workspace's MCP servers
 
 The workspace declares its MCP servers in [`.mcp.json`](../../.mcp.json), which is committed.
 
@@ -14,6 +14,7 @@ The workspace declares its MCP servers in [`.mcp.json`](../../.mcp.json), which 
 | `atlassian` | Remote HTTP (`mcp.atlassian.com`) | Browser OAuth, per-user | Jira issues, Confluence pages (used by `/docs-generate`'s augmentation phase and `/docs-drift`) |
 | `jenkins` | Docker container over stdio | `.claude/.jenkins.env`, gitignored | Build status, console logs, test reports from `build.hmcts.net` |
 | `playwright` | Local stdio (`npx @playwright/mcp`) | None | Browser automation — navigate, click, fill forms, take snapshots/screenshots |
+| `Azure MCP Server` | Local stdio (`npx @azure/mcp@latest`) | `az login` session, pinned via `AZURE_TOKEN_CREDENTIALS` | Subscription, resource and Azure Monitor/Log Analytics queries |
 
 Only Jenkins needs a local env file, and only Jenkins needs the Docker CLI (the devcontainer mounts the host socket).
 
@@ -87,7 +88,19 @@ Nothing to configure — `npx -y @playwright/mcp@latest` fetches and caches the 
 
 It can't drive a *visible* browser inside the devcontainer: the server defaults to the `chrome` channel, which isn't installed, and even after installing Chrome, headed launches don't inherit the container's Xvfb `$DISPLAY` the way a direct Chrome invocation on the same display does. For a flow that genuinely needs a human to see or interact with the browser (for example, signing in through a UI), use API tokens or credentials instead of the MCP browser tools rather than trying to force a headed launch.
 
-## 4. Restart and verify
+## 4. Azure MCP Server
+
+Nothing to install — `npx -y @azure/mcp@latest server start` fetches and caches the server on first use, and it needs no separate token or env file.
+
+It authenticates through `DefaultAzureCredential`, which by default walks a chain of credential sources — environment variables, managed identity, workload identity — before ever trying the `az` CLI's cached login. Inside the devcontainer the managed-identity/IMDS probe in that chain can stall for ten or more minutes with no error before falling through. Pin the credential in the server's `env` block in `.mcp.json` so it goes straight to your existing `az login` session instead:
+
+```json
+"env": { "AZURE_TOKEN_CREDENTIALS": "AzureCliCredential" }
+```
+
+With it set, a query resolves in about a second rather than minutes, reading the same `~/.azure` token cache `az` already uses — no separate login required.
+
+## 5. Restart and verify
 
 MCP servers are launched at startup, so restart your client to pick up new servers or changed credentials.
 
@@ -109,6 +122,7 @@ The Atlassian OAuth flow needs a browser on the machine running the client. Insi
 - **An Atlassian tool fails asking for `cloudId`** → pass `https://hmcts.atlassian.net` (or the UUID from `getAccessibleAtlassianResources`) explicitly. It is never inferred.
 - **An Atlassian operation name is rejected** → only Jira and Confluence basics are exposed as named tools; everything else is reached by `discover` then `executeRead` / `executeWrite`. Don't guess operation names.
 - **A server is missing from `/mcp`** → `.mcp.json` failed to parse, or the client was not restarted. Check with `jq . .mcp.json`.
+- **An Azure MCP tool call hangs for minutes with no error** → `DefaultAzureCredential` is walking its full credential chain before reaching the `az` CLI credential. Set `AZURE_TOKEN_CREDENTIALS=AzureCliCredential` in the server's `env` block in `.mcp.json`.
 
 ## Credential hygiene
 
