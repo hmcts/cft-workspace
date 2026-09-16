@@ -47,6 +47,20 @@ Add an entry in the following format:
 
 Scan the organisation manually in Jenkins if it does not scan automatically.
 
+## Watch for a duplicate SonarCloud project
+
+A newly created repository can end up analysed by SonarCloud twice: once as the project the
+common pipeline scans via the repo's `sonar-project.properties`, and once by SonarCloud's own
+GitHub App "Automatic Analysis", which auto-imports any new repository under the org and creates
+a second project keyed `hmcts_<repo-name>`. Automatic Analysis reads `.sonarcloud.properties`,
+not `sonar-project.properties` — with neither file present it scans the whole repository
+(config, charts, test fixtures, SQL migrations) instead of the pipeline's configured `sonar.sources`
+scope, and can fail its own quality gate on files the pipeline-scanned project never sees. Both
+projects post a separate GitHub commit status, so a PR can show one Sonar check green and another
+red for the same commit. Either disable Automatic Analysis for the repository in SonarCloud's
+project settings, or add a `.sonarcloud.properties` matching the pipeline's source scope so both
+projects agree.
+
 ## Allow production deployments
 
 To allow Jenkins to deploy to production, add your GitHub repository to the approved repositories list.

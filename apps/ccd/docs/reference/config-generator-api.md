@@ -265,6 +265,15 @@ but not `BigDecimal`, which falls through to the default inferred type rather th
 are worked around with an explicit `typeOverride`, but the silent fallback is easy to miss because
 the generator doesn't warn.
 
+**`displayOrder` does not reorder fields, pages, or tabs.** `FieldCollectionBuilder` derives
+`PageFieldDisplayOrder` and `PageDisplayOrder` from a sequential counter incremented as builder
+methods are called, and tab/tab-field ordering follows the same call-order rule — there is no
+builder option to set an explicit position for an ordinary field or page. The `@CCD(displayOrder
+= ...)` attribute only takes effect where a generator reads it directly: `FixedList`/`State` enum
+constant ordering, plus the few builder-level orderers that do accept an explicit number —
+`Event.EventBuilder`, NoC challenge questions, and `CaseCategoryBuilder.displayOrder(int)`. To
+reorder an ordinary field, page, or tab, move its builder call instead.
+
 ---
 
 ## `@JsonUnwrapped` pattern
