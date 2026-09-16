@@ -1,0 +1,408 @@
+#!/usr/bin/env bash
+# Review recent Claude Code conversations for durable CFT knowledge and propose
+# documentation updates.
+#
+# Hooked to SessionStart, not SessionEnd: SessionEnd only fires on orderly exits,
+# so a closed IDE or stopped devcontainer would lose the trigger. Transcripts are
+# appended live, so a per-session byte offset is enough to sweep late without
+# missing anything.
+#
+# Usage:
+#   scripts/knowledge-sweep                # sweep now, honouring the interval
+#   scripts/knowledge-sweep --background   # detach and return immediately (hook)
+#   scripts/knowledge-sweep --force        # ignore the interval
+#   scripts/knowledge-sweep --status       # what's pending, what's been seen
+#   scripts/knowledge-sweep --dry-run      # build the digest, skip the model
+#   scripts/knowledge-sweep --backfill     # review existing history on a first run
+
+source "$(dirname "$0")/lib/_common.sh"
+
+STATE_DIR="$WORKSPACE_ROOT/.claude/knowledge-sweep"
+LEDGER="$STATE_DIR/ledger.json"
+STAMP="$STATE_DIR/last-run"
+LOCK="$STATE_DIR/sweep.lock"
+LOG="$STATE_DIR/sweep.log"
+PENDING="$STATE_DIR/PENDING"
+# Not under .claude/ — Claude Code refuses Write/Edit anywhere beneath a .claude/
+# directory, which would give the harvester a checkout it cannot edit.
+WORKTREE="${TMPDIR:-/tmp}/cft-knowledge-sweep-wt"
+HARVESTER="$WORKSPACE_ROOT/.claude/agents/knowledge-harvester.md"
+
+MIN_INTERVAL_SECONDS=${KNOWLEDGE_SWEEP_INTERVAL:-3600}
+QUIESCENT_SECONDS=${KNOWLEDGE_SWEEP_QUIESCENT:-600}
+MAX_SESSION_DELTA_BYTES=${KNOWLEDGE_SWEEP_MAX_SESSION_BYTES:-2000000}
+MAX_DIGEST_BYTES=${KNOWLEDGE_SWEEP_MAX_DIGEST_BYTES:-400000}
+MAX_SESSIONS=${KNOWLEDGE_SWEEP_MAX_SESSIONS:-10}
+MODEL=${KNOWLEDGE_SWEEP_MODEL:-sonnet}
+
+# pr — push the author's branch and open/update their PR; branch — commit locally
+# and never push.
+MODE=${KNOWLEDGE_SWEEP_MODE:-pr}
+
+BACKGROUND=0
+FORCE=0
+DRY_RUN=0
+STATUS=0
+BACKFILL=0
+for arg in "$@"; do
+    case "$arg" in
+        --background) BACKGROUND=1 ;;
+        --force)      FORCE=1 ;;
+        --dry-run)    DRY_RUN=1 ;;
+        --status)     STATUS=1 ;;
+        --backfill)   BACKFILL=1 ;;
+        *)            die "unknown argument: $arg" ;;
+    esac
+done
+
+# The harvester's own claude process inherits this repo's SessionStart hook.
+[[ -n "${KNOWLEDGE_SWEEP_CHILD:-}" ]] && exit 0
+
+mkdir -p "$STATE_DIR"
+[[ -f "$LEDGER" ]] || printf '{}\n' > "$LEDGER"
+
+transcript_dir() {
+    # Transcripts live under a slug of the project path, every non-alphanumeric
+    # character replaced by a hyphen.
+    local slug
+    slug=$(printf '%s' "$WORKSPACE_ROOT" | sed 's/[^a-zA-Z0-9]/-/g')
+    printf '%s/.claude/projects/%s' "$HOME" "$slug"
+}
+
+if [[ $STATUS -eq 1 ]]; then
+    info "knowledge-sweep status"
+    if [[ -f "$STAMP" ]]; then
+        log "  last run: $(date -r "$STAMP" '+%Y-%m-%d %H:%M:%S')"
+    else
+        log "  last run: never"
+    fi
+    log "  sessions in ledger: $(jq 'length' "$LEDGER")"
+    log "  transcript dir: $(transcript_dir)"
+    if [[ -s "$PENDING" ]]; then
+        log ""
+        cat "$PENDING"
+    else
+        log "  no proposals pending"
+    fi
+    exit 0
+fi
+
+if [[ $BACKGROUND -eq 1 ]]; then
+    nohup "$0" ${FORCE:+--force} >> "$LOG" 2>&1 &
+    exit 0
+fi
+
+exec 9>"$LOCK"
+if ! flock -n 9; then
+    exit 0
+fi
+
+if [[ $FORCE -eq 0 && -f "$STAMP" ]]; then
+    age=$(( $(date +%s) - $(stat -c %Y "$STAMP") ))
+    if (( age < MIN_INTERVAL_SECONDS )); then
+        exit 0
+    fi
+fi
+
+TDIR=$(transcript_dir)
+[[ -d "$TDIR" ]] || { warn "no transcript directory at $TDIR"; exit 0; }
+
+# A first run faces every session ever held here. The digest cap means most of
+# that backlog would be recorded as seen without being read, so decline it
+# explicitly rather than lying in the ledger.
+if [[ "$(jq 'length' "$LEDGER")" == "0" && $BACKFILL -eq 0 ]]; then
+    seeded=0
+    tmp=$(mktemp)
+    cp "$LEDGER" "$tmp"
+    while IFS= read -r t; do
+        sid=$(basename "$t" .jsonl)
+        jq --arg s "$sid" --argjson o "$(stat -c %s "$t")" \
+           --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+           '.[$s] = {offset: $o, reviewed_at: $t, seeded: true}' "$tmp" > "$tmp.next"
+        mv "$tmp.next" "$tmp"
+        seeded=$(( seeded + 1 ))
+    done < <(find "$TDIR" -maxdepth 1 -name '*.jsonl')
+    mv "$tmp" "$LEDGER"
+    touch "$STAMP"
+    ok "first run: marked $seeded existing session(s) as seen — sweeping new activity from now on"
+    log "to review the backlog instead: scripts/knowledge-sweep --backfill --force"
+    exit 0
+fi
+
+command -v claude >/dev/null || die "claude CLI not on PATH"
+command -v jq >/dev/null || die "jq not on PATH"
+
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+
+DIGEST="$WORK/digest.md"
+: > "$DIGEST"
+
+# The readable spine of a transcript slice: what was asked, what was answered,
+# which commands ran. Bulk tool output is clipped.
+digest_slice() {
+    jq -R 'fromjson? // empty' \
+    | jq -r '
+        def clip($n):
+          (. // "") | tostring
+          | if (length > $n) then (.[0:$n] + " …[clipped]") else . end;
+        def blocks:
+          if (.message.content | type) == "array" then .message.content
+          elif (.message.content | type) == "string" then [{type: "text", text: .message.content}]
+          else [] end;
+        select(.type == "user" or .type == "assistant")
+        | (if .type == "user" then "USER" else "CLAUDE" end) as $role
+        | blocks[]
+        | if .type == "text" then
+            (if ((.text // "") | length) > 0 then "\($role): \(.text | clip(2000))" else empty end)
+          elif .type == "tool_use" then
+            "  TOOL \(.name // "?"): \((.input.command // .input.file_path // .input.pattern // .input.description // "") | clip(300))"
+          elif .type == "tool_result" then
+            "  RESULT: \((if (.content | type) == "array" then ([.content[]? | .text? // ""] | join(" ")) else .content end) | clip(400))"
+          else empty end
+      ' 2>/dev/null || true
+}
+
+sessions_reviewed=0
+declare -A new_offsets=()
+
+while IFS= read -r transcript; do
+    (( sessions_reviewed >= MAX_SESSIONS )) && break
+
+    sid=$(basename "$transcript" .jsonl)
+    size=$(stat -c %s "$transcript")
+    mtime=$(stat -c %Y "$transcript")
+
+    # A transcript touched moments ago belongs to a session still in progress.
+    if (( $(date +%s) - mtime < QUIESCENT_SECONDS )); then
+        continue
+    fi
+
+    offset=$(jq -r --arg s "$sid" '.[$s].offset // 0' "$LEDGER")
+    (( size <= offset )) && continue
+
+    delta=$(( size - offset ))
+    start=$(( offset + 1 ))
+    truncated=""
+    if (( delta > MAX_SESSION_DELTA_BYTES )); then
+        start=$(( size - MAX_SESSION_DELTA_BYTES + 1 ))
+        truncated=" (earlier ${delta} bytes skipped as too large)"
+    fi
+
+    slice="$WORK/$sid.txt"
+    if (( start > offset + 1 )); then
+        # Drop the partial first line left by starting mid-file.
+        tail -c "+$start" "$transcript" | tail -n +2 | digest_slice > "$slice"
+    else
+        tail -c "+$start" "$transcript" | digest_slice > "$slice"
+    fi
+
+    if [[ ! -s "$slice" ]]; then
+        new_offsets[$sid]=$size
+        continue
+    fi
+
+    {
+        printf '\n## Session %s\n' "$sid"
+        printf 'Last active: %s%s\n\n' "$(date -d "@$mtime" '+%Y-%m-%d %H:%M')" "$truncated"
+        cat "$slice"
+    } >> "$DIGEST"
+
+    new_offsets[$sid]=$size
+    sessions_reviewed=$(( sessions_reviewed + 1 ))
+
+    if (( $(stat -c %s "$DIGEST") > MAX_DIGEST_BYTES )); then
+        printf '\n[digest truncated — remaining sessions deferred to the next sweep]\n' >> "$DIGEST"
+        break
+    fi
+done < <(find "$TDIR" -maxdepth 1 -name '*.jsonl' -printf '%T@ %p\n' | sort -n | cut -d' ' -f2-)
+
+[[ $DRY_RUN -eq 0 ]] && touch "$STAMP"
+
+commit_ledger() {
+    local tmp="$WORK/ledger.json"
+    cp "$LEDGER" "$tmp"
+    for sid in "${!new_offsets[@]}"; do
+        jq --arg s "$sid" --argjson o "${new_offsets[$sid]}" \
+           --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+           '.[$s] = {offset: $o, reviewed_at: $t}' "$tmp" > "$tmp.next"
+        mv "$tmp.next" "$tmp"
+    done
+    mv "$tmp" "$LEDGER"
+}
+
+if [[ ! -s "$DIGEST" ]]; then
+    commit_ledger
+    log "$(date '+%F %T') nothing new to review"
+    exit 0
+fi
+
+if [[ $DRY_RUN -eq 1 ]]; then
+    ok "digest built: $(stat -c %s "$DIGEST") bytes from $sessions_reviewed session(s)"
+    cp "$DIGEST" "$STATE_DIR/last-digest.md"
+    log "written to $STATE_DIR/last-digest.md (ledger not advanced)"
+    exit 0
+fi
+
+# One long-lived branch per author, so repeated sweeps accumulate onto a single
+# open PR.
+GH_LOGIN=$(gh api user --jq .login 2>/dev/null || printf '')
+[[ -n "$GH_LOGIN" ]] || { warn "gh not authenticated — staying local"; MODE=branch; }
+BRANCH="knowledge/${GH_LOGIN:-local}"
+
+git -C "$WORKSPACE_ROOT" fetch --quiet origin master 2>/dev/null || true
+git -C "$WORKSPACE_ROOT" fetch --quiet origin "$BRANCH" 2>/dev/null || true
+
+EXISTING_PR=""
+if [[ "$MODE" == "pr" ]]; then
+    EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // ""' 2>/dev/null || printf '')
+fi
+
+REBASED=0
+if [[ -n "$EXISTING_PR" ]] && git -C "$WORKSPACE_ROOT" rev-parse --verify --quiet "origin/$BRANCH" >/dev/null; then
+    BASE="origin/$BRANCH"
+    REBASED=1
+else
+    BASE=$(git -C "$WORKSPACE_ROOT" rev-parse --verify --quiet origin/master \
+        || git -C "$WORKSPACE_ROOT" rev-parse master)
+fi
+
+rm -rf "$WORKTREE"
+git -C "$WORKSPACE_ROOT" worktree prune
+git -C "$WORKSPACE_ROOT" worktree add --quiet --force -B "$BRANCH" "$WORKTREE" "$BASE"
+
+if (( REBASED )); then
+    if ! git -C "$WORKTREE" rebase --quiet origin/master 2>/dev/null; then
+        git -C "$WORKTREE" rebase --abort 2>/dev/null || true
+        warn "could not rebase $BRANCH onto origin/master — proposing against its existing base"
+    fi
+fi
+
+cleanup_worktree() {
+    git -C "$WORKSPACE_ROOT" worktree remove --force "$WORKTREE" 2>/dev/null || true
+    git -C "$WORKSPACE_ROOT" worktree prune
+}
+
+SUMMARY="$WORKTREE/sweep-summary.local.md"
+cp "$DIGEST" "$WORKTREE/sweep-digest.local.md"
+
+# The instructions live in the agent definition so they can also be run
+# interactively; the body doubles as the headless prompt.
+PROMPT_BODY=$(awk '/^---[[:space:]]*$/{c++; next} c>=2{print}' "$HARVESTER")
+[[ -n "$PROMPT_BODY" ]] || { cleanup_worktree; die "could not read harvester prompt from $HARVESTER"; }
+
+set +e
+(
+    cd "$WORKTREE" || exit 1
+    export KNOWLEDGE_SWEEP_CHILD=1
+    printf '%s\n\nThe digest is at `sweep-digest.local.md`. Write your summary to `sweep-summary.local.md`.\n' "$PROMPT_BODY" \
+    | claude -p \
+        --model "$MODEL" \
+        --permission-mode acceptEdits \
+        --allowedTools "Read" "Edit" "Write" "Grep" "Glob" "Bash(./scripts/docs-index)" \
+        > "$WORK/model.log" 2>&1
+)
+model_status=$?
+set -e
+
+cat "$WORK/model.log" >> "$LOG"
+
+rm -f "$WORKTREE/sweep-digest.local.md"
+
+if (( model_status != 0 )); then
+    warn "harvester exited $model_status — see $LOG"
+    cleanup_worktree
+    git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
+    exit 1
+fi
+
+# This repo is public, so a pasted command line carrying a live token must not
+# reach a branch even though the harvester is told never to quote a transcript.
+if git -C "$WORKTREE" diff --unified=0 | rg -q \
+    -e 'eyJ[A-Za-z0-9_-]{20,}\.' \
+    -e 'gh[pousr]_[A-Za-z0-9]{20,}' \
+    -e 'AccountKey=' \
+    -e 'BEGIN (RSA|EC|OPENSSH|PRIVATE) ' \
+    -e '(client_secret|api[_-]?key|password)["'\'':= ]+[A-Za-z0-9/+_-]{16,}'; then
+    err "secret-shaped string in proposed diff — discarding branch $BRANCH"
+    cleanup_worktree
+    git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
+    commit_ledger
+    exit 1
+fi
+
+if [[ -z "$(git -C "$WORKTREE" status --porcelain)" ]]; then
+    log "$(date '+%F %T') reviewed $sessions_reviewed session(s), no documentation changes proposed"
+    cleanup_worktree
+    git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
+    commit_ledger
+    exit 0
+fi
+
+summary_text="(no summary written)"
+[[ -s "$SUMMARY" ]] && summary_text=$(cat "$SUMMARY")
+rm -f "$SUMMARY"
+
+git -C "$WORKTREE" add -A
+git -C "$WORKTREE" commit --quiet -m "docs: knowledge sweep $(date +%F)" \
+    -m "Proposed from $sessions_reviewed reviewed session(s) by scripts/knowledge-sweep. Unreviewed — verify before merging." \
+    -m "$summary_text"
+
+if [[ "$MODE" != "pr" ]]; then
+    cleanup_worktree
+    commit_ledger
+    {
+        printf 'knowledge-sweep: %s proposes documentation changes (local only)\n' "$BRANCH"
+        printf '  review:  git diff master..%s\n' "$BRANCH"
+        printf '  discard: git branch -D %s\n\n' "$BRANCH"
+        printf '%s\n' "$summary_text"
+    } > "$PENDING"
+    ok "proposed changes on $BRANCH"
+    exit 0
+fi
+
+if ! git -C "$WORKTREE" push --quiet --force-with-lease -u origin "$BRANCH" 2>>"$LOG"; then
+    warn "push of $BRANCH failed — commit kept locally, see $LOG"
+    cleanup_worktree
+    commit_ledger
+    exit 1
+fi
+
+PR_BODY="$WORK/pr-body.md"
+{
+    printf 'Documentation updates proposed by `scripts/knowledge-sweep` from this author'\''s recent workspace sessions.\n\n'
+    printf '**Unreviewed machine output.** Every claim needs checking against the source repos before merge.\n\n'
+    printf '## Proposed in the latest sweep\n\n%s\n\n' "$summary_text"
+    printf '---\n\nThis branch accumulates: later sweeps add commits here rather than opening another PR.\n'
+    printf 'The daily consolidation workflow folds open sweep PRs together — see `.github/workflows/knowledge-consolidate.yml`.\n'
+} > "$PR_BODY"
+
+if [[ -n "$EXISTING_PR" ]]; then
+    gh pr edit "$EXISTING_PR" --body-file "$PR_BODY" >/dev/null 2>>"$LOG" || true
+    gh pr comment "$EXISTING_PR" --body "New sweep added $(date -u +%Y-%m-%dT%H:%MZ):
+
+$summary_text" >/dev/null 2>>"$LOG" || true
+    PR_URL=$(gh pr view "$EXISTING_PR" --json url --jq .url 2>/dev/null || printf '')
+    ok "updated PR #$EXISTING_PR"
+else
+    gh label create knowledge-sweep --color BFD4F2 \
+        --description "Documentation proposed by scripts/knowledge-sweep" >/dev/null 2>&1 || true
+    PR_URL=$(gh pr create \
+        --base master \
+        --head "$BRANCH" \
+        --title "docs: knowledge sweep — $GH_LOGIN" \
+        --body-file "$PR_BODY" \
+        --label knowledge-sweep 2>>"$LOG" || printf '')
+    [[ -n "$PR_URL" ]] && ok "opened $PR_URL" || warn "pushed $BRANCH but PR creation failed — see $LOG"
+fi
+
+cleanup_worktree
+commit_ledger
+
+{
+    printf 'knowledge-sweep proposed documentation changes\n'
+    printf '  %s\n\n' "${PR_URL:-$BRANCH}"
+    printf '%s\n' "$summary_text"
+} > "$PENDING"
+
+log "$summary_text"

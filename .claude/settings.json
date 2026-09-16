@@ -58,6 +58,14 @@
           {
             "type": "command",
             "command": "./scripts/doctor --quiet 2>&1 | head -20"
+          },
+          {
+            "type": "command",
+            "command": "./scripts/knowledge-sweep --background"
+          },
+          {
+            "type": "command",
+            "command": "cat .claude/knowledge-sweep/PENDING 2>/dev/null | head -20 || true"
           }
         ]
       }

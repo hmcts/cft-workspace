@@ -94,6 +94,7 @@ The MCP configuration includes Atlassian (JIRA & Confluence), Jenkins and Playwr
 | `scripts/index` | Regenerate `INDEX.md` from each product's `CLAUDE.md` frontmatter. |
 | `scripts/docs-index` | Regenerate `DOCS.md` from each Diátaxis doc page's frontmatter. |
 | `scripts/validate-plugins` | Check the team-plugin catalogue and every plugin it points at. Runs in CI on every PR. |
+| `scripts/knowledge-sweep` | Review your recent sessions for durable CFT knowledge and propose documentation updates as a PR. Runs from the SessionStart hook, at most hourly. |
 
 The `prefix` argument filters by path prefix — e.g. `./scripts/sync apps/nfdiv` only touches the nfdiv clones.
 
