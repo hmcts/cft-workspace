@@ -1,10 +1,10 @@
 # cft-workspace
 
-Workspace-level guidance for AI coding tools. Claude Code loads this file directly; Codex loads it through the repository's `AGENTS.md` adapter. The user is an HMCTS engineer using this workspace to navigate, search, and modify across many CFT repos at once.
+Workspace-level knowledgebase for AI coding tools. The user is an HMCTS engineer using this workspace to navigate, search, and modify across many CFT repos at once.
 
 ## What this repo is
 
-This repo (`hmcts/cft-workspace`) tracks **scaffolding only** — devcontainer, scripts, AI-tool configuration, docs, and the manifest. The actual HMCTS source lives in independently-cloned repos under `apps/`, `libs/`, `platops/`. Those clones are gitignored at this level — never `git add` their contents, never assume the workspace repo is a monorepo.
+This repo (`hmcts/cft-workspace`) is an agentic workspace for the HMCTS CFT repositories. The actual HMCTS source lives in independently-cloned repos under `apps/`, `libs/`, `platops/`. Those clones are gitignored at this level — never `git add` their contents, never assume the workspace repo is a monorepo.
 
 ```
 apps/<product>/<repo>      # CFT apps — both shared platform (ccd/, xui/, idam/, …)
@@ -31,7 +31,7 @@ General patterns:
 - **Node/Yarn frontends**: `yarn install`, `yarn start`, `yarn test`, `yarn lint`.
 - Several clones ship `docker-compose.yml` for local dependencies.
 
-## Documentation layout
+## Documentation
 
 Documentation is split between **workspace-wide / platform** (in root `docs/`) and **product-specific** (in `apps/<product>/docs/`). Both follow the [Diátaxis](https://diataxis.fr/) framework — `tutorials/`, `how-to/`, `reference/`, `explanation/`.
 
@@ -49,9 +49,8 @@ Companion skills:
 - **`/cft-create-test-user <what>`** — creates IDAM test users, roles and OAuth clients in a non-prod environment. Wraps `scripts/idam-test-user`, which encodes the per-environment gotchas (AAT's 3h cleanup, RD's email-domain validation, role prerequisites).
 - **`/cft-manage-test-org <what>`** — creates/approves/deletes professional organisations and manages their users and PUI roles. Wraps `scripts/prd-test-org`; its `check` subcommand reports whether a microservice can create and/or approve, which is the usual blocker.
 - **`/cft-role-assignment <what>`** — creates, queries and deletes AM role assignments (the runtime half of "why can't this user see tasks"). Wraps `scripts/am-role-assignment`.
-- **`/cft-whois <login|url|email|name>`** — identifies the human behind an HMCTS GitHub login, or finds the login for a person. Wraps `scripts/cft-whois`; reads the git author email on their commits, because most HMCTS GitHub profiles are blank.
-- **`/docs-generate <product>`** — generates or refreshes a product's Diátaxis docs (CCD's pipeline, generalised). Includes a Confluence-augmentation phase.
-- **`/docs-drift`** — checks every doc page for drift across three modes (source citations, port manifest for root docs, Confluence revisions).
+-
+When undergoing tasks agents should make use of the wide range of documentation and skills available in this repository. Agents should also prompt the user to update documentation when gaps or incorrect information has been surfaced. 
 
 ## API specs
 
@@ -69,8 +68,6 @@ These projects build independently but are tightly related at runtime / by domai
 - **EM / Evidence Management** (`apps/em/*`) supplies document bundling/stitching (`em-stitching-api`, `em-ccd-orchestrator`), annotation (`em-annotation-api`), in-court presentation (`em-icp-api`), and hearing-recording ingest/serve (`em-hrs-ingestor`, `em-hrs-api`).
 - **`libs/ccd-config-generator`** is the Java SDK service teams use to generate CCD definition spreadsheets/JSON consumed by `ccd-definition-store-api`. See its `AGENTS.md`.
 - **`libs/rse-cft-lib`** (cftlib) bundles CCD + dependencies so service teams can run the CFT stack in-process for tests.
-- **PCS** (`apps/pcs/*`): possession claims service. `pcs-api` is the Spring Boot backend; `pcs-frontend` the Express/TS user-facing app.
-- **`libs/payments-java-client`** is consumed by services that integrate with HMCTS Payments. **`libs/ccd-case-document-am-client`** is the Java client to CDAM. **`libs/send-letter-client`** is the Java client for Bulk Print (`apps/send-letter/*`). **`libs/idam-java-client`** is the Feign client for IDAM.
 
 When making a change in one repo that another consumes, the dependency is via published artifacts (Jenkins / JitPack) — there is no source-level wiring across these directories.
 
