@@ -122,6 +122,8 @@ Providing you follow the above steps, the Jenkins library will parse the labels 
 
 The label is only read when a build runs — adding it to a PR that already has a build in progress or completed does not retroactively apply the extra values. Push a new commit, or otherwise re-trigger the build, after adding the label.
 
+If you enable persistence on a StatefulSet-backed sub-chart such as `ccd`'s `elasticsearch` for preview, nothing in the pipeline deletes the resulting PVC when the PR's Helm release is uninstalled — the pinned `elasticsearch` sub-chart predates `persistentVolumeClaimRetentionPolicy` support and has no `values.schema.json`, so setting that field is silently ignored. Several teams have accumulated hundreds of orphaned preview disks this way; leave persistence disabled for preview unless you also own a cleanup path for the PVC.
+
 ## Publishing helm charts
 
 We publish charts in two different ways depending on the type of chart.
