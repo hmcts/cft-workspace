@@ -152,6 +152,10 @@ The pipeline's Docker build step uses `az acr build` (ACR Tasks), which builds w
 
 The `Waiting for an agent...` line an `az acr build` run prints early is not evidence of queueing — it's logged speculatively before the run polls for an agent, and ACR build-run records typically show sub-second queue waits. If a Docker build stage is slow, look at the actual remote build execution time rather than chasing ACR agent capacity.
 
+### SonarCloud "Automatic Analysis" scanning outside the pipeline's scope
+
+Repos with the SonarCloud GitHub App installed get a second, independent scan — GitHub's "Automatic Analysis" — alongside the pipeline's own Sonar step. Automatic Analysis reads its scope from `.sonarcloud.properties` at the repo root, not from `sonar-project.properties` (which only the pipeline's scanner reads). If `.sonarcloud.properties` doesn't exist, Automatic Analysis falls back to scanning the whole repo, so it can flag files the pipeline scan never looks at — including files an analyser aimed at the wrong dialect (e.g. Sonar's PL/SQL rules firing on a PostgreSQL migration) misreads. The result is a failing `SonarCloud Code Analysis` PR check that has nothing to do with the actual code change. Add a `.sonarcloud.properties` that mirrors the pipeline's `sonar.sources`/`sonar.tests`/`sonar.exclusions` key-for-key to bring both scans onto the same scope; the underlying fix is for an org admin to disable Automatic Analysis for the repo so there's only one Sonar project to satisfy.
+
 ### Troubleshooting build issues
 
 See [troubleshooting issues](../troubleshooting/).

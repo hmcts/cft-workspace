@@ -302,6 +302,8 @@ This generates CCD fields: `applicant1FirstName`, `applicant1LastName`, `applica
 
 The `FieldCollectionBuilder.complex()` method detects `@JsonUnwrapped` fields and shares the parent's field list/ordering state rather than creating a nested complex type (`FieldCollection.java:414-443`).
 
+`@JsonUnwrapped` prefixes compose across multiple levels of nesting: a class reached via `@JsonUnwrapped(prefix = "section")` that itself holds a field marked `@JsonUnwrapped(prefix = "party")` produces flat ids like `sectionPartyName`, with the inner prefix capitalised and concatenated onto the outer one. This makes it safe to build a shared nested type (e.g. a common "party" class reused under several sections) without a data migration, as long as the composed prefix is what's already on the case in production — verified by decompiling the field ids a real `generateCCDConfig` run produces.
+
 ---
 
 ## `addPreEventHook` (migration hooks)
