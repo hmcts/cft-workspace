@@ -16,6 +16,8 @@ We deploy all of our applications using a helm chart to Kubernetes.
 Install helm along with the other tools using the links on the
 [developer tools onboarding page](../../tutorials/cnp-onboarding/person-developer-tools.md#common-tools).
 
+Helm 4 rejects any dependency chart archive over 5MiB (`is larger than the maximum file size 5242880`). Jenkins still runs an older Helm that has no such limit, so a chart that deploys fine via Jenkins can still fail `helm dependency update`/`helm template` on your machine if one of its dependencies (especially one pinned as a version range) has grown past that size — the failure is local tooling catching up, not a sign the chart is broken.
+
 ## Base charts
 
 We provide opinionated, batteries included helm charts that give:
@@ -122,7 +124,7 @@ Providing you follow the above steps, the Jenkins library will parse the labels 
 
 The label is only read when a build runs — adding it to a PR that already has a build in progress or completed does not retroactively apply the extra values. Push a new commit, or otherwise re-trigger the build, after adding the label.
 
-If you enable persistence on a StatefulSet-backed sub-chart such as `ccd`'s `elasticsearch` for preview, nothing in the pipeline deletes the resulting PVC when the PR's Helm release is uninstalled — the pinned `elasticsearch` sub-chart predates `persistentVolumeClaimRetentionPolicy` support and has no `values.schema.json`, so setting that field is silently ignored. Several teams have accumulated hundreds of orphaned preview disks this way; leave persistence disabled for preview unless you also own a cleanup path for the PVC.
+If you enable persistence on a StatefulSet-backed sub-chart such as `ccd`'s `elasticsearch` for preview, nothing in the pipeline deletes the resulting PVC when the PR's Helm release is uninstalled. The archived upstream `elasticsearch` chart (`https://helm.elastic.co`, pinned around 8.5.1) predates `persistentVolumeClaimRetentionPolicy` support and has no `values.schema.json`, so setting that field on it is silently ignored. `ccd` depends instead on an HMCTS fork of that chart published to `oci://hmctsprod.azurecr.io/helm/elasticsearch`, which does honour `persistentVolumeClaimRetentionPolicy` — point your own `elasticsearch` dependency at that fork if you need working PVC cleanup on preview, rather than leaving persistence disabled.
 
 ## Publishing helm charts
 
