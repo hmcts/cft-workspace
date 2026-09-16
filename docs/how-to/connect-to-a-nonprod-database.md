@@ -38,15 +38,33 @@ carry the whole connection, prefixed by the Terraform `component` (**not** the p
 <component>-POSTGRES-PASS
 ```
 
-List them rather than guessing the prefix — it varies more than you'd expect
-(`professional-api-` in `rd-aat`, but bare `api-` in `pcs-perftest`):
+Three parts of that name vary, not just the prefix: the prefix itself
+(`professional-api-` in `rd-aat`, but bare `api-` in `pcs-perftest`), the **case**, and the
+**last segment**. `dtsse-aat` is lowercase throughout and spells the password secret
+`password` rather than `PASS`:
 
-```bash
-az keyvault secret list --vault-name rd-perftest \
-  --query "[?contains(name,'POSTGRES')].name" -o tsv
+```
+github-metrics-postgres-host
+github-metrics-postgres-port
+github-metrics-postgres-database
+github-metrics-postgres-user
+github-metrics-postgres-password
 ```
 
-If the vault has no `POSTGRES-*` secrets at all, check the service's
+So list them rather than guessing — and match case-insensitively, because
+`contains(name,'POSTGRES')` finds nothing at all in a vault named this way:
+
+```bash
+az keyvault secret list --vault-name dtsse-aat \
+  --query "[?contains(lower(name),'postgres')].name" -o tsv
+```
+
+Listing can return **more than one service's credentials**: `dtsse-aat` holds a bare
+`postgres-*` group belonging to a different consumer alongside the `github-metrics-postgres-*`
+group. The prefix is the only thing that distinguishes them, so take all five values from a
+single prefix rather than whichever secret matched first.
+
+If the vault has no postgres secrets at all, check the service's
 `infrastructure/*.tf` for the `azurerm_key_vault_secret` resources — a few services deviate
 (`-POSTGRES-PASS-FLEX`, `-POSTGRES-PASS-V15`, or a differently-named vault).
 
@@ -66,17 +84,36 @@ psql -c "select current_user, current_database(), version();"
 `PGSSLMODE=require` is not optional — Flexible Server rejects unencrypted connections, and
 the resulting error mentions `pg_hba.conf` rather than TLS, which sends you down the wrong path.
 
-Wrap it in a shell function if you do this often:
+All five in one go, mapping each secret suffix to its `PG*` variable — here for the lowercase
+`dtsse-aat` naming:
 
 ```bash
-# Usage: pgenv rd-perftest professional-api
+eval "$(for f in host:HOST port:PORT database:DATABASE user:USER password:PASSWORD; do
+  printf 'export PG%s=%q\n' "${f#*:}" \
+    "$(az keyvault secret show --vault-name dtsse-aat --name "github-metrics-postgres-${f%%:*}" --query value -o tsv)"
+done; echo 'export PGSSLMODE=require')"
+```
+
+The `%q` is load-bearing: these passwords are 20 characters of generated output and can contain
+shell metacharacters, which a bare `$(…)` inside the `eval` would mangle or expand.
+
+Wrap it in a shell function if you do this often. Resolve the real secret names from the vault
+first, so the same call works whichever naming convention the vault uses:
+
+```bash
+# Usage: pgenv rd-perftest professional-api   -> professional-api-POSTGRES-PASS
+#        pgenv dtsse-aat   github-metrics     -> github-metrics-postgres-password
 pgenv() {
-  local vault=$1 prefix=$2
-  for f in HOST PORT DATABASE USER PASS; do
-    local v; v=$(az keyvault secret show --vault-name "$vault" --name "$prefix-POSTGRES-$f" --query value -o tsv) || return 1
-    case $f in
-      PASS) export PGPASSWORD="$v" ;;
-      *)    export "PG$f"="$v" ;;
+  local vault=$1 prefix=$2 names field name v
+  names=$(az keyvault secret list --vault-name "$vault" \
+    --query "[?contains(lower(name),'postgres')].name" -o tsv) || return 1
+  for field in HOST PORT DATABASE USER 'PASSWORD|PASS'; do
+    name=$(printf '%s\n' "$names" | grep -iE "^$prefix-postgres-($field)$" | head -1)
+    [ -n "$name" ] || { echo "pgenv: no $field secret for '$prefix' in $vault" >&2; return 1; }
+    v=$(az keyvault secret show --vault-name "$vault" --name "$name" --query value -o tsv) || return 1
+    case $field in
+      'PASSWORD|PASS') export PGPASSWORD="$v" ;;
+      *)               export "PG$field"="$v" ;;
     esac
   done
   export PGSSLMODE=require
@@ -104,6 +141,69 @@ from pg_stat_user_tables order by n_live_tup desc limit 10;
 
 `psql` backslash commands ignore `search_path` set in the same `-c`, so schema-qualify them
 instead: `\d dbrefdata.professional_user`.
+
+## Passfiles and GUI clients
+
+Exporting `PGPASSWORD` is fine for a one-off `psql`, but once you also want a GUI, a passfile
+is the better store: `psql` and pgAdmin read the same file, so the credential is configured
+once, and it stays out of your shell history and out of the environment.
+
+Write `~/.pgpass` with one line per server, `host:port:database:user:password`:
+
+```bash
+umask 077
+printf '%s:5432:github_metrics:pgadmin:%s\n' \
+  dts-github-metrics-aat.postgres.database.azure.com \
+  "$(az keyvault secret show --vault-name dtsse-aat --name github-metrics-postgres-password --query value -o tsv)" \
+  >> ~/.pgpass
+```
+
+`*` is a valid wildcard in any field except the password, which is useful when one server hosts
+several databases.
+
+Set `umask 077` **before** writing the file rather than `chmod 600`-ing it afterwards, so it is
+never even briefly world-readable. The `0600` requirement is a hard failure with a misleading
+symptom: at `644` libpq does not error, it warns and falls back to prompting for a password.
+
+```
+WARNING: password file "/home/you/.pgpass" has group or world access; permissions should be u=rw (0600) or less
+```
+
+On the command line you at least see the warning. In a GUI you don't — you just get an
+unexplained password prompt on a connection you thought was fully configured.
+
+With the file in place, the passfile can be the only credential source — `PGPASSWORD` unset,
+nothing but `PGPASSFILE` (or the default `~/.pgpass`) supplying the password:
+
+```bash
+unset PGPASSWORD
+export PGPASSFILE=~/.pgpass
+psql "host=dts-github-metrics-aat.postgres.database.azure.com port=5432 \
+  dbname=github_metrics user=pgadmin sslmode=require" \
+  -c "select current_user, current_database()"
+```
+
+```
+ current_user | current_database
+--------------+------------------
+ pgadmin      | github_metrics
+```
+
+If that hangs or the hostname doesn't resolve, it's the [VPN](#prerequisites), not the passfile.
+
+### pgAdmin
+
+Register the server as usual, then on its **Properties → Parameters** tab add `passfile` = the
+path to the file and `sslmode` = `require`, and leave the password field on the **Connection**
+tab blank. On older pgAdmin 4 builds these fields are under **Advanced** instead.
+
+This only works in pgAdmin **desktop** mode. In container / web / server mode the `passfile`
+path is resolved on the machine pgAdmin itself runs on, not the one your browser is on, so
+`~/.pgpass` simply isn't found unless you mount it into the container. Use pgAdmin's own
+encrypted "Save password" there instead.
+
+DBeaver is often configured the same way, but its PostgreSQL driver is JDBC rather than libpq,
+so passfile support there is unverified — fall back to DBeaver's own credentials store.
 
 ## Writing data
 
