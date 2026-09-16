@@ -169,6 +169,7 @@ If this happens, simply run the master build manually on sandbox jenkins.
       kubectl get pod -n <namespace> <pod> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}{"\n"}'
       ```
       Container Insights (`oms_agent`) is only enabled on the perftest and prod AKS clusters, not on AAT or preview — but that doesn't mean AAT has no historical container-memory data. The `kube-prometheus-stack` HelmRelease runs on every CFT cluster and scrapes cAdvisor via the kubelet `ServiceMonitor` regardless of any chart's own `prometheus.enabled` flag, so `container_memory_working_set_bytes` history (30-day retention) exists for every pod on AAT. AAT is two separate clusters, each with its own Prometheus; only one of them also runs a Grafana instance, but that Grafana has both clusters' Prometheus instances wired in as datasources.
+    - When triaging what's actually running, don't trust ACR tag metadata (`az acr manifest list-metadata` / `show-metadata`) as a proxy for build time — `createdTime`/`lastUpdateTime` record when a tag was last pointed at a manifest, which a re-tag (for example re-pushing `:latest`) updates without a new build. To confirm when the code in a running pod was actually built, inspect file timestamps inside the container (e.g. bundle or sourcemap mtimes) rather than ordering by ACR tag dates.
 
 - Below are some handy kubectl commands to debug the issues
 
@@ -318,6 +319,7 @@ VPN access and troubleshooting has moved to [VPN onboarding](../tutorials/cnp-on
 ---
 - By Default, all developers have read access to non-prod AKS clusters and slightly higher privileges to their namespaces.
 - You can connect to AKS clusters using `az aks get-credentials`. Below are some handy commands:
+- CFT clusters run a Gatekeeper policy (`azurepolicy-k8sazurev1blocknakedpods`) that rejects any Pod not owned by a controller. If you want an ad-hoc container to poke around the cluster with (e.g. to check DNS or connectivity from inside the namespace), wrap it in a `Job` rather than applying a bare Pod manifest — the latter is rejected outright.
 
 ### CFT clusters
 

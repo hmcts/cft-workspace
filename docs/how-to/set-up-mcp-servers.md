@@ -13,6 +13,7 @@ The workspace declares its MCP servers in [`.mcp.json`](../../.mcp.json), which 
 |---|---|---|---|
 | `atlassian` | Remote HTTP (`mcp.atlassian.com`) | Browser OAuth, per-user | Jira issues, Confluence pages (used by `/docs-generate`'s augmentation phase and `/docs-drift`) |
 | `jenkins` | Docker container over stdio | `.claude/.jenkins.env`, gitignored | Build status, console logs, test reports from `build.hmcts.net` |
+| `playwright` | Local stdio (`npx @playwright/mcp`) | None | Browser automation — navigate, click, fill forms, take snapshots/screenshots |
 
 Only Jenkins needs a local env file, and only Jenkins needs the Docker CLI (the devcontainer mounts the host socket).
 
@@ -80,7 +81,13 @@ The `jenkins` entry in `.mcp.json` passes `--network host`. This is required, no
 
 The MCP server calls `.json()` on that HTML and fails with `Expecting value: line 3 column 1 (char 4)`. That error reads like bad credentials but is actually a routing problem. `--network host` makes the container inherit the devcontainer's VPN resolver.
 
-## 3. Restart and verify
+## 3. Playwright
+
+Nothing to configure — `npx -y @playwright/mcp@latest` fetches and caches the server on first use, and it needs no credentials or env file.
+
+It can't drive a *visible* browser inside the devcontainer: the server defaults to the `chrome` channel, which isn't installed, and even after installing Chrome, headed launches don't inherit the container's Xvfb `$DISPLAY` the way a direct Chrome invocation on the same display does. For a flow that genuinely needs a human to see or interact with the browser (for example, signing in through a UI), use API tokens or credentials instead of the MCP browser tools rather than trying to force a headed launch.
+
+## 4. Restart and verify
 
 MCP servers are launched at startup, so restart your client to pick up new servers or changed credentials.
 
