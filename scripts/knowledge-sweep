@@ -118,7 +118,8 @@ fi
 if [[ $UNTIL_DONE -eq 1 ]]; then
     TDIR_P=$(transcript_dir)
     for (( batch = 1; batch <= ${KNOWLEDGE_SWEEP_MAX_BATCHES:-200}; batch++ )); do
-        IFS=$'\t' read -r mb sessions before < <(progress "$TDIR_P")
+        IFS=$'\t' read -r mb sessions _ < <(progress "$TDIR_P")
+        before=$(jq '[.[].offset // 0] | add // 0' "$LEDGER")
         info "backfill batch $batch — ${mb} MB unreviewed across ${sessions} session(s)"
         if [[ "$sessions" == "0" ]]; then
             ok "backfill complete"
@@ -133,8 +134,11 @@ if [[ $UNTIL_DONE -eq 1 ]]; then
         # A batch that consumes nothing has failed for a reason retrying won't
         # fix — a DNS outage or an expired credential, not the content. Stop
         # rather than spending the batch budget on the same failure.
-        IFS=$'\t' read -r _ _ after < <(progress "$TDIR_P")
-        if (( after >= before )); then
+        #
+        # Measured on total ledger offsets, which only move when work is done.
+        # Unreviewed bytes would drift on their own as live sessions append.
+        after=$(jq '[.[].offset // 0] | add // 0' "$LEDGER")
+        if (( after <= before )); then
             err "batch $batch consumed no transcript — stopping. Nothing was skipped; rerun to resume."
             exit 1
         fi
