@@ -62,6 +62,12 @@ not an exact tag match. A new tag that is a substring of an existing one — `@h
 `@healthCheck`, or `@rent` inside `@rentNonRent` — is silently pulled into any run that filters
 on the shorter tag. Check new tag names against the existing tag list for this before adding one.
 
+`expect.soft(...)` records a failure but does not throw, so a step immediately after it runs
+regardless of the outcome. Wrapping that later step in `try`/`catch` to detect the soft
+assertion's failure will never fire — the catch only reacts to a thrown error, and there isn't
+one. This applies to any accessibility audit helper (such as axe-based ones) built on
+`expect.soft`, not just to test assertions written directly.
+
 ### Security
 
 Configure the Content Security Policy headers to prevent XSS attacks.
