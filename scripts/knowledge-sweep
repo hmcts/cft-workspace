@@ -13,7 +13,9 @@
 #   scripts/knowledge-sweep --force        # ignore the interval
 #   scripts/knowledge-sweep --status       # what's pending, what's been seen
 #   scripts/knowledge-sweep --dry-run      # build the digest, skip the model
-#   scripts/knowledge-sweep --backfill     # review existing history on a first run
+#   scripts/knowledge-sweep --backfill     # work forward through unreviewed history
+#   scripts/knowledge-sweep --backfill --until-done   # repeat until history is exhausted
+#   scripts/knowledge-sweep --max-sessions=N          # override the per-run session cap
 
 source "$(dirname "$0")/lib/_common.sh"
 
@@ -44,16 +46,22 @@ FORCE=0
 DRY_RUN=0
 STATUS=0
 BACKFILL=0
+UNTIL_DONE=0
 for arg in "$@"; do
     case "$arg" in
-        --background) BACKGROUND=1 ;;
-        --force)      FORCE=1 ;;
-        --dry-run)    DRY_RUN=1 ;;
-        --status)     STATUS=1 ;;
-        --backfill)   BACKFILL=1 ;;
-        *)            die "unknown argument: $arg" ;;
+        --background)      BACKGROUND=1 ;;
+        --force)           FORCE=1 ;;
+        --dry-run)         DRY_RUN=1 ;;
+        --status)          STATUS=1 ;;
+        --backfill)        BACKFILL=1 ;;
+        --until-done)      UNTIL_DONE=1; BACKFILL=1 ;;
+        --max-sessions=*)  MAX_SESSIONS="${arg#*=}" ;;
+        *)                 die "unknown argument: $arg" ;;
     esac
 done
+
+# Backfill is an explicit operator action; the hourly interval doesn't apply.
+(( BACKFILL )) && FORCE=1
 
 # The harvester's own claude process inherits this repo's SessionStart hook.
 [[ -n "${KNOWLEDGE_SWEEP_CHILD:-}" ]] && exit 0
@@ -69,6 +77,21 @@ transcript_dir() {
     printf '%s/.claude/projects/%s' "$HOME" "$slug"
 }
 
+# Unreviewed bytes across every transcript, and how many sessions they span.
+# A session marked `seeded` was never read, so all of it counts as unreviewed.
+progress() {
+    local tdir="$1"
+    find "$tdir" -maxdepth 1 -name '*.jsonl' -printf '%f\t%s\n' 2>/dev/null \
+    | while IFS=$'\t' read -r name size; do
+        local sid="${name%.jsonl}" offset
+        offset=$(jq -r --arg s "$sid" \
+            'if (.[$s].seeded == true) then 0 else (.[$s].offset // 0) end' "$LEDGER")
+        printf '%s\n' "$(( size - offset ))"
+    done \
+    | awk '{ if ($1 > 0) { total += $1; n++ } }
+           END { printf "%.1f\t%d\t%d\n", total/1048576, n+0, total+0 }'
+}
+
 if [[ $STATUS -eq 1 ]]; then
     info "knowledge-sweep status"
     if [[ -f "$STAMP" ]]; then
@@ -77,6 +100,9 @@ if [[ $STATUS -eq 1 ]]; then
         log "  last run: never"
     fi
     log "  sessions in ledger: $(jq 'length' "$LEDGER")"
+    log "  never read (seeded): $(jq '[.[] | select(.seeded == true)] | length' "$LEDGER")"
+    IFS=$'\t' read -r mb sessions _ < <(progress "$(transcript_dir)")
+    log "  unreviewed: ${mb} MB across ${sessions} session(s)"
     log "  transcript dir: $(transcript_dir)"
     if [[ -s "$PENDING" ]]; then
         log ""
@@ -84,6 +110,36 @@ if [[ $STATUS -eq 1 ]]; then
     else
         log "  no proposals pending"
     fi
+    exit 0
+fi
+
+# Re-invokes itself so each batch gets clean state, and so the lock below is
+# held per batch rather than for the whole backfill.
+if [[ $UNTIL_DONE -eq 1 ]]; then
+    TDIR_P=$(transcript_dir)
+    for (( batch = 1; batch <= ${KNOWLEDGE_SWEEP_MAX_BATCHES:-200}; batch++ )); do
+        IFS=$'\t' read -r mb sessions before < <(progress "$TDIR_P")
+        info "backfill batch $batch — ${mb} MB unreviewed across ${sessions} session(s)"
+        if [[ "$sessions" == "0" ]]; then
+            ok "backfill complete"
+            exit 0
+        fi
+        out=$("$0" --backfill --force 2>&1) || true
+        printf '%s\n' "$out"
+        if grep -q 'nothing new to review' <<<"$out"; then
+            ok "backfill complete"
+            exit 0
+        fi
+        # A batch that consumes nothing has failed for a reason retrying won't
+        # fix — a DNS outage or an expired credential, not the content. Stop
+        # rather than spending the batch budget on the same failure.
+        IFS=$'\t' read -r _ _ after < <(progress "$TDIR_P")
+        if (( after >= before )); then
+            err "batch $batch consumed no transcript — stopping. Nothing was skipped; rerun to resume."
+            exit 1
+        fi
+    done
+    warn "batch limit reached — run again to continue"
     exit 0
 fi
 
@@ -127,6 +183,17 @@ if [[ "$(jq 'length' "$LEDGER")" == "0" && $BACKFILL -eq 0 ]]; then
     ok "first run: marked $seeded existing session(s) as seen — sweeping new activity from now on"
     log "to review the backlog instead: scripts/knowledge-sweep --backfill --force"
     exit 0
+fi
+
+# Seeding recorded each session's full size without reading it. A backfill has to
+# undo that once, so the walk below starts from the beginning of each session.
+if (( BACKFILL )) && [[ "$(jq '[.[] | select(.seeded == true)] | length' "$LEDGER")" != "0" ]]; then
+    tmp=$(mktemp)
+    jq 'with_entries(if .value.seeded == true
+                     then .value = {offset: 0, backfill: true}
+                     else . end)' "$LEDGER" > "$tmp"
+    mv "$tmp" "$LEDGER"
+    ok "backfill: reset $(jq '[.[] | select(.backfill == true)] | length' "$LEDGER") seeded session(s) to be read from the start"
 fi
 
 command -v claude >/dev/null || die "claude CLI not on PATH"
@@ -182,23 +249,54 @@ while IFS= read -r transcript; do
     (( size <= offset )) && continue
 
     delta=$(( size - offset ))
-    start=$(( offset + 1 ))
-    truncated=""
-    if (( delta > MAX_SESSION_DELTA_BYTES )); then
-        start=$(( size - MAX_SESSION_DELTA_BYTES + 1 ))
-        truncated=" (earlier ${delta} bytes skipped as too large)"
-    fi
-
     slice="$WORK/$sid.txt"
-    if (( start > offset + 1 )); then
+    truncated=""
+
+    if (( delta <= MAX_SESSION_DELTA_BYTES )); then
+        next_offset=$size
+        tail -c "+$(( offset + 1 ))" "$transcript" | digest_slice > "$slice"
+    elif (( BACKFILL )); then
+        # Walk forward from the offset, taking whole lines up to the cap, and
+        # advance only by what was consumed. Successive runs cover the session
+        # instead of skipping to its tail.
+        #
+        # dd rather than `tail -c | head -c`: any consumer that stops early
+        # SIGPIPEs the reader, which pipefail turns into a fatal error.
+        raw="$WORK/$sid.raw"
+        dd if="$transcript" of="$raw" status=none \
+           iflag=skip_bytes,count_bytes bs=1M \
+           skip="$offset" count="$MAX_SESSION_DELTA_BYTES"
+
+        window=$(stat -c %s "$raw")
+        if [[ -z "$(tail -c 1 "$raw")" ]]; then
+            # Window happens to end on a newline, so every line in it is whole.
+            consumed=$window
+        else
+            consumed=$(LC_ALL=C awk '{ p = n; n += length($0) + 1 } END { print p + 0 }' "$raw")
+        fi
+        if (( consumed <= 0 )); then
+            # A single line longer than the cap. Take the window as-is and move
+            # on; digest_slice drops the unparseable fragment.
+            warn "$sid: no line boundary within ${MAX_SESSION_DELTA_BYTES}B of offset $offset"
+            consumed=$window
+        fi
+
+        next_offset=$(( offset + consumed ))
+        head -c "$consumed" "$raw" | digest_slice > "$slice"
+        truncated=" (backfill: bytes $offset–$next_offset of $size)"
+    else
+        # Forward sweeping favours recent activity; a session that grew faster
+        # than the cap loses its middle, so say so rather than failing quietly.
+        start=$(( size - MAX_SESSION_DELTA_BYTES + 1 ))
+        next_offset=$size
         # Drop the partial first line left by starting mid-file.
         tail -c "+$start" "$transcript" | tail -n +2 | digest_slice > "$slice"
-    else
-        tail -c "+$start" "$transcript" | digest_slice > "$slice"
+        truncated=" (skipped $(( delta - MAX_SESSION_DELTA_BYTES )) earlier bytes)"
+        warn "$sid: delta ${delta}B exceeds the per-session cap — reviewed the most recent ${MAX_SESSION_DELTA_BYTES}B only"
     fi
 
     if [[ ! -s "$slice" ]]; then
-        new_offsets[$sid]=$size
+        new_offsets[$sid]=$next_offset
         continue
     fi
 
@@ -208,7 +306,7 @@ while IFS= read -r transcript; do
         cat "$slice"
     } >> "$DIGEST"
 
-    new_offsets[$sid]=$size
+    new_offsets[$sid]=$next_offset
     sessions_reviewed=$(( sessions_reviewed + 1 ))
 
     if (( $(stat -c %s "$DIGEST") > MAX_DIGEST_BYTES )); then
@@ -247,8 +345,14 @@ fi
 # One long-lived branch per author, so repeated sweeps accumulate onto a single
 # open PR.
 GH_LOGIN=$(gh api user --jq .login 2>/dev/null || printf '')
-[[ -n "$GH_LOGIN" ]] || { warn "gh not authenticated — staying local"; MODE=branch; }
-BRANCH="knowledge/${GH_LOGIN:-local}"
+if [[ -z "$GH_LOGIN" ]]; then
+    # Defer rather than downgrade: a batch committed to knowledge/local is
+    # thrown away, and the outage is usually transient (DNS, expired token).
+    # Exiting before the model runs costs nothing and leaves the ledger intact.
+    [[ "$MODE" == "pr" ]] && die "gh unavailable — deferring this batch, nothing consumed"
+    GH_LOGIN=local
+fi
+BRANCH="knowledge/$GH_LOGIN"
 
 git -C "$WORKSPACE_ROOT" fetch --quiet origin master 2>/dev/null || true
 git -C "$WORKSPACE_ROOT" fetch --quiet origin "$BRANCH" 2>/dev/null || true
@@ -379,9 +483,13 @@ PR_BODY="$WORK/pr-body.md"
 
 if [[ -n "$EXISTING_PR" ]]; then
     gh pr edit "$EXISTING_PR" --body-file "$PR_BODY" >/dev/null 2>>"$LOG" || true
-    gh pr comment "$EXISTING_PR" --body "New sweep added $(date -u +%Y-%m-%dT%H:%MZ):
+    # A backfill runs dozens of batches; the commit log carries their history
+    # without a comment per batch.
+    if (( ! BACKFILL )); then
+        gh pr comment "$EXISTING_PR" --body "New sweep added $(date -u +%Y-%m-%dT%H:%MZ):
 
 $summary_text" >/dev/null 2>>"$LOG" || true
+    fi
     PR_URL=$(gh pr view "$EXISTING_PR" --json url --jq .url 2>/dev/null || printf '')
     ok "updated PR #$EXISTING_PR"
 else
