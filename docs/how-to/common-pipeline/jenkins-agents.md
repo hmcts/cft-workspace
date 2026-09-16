@@ -18,3 +18,7 @@ Jenkins agents will have access to a single environment so a pipeline may use mu
 For pipelines that only target a single environment, a single agent will be used.
 
 ![Single agent pipeline](../../images/single-env-common-pipeline.png)
+
+## Gradle build caching
+
+Gradle's own build cache (`org.gradle.caching`) is not enabled by default in CNP Java pipelines — it has to be set in the repo's `gradle.properties`. It's worth enabling: when `BUILD_AGENT_CONTAINER` isn't set, the pipeline falls back to "Using VM agent" — one shared pod/workspace for the whole build rather than a fresh container per stage — so `GRADLE_USER_HOME` (and therefore the build cache, once turned on) persists across every Gradle invocation within a single Jenkins build. Adding `org.gradle.caching=true` alone, with no library or infrastructure change, can turn a later repeat of a task like `clean test` in the same build from tens of seconds to a few seconds.

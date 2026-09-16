@@ -417,6 +417,10 @@ Node.js v18.16.0
 
 Bump the node version in `.nvmrc` to `18.17`
 
+### - A Docker image with `packageManager` pinned in `package.json` tries to download Yarn at container start
+
+When `package.json` pins a `packageManager` version, `yarn` on `PATH` inside the image is really a Corepack shim, which resolves the pinned version from Corepack's own cache — separate from the `.yarn/cache` folder Yarn itself populates. That cache is normally only populated as a side effect of running `yarn install` in the image. If a Docker build trims the image by removing what looks like a redundant cache directory without checking whether it's Corepack's, the built image passes `tsc`, lint, and unit tests (none of which start a fresh shim) but tries to fetch Yarn from the network the first time a container actually runs `yarn` — invisible until you run the built image itself, ideally with `--network none`, rather than trusting static checks.
+
 ### - After(build) is deprecated
 
 ```
@@ -741,6 +745,8 @@ When writing a suppression, match it against the `packageUrl`/CPE actually repor
 The checker matches your dependencies against the live NVD CVE feed on every run, not a pinned snapshot, so an identical build can pass in the morning and fail later the same day purely because a new CVE was published against one of your dependencies in the meantime. Before treating this as a regression in your PR, check the report for a CVE with a very recent publish date — if the flagged dependency hasn't changed, it's the feed, not your change, and the fix is to triage/suppress the new CVE rather than bisect your commits.
 
 A related but distinct failure is `DatabaseException: Error connecting to the database` (or similar wording) with an otherwise-empty vulnerability report — this is the checker losing its connection to the NVD data mirror mid-scan, not a scan result. Re-run the build; if it goes green with no changes, it was transient.
+
+The same feed volatility cuts the other way when deciding whether to remove a suppression: a suppressed CVE not appearing in one report is not proof it's gone. Because the checker re-queries the live feed each run, the same suppressed CVE can be absent from one build's report and present in the next even with no dependency change. Only remove a suppression once you've confirmed via `dependencyInsight` (or equivalent resolved-coordinate evidence) that the vulnerable version range no longer resolves anywhere in the dependency graph — not because it "hasn't shown up in a few runs".
 
 #### - "NoSuchMethodError" when running the OWASP Dependency Checker
 

@@ -138,6 +138,16 @@ If your infrastructure pipeline requires the use of a Key Vault to build, and th
 
 To read team secrets inside such a hook, capture `pipelineConf = config` at the top level of `withPipeline`, build an `AppPipelineConfig` with its own `vaultSecrets` map, and call `withTeamSecrets(vaultConfig, environment) { ... }` explicitly — it already iterates every vault in the map, so there's no need to recurse yourself. Whether you also need a `withSubscription` wrapper around it depends on which agent the hook runs on: on the primary agent (for example a `checkout` hook) `withTeamSecrets` has nothing to authenticate with, so you do; on an environment agent (a stage token suffixed `:<environment>`, such as `dbmigrate:perftest`) it authenticates itself via that environment's managed identity, so wrapping it in `withSubscription` is redundant.
 
+### Retries restart the whole parallel stage
+
+The `retry` wrapper around an expensive stage (e.g. a multi-branch functional/E2E stage) is configured in `cnp-jenkins-library`, not in your repo's Jenkinsfile. A transient agent blip partway through such a stage restarts the *entire* stage — including every other branch already running inside it, from Checkout — rather than just the step that failed. No per-repo Jenkinsfile change can scope a retry down to the failed branch alone; raise it with Platform Operations if a stage's retry cost is a problem.
+
+### Docker build stage
+
+The pipeline's Docker build step uses `az acr build` (ACR Tasks), which builds with the legacy (non-BuildKit) Docker builder. That builder walks every stage declared in the Dockerfile in file order, regardless of `--target` — a stage is only skipped if it's declared *after* the target stage. A leftover or unused stage placed earlier in the file (for example an old `development` stage with its own `COPY . .`) is still built on every single run even though `--target runtime` is set; the fix is to delete or reorder the stage, not to rely on `--target` alone.
+
+The `Waiting for an agent...` line an `az acr build` run prints early is not evidence of queueing — it's logged speculatively before the run polls for an agent, and ACR build-run records typically show sub-second queue waits. If a Docker build stage is slow, look at the actual remote build execution time rather than chasing ACR agent capacity.
+
 ### Troubleshooting build issues
 
 See [troubleshooting issues](../troubleshooting/).
