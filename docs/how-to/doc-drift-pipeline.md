@@ -68,6 +68,13 @@ immediately — `timeout-minutes` must be a *number* and a dispatch input is
 always a *string*, so it needs `fromJSON(...)`. Two burnt dispatches to discover
 what one lint run says outright.
 
+A step that runs a command exiting non-zero to signal a result, not a crash
+(`doc-drift` exits 1 when it finds drift), has to guard the call explicitly:
+GitHub's default step shell always runs as `bash -e`, whatever flags your own
+`set` line adds, so an unguarded call aborts the step before the report is
+even read. `run: ./scripts/doc-drift ... || true` is what the check step
+does; `set -uo pipefail` alone does not turn `-e` off.
+
 It clones the cited repos, runs the source-mode check, and if anything is
 stale or broken, hands the report to Claude to reconcile the prose against the
 current source, re-record the SHAs, and **commit — once per product, as it

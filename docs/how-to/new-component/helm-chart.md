@@ -120,6 +120,8 @@ To make use of this feature you need the following:
 
 Providing you follow the above steps, the Jenkins library will parse the labels and form a list of templates to use, apply `envsubst` to override templated config and append the files to Helm.
 
+The label is only read when a build runs — adding it to a PR that already has a build in progress or completed does not retroactively apply the extra values. Push a new commit, or otherwise re-trigger the build, after adding the label.
+
 ## Publishing helm charts
 
 We publish charts in two different ways depending on the type of chart.
