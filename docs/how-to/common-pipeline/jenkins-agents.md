@@ -26,3 +26,7 @@ Gradle's own build cache (`org.gradle.caching`) is not enabled by default in CNP
 ## Agent disconnects restart the build, silently
 
 If a preview agent disconnects mid-build, the console log shows `Waiting for reconnection of <agent>` and the pipeline does not fail — it re-runs from the start on a new agent once one is available, discarding whatever stages already completed. There is no separate warning that this happened; the only sign is the same test stage running twice in one build's log. Treat any before/after comparison built from a single Jenkins run's timing or results as suspect if the console log contains a reconnection wait, since the "after" numbers may include a discarded, restarted attempt rather than one clean run.
+
+## A long-running build is often waiting on a lock, not stuck
+
+Preview deploys serialise on a per-PR/environment resource lock (`Resource: pr-<number>-<repo>-preview-deploy`). Pushing several commits to the same PR in quick succession queues that many builds behind the same lock instead of cancelling the earlier ones, so an older build can sit at `building: true` for tens of minutes with a newer build of the same job already running. Before treating a long-running build as a stuck agent, check its console log for `Trying to acquire lock on [Resource: ...]` — that line means it is queued, not broken.
