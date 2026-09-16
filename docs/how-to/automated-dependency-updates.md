@@ -140,7 +140,7 @@ For more information, see the [Renovate documentation](https://docs.renovatebot.
 ## Wiring CI automation to Renovate PRs
 
 If you build a workflow that reacts to Renovate PRs (e.g. a `workflow_run` gate that
-checks the PR author, or an autofix bot that pushes a fix when CI fails), three things
+checks the PR author, or an autofix bot that pushes a fix when CI fails), these things
 catch people out:
 
 - **Match the author via the REST API, not `gh pr view --json author` or other
@@ -164,6 +164,13 @@ catch people out:
   to Renovate PRs and you don't want to add that allowlist entry, budget for every
   fixed PR moving to manual review and merge from then on, and say so in the PR
   comment your automation leaves.
+- **If that autofix step runs `claude` with `--dangerously-skip-permissions`, an
+  `--allowedTools` list passed alongside it enforces nothing.** Bypass mode stops the
+  permission system being consulted at all, so an allow-list — which only pre-approves
+  actions that would otherwise prompt — has nothing left to restrict; only deny rules
+  (`--disallowedTools`) still apply in that mode. A workflow relying on the allow-list
+  to keep an unattended agent from running `git push` or similar needs a deny rule, not
+  an allow-list, once `--dangerously-skip-permissions` is in play.
 
 ## Dependabot vs Renovate
 
