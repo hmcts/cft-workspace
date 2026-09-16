@@ -53,3 +53,10 @@ Use playwright or cypress to test applications in the browser.
 Configure the Content Security Policy headers to prevent XSS attacks.
 
 Add CSRF protection to forms to ensure that they cannot be submitted by a third party.
+
+Server-side templating engines (Nunjucks, and Jinja-derivatives generally) autoescape
+output by default — that is the primary XSS defence for any value that reaches a template,
+not just CSP. A `| safe` filter (or equivalent raw-output helper) disables autoescaping for
+that value, so only apply it to content that is verifiably server-constructed or static;
+using it on any field editable by an admin, caseworker, or other user and then rendered on a
+publicly accessible page reopens a stored-XSS hole that CSP alone will not close.

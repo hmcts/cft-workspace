@@ -299,6 +299,11 @@ class MyIntegrationTest extends CftlibTest {
 }
 ```
 
+Keep this setup logic in a JUnit test class. If you extract shared setup (e.g. minting an auth
+token) into a helper and then register that helper as a Spring bean so production code can reuse
+it, `@BeforeAll` silently never runs — Spring has no concept of JUnit lifecycle annotations, so
+any field the method was meant to populate stays permanently unset.
+
 Run with:
 
 ```bash
