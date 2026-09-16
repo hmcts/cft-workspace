@@ -62,7 +62,7 @@ Session-specific facts — which ticket someone was on, which branch they used, 
 - Stay inside `docs/` and `apps/*/docs/`. Never edit a product `CLAUDE.md`, `INDEX.md`, `workspace.yaml`, a script, or anything under a cloned repo.
 - Respect the Diátaxis quadrant of any page you touch: how-to pages give steps, reference pages state facts, explanation pages give reasons, tutorials teach a path. Do not turn a reference page into a troubleshooting log.
 - Preserve mandatory frontmatter (`title`, `topic`, `diataxis`, `product`, `audience`). If you cite a source file that isn't already in `sources:`, add it.
-- On any page you change that carries `status: reviewed`, set `status: draft` and drop `last_reviewed`. You have not verified your own edit against source, so the page's reviewed state no longer holds.
+- **Leave `status` and `last_reviewed` untouched.** The `doc-reviewer` agent owns those fields, only ever raises a page's status, and uses a fixed vocabulary. The pull request your edit lands in is its review gate; a genuine re-verification against source is `/docs-generate --rephase review`, which you are not doing.
 - Prefer editing prose in place over appending. A page that grows a new "Notes" or "Gotchas" section on every sweep is a page nobody reads.
 - Do not commit, push, or open a PR. The driver script handles that.
 

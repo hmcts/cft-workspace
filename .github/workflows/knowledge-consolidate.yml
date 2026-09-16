@@ -211,9 +211,9 @@ jobs:
               and note that you did.
             - Documentation never names an individual, a session, a ticket in
               passing, or an AI tool as a source.
-            - On any page you change, set `status: draft` and drop
-              `last_reviewed` if present. Nothing here has been verified against
-              source.
+            - Leave `status` and `last_reviewed` untouched. The `doc-reviewer`
+              agent owns those fields and only ever raises a page's status; this
+              PR is the review gate for what you produce here.
             - Do NOT put `Co-Authored-By: Claude`, a `Claude-Session` trailer, or
               any claude.ai link in the commit message.
             - If the merged content genuinely needed no reconciliation, make no
