@@ -212,9 +212,9 @@ A CCD-based preview/PR deploy routinely logs Helm's `coalesce.go: warning: canno
 
 ### Preview database creation fails
 
-Every PR preview namespace for a product gets its own database on one small shared flexible server. When idle JDBC pool connections accumulate across many previews — an oversized `*_MAX_POOL_SIZE`, or a scheduler thread count that keeps the pool fully warm — the server approaches `max_connections` and its control-plane API starts failing. New PRs then can't get a database created at all, and pods crashloop on `FATAL: database "..." does not exist` or a Hikari connection timeout, even though the failing PR's own Helm values are correct.
+Every PR preview namespace for a product gets its own database on one small shared flexible server. When idle JDBC pool connections accumulate across many previews — a `*_MIN_IDLE` setting that keeps connections open on an otherwise-idle release, or a scheduler thread count that keeps the pool fully warm — the server approaches `max_connections` and its control-plane API starts failing. New PRs then can't get a database created at all, and pods crashloop on `FATAL: database "..." does not exist` or a Hikari connection timeout, even though the failing PR's own Helm values are correct.
 
-Check connection counts against `max_connections` and look for oversized pool settings rather than raising the server's limit.
+Check connection counts against `max_connections` and look for oversized `*_MIN_IDLE` settings rather than raising the server's limit. `*_MAX_POOL_SIZE` is only a ceiling on connections drawn during active load, not a reservation — raising it doesn't by itself add to what an idle release holds open across dozens of concurrent previews.
 
 ### OOMKilled despite a generous memoryLimits
 
