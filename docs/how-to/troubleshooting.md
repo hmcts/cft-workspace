@@ -725,6 +725,8 @@ dependencyCheck {
 Here is an example of how to configure the suppression file [build.gradle](https://github.com/hmcts/template-spring-boot/blob/2b93593d233b4e3590e5a6d01054b1dd79bfd7c6/skeleton/build.gradle#L153)
 Here is the aforementioned [suppression file](https://github.com/hmcts/template-spring-boot/blob/master/skeleton/config/owasp/suppressions.xml)
 
+When writing a suppression, match it against the `packageUrl`/CPE actually reported for that CVE in the HTML report, not the artifact name you'd expect. The checker matches CVEs against a shared CPE, so a CVE against one artifact can be reported against a different (but related) artifact on the same release line — for example a CVE in `spring-cloud-commons` reported against `spring-cloud-starter`. A suppression regex written for the "obvious" artifact name silently fails to suppress it, and this is only caught by running the real scan — checking a suppression regex against a predicted purl instead of the one actually in the report gives false confidence that it works.
+
 
 #### - "NoSuchMethodError" when running the OWASP Dependency Checker
 

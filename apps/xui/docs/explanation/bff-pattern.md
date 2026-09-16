@@ -29,8 +29,8 @@ sources:
   - rpx-xui-node-lib:src/auth/auth.constants.ts
   - rpx-xui-node-lib:src/auth/s2s/s2s.constants.ts
   - rpx-xui-node-lib:src/session/session.constants.ts
-status: reviewed
-last_reviewed: "2026-05-13T00:00:00Z"
+  - rpx-xui-webapp:api/lib/processError.handler.ts
+status: draft
 examples_extracted_from:
   - apps/xui/rpx-xui-webapp/api/application.ts
   - apps/xui/rpx-xui-webapp/api/auth/index.ts
@@ -282,6 +282,12 @@ Error handling operates at two levels:
 ### Express error middleware
 
 The Express error handler (registered after all routes in `application.ts`) catches unhandled errors from route handlers and proxy failures. Errors from `http-proxy-middleware` are surfaced via the proxy's `onError` callback (`api/lib/middleware/proxy.ts:115`), which calls `onProxyError`. This handler sends `res.status(500)` with a body containing `{ error: "Error when connecting to remote server", status: 504 }` — note the mismatch between the HTTP status code (500) and the body's `status` field (504). This is a known inconsistency.
+
+### Throws inside `onReq`/`onRes` are not error handling at all
+
+A custom `onReq` or `onRes` handler passed into `applyProxy` (for example the searchCases and documents proxies) does not run inside Express's request pipeline. `http-proxy-middleware`/`httpxy` invoke it from a `proxyReq.on('socket', ...)` listener, a plain `EventEmitter` callback. A throw there never reaches Express's error middleware or the proxy's own `onError`/`onProxyError` path — Node treats it as an `uncaughtException` and, with no handler installed, kills the whole process. `api/lib/processError.handler.ts` exports `processErrorInit()` to install `uncaughtException`/`unhandledRejection` handlers, but nothing in the app calls it, so these crashes are currently silent and end only in a pod restart.
+
+The practical trap this produces: `onReq`/`onRes` code that assumes body-parser has already populated `req.body` (e.g. `body.size || 10`) worked for years because body-parser 1.x always set `req.body = req.body || {}` on a bodyless request. body-parser 2.x leaves `req.body` as `undefined` instead, so any bodyless call into that handler throws — and per the paragraph above, that throw crashes the process rather than producing a 500. Any `onReq`/`onRes` handler must guard against `req.body` being `undefined`, independent of what body-parser version is currently pinned.
 
 ### CSRF protection
 
