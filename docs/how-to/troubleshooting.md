@@ -206,6 +206,10 @@ If this happens, simply run the master build manually on sandbox jenkins.
 
      ```
 
+### `coalesce.go` warnings in a CCD-chart deploy log are usually noise
+
+A CCD-based preview/PR deploy routinely logs Helm's `coalesce.go: warning: cannot overwrite table with non table for <release>.ccd.<subchart>.<key>` for dozens of unrelated keys (`keyVaults`, `draft-store-service`, `rpe-service-auth-provider`, several subchart levels deep) — including on builds that deploy and pass cleanly. It's composition noise from how the CCD subcharts merge nested values, not evidence that a specific values key (e.g. `postgresql.setup.databases`) resolved to an empty map. Confirm an actual values regression against the rendered output (`helm template` / `helm get values`) rather than treating this warning as diagnostic.
+
 ### Preview database creation fails
 
 Every PR preview namespace for a product gets its own database on one small shared flexible server. When idle JDBC pool connections accumulate across many previews — an oversized `*_MAX_POOL_SIZE`, or a scheduler thread count that keeps the pool fully warm — the server approaches `max_connections` and its control-plane API starts failing. New PRs then can't get a database created at all, and pods crashloop on `FATAL: database "..." does not exist` or a Hikari connection timeout, even though the failing PR's own Helm values are correct.
