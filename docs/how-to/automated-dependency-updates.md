@@ -130,6 +130,34 @@ Below are a couple of examples on how to accomplish this:
 
 For more information, see the [Renovate documentation](https://docs.renovatebot.com/).
 
+## Wiring CI automation to Renovate PRs
+
+If you build a workflow that reacts to Renovate PRs (e.g. a `workflow_run` gate that
+checks the PR author, or an autofix bot that pushes a fix when CI fails), three things
+catch people out:
+
+- **Match the author via the REST API, not `gh pr view --json author` or other
+  GraphQL-backed lookups.** For a GitHub App like Renovate, GraphQL renders the author
+  as `login: "app/renovate"`, while the REST API (`gh api repos/<org>/<repo>/pulls/<n>
+  --jq .user.login`) and the `workflow_run` payload both give the canonical
+  `renovate[bot]` form. A gate comparing against `"renovate[bot]"` using the GraphQL
+  form never matches, and fails silently if the same comparison is only ever used to
+  *exclude* Renovate PRs (a non-match is safe there, so the bug stays invisible).
+- **If the workflow calls `claude-code-action`, set `allowed_bots`.** The action
+  refuses to run when the triggering actor is non-human ("Workflow initiated by
+  non-human actor: renovate (type: Bot)"). On a `workflow_run` fired from a Renovate
+  PR, the actor is Renovate, so any Claude Code Action step needs
+  `allowed_bots: "renovate"` (or `'*'` to allow all bots) or it fails at the
+  actor-validation step before your prompt ever runs.
+- **A non-Renovate commit takes the branch out of Renovate's management, permanently.**
+  Once any commit from a different identity lands on a Renovate-opened branch,
+  Renovate's edited-branch detection stops rebasing that branch and stops
+  auto-merging that PR — there is no automatic recovery short of adding the pushing
+  identity to `gitIgnoredAuthors` in `renovate.json`. If your automation pushes fixes
+  to Renovate PRs and you don't want to add that allowlist entry, budget for every
+  fixed PR moving to manual review and merge from then on, and say so in the PR
+  comment your automation leaves.
+
 ## Dependabot vs Renovate
 
 We do not recommend using dependabot.
