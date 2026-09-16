@@ -403,6 +403,16 @@ kubectl config use-context cft-aat-00-aks
 
 ## Golden Path
 ---
+### IDAM / OIDC Errors
+
+#### - A strict OIDC client rejects sign-in against real AAT/demo IDAM on an issuer mismatch
+
+Deployed AAT/demo IDAM's OIDC discovery document advertises the public `idam-web-public.<env>.platform.hmcts.net` hostname as the issuer, but the id_tokens it actually signs carry the internal ForgeRock hostname as `iss`. A strict client (for example `openid-client` v6) validates the id_token's `iss` against the discovery document and rejects every sign-in on that mismatch. This is a different failure from the local `rse-idam-simulator` issuer drift described in [Running with cftlib](../../apps/ccd/docs/tutorials/running-with-cftlib.md#troubleshooting) — it affects any client integrating with a real deployed IDAM, not just the local stack.
+
+Once the client is reconciled to expect the internal issuer, a second, opposite-direction mismatch appears: the unsigned `iss` query parameter IDAM appends to the OAuth callback URL carries the *public* hostname, which now conflicts with the internal issuer the id_token check expects. That callback parameter is not signed and should be ignored rather than validated against the id_token's `iss`.
+
+To discover the real signed issuer without a full sign-in flow, run a scope-restricted `client_credentials` grant against the environment at boot time and read the `iss` claim of the token it returns, rather than assuming either hostname.
+
 ### NodeJS Errors
 
 #### - URL.canParse is not a function
@@ -436,6 +446,12 @@ variable, resolved by `@opentelemetry/resources`' env detector. Setting `service
 `config/default.json` has no effect on this — every instance keeps reporting as
 `unknown_service:node` in Application Insights regardless of what the app config says. Set
 `OTEL_SERVICE_NAME` instead (for example in the Helm chart's environment block).
+
+### - A page built on `@hmcts-cft/express-govuk-starter` can't be overridden, or silently loses its header service name
+
+The starter registers its own routes (for example `/cookies`) ahead of a consuming app's router, and its view directory takes precedence in the Nunjucks template loader. Adding a same-path route or template in your own app does not override the starter's version — the only way to change a starter-owned page is to unmount the starter's route/middleware for that path and own it outright.
+
+Separately, govuk-frontend 6 removed `serviceName` support from the `govukHeader` macro, but the starter's default `layouts/default.njk` still passes `serviceName` to it. Any page still rendered under that default layout silently loses the service name and back link in the header, with no error — check whether the page has been moved onto the app's own layout before assuming the header is misconfigured elsewhere.
 
 ### - After(build) is deprecated
 
