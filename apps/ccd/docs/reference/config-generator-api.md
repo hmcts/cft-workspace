@@ -498,9 +498,20 @@ itself. A config can `@Autowired`-inject a `List<CCDConfig<T,S,R>>` of sibling b
 beans sharing that natural grouping ever calls `caseType()`/`jurisdiction()` on their own builder — because
 they were only ever meant to be composed into somebody else's case type — the group is still generated,
 just with no case-type id, and its JSON is written loose at the top level of the output directory rather
-than into a named subfolder. That stray output is harmless (nothing imports it as a case type), and it also
+than into a named subfolder — because the generator resolves a group's output directory as
+`new File(outputDir, caseTypeId)`, and an empty case-type id resolves to `outputDir` itself. The
+generator clears a group's output directory before writing to it, so writing the nameless group
+recursively deletes the *entire* output directory, taking with it any real case-type subdirectories
+that a different group already wrote earlier in the same run. With exactly one real case type this is
+invisible (there is nothing else to delete); from a second case type onward it is destructive, and
+which case type loses its definition depends on Spring's bean injection order — which follows the
+scanned package order of the class carrying the nameless group's beans, not the case type id or any
+alphabetical sort — so renaming a case type does not fix it. The symptom is a case type whose Java
+compiles cleanly but whose definition directory is simply missing after `generateCCDConfig`. This
 means the fan-in pattern doesn't leak one case-data class's configs into another: a `CCDConfig` on a
-different case-data class starts with an empty group of its own, unaffected by any other class's fan-in.
+different case-data class starts with an empty group of its own, unaffected by any other class's
+fan-in — but it is not safe to assume the loose output of one service's fan-in is harmless once that
+service has more than one case type.
 
 ```java
 @Component
