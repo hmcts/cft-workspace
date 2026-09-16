@@ -7,4 +7,5 @@ Deployment checklist for taking a new service to production on CNP.
 - [TLS certificates](tls-certificates.md)
 - [Shutter solution](shutter.md)
 - [Public DNS](public-dns.md)
+- [Expose a service on private DNS only](private-dns.md)
 - [OAT readiness](oat.md)
