@@ -373,7 +373,7 @@ PR_BODY="$WORK/pr-body.md"
     printf 'Documentation updates proposed by `scripts/knowledge-sweep` from this author'\''s recent workspace sessions.\n\n'
     printf '**Unreviewed machine output.** Every claim needs checking against the source repos before merge.\n\n'
     printf '## Proposed in the latest sweep\n\n%s\n\n' "$summary_text"
-    printf '---\n\nThis branch accumulates: later sweeps add commits here rather than opening another PR.\n'
+    printf -- '---\n\nThis branch accumulates: later sweeps add commits here rather than opening another PR.\n'
     printf 'The daily consolidation workflow folds open sweep PRs together — see `.github/workflows/knowledge-consolidate.yml`.\n'
 } > "$PR_BODY"
 
