@@ -48,6 +48,20 @@ Use Pa11y for accessibility testing to WCAG 2.1 AA.
 
 Use playwright or cypress to test applications in the browser.
 
+Playwright locator methods such as `isVisible()`, `isChecked()`, `count()` and `textContent()`
+accept a `timeout` option, but it only bounds how long that one check waits before returning —
+it does not retry. Pairing one of these with a fixed `sleep`/`waitForTimeout` to cover a race
+(the element appearing late) is fragile: if the sleep is later removed or shortened, the check
+can return a stale `false`/empty result within milliseconds of being called, well before the
+element actually appears. Use the retrying equivalents instead — `locator.waitFor()` or
+`expect(locator).toBeVisible()` / `.toBeChecked()` — which poll until the condition holds or the
+timeout elapses.
+
+Playwright's `--grep`/`--grep-invert` tag filters match as an unanchored substring (or regex),
+not an exact tag match. A new tag that is a substring of an existing one — `@health` inside
+`@healthCheck`, or `@rent` inside `@rentNonRent` — is silently pulled into any run that filters
+on the shorter tag. Check new tag names against the existing tag list for this before adding one.
+
 ### Security
 
 Configure the Content Security Policy headers to prevent XSS attacks.
