@@ -208,7 +208,7 @@ Each jurisdiction also specifies `caseTypes` in config — used to match which s
 | EM Markup/NPA | `services.markup_api` (`SERVICES_MARKUP_API_URL`) | `/api/markups`, `/api/redaction` | Redaction and markup |
 | EM ICP | `services.icp_api` (`SERVICES_ICP_API_URL`) | `/icp` | In-court presentation; WebSocket proxy (`ws:true`) |
 
-The `/documents` route handler also enforces its own per-session upload throttle, independent of CDAM or DM Store: a `POST` within `INITIAL_TIMEOUT_PERIOD` (5s) of the previous upload in the same session gets a 429, and each further rate-limited hit doubles the window up to `MAX_TIMEOUT_PERIOD` (180s) (`rpx-xui-webapp:api/documents/index.ts`). CDAM and DM Store have no rate-limiting of their own on this path. The throttle is keyed on `req.session`, so parallel test workers with separate sessions never collide with each other.
+The `/documents` route handler also enforces its own per-session upload throttle, independent of CDAM or DM Store: a `POST` within `INITIAL_TIMEOUT_PERIOD` (5s) of the previous upload in the same session gets a 429, and each further rate-limited hit doubles the window up to `MAX_TIMEOUT_PERIOD` (180s) (`rpx-xui-webapp:api/documents/index.ts`). CDAM and DM Store have no rate-limiting of their own on this path. The throttle is keyed on `req.session`, so parallel test workers with separate sessions never collide with each other. The timestamp used for the check is stamped after the previous upload completes, not before it starts, so retrying a 429 by re-uploading immediately pushes the window further toward its ceiling rather than escaping it -- widening the gap before the next upload attempt clears the throttle; issuing more retries does not.
 
 ### Reference Data
 

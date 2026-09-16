@@ -164,6 +164,10 @@ Repos with the SonarCloud GitHub App installed get a second, independent scan �
 
 The pipeline's `dependencyCheckAggregate` step scores dependencies against the live NVD feed at the moment it runs, not against a pinned snapshot. Two builds of the same commit, minutes apart, can disagree: a master build can report "Found 0 vulnerabilities" and a PR build of unchanged dependencies can report dozens a short time later, because new CVEs were published to NVD in between. When this happens it typically fails every open PR in the repo at once, not just one — check the master build's timestamp against the PR build's before assuming the PR's own changes are at fault, and add a suppression in `config/owasp/suppressions.xml` (following the existing entries' reachability-analysis and `until=` convention) rather than treating it as a regression to bisect.
 
+### Yarn quarantines packages published in the last 24 hours
+
+Yarn 4.15+ ships `npmMinimalAgeGate`, a client-side gate (default one day) that refuses to install any npm package version published more recently than that window. A Renovate PR bumping to a version published within the last day fails `yarn install` outright — including Renovate's own lockfile-update step — with an error (`YN0016: ... quarantined`) that reads like an npm registry restriction but is yarn refusing the install locally. The PR stays red until the version ages past the gate, or until `minimumReleaseAge` is set in `renovate.json` so Renovate never proposes a version yarn will still refuse.
+
 ### Troubleshooting build issues
 
 See [troubleshooting issues](../troubleshooting/).

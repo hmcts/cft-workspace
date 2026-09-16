@@ -19,6 +19,8 @@ Tests should be reliable. They should not fail randomly. They should not fail wh
 
 If a test compares output against a golden/expected fixture file, keep the step that regenerates that fixture separate from the `@Test` that asserts against it. A regenerator annotated as its own test will overwrite the fixture from current output on every run, before the comparison runs — so the comparison test can never fail, regardless of real regressions.
 
+Some Playwright locator methods (`isVisible()`, `isChecked()`, `count()`, `textContent()`, `.all()`, and similar) check the page once and return immediately — their `timeout` option bounds that single check, it does not make them poll, unlike a web-first assertion such as `expect(locator).toBeVisible()`. Wrapping one of these in a `toPass({ timeout })` retry loop only helps if the wrapped action's own worst-case duration fits inside that timeout on a single attempt; if it doesn't, every retry fails the same way. Treat a test that intermittently fails on one of these calls as a missing auto-retry before assuming it's a real race in the app under test.
+
 ### Fast
 
 Tests should be fast. If they are slow, they will be ignored.

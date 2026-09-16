@@ -46,5 +46,9 @@ This job selects resources by Azure tag (business area and environment), not by 
 In the event that an environment or environments are needed outside of the default hours, you can raise a request to automatically exclude it from the shutdown schedule.
 You can view more details in the auto-shutdown [README](https://github.com/hmcts/auto-shutdown/blob/master/README.md)
 
+### Renovate automerge and the shutdown window
+
+A PR rebuild that lands while its environment's AKS cluster is powered off for the shutdown window fails its deploy stage — typically with a DNS-lookup-style error that looks environmental rather than dependency-related, and this can happen even outside Renovate's own configured schedule, since another PR merging can trigger a `synchronize` rebuild at any time. With automerge enabled, one PR failing this way blocks every automerge PR queued behind it. Scheduling Renovate's own runs around the window doesn't prevent this on its own; a retry that re-runs a PR only when the deploy stage was its sole failure is more reliable than trying to time around the schedule.
+
 ### How to ask for help
 If you need help you can raise a help request to the Platform Operations team via the [#platops-help (Slack)](https://hmcts-reform.slack.com/app_redirect?channel=platops-help) channel.
