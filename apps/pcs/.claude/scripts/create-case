@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+# Create a PCS possession claim from a named test fixture and drive it to a state.
+#
+# Usage: create-case <env> <fixture> [state] [--list] [--dry-run] [--json]
+#                    [--case-type-suffix <suffix>]
+#
+# Drives the same four CCD data-store calls the Playwright suites use — an
+# event-trigger GET and a POST for createPossessionClaim, then the same pair for
+# resumePossessionClaim — as the claimant solicitor. CASE_ISSUED additionally
+# fakes the Pay-hub callback; the eight states beyond it add one changeCaseState
+# event fired as a hearing-centre admin.
+#
+# The fixtures are the live payload consts in both clones' test trees, not a
+# catalogue kept here, so --list is the only authoritative list of them.
+# Background: apps/pcs/pcs-api/src/e2eTest/test-README.md
+
+set -euo pipefail
+
+# Absolute, because the runner is executed with the cwd moved into pcs-api's
+# e2eTest tree and a plugin's own cwd is its cache directory either way.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "$SCRIPT_DIR/lib/pcs-env.sh"
+
+RUNNER="${PCS_CREATE_CASE_RUNNER:-$SCRIPT_DIR/lib/create-case-runner.ts}"
+
+ENV_ARG=""
+FIXTURE=""
+STATE="CASE_ISSUED"
+SUFFIX=""
+LIST=0
+DRY_RUN=0
+JSON_OUT=0
+
+usage() {
+    cat >&2 <<'EOF'
+usage: create-case <env> <fixture> [state] [--list] [--dry-run] [--json]
+                   [--case-type-suffix <suffix>]
+
+  <env>       local | preview-<PR> | aat | demo | perftest | ithc
+  <fixture>   a fixture id — run --list to see them all
+  [state]     AWAITING_SUBMISSION_TO_HMCTS | PENDING_CASE_ISSUED |
+              CASE_ISSUED (default) | JUDICIAL_REFERRAL | HEARING_READINESS |
+              PREPARE_FOR_HEARING_CONDUCT_HEARING | DECISION_OUTCOME |
+              CASE_PROGRESSION | ALL_FINAL_ORDERS_ISSUED | CASE_STAYED |
+              BREATHING_SPACE
+
+  --list                 list every fixture and exit — needs no VPN or secrets
+  --dry-run              print the resolved URLs, vault and case type, then stop
+  --json                 emit one JSON object on stdout and nothing else
+  --                     stop reading flags and treat the rest as positional
+  --case-type-suffix S   target PCS-S instead of PCS. Only AAT needs this, where
+                         the definition is imported twice and the PCS-staging
+                         copy is served by pcs-api-staging.aat.platform.hmcts.net
+
+Fixture ids are <repo>/<country>/<variant>, where repo is 'api' for pcs-api's
+E2E payloads and 'web' for pcs-frontend's. A bare variant is accepted when it is
+unambiguous — 'assured-tenancy' resolves, 'base' and 'no-defendants' do not,
+because they exist in more than one repo or country.
+
+Cases are created as a real claimant solicitor and are not cleaned up. On AAT the
+testing session is not involved — these persist.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --)                  shift
+                             while [[ $# -gt 0 ]]; do
+                                 if   [[ -z "$ENV_ARG" ]]; then ENV_ARG="$1"
+                                 elif [[ -z "$FIXTURE" ]]; then FIXTURE="$1"
+                                 else STATE="$1"
+                                 fi
+                                 shift
+                             done ;;
+        -h|--help)           usage; exit 0 ;;
+        --list)              LIST=1; shift ;;
+        --dry-run)           DRY_RUN=1; shift ;;
+        --json)              JSON_OUT=1; shift ;;
+        --case-type-suffix)  SUFFIX="${2:-}"
+                             [[ -n "$SUFFIX" ]] || { err "--case-type-suffix needs a value"; exit 2; }
+                             shift 2 ;;
+        -*)                  err "unknown flag: $1"; usage; exit 2 ;;
+        *)
+            if   [[ -z "$ENV_ARG" ]]; then ENV_ARG="$1"
+            elif [[ -z "$FIXTURE" ]]; then FIXTURE="$1"
+            else STATE="$1"
+            fi
+            shift ;;
+    esac
+done
+
+require_tools jq
+resolve_runner_env
+
+# Listing reads the fixture modules off disk and touches nothing else, so it has
+# to work with no environment, no VPN, no Azure login and no arguments.
+if (( LIST )); then
+    LIST_ARGS=(--list)
+    (( JSON_OUT )) && LIST_ARGS+=(--json)
+    build_runner_cmd "$RUNNER" "${LIST_ARGS[@]}"
+    cd "$E2E_DIR" && exec "${RUNNER_CMD[@]}"
+fi
+
+[[ -n "$ENV_ARG" && -n "$FIXTURE" ]] || { usage; exit 2; }
+
+resolve_env "$ENV_ARG"
+apply_case_type_suffix "$SUFFIX"
+export PCS_ENV_LABEL="$ENV_LABEL"
+export PCS_ENV_KIND="$ENV_KIND"
+
+STATE_NORM="$(printf '%s' "$STATE" | tr '[:lower:]-' '[:upper:]_')"
+
+# Resolve the fixture and state against the modules on disk first. Both are pure
+# disk reads, so a typo fails here in a second rather than after the VPN check
+# and the Key Vault round trip.
+build_runner_cmd "$RUNNER" --check --fixture "$FIXTURE" --state "$STATE_NORM"
+run_runner_query
+CHECK="$RUNNER_RESULT"
+
+# Everything past PENDING_CASE_ISSUED needs the fee-payment endpoints, which live
+# on pcs-api's testing-support controller. Refuse before doing any work rather
+# than creating a case that cannot reach the state that was asked for.
+if [[ "$(printf '%s' "$CHECK" | jq -r '.needsPayment')" == "true" ]]; then
+    require_testing_support "reaching $STATE_NORM"
+fi
+
+build_runner_cmd "$RUNNER" --fixture "$FIXTURE" --state "$STATE_NORM"
+
+if (( DRY_RUN )); then
+    log "${C_BOLD}create-case dry run${C_RESET}"
+    log "  environment  $ENV_LABEL"
+    log "  case type    $PCS_CASE_TYPE"
+    log "  fixture      $FIXTURE"
+    log "  target state $STATE_NORM"
+    log "  data store   $DATA_STORE_URL_BASE"
+    log "  pcs-api      $CASE_API_URL"
+    log "  manage case  $MANAGE_CASE_BASE_URL"
+    log "  idam         $IDAM_WEB_URL"
+    log "  s2s          $S2S_URL"
+    log "  claimant     $PCS_CLAIMANT_EMAIL"
+    log "  admin        $PCS_ADMIN_EMAIL"
+    log "  key vault    ${VAULT:-none — local needs no secrets}"
+    log ""
+    log "${C_DIM}would run:${C_RESET}"
+    printf '%q ' "${RUNNER_CMD[@]}" >&2
+    log ""
+    exit 0
+fi
+
+preflight_reachable
+resolve_secrets
+
+run_runner
+
+if [[ "$(printf '%s' "$RUNNER_RESULT" | jq -r '.ok')" != "true" ]]; then
+    translate_failure "$RUNNER_RESULT"
+fi
+
+if (( JSON_OUT )); then
+    printf '%s\n' "$RUNNER_RESULT"
+    exit 0
+fi
+
+read -r case_ref state fixture_id const_name url <<<"$(printf '%s' "$RUNNER_RESULT" \
+    | jq -r '[.caseReference, .state, .fixture, .constName, .manageCaseUrl] | @tsv')"
+
+log ""
+ok "Case $case_ref is in $state"
+log "  fixture      $fixture_id ($const_name)"
+log "  case type    $PCS_CASE_TYPE in $ENV_LABEL"
+log "  open in XUI  $url"
+
+requested="$(printf '%s' "$RUNNER_RESULT" | jq -r '.requestedState')"
+if [[ "$state" != "$requested" ]]; then
+    warn "  asked for $requested but the case reports $state — check it in XUI."
+fi
+
+log ""
+log "${C_DIM}Case access is granted asynchronously through AM, so it may take a moment to${C_RESET}"
+log "${C_DIM}appear in XUI. --json includes the case-role clean-up call the E2E suite runs.${C_RESET}"

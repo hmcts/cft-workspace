@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+# Inspect or act on an existing PCS case.
+#
+# Usage: manage-case <env> <case-ref> <operation> [args…] [--list] [--dry-run] [--json]
+#
+# CCD events go through the same two calls the Playwright suites use: an
+# event-trigger GET for a token, then a POST to /cases/{ref}/events. Reads of the
+# fee rows and the defendant access codes go to pcs-api's testing-support
+# controller and need only an S2S token.
+#
+# Which user an operation acts as is load-bearing. changeCaseState and manageHearing
+# are granted only to the hearing-centre roles; addCaseNote to a wider caseworker
+# bundle. Using the wrong one gives a 403, or a 404 reading "No case type found",
+# that reads like an infrastructure fault — so the operation decides, not the caller.
+# Those roles are also region-scoped in AM, which is what --as is for.
+# Background: apps/pcs/pcs-api/src/e2eTest/test-README.md
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "$SCRIPT_DIR/lib/pcs-env.sh"
+
+RUNNER="${PCS_MANAGE_CASE_RUNNER:-$SCRIPT_DIR/lib/manage-case-runner.ts}"
+
+ENV_ARG=""
+CASE_REF=""
+OPERATION=""
+OP_ARGS=()
+ACTOR_OVERRIDE=""
+LIST=0
+DRY_RUN=0
+JSON_OUT=0
+
+usage() {
+    cat >&2 <<'EOF'
+usage: manage-case <env> <case-ref> <operation> [args…] [--dry-run] [--json]
+       manage-case --list
+
+  <env>        local | preview-<PR> | aat | demo | perftest | ithc
+  <case-ref>   the 16-digit case reference, with or without dashes
+  <operation>  run --list for the operations and what each one needs
+
+  --list       list the operations and exit — needs no VPN or secrets
+  --dry-run    print the resolved URLs, the acting user and the call, then stop
+  --json       emit one JSON object on stdout and nothing else
+  --as EMAIL   act as this user instead of the operation's default. Needed when a
+               hearing-centre role is scoped to a region the default user is not
+               assigned to (Welsh cases, for instance)
+  --           stop reading flags, so an operation argument may start with a dash
+
+Some operations write to the case. There is no undo: cancelling a hearing or
+moving a state is a real event in the case history, and a case cannot return to
+CASE_ISSUED once it has left it.
+
+Deliberately absent: enforcement, general applications and case links.
+enforceTheOrder and confirmEviction are not in any deployed CCD definition;
+makeAnApplication needs a solicitor who already represents a defendant party; and
+createCaseLink returns a 500 from pcs-api's persistence callback for any payload.
+EOF
+}
+
+END_OF_FLAGS=0
+
+while [[ $# -gt 0 ]]; do
+    # Operation arguments are free text — a case note or a cancellation reason can
+    # legitimately start with a dash — so `--` stops flag parsing.
+    if (( END_OF_FLAGS )); then
+        if   [[ -z "$ENV_ARG" ]];   then ENV_ARG="$1"
+        elif [[ -z "$CASE_REF" ]];  then CASE_REF="$1"
+        elif [[ -z "$OPERATION" ]]; then OPERATION="$1"
+        else OP_ARGS+=("$1")
+        fi
+        shift
+        continue
+    fi
+
+    case "$1" in
+        --)                  END_OF_FLAGS=1; shift ;;
+        -h|--help)           usage; exit 0 ;;
+        --list)              LIST=1; shift ;;
+        --dry-run)           DRY_RUN=1; shift ;;
+        --json)              JSON_OUT=1; shift ;;
+        --as)                ACTOR_OVERRIDE="${2:-}"
+                             [[ -n "$ACTOR_OVERRIDE" ]] || { err "--as needs an email address"; exit 2; }
+                             shift 2 ;;
+        -*)                  err "unknown flag: $1"; usage; exit 2 ;;
+        *)
+            if   [[ -z "$ENV_ARG" ]];   then ENV_ARG="$1"
+            elif [[ -z "$CASE_REF" ]];  then CASE_REF="$1"
+            elif [[ -z "$OPERATION" ]]; then OPERATION="$1"
+            else OP_ARGS+=("$1")
+            fi
+            shift ;;
+    esac
+done
+
+require_tools jq
+resolve_runner_env
+
+if (( LIST )); then
+    LIST_ARGS=(--list)
+    (( JSON_OUT )) && LIST_ARGS+=(--json)
+    build_runner_cmd "$RUNNER" "${LIST_ARGS[@]}"
+    cd "$E2E_DIR" && exec "${RUNNER_CMD[@]}"
+fi
+
+[[ -n "$ENV_ARG" && -n "$CASE_REF" && -n "$OPERATION" ]] || { usage; exit 2; }
+
+resolve_env "$ENV_ARG"
+# No suffix flag here: every operation addresses /cases/{ref} or /testing-support,
+# so the case-type id never appears in a URL. Called only to set PCS_CASE_TYPE for
+# the failure messages.
+apply_case_type_suffix ""
+export PCS_ENV_LABEL="$ENV_LABEL"
+export PCS_ENV_KIND="$ENV_KIND"
+
+# Resolve the operation first. It reports which user the operation acts as and
+# whether it needs testing-support, both of which decide what has to be set up below
+# — and it validates the case reference and the operation's own arguments, so a typo
+# fails here rather than after the VPN check and the Key Vault round trip.
+CHECK_ARGS=(--check --operation "$OPERATION" --case "$CASE_REF")
+for arg in "${OP_ARGS[@]}"; do
+    CHECK_ARGS+=(--arg "$arg")
+done
+build_runner_cmd "$RUNNER" "${CHECK_ARGS[@]}"
+run_runner_query
+CHECK="$RUNNER_RESULT"
+
+ACTOR="$(printf '%s' "$CHECK" | jq -r '.actor')"
+NEEDS_TS="$(printf '%s' "$CHECK" | jq -r '.testingSupport')"
+
+if [[ "$NEEDS_TS" == "true" ]]; then
+    require_testing_support "$OPERATION"
+fi
+
+RUNNER_ARGS=(--case "$CASE_REF" --operation "$OPERATION")
+for arg in "${OP_ARGS[@]}"; do
+    RUNNER_ARGS+=(--arg "$arg")
+done
+build_runner_cmd "$RUNNER" "${RUNNER_ARGS[@]}"
+
+case "$ACTOR" in
+    none)       ACTING_AS="none — S2S only" ;;
+    claimant)   ACTING_AS="$PCS_CLAIMANT_EMAIL" ;;
+    admin)      ACTING_AS="$PCS_ADMIN_EMAIL" ;;
+    caseworker) ACTING_AS="$PCS_CASEWORKER_EMAIL" ;;
+    *)          ACTING_AS="$ACTOR" ;;
+esac
+
+if [[ -n "$ACTOR_OVERRIDE" && "$ACTOR" != "none" ]]; then
+    export PCS_ACTOR_OVERRIDE="$ACTOR_OVERRIDE"
+    ACTING_AS="$ACTOR_OVERRIDE (--as)"
+elif [[ -n "$ACTOR_OVERRIDE" ]]; then
+    warn "--as is ignored: $OPERATION needs only an S2S token, no user."
+fi
+
+if (( DRY_RUN )); then
+    log "${C_BOLD}manage-case dry run${C_RESET}"
+    log "  environment  $ENV_LABEL"
+    log "  case         $CASE_REF"
+    log "  operation    $OPERATION $( (( ${#OP_ARGS[@]} )) && printf '%s' "${OP_ARGS[*]}" )"
+    log "  acting as    $ACTING_AS"
+    log "  case type    $PCS_CASE_TYPE"
+    log "  data store   $DATA_STORE_URL_BASE"
+    log "  pcs-api      $CASE_API_URL"
+    log "  key vault    ${VAULT:-none — local needs no secrets}"
+    log ""
+    log "${C_DIM}would run:${C_RESET}"
+    printf '%q ' "${RUNNER_CMD[@]}" >&2
+    log ""
+    exit 0
+fi
+
+preflight_reachable
+
+# The S2S-only operations need no user password and no client secret, so don't
+# make the caller hold an Azure login they don't need.
+if [[ "$ACTOR" != "none" ]]; then
+    resolve_secrets
+fi
+
+run_runner
+
+if [[ "$(printf '%s' "$RUNNER_RESULT" | jq -r '.ok')" != "true" ]]; then
+    translate_failure "$RUNNER_RESULT"
+fi
+
+if (( JSON_OUT )); then
+    printf '%s\n' "$RUNNER_RESULT"
+    exit 0
+fi
+
+log ""
+ok "$OPERATION on $(printf '%s' "$RUNNER_RESULT" | jq -r '.caseReference') in $ENV_LABEL"
+printf '%s' "$RUNNER_RESULT" \
+    | jq 'del(.ok, .operation, .caseId, .caseReference, .environment)' >&2
