@@ -78,6 +78,10 @@ Analysis completing and the quality gate evaluating correctly does not mean Sona
 
 A repo can end up with more than one SonarCloud project for the same GitHub repo — typically one created by SonarCloud's GitHub-import/Automatic Analysis (source-only, so it reports 0% coverage, but bound and therefore able to comment) and one fed by the Jenkins `sonarqube` task (full coverage data, but not bound unless someone did it manually). If comments stopped after previously working, check for duplicate/orphaned projects for the repo and confirm which one Jenkins is actually publishing to before asking platform/Sonar admins to bind it.
 
+### Coverage percentage doesn't match the raw jacoco XML
+
+`sonar.coverage.exclusions` in `sonar-project.properties` strips whole categories of classes (generated code, config, domain/model classes are common exclusions) before SonarCloud computes its coverage percentage. Computing coverage by hand from the jacoco XML report — summing covered/total lines across every class — includes those excluded classes and can read tens of percentage points lower than what SonarCloud actually reports for the project. If you need the real figure, query the SonarCloud API (or read the dashboard) rather than the raw jacoco XML.
+
 ### Build / Docker Build / Unit Test failure
 
   - If your build is failing in these stages, it's most likely to fail in your local as well. Look at the first line of the Jenkins step that fails and try run the same command Jenkins is running.

@@ -142,6 +142,10 @@ To read team secrets inside such a hook, capture `pipelineConf = config` at the 
 
 The `retry` wrapper around an expensive stage (e.g. a multi-branch functional/E2E stage) is configured in `cnp-jenkins-library`, not in your repo's Jenkinsfile. A transient agent blip partway through such a stage restarts the *entire* stage — including every other branch already running inside it, from Checkout — rather than just the step that failed. No per-repo Jenkinsfile change can scope a retry down to the failed branch alone; raise it with Platform Operations if a stage's retry cost is a problem.
 
+### E2E tests on a PR need the `enable_e2e_test` label
+
+`enable_e2e_test` is the switch that turns on end-to-end testing for a PR build in `sectionDeployToAKS`; labels like `enable_e2e_regression` only select which suite runs once E2E is already enabled — they do nothing on their own. A PR carrying a suite-selection label but not `enable_e2e_test` still builds, deploys and reports success, having silently skipped the E2E stage entirely. Separately, `enableE2eTest()` is only wired up from the `onMaster()` path in the shared library — PR-time E2E is entirely this separate, label-gated path, not a scaled-down version of what runs on master.
+
 ### Docker build stage
 
 The pipeline's Docker build step uses `az acr build` (ACR Tasks), which builds with the legacy (non-BuildKit) Docker builder. That builder walks every stage declared in the Dockerfile in file order, regardless of `--target` — a stage is only skipped if it's declared *after* the target stage. A leftover or unused stage placed earlier in the file (for example an old `development` stage with its own `COPY . .`) is still built on every single run even though `--target runtime` is set; the fix is to delete or reorder the stage, not to rely on `--target` alone.
