@@ -315,6 +315,12 @@ Not everything is SHA-trackable, and that's by design:
   branch merges or is deleted. Drop the `@branch` pin and re-record.
 - **Renamed repos.** A citation resolves by repo name; if upstream renames the
   repo, `workspace.yaml` needs updating too, or the clone URL 404s.
+- **Confluence URLs pasted into prose.** `--mode=confluence` only enumerates
+  pages carrying `confluence:` frontmatter — it has no way to notice a raw
+  `tools.hmcts.net/confluence/...` link sitting in a page's body text, whether
+  by page ID or by title slug. Those links go stale exactly like frontmatter
+  citations (for example, an entire platform migration to a new Confluence
+  host) but nothing flags them; they have to be swept up separately.
 
 ## Other modes
 
