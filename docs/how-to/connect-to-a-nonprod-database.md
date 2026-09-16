@@ -147,13 +147,15 @@ DCD-CNP-DEV
 $ az keyvault secret show --vault-name rd-perftest --name professional-api-POSTGRES-USER --query value -o tsv
 pgadmin                                          # works
 $ az keyvault show --name rd-perftest --query name -o tsv
-ERROR: The Vault 'rd-perftest' not found within subscription.   # needs DCD-CFTAPPS-TEST
+ERROR: The Vault 'rd-perftest' not found within subscription.   # needs DCD-CNP-QA
 ```
 
 So you don't need `az account set` for this recipe — but do remember the environment→
-subscription mapping if you go looking at the server in the portal, because it isn't what
-you'd guess (AAT lives in `DCD-CFTAPPS-STG`, perftest in `DCD-CFTAPPS-TEST`). See
-[CNP environments](../reference/cnp-environments.md).
+subscription mapping if you go looking at the vault or the server in the portal, because it
+isn't what you'd guess. Per-service shared infrastructure (Key Vault, App Insights, Redis)
+and the `<service>-data-<env>` database groups sit in `DCD-CNP-QA` for perftest and ITHC, and
+`DCD-CNP-DEV` for AAT and demo — *not* in `DCD-CFTAPPS-<ENV>`, which holds the AKS clusters.
+See [CNP environments](../reference/cnp-environments.md#per-service-shared-infrastructure-lives-in-the-cnp-subscriptions).
 
 ### AAD token auth fails on these servers
 

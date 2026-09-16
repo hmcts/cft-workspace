@@ -9,7 +9,7 @@ audience: both
 
 
 
-| Shared Services Environment | CFT Environment | Azure app subscription (CFTAPPS) | Use case | Path to live | Additional Information |
+| Shared Services Environment | CFT Environment | Azure AKS subscription (CFTAPPS) | Use case | Path to live | Additional Information |
 | - | - | - | - | - | - |
 | Prod            | Prod       | `DCD-CFTAPPS-PROD` | Live services | Yes |  |
 | Staging         | AAT        | `DCD-CFTAPPS-STG`  | Automated Acceptance Testing before moving to Prod | Yes |  |
@@ -21,18 +21,35 @@ audience: both
 
 ## Azure subscriptions
 
-Application resources (per-service resource groups, key vaults, App Insights, databases) live in the **`DCD-CFTAPPS-*`** subscription for the environment. Note the naming mismatch that catches people out:
+The **`DCD-CFTAPPS-*`** subscription for an environment holds the AKS clusters and the chart-deployed app workloads — e.g. perftest's clusters are `cft-perftest-00-aks` / `cft-perftest-01-aks` in `DCD-CFTAPPS-TEST`. Note the naming mismatch that catches people out:
 
-- **AAT** apps are in **`DCD-CFTAPPS-STG`** (Staging), *not* an "aat" subscription — there is no `DCD-CFTAPPS-AAT`.
-- **Preview** apps are in **`DCD-CFTAPPS-DEV`** (Dev).
-- **Perftest** apps are in **`DCD-CFTAPPS-TEST`** (Test).
+- **AAT** clusters are in **`DCD-CFTAPPS-STG`** (Staging), *not* an "aat" subscription — there is no `DCD-CFTAPPS-AAT`.
+- **Preview** clusters are in **`DCD-CFTAPPS-DEV`** (Dev).
+- **Perftest** clusters are in **`DCD-CFTAPPS-TEST`** (Test).
 
-Watch for these gotchas when using `az`:
+### Per-service shared infrastructure lives in the CNP subscriptions
 
-- `az login` may default to `DCD-CFTAPPS-DEV`. Always `az account set --subscription <name>` to the environment you actually want before inspecting resources.
-- Read access to a subscription's platform resource groups does **not** imply read access to app-team resource groups (e.g. `pcs-prod`, `ccd-shared-aat`, `rpe-service-auth-provider-aat`). If an app RG appears to be "not found", it is more likely a permissions boundary than a missing resource — confirm with someone who has app-team access rather than assuming the resource is absent.
+The per-service resource groups created by each service's `*-shared-infrastructure` Terraform — App Insights, Redis, Key Vault, private endpoints, and the matching `<service>-data-<env>` database groups — do **not** follow the `DCD-CFTAPPS-*` mapping above. In non-production they live in the `DCD-CNP-*` subscriptions:
 
-The `DCD-CNP-*` subscriptions hold shared CNP platform/AKS infrastructure (as opposed to the per-service application resources in `DCD-CFTAPPS-*`).
+| CFT Environment | Service shared-infra subscription | Subscription ID |
+| - | - | - |
+| Perftest, ITHC | `DCD-CNP-QA`  | `7a4e3bd5-ae3a-4d0c-b441-2188fee3ff1c` |
+| AAT, Demo      | `DCD-CNP-DEV` | `1c4f0704-a29e-403d-b719-b90c34ef14c9` |
+
+So if you are looking for a service's App Insights, Redis or Key Vault in a non-production environment, `DCD-CFTAPPS-<ENV>` is the wrong place to look — and because the resource group simply is not there, the empty result reads like a permissions boundary when it is actually the wrong subscription. `DCD-CFTAPPS-TEST` and `DCD-CFTAPPS-STG` hold only platform-level App Insights components (`cft-platform-test` / `cft-api-mgmt-test`, `cft-platform-stg` / `cft-api-mgmt-stg`) — no per-service ones at all.
+
+```bash
+# perftest shared infrastructure for pcs: App Insights, Redis, Key Vault, private endpoint
+az resource list --subscription DCD-CNP-QA -g pcs-perftest -o table
+```
+
+Verified 2026-09-16 for `pcs` (`pcs-perftest`, `pcs-ithc`, `pcs-data-perftest`, `pcs-data-ithc` in `DCD-CNP-QA`; `pcs-aat`, `pcs-demo` in `DCD-CNP-DEV`) and `idam` (`idam-idam-perftest`, `idam-idam-ithc` in `DCD-CNP-QA`). Other services look the same — `rd-perftest` and `rd-ithc` are in `DCD-CNP-QA` too — but confirm with `az group list` before concluding a resource group is missing.
+
+### Gotchas when using `az`
+
+- `az login` may default to `DCD-CFTAPPS-DEV`. Always `az account set --subscription <name>` to the subscription you actually want before inspecting resources.
+- If a service resource group appears to be "not found", check the subscription before assuming a permissions problem — for non-prod shared infrastructure it is usually `DCD-CNP-QA` / `DCD-CNP-DEV` rather than `DCD-CFTAPPS-<ENV>`.
+- Read access to a subscription's platform resource groups does **not** imply read access to app-team resource groups (e.g. `pcs-prod`, `ccd-shared-aat`, `rpe-service-auth-provider-aat`). Once you are sure you are in the right subscription, a "not found" is more likely a permissions boundary than a missing resource — confirm with someone who has app-team access rather than assuming the resource is absent.
 
 ## See also
 
