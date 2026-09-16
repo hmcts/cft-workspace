@@ -172,6 +172,8 @@ Performing a release consists of the following steps:
 4. Create a GitHub release, tagging it with the same version number used in Chart.yaml
 5. The release build will be triggered, publishing the new chart version
 
+If your PR bumps a dependency on another chart to a version that hasn't been released yet, the PR validation build will fail `helm dependency update` until that dependency's own release build has published the new version to ACR. Once it has, you need a fresh commit to re-run validation -- taking the PR out of draft, editing its description, or approving it does not trigger a new build, and re-queuing a build manually needs "Queue builds" permission on the pipeline that most engineers don't have.
+
 #### Setting up an AzureDevOps chart build
 
 Join the `dcd_group_ado_user_v2` Microsoft Entra group, this will give you:
