@@ -162,18 +162,8 @@ If this happens, simply run the master build manually on sandbox jenkins.
     - There is not enough space in the cluster to fit in a new pod.
     - Pod is scheduled, but fails to pass readiness (`/health/readiness`) or  liveness (`/health/liveness`) checks.
     - A misconfigured environment variable, example - incorrect URL of a dependent service.
-    - The product's shared preview PostgreSQL flexible server has run out of connections. Every PR preview namespace for a product gets its own database(s) on one small shared flexible server; if idle JDBC pool connections build up across many PR previews (for example because a scheduler thread count matches the pool size and keeps it fully warm, or a per-service `*_MAX_POOL_SIZE` is set far above what the service needs), the server can approach `max_connections` and its control-plane API starts failing. New PRs then can't get a database created at all, and pods crashloop on `FATAL: database "..." does not exist` or a Hikari connection-timeout — even though the failing PR's own Helm values are correct. Check actual connection counts against `max_connections` on the shared server, and look for oversized pool settings, rather than raising the server's connection limit to mask it.
-    - The pod is OOMKilled even though the chart's `memoryLimits` looks generous. Every Jenkins-driven helm deploy (`helmInstall.groovy`) sets `--set global.devMode=true` unconditionally — Preview, PR builds, and the Jenkins-managed AAT "staging" release alike. In devMode the chart template switches to `devmemoryLimits`/`devmemoryRequests`/`devcpuLimits`/`devcpuRequests` instead, with no fallback to the non-dev keys, so a chart that only sets `memoryLimits` silently gets the base chart's low `devmemoryLimits` default (512Mi on chart-base/chart-nodejs, 1Gi on chart-java). Set `devmemoryLimits` alongside `memoryLimits` if the app is deployed via Jenkins. GitHub Actions deploys and Flux-managed `HelmRelease`s never set `global.devMode`, so they always read the non-dev keys.
-    - Related trap: the same app in the same AAT namespace can be running under two independent Helm releases with different memory behaviour — a Jenkins-managed release (name usually `<app>-staging`, devMode on) and a Flux-managed release (name `<app>`, devMode off, tracking a prod image tag). Confirm which release your pod belongs to before changing chart values or reasoning about which limit applies:
-      ```bash
-      kubectl get pod -n <namespace> <pod> -o jsonpath='{.metadata.labels.app\.kubernetes\.io/instance}{"\n"}'
-      ```
-    - `kubectl top pods` reports the cgroup working set — the same figure the kernel OOM-killer compares against the memory limit — but it's a live snapshot only a few seconds old, resets to nothing useful once a pod has already been killed and restarted, and may be unavailable if the cluster has no metrics-server. To confirm a pod was actually OOMKilled rather than inferring it from `top`:
-      ```bash
-      kubectl get pod -n <namespace> <pod> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}{"\n"}'
-      ```
-      Container Insights (`oms_agent`) is only enabled on the perftest and prod AKS clusters, not on AAT or preview — but that doesn't mean AAT has no historical container-memory data. The `kube-prometheus-stack` HelmRelease runs on every CFT cluster and scrapes cAdvisor via the kubelet `ServiceMonitor` regardless of any chart's own `prometheus.enabled` flag, so `container_memory_working_set_bytes` history (30-day retention) exists for every pod on AAT. AAT is two separate clusters, each with its own Prometheus; only one of them also runs a Grafana instance, but that Grafana has both clusters' Prometheus instances wired in as datasources.
-    - When triaging what's actually running, don't trust ACR tag metadata (`az acr manifest list-metadata` / `show-metadata`) as a proxy for build time — `createdTime`/`lastUpdateTime` record when a tag was last pointed at a manifest, which a re-tag (for example re-pushing `:latest`) updates without a new build. To confirm when the code in a running pod was actually built, inspect file timestamps inside the container (e.g. bundle or sourcemap mtimes) rather than ordering by ACR tag dates.
+    - The product's shared preview PostgreSQL server has run out of connections — see [Preview database creation fails](#preview-database-creation-fails).
+    - The pod is OOMKilled despite a generous `memoryLimits` — see [OOMKilled despite a generous memoryLimits](#oomkilled-despite-a-generous-memorylimits).
 
 - Below are some handy kubectl commands to debug the issues
 
@@ -211,6 +201,34 @@ If this happens, simply run the master build manually on sandbox jenkins.
      kubectl logs <pod-name> -n <your-namespace> -p
 
      ```
+
+### Preview database creation fails
+
+Every PR preview namespace for a product gets its own database on one small shared flexible server. When idle JDBC pool connections accumulate across many previews — an oversized `*_MAX_POOL_SIZE`, or a scheduler thread count that keeps the pool fully warm — the server approaches `max_connections` and its control-plane API starts failing. New PRs then can't get a database created at all, and pods crashloop on `FATAL: database "..." does not exist` or a Hikari connection timeout, even though the failing PR's own Helm values are correct.
+
+Check connection counts against `max_connections` and look for oversized pool settings rather than raising the server's limit.
+
+### OOMKilled despite a generous memoryLimits
+
+Jenkins-driven helm deploys (`helmInstall.groovy`) always pass `--set global.devMode=true` — Preview, PR builds and the Jenkins-managed AAT "staging" release alike. In devMode the chart reads `devmemoryLimits`/`devmemoryRequests`/`devcpuLimits`/`devcpuRequests` with no fallback to the non-dev keys, so a chart setting only `memoryLimits` gets the base chart's default instead (512Mi on chart-base and chart-nodejs, 1Gi on chart-java). Set `devmemoryLimits` alongside `memoryLimits` for anything Jenkins deploys. GitHub Actions deploys and Flux-managed `HelmRelease`s never set `global.devMode`.
+
+The same app in the same AAT namespace can run under two independent releases with different memory behaviour: a Jenkins-managed `<app>-staging` (devMode on) and a Flux-managed `<app>` (devMode off, tracking a prod image tag). Check which one a pod belongs to before changing chart values:
+
+```bash
+kubectl get pod -n <namespace> <pod> -o jsonpath='{.metadata.labels.app\.kubernetes\.io/instance}{"\n"}'
+```
+
+`kubectl top pods` reports the cgroup working set the OOM-killer compares against the limit, but it's a live snapshot and resets once a pod restarts. To confirm a kill actually happened:
+
+```bash
+kubectl get pod -n <namespace> <pod> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}{"\n"}'
+```
+
+For history, Container Insights (`oms_agent`) is only enabled on perftest and prod — but `kube-prometheus-stack` runs on every CFT cluster and scrapes cAdvisor via the kubelet `ServiceMonitor` regardless of any chart's own `prometheus.enabled`, so `container_memory_working_set_bytes` is available for 30 days on AAT too. AAT is two clusters with a Prometheus each; only one runs Grafana, and that Grafana has both wired in as datasources.
+
+### ACR tag dates are not build times
+
+`createdTime`/`lastUpdateTime` from `az acr manifest list-metadata` record when a tag was last pointed at a manifest, so re-pushing `:latest` updates them without a new build. To date the code in a running pod, read file timestamps inside the container instead.
 
 ## VPN
 ---
@@ -434,24 +452,6 @@ Bump the node version in `.nvmrc` to `18.17`
 ### - A Docker image with `packageManager` pinned in `package.json` tries to download Yarn at container start
 
 When `package.json` pins a `packageManager` version, `yarn` on `PATH` inside the image is really a Corepack shim, which resolves the pinned version from Corepack's own cache — separate from the `.yarn/cache` folder Yarn itself populates. That cache is normally only populated as a side effect of running `yarn install` in the image. If a Docker build trims the image by removing what looks like a redundant cache directory without checking whether it's Corepack's, the built image passes `tsc`, lint, and unit tests (none of which start a fresh shim) but tries to fetch Yarn from the network the first time a container actually runs `yarn` — invisible until you run the built image itself, ideally with `--network none`, rather than trusting static checks.
-
-### - Application Insights shows every instance as `unknown_service:node`
-
-A Node.js service built on the `@hmcts-cft/cloud-native-platform` starter package configures
-its Application Insights role name through a `serviceName` config value, but that value is
-inert: the package bundles the OpenTelemetry-based v3 `applicationinsights` SDK, and nothing
-in that SDK reads `APPLICATIONINSIGHTS_ROLE_NAME` or any config-derived role name. The role
-name it actually reports comes from the standard OpenTelemetry `OTEL_SERVICE_NAME` environment
-variable, resolved by `@opentelemetry/resources`' env detector. Setting `serviceName` in
-`config/default.json` has no effect on this — every instance keeps reporting as
-`unknown_service:node` in Application Insights regardless of what the app config says. Set
-`OTEL_SERVICE_NAME` instead (for example in the Helm chart's environment block).
-
-### - A page built on `@hmcts-cft/express-govuk-starter` can't be overridden, or silently loses its header service name
-
-The starter registers its own routes (for example `/cookies`) ahead of a consuming app's router, and its view directory takes precedence in the Nunjucks template loader. Adding a same-path route or template in your own app does not override the starter's version — the only way to change a starter-owned page is to unmount the starter's route/middleware for that path and own it outright.
-
-Separately, govuk-frontend 6 removed `serviceName` support from the `govukHeader` macro, but the starter's default `layouts/default.njk` still passes `serviceName` to it. Any page still rendered under that default layout silently loses the service name and back link in the header, with no error — check whether the page has been moved onto the app's own layout before assuming the header is misconfigured elsewhere.
 
 ### - After(build) is deprecated
 

@@ -9,14 +9,14 @@ audience: both
 
 HMCTS services publish their OpenAPI specs to a central registry, [`hmcts/cnp-api-docs`](https://github.com/hmcts/cnp-api-docs). This workspace clones that registry locally at `platops/cnp-api-docs/` so developers and agents can browse, grep, and link to specs without going through the hosted site for every lookup.
 
-(This repository was previously named `hmcts/reform-api-docs`; GitHub's rename redirect still resolves the old name, so references to `reform-api-docs` in older scripts or docs point at the same registry, not a separate one.)
+`reform-api-docs` resolves to the same repository via GitHub's rename redirect, so a reference to that name in an older script points at this registry rather than a separate one.
 
 ## What's in the registry
 
 - **`platops/cnp-api-docs/docs/specs/*.json`** — ~180 OpenAPI spec files (mostly OpenAPI 3.x; a few legacy Swagger 2.0). One file per published API; some services publish several (e.g. `ccd-data-store-api` publishes four versioned variants).
-- **Hosted view** — the same files rendered at <https://hmcts.github.io/cnp-api-docs/>, generated straight from `docs/specs/*.json` — a per-product page (`/products/<product>/`), a Swagger UI per spec (`/api/<service>/`), an architecture/dependency explorer (`/architecture/`), and a registry-health report (`/health/`) that buckets every spec as fresh, ageing, stale, unpublished, or never-published.
+- **Hosted view** — the same files rendered at <https://hmcts.github.io/cnp-api-docs/>: a per-product page (`/products/<product>/`), a Swagger UI per spec (`/api/<service>/`), an architecture/dependency explorer (`/architecture/`), and a registry-health report (`/health/`) that buckets every spec as fresh, ageing, stale, unpublished, or never-published.
 
-The hosted site was replatformed in mid-2026 from a hand-committed `vis.js` network graph + Swagger UI bundle onto this generated static site. The old registry file this workspace previously documented here, `docs/microservices.json` — along with its schema, the `docs/lld/*.html` Low Level Design pages, and the `docs/generate-llds.js` script that built them — no longer exists in `cnp-api-docs`; there is nothing to hand-edit to add a service's group/dependency metadata any more. The old bookmarked URLs still resolve: `swagger.html?url=...` and `lld/<product>.html` both redirect to the equivalent `/products/<product>/` or `/api/<service>/` page, and `groups/<product>/` redirects to `/products/<product>/` too.
+The whole site is generated from `docs/specs/*.json`. There is no hand-maintained registry file, service-group metadata or Low Level Design page to edit — publishing a spec is the only step needed for a service to appear. Older bookmarks still resolve: `swagger.html?url=...` and `lld/<product>.html` redirect to the equivalent `/api/<service>/` or `/products/<product>/` page, as does `groups/<product>/`.
 
 The local clone is kept current by `./scripts/sync platops/cnp-api-docs` and is non-destructive.
 
@@ -64,8 +64,6 @@ The hosted Swagger UI for any spec is:
 https://hmcts.github.io/cnp-api-docs/api/<service-name>/
 ```
 
-The pre-replatform form, `swagger.html?url=https://hmcts.github.io/cnp-api-docs/specs/<filename>`, still resolves — it redirects to the page above.
-
 ## How the workspace links products to specs
 
 Each per-product `CLAUDE.md` declares an `api_specs:` list in its frontmatter — see [`taxonomy.md`](taxonomy.md#api_specs):
@@ -100,10 +98,6 @@ There is nothing to do at the workspace level. Once a service repo pushes a spec
 
 1. Re-run `/docs-generate-product-md <product>` — the analyser detects the publish workflow and updates `api_specs:`.
 2. Re-run `./scripts/index` (or `/workspace-index`) to refresh `INDEX.md`.
-
-The hosted site's product pages, architecture explorer, and health report are all derived at build
-time from `docs/specs/*.json` — there is no separate registry file to hand-edit for a new service to
-appear there.
 
 ## Caveats
 
