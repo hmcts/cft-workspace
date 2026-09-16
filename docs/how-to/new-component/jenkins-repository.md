@@ -47,6 +47,16 @@ Add an entry in the following format:
 
 Scan the organisation manually in Jenkins if it does not scan automatically.
 
+## A pull request opened before onboarding may never get built
+
+Jenkins multibranch discovery for pull requests is triggered by a `pull_request` webhook
+event, not by the org scan alone. If a pull request was opened before the repository's
+GitHub topic and allowlist entry were in place, that event carried no matching Jenkins job to
+build against — merging the allowlist PR afterwards does not retroactively pick it up, and the
+multibranch project can sit with zero indexed branches. Closing and reopening the pull request
+fires a fresh `pull_request` event and triggers discovery immediately, without waiting for the
+next scheduled organisation scan.
+
 ## Watch for a duplicate SonarCloud project
 
 A newly created repository can end up analysed by SonarCloud twice: once as the project the

@@ -77,6 +77,13 @@ Make sure you [enable auto-merge on the repository settings](https://docs.github
 
 ![Auto-merge settings](../images/automerge.png)
 
+If the repository's branch protection is a ruleset requiring an approving review, Renovate PRs stay
+`REVIEW_REQUIRED`/blocked no matter what automerge preset is configured, unless the Renovate app is
+itself listed as a bypass actor on that ruleset (`bypass_mode: pull_request`, so it can only bypass
+while merging a PR, never on a direct push to the protected branch). Also check that `renovate.json`'s
+`extends` actually includes one of the automerge presets above — inheriting only the base
+`hmcts/.github:renovate-config` preset enables automerge for nothing.
+
 ### Codeowners
 
 If you have codeowners setup in your repository renovate won't be able to merge the pull requests automatically unless you remove the dependency files from `CODEOWNERS`.

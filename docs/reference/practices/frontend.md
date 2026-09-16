@@ -74,3 +74,10 @@ not just CSP. A `| safe` filter (or equivalent raw-output helper) disables autoe
 that value, so only apply it to content that is verifiably server-constructed or static;
 using it on any field editable by an admin, caseworker, or other user and then rendered on a
 publicly accessible page reopens a stored-XSS hole that CSP alone will not close.
+
+Shared Helmet-based CSP presets commonly default `form-action` to `'self'` only. Any form
+whose action or redirect chain ends at IDAM's sign-in domain — including a session that has
+expired mid-journey and bounces the user back through `/login` — is then silently blocked by
+the browser with no client-side error to catch: the POST simply never completes. If the
+application signs in through IDAM (or posts to any other external origin), explicitly widen
+`form-action` to include that origin.
