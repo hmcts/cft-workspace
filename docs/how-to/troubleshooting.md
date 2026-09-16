@@ -734,6 +734,12 @@ Here is the aforementioned [suppression file](https://github.com/hmcts/template-
 When writing a suppression, match it against the `packageUrl`/CPE actually reported for that CVE in the HTML report, not the artifact name you'd expect. The checker matches CVEs against a shared CPE, so a CVE against one artifact can be reported against a different (but related) artifact on the same release line — for example a CVE in `spring-cloud-commons` reported against `spring-cloud-starter`. A suppression regex written for the "obvious" artifact name silently fails to suppress it, and this is only caught by running the real scan — checking a suppression regex against a predicted purl instead of the one actually in the report gives false confidence that it works.
 
 
+#### - A build fails on the dependency check with no dependency or code changes
+
+The checker matches your dependencies against the live NVD CVE feed on every run, not a pinned snapshot, so an identical build can pass in the morning and fail later the same day purely because a new CVE was published against one of your dependencies in the meantime. Before treating this as a regression in your PR, check the report for a CVE with a very recent publish date — if the flagged dependency hasn't changed, it's the feed, not your change, and the fix is to triage/suppress the new CVE rather than bisect your commits.
+
+A related but distinct failure is `DatabaseException: Error connecting to the database` (or similar wording) with an otherwise-empty vulnerability report — this is the checker losing its connection to the NVD data mirror mid-scan, not a scan result. Re-run the build; if it goes green with no changes, it was transient.
+
 #### - "NoSuchMethodError" when running the OWASP Dependency Checker
 
 With the Dependency-Check v9.0.0 users may encounter issues with  `NoSuchMethodError` exceptions due to dependency resolution.

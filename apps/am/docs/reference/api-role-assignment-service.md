@@ -25,8 +25,7 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/LocationMatcher.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/RegionMatcher.java
   - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java
-status: reviewed
-last_reviewed: "2026-05-13T00:00:00Z"
+status: draft
 examples_extracted_from:
   - apps/am/am-role-assignment-service/src/main/resources/db/migration/V1_1__init_tables.sql
   - apps/am/am-role-assignment-service/src/main/resources/META-INF/kmodule.xml
@@ -91,18 +90,20 @@ sources_sha:
 - All endpoints require `Authorization` (OIDC JWT), `ServiceAuthorization` (S2S token), and optionally `x-correlation-id` headers.
 - The query endpoint supports two versions (v1 single query, v2 multi-query) differentiated by `Content-Type` header, not URL path.
 - Pagination on query endpoints is controlled via request headers (`pageNumber`, `size`, `sort`, `direction`), not query parameters.
-- Create requests are validated by a three-stage in-process Drools rules engine (service-trust, pattern validation, rejection fallback); rejected assignments return HTTP 422.
+- Create requests are validated by a three-stage in-process Drools rules engine (service-trust, pattern validation, rejection fallback). A request rejected by these rules still returns HTTP 200/201 — the rejection only appears in the response body's `status` field (`REJECTED`), so callers must inspect the body, not just the HTTP status, to know whether an assignment actually landed (verified against AAT).
 - `replaceExisting=true` on a create request atomically deletes and replaces all assignments matching the same `process` + `reference`.
 
 ## Endpoints
 
 ### Create
 
-| Method | Path | Description | Success | Error |
-|--------|------|-------------|---------|-------|
-| POST | `/am/role-assignments` | Create one or more role assignments | 201 | 422 (Drools rejection) |
+| Method | Path | Description | Success |
+|--------|------|-------------|---------|
+| POST | `/am/role-assignments` | Create one or more role assignments | 201 |
 
 The request body is an `AssignmentRequest` containing a `roleRequest` header and a `requestedRoles` collection. The operation is transactional (`REQUIRES_NEW`). When `replaceExisting=true`, existing assignments with the same `process` + `reference` are deleted and replaced atomically.
+
+**A Drools rejection is not an HTTP error.** The endpoint still returns 201 when the rejection fallback rule fires; the created `roleRequest`/`requestedRoles` objects in the response body carry `"status": "REJECTED"` instead of `"APPROVED"`/`"LIVE"`. Code that only checks the HTTP status code will treat a rejected assignment as a success.
 
 When `replaceExisting=true`, the service compares new records against existing records and skips replacement if they are identical (duplicate detection).
 
@@ -181,6 +182,11 @@ On the create path `assignerId` is mandatory and is never defaulted: `parseReque
 `validateAssignmentRequest` runs `validateId` over it -- `ParseRequestService.java:44-59` and
 `ValidationUtil.java:138`. A blank or absent `assignerId` fails with
 `400 An input parameter is Null/Empty` -- `ValidationUtil.java:75-82`.
+
+The caller has to source this IDAM user ID itself, and it is not always available by decoding the
+`Authorization` JWT: caseworker-type access tokens seen in AAT carry no `uid` claim. Call IDAM's
+`GET /o/userinfo` with the same bearer token and read `uid` from the response instead of assuming
+it's in the token.
 
 The delete path is the exception: `prepareDeleteRequest` calls `setAssignerId`, which takes the
 value from an `assignerId` request header and falls back to the authenticated user ID when the
@@ -593,7 +599,8 @@ response bandwidth for high-frequency callers such as CCD data store, not databa
 | 401 | Missing or invalid `Authorization` header |
 | 403 | Missing or invalid `ServiceAuthorization` header / caller not in S2S list |
 | 404 | Assignment ID not found (for DELETE by UUID) |
-| 422 | Drools validation rejected the assignment request |
+
+Note: a Drools-rejected create does **not** produce a 422 — see the callout under [Create](#create). A 422 with the shape below has been seen in some deployments, but its trigger has not been confirmed against current source; treat any documented HTTP status here as a hint to check the response body rather than a guarantee.
 
 **Error response shape**:
 
