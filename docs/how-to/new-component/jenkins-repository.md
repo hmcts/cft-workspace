@@ -71,6 +71,24 @@ red for the same commit. Either disable Automatic Analysis for the repository in
 project settings, or add a `.sonarcloud.properties` matching the pipeline's source scope so both
 projects agree.
 
+## A new Node.js repo needs Renovate config and five yarn scripts before the build goes green
+
+Once discovery is working (see above), a new Node.js repo on the common pipeline hits a
+sequence of gates that are each only visible once the previous one is fixed:
+
+- `.github/renovate.json` must extend the org config (`local>hmcts/.github:renovate-config`)
+  and must not use `enabledManagers`, or `renovate-config-check.sh` fails the build. Copy the
+  shape from an existing frontend rather than writing it from scratch.
+- The build expects five yarn scripts to exist: `test`, `test:coverage`, `test:a11y` (run in
+  the unit-test stage, before anything is deployed, so it can't hit a URL — render templates
+  into a DOM implementation and run `axe-core` against that), plus `test:smoke` and
+  `test:functional` for the deploy stages (label-gated stages add `test:fullfunctional` and
+  `test:crossbrowser`). A repo that doesn't use one of these can stub it with
+  `echo '…' && exit 0` rather than have the build fail on "Couldn't find a script named …".
+- `yarn-audit-known-issues` needs to exist and be committed for any audit finding you can't
+  fix immediately (generate with
+  `yarn npm audit --recursive --environment production --json > yarn-audit-known-issues`).
+
 ## Allow production deployments
 
 To allow Jenkins to deploy to production, add your GitHub repository to the approved repositories list.

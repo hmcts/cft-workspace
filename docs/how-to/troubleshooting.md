@@ -425,6 +425,18 @@ Bump the node version in `.nvmrc` to `18.17`
 
 When `package.json` pins a `packageManager` version, `yarn` on `PATH` inside the image is really a Corepack shim, which resolves the pinned version from Corepack's own cache — separate from the `.yarn/cache` folder Yarn itself populates. That cache is normally only populated as a side effect of running `yarn install` in the image. If a Docker build trims the image by removing what looks like a redundant cache directory without checking whether it's Corepack's, the built image passes `tsc`, lint, and unit tests (none of which start a fresh shim) but tries to fetch Yarn from the network the first time a container actually runs `yarn` — invisible until you run the built image itself, ideally with `--network none`, rather than trusting static checks.
 
+### - Application Insights shows every instance as `unknown_service:node`
+
+A Node.js service built on the `@hmcts-cft/cloud-native-platform` starter package configures
+its Application Insights role name through a `serviceName` config value, but that value is
+inert: the package bundles the OpenTelemetry-based v3 `applicationinsights` SDK, and nothing
+in that SDK reads `APPLICATIONINSIGHTS_ROLE_NAME` or any config-derived role name. The role
+name it actually reports comes from the standard OpenTelemetry `OTEL_SERVICE_NAME` environment
+variable, resolved by `@opentelemetry/resources`' env detector. Setting `serviceName` in
+`config/default.json` has no effect on this — every instance keeps reporting as
+`unknown_service:node` in Application Insights regardless of what the app config says. Set
+`OTEL_SERVICE_NAME` instead (for example in the Helm chart's environment block).
+
 ### - After(build) is deprecated
 
 ```
