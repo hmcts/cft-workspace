@@ -476,6 +476,19 @@ that needs two independent case types from one case data class (for example two 
 from largely-shared fields) must override `groupingKey()` on each config to return a distinct value
 per case type; otherwise their events silently collapse into a single case type at generation time.
 
+This natural, per-case-data-class grouping happens independently of any manual composition a config does
+itself. A config can `@Autowired`-inject a `List<CCDConfig<T,S,R>>` of sibling beans and fan their
+`configure()` calls into its *own* builder (for example to compose one case type from many smaller
+`@Component` classes) — but every one of those sibling beans is still, separately, picked up by
+`CCDDefinitionGenerator`'s own grouping by case-data class, because that grouping considers every
+`CCDConfig` bean in the Spring context, not just the ones nobody else has already claimed. If none of the
+beans sharing that natural grouping ever calls `caseType()`/`jurisdiction()` on their own builder — because
+they were only ever meant to be composed into somebody else's case type — the group is still generated,
+just with no case-type id, and its JSON is written loose at the top level of the output directory rather
+than into a named subfolder. That stray output is harmless (nothing imports it as a case type), and it also
+means the fan-in pattern doesn't leak one case-data class's configs into another: a `CCDConfig` on a
+different case-data class starts with an empty group of its own, unaffected by any other class's fan-in.
+
 ```java
 @Component
 public class MyCaseConfig implements CCDConfig<MyCaseData, State, UserRole> {

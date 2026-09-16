@@ -72,6 +72,12 @@ When you run it on the master/main branch it will setup the default branch and t
 
 If you receive this error: `Pipeline aborted due to quality gate failure: NONE` on master, try a re-run of the pipeline. This may simply be an intermittent issue caused by sonarcloud or because the GitHub repo has only just been created and this is the first time you're running the pipeline.
 
+### Sonar scan succeeds but no PR comment appears
+
+Analysis completing and the quality gate evaluating correctly does not mean SonarCloud will comment on the PR. PR decoration also requires the receiving SonarCloud project to have a **DevOps Platform binding** to the GitHub repo, plus the SonarCloud GitHub App installed with access to that repo. Both live in SonarCloud's own project settings (Administration → DevOps Platform Integration) — nothing in `build.gradle`, `Jenkinsfile_CNP` or `sonar-project.properties` can create or fix that binding, so changing `sonar.projectKey` will not restore comments; it can only move the (still unbound) analysis to a different project.
+
+A repo can end up with more than one SonarCloud project for the same GitHub repo — typically one created by SonarCloud's GitHub-import/Automatic Analysis (source-only, so it reports 0% coverage, but bound and therefore able to comment) and one fed by the Jenkins `sonarqube` task (full coverage data, but not bound unless someone did it manually). If comments stopped after previously working, check for duplicate/orphaned projects for the repo and confirm which one Jenkins is actually publishing to before asking platform/Sonar admins to bind it.
+
 ### Build / Docker Build / Unit Test failure
 
   - If your build is failing in these stages, it's most likely to fail in your local as well. Look at the first line of the Jenkins step that fails and try run the same command Jenkins is running.
