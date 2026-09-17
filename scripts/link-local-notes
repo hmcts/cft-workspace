@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Re-link each clone's personal working files to their host-visible copies in `local-notes/`.
+#
+# **Why the indirection.** The clones live on Docker named volumes, so anything untracked inside one
+# exists only in the volume: no git, no Mac backup, and gone on `docker volume prune`. These files are
+# untracked by intention — `rules-of-engagement.md` is per-engineer instruction and the `steve*` notes are
+# scratch — so committing them is wrong and losing them is worse. Keeping the content under
+# `local-notes/`, which is on the bind-mounted workspace repo, puts it on the host where the Mac's own
+# backup covers it, while the symlink keeps the path each file is habitually referred to by
+# (`deed-poll-admin/rules-of-engagement.md`) working unchanged.
+#
+# **The four `rules-of-engagement.md` files are NOT copies of each other** — they differ by START_TOKEN
+# (`ADMIN - 👵`, `API - 🐦`, …), which is how the engineer tells which agent is working in which repo. So
+# there is one per clone and they must not be consolidated.
+#
+# Idempotent, and safe to run when a clone is missing: a repo that has not been cloned yet is skipped
+# rather than being given a dangling link. `scripts/bootstrap` creates the clones, so this runs after it.
+#
+#   ./scripts/link-local-notes
+#
+# Called from `.devcontainer/post-create.sh` so a rebuild or a pruned volume restores the links without
+# anyone remembering to.
+
+cd "$(dirname "$0")/.."
+NOTES_DIR="local-notes"
+
+# repo:filename pairs. Filenames are the originals rather than something tidier, because the point is that
+# the habitual path keeps working — renaming them here would defeat it.
+ENTRIES=(
+  "deed-poll-admin:rules-of-engagement.md"
+  "deed-poll-api:rules-of-engagement.md"
+  "deed-poll-web:rules-of-engagement.md"
+  "deed-poll-infra:rules-of-engagement.md"
+  "deed-poll-admin:steves_notes.md"
+  "deed-poll-api:steve-where-to-next.md"
+  "deed-poll-web:steve_where_to_next.md"
+)
+
+linked=0
+skipped=0
+
+for entry in "${ENTRIES[@]}"; do
+  repo="${entry%%:*}"
+  file="${entry##*:}"
+  source_file="$NOTES_DIR/$repo/$file"
+  target="$repo/$file"
+
+  if [[ ! -d "$repo" ]]; then
+    echo "skip   $target — $repo not cloned"
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  # No source means nothing to link to. Creating the link anyway would leave a dangling symlink, which
+  # reads as a corrupt file rather than an absent one — worse than doing nothing and saying so.
+  if [[ ! -f "$source_file" ]]; then
+    echo "skip   $target — no $source_file"
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  # A regular file already there is real content, not a stale link: back it up rather than overwrite it.
+  # This is the case where someone edited the clone's copy directly before the links existed.
+  if [[ -f "$target" && ! -L "$target" ]]; then
+    if cmp -s "$target" "$source_file"; then
+      rm -f "$target"
+    else
+      backup="$source_file.$(date +%Y%m%d%H%M%S).conflict"
+      echo "NOTE   $target differs from $source_file — kept as $backup"
+      cp -p "$target" "$backup"
+      rm -f "$target"
+    fi
+  fi
+
+  rm -f "$target"
+  # Relative, counted from the clone directory, so the link survives the workspace being mounted at a
+  # different absolute path.
+  ln -s "../$source_file" "$target"
+  linked=$((linked + 1))
+done
+
+echo "linked $linked, skipped $skipped"

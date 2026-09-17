@@ -26,7 +26,27 @@
         "files.autoSave": "onFocusChange",
         "terminal.integrated.defaultProfile.linux": "zsh",
         "explorer.excludeGitIgnore": false,
-        "git.repositoryScanMaxDepth": 5,
+        // **Auto-fetch off, and this is the fix for the console lag rather than a tidy-up.** Measured
+        // 2026-09-17: VS Code's git extension had **115 `git-upload-pack` sessions in uninterruptible
+        // sleep at once**, against every clone it had discovered — `payments-java-client`,
+        // `ccd-case-migration-starter`, `azure-public-dns` and so on — for a **load average of 95**. The
+        // parent chain was `ssh → git fetch → VS Code extension host → code-server`, so it was not a build,
+        // not a test and not anything anyone asked for.
+        //
+        // A scan depth of 5 across `apps/<product>/<repo>`, `libs/` and `platops/` finds ~40 repositories,
+        // and auto-fetch then hits each one periodically over ssh. That is fine on one repo and pathological
+        // on forty, especially across a slow mount.
+        //
+        // **It also silently invalidated every I/O benchmark taken before this was found**, because the load
+        // was ambient rather than caused by the thing being measured — hence scripts/bench-workspace-io now
+        // records /proc/loadavg alongside its numbers.
+        //
+        // Depth 1 still finds the four deed-poll clones and the workspace repo, which is what the engineer
+        // actually works in; the reference clones under apps/, libs/ and platops/ are read-only material and
+        // do not need VS Code's git integration. Raise it deliberately if that changes.
+        "git.autofetch": false,
+        "git.autofetchPeriod": 0,
+        "git.repositoryScanMaxDepth": 1,
         "git.detectSubmodulesLimit": 40,
         "files.exclude": {
           "**/node_modules": true,
@@ -60,7 +80,12 @@
       }
     }
   },
-  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
+  // The workspace repo stays a bind mount: it is scaffolding only — devcontainer, scripts, docs, the
+  // manifest and the engineer's `*.local.md` files — so it is small, and it is the part worth having
+  // visible and backed up on the host. `consistency=cached` was dropped rather than kept: it is an
+  // osxfs-era flag that Docker Desktop ignores under VirtioFS and gRPC-FUSE, so it read as a performance
+  // measure while doing nothing.
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
   "workspaceFolder": "${localWorkspaceFolder}",
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind",
@@ -76,7 +101,33 @@
     "source=cft-m2,target=/home/hmcts/.m2,type=volume",
     "source=cft-npm,target=/home/hmcts/.npm,type=volume",
     "source=cft-yarn,target=/home/hmcts/.cache/yarn,type=volume",
-    "source=cft-codex,target=/home/hmcts/.codex,type=volume"
+    "source=cft-codex,target=/home/hmcts/.codex,type=volume",
+
+    // The clones go on named volumes, and this is the change that makes the workspace usable.
+    //
+    // **Measured 2026-09-17 on an idle machine:** reading the same 86 TypeScript files three times took
+    // **32,692 ms** through the host bind mount and **90 ms** from container-native storage — 363x, or
+    // ~127 ms versus ~0.35 ms per file. That single number is behind every slow thing here: a vitest run
+    // reporting `tests 7.61s` after `import 1182.70s`, 22 fork workers timing out while every test passed,
+    // `turbo watch` never starting a task in eight minutes, a 245-second Vite CSS transform, a Docker build
+    // context moving at 34 KB/s, and the memory kills that follow from all of it.
+    //
+    // The caches above were already volumes, so the pattern was understood — it just had not been applied
+    // to the source. Mounting at the same paths the bind used keeps every absolute path identical, which
+    // matters: Claude's memory directory, ralphex state and git worktrees are all keyed on them.
+    //
+    // **What this costs:** the clones are no longer visible on the host. That is deliberate and agreed —
+    // editing happens in the container, and `scripts/bootstrap` re-clones from the remotes, so a volume is
+    // reconstructible state rather than the only copy of anything. The exception is untracked files inside
+    // a clone, which is what `scripts/link-local-notes` exists to keep on the host. Anything else untracked
+    // in a clone is lost on `docker volume prune` — commit it or link it.
+    "source=cft-src-deed-poll-admin,target=${localWorkspaceFolder}/deed-poll-admin,type=volume",
+    "source=cft-src-deed-poll-api,target=${localWorkspaceFolder}/deed-poll-api,type=volume",
+    "source=cft-src-deed-poll-web,target=${localWorkspaceFolder}/deed-poll-web,type=volume",
+    "source=cft-src-deed-poll-infra,target=${localWorkspaceFolder}/deed-poll-infra,type=volume",
+    "source=cft-src-apps,target=${localWorkspaceFolder}/apps,type=volume",
+    "source=cft-src-libs,target=${localWorkspaceFolder}/libs,type=volume",
+    "source=cft-src-platops,target=${localWorkspaceFolder}/platops,type=volume"
   ],
   "initializeCommand": "mkdir -p ~/.claude ~/.azure ~/.kube ~/.ssh ~/.config/gh && touch ~/.zsh_history ~/.bash_history ~/.claude.json",
   "postStartCommand": "bash .devcontainer/post-start.sh",
