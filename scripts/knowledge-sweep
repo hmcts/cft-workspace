@@ -25,6 +25,7 @@ STAMP="$STATE_DIR/last-run"
 LOCKDIR="$STATE_DIR/sweep.lock.d"
 LOG="$STATE_DIR/sweep.log"
 PENDING="$STATE_DIR/PENDING"
+SOURCES="$STATE_DIR/sources.json"
 # Not under .claude/ — Claude Code refuses Write/Edit anywhere beneath a .claude/
 # directory, which would give the harvester a checkout it cannot edit.
 WORKTREE="${TMPDIR:-/tmp}/cft-knowledge-sweep-wt"
@@ -53,10 +54,16 @@ else
     fmt_epoch()  { date -r "$1" "+$2"; }
 fi
 
-# Oldest first, without GNU find's -printf.
+# Every transcript across every source, unordered.
+all_transcripts() {
+    transcript_dirs | while IFS= read -r d; do
+        find "$d" -maxdepth 1 -type f -name '*.jsonl' -print 2>/dev/null
+    done
+}
+
+# The same, oldest first — without GNU find's -printf.
 list_transcripts() {
-    local d="$1" f
-    find "$d" -maxdepth 1 -type f -name '*.jsonl' -print 2>/dev/null \
+    all_transcripts \
     | while IFS= read -r f; do printf '%s\t%s\n' "$(file_mtime "$f")" "$f"; done \
     | sort -n | cut -f2-
 }
@@ -88,20 +95,66 @@ done
 
 mkdir -p "$STATE_DIR"
 [[ -f "$LEDGER" ]] || printf '{}\n' > "$LEDGER"
+[[ -f "$SOURCES" ]] || printf '[]\n' > "$SOURCES"
 
-transcript_dir() {
-    # Transcripts live under a slug of the project path, every non-alphanumeric
-    # character replaced by a hyphen.
+# Which CLI does the harvesting. Claude Code is the default because the
+# harvester is written as one of its agents; a Codex-only engineer needs
+# KNOWLEDGE_SWEEP_HARVEST_CMD, which receives the prompt on stdin.
+HARVEST_CMD=${KNOWLEDGE_SWEEP_HARVEST_CMD:-}
+if [[ -z "$HARVEST_CMD" ]]; then
+    if command -v claude >/dev/null; then
+        HARVEST_CMD="claude -p --model $MODEL --permission-mode acceptEdits"
+        HARVEST_CMD+=" --allowedTools Read Edit Write Grep Glob Bash(./scripts/docs-index)"
+    elif command -v codex >/dev/null; then
+        # Untested: no Codex install was available to verify the invocation or
+        # its sandbox flags. Override with KNOWLEDGE_SWEEP_HARVEST_CMD if wrong.
+        HARVEST_CMD="codex exec"
+    fi
+fi
+
+# Claude Code's layout: a slug of the project path, every non-alphanumeric
+# character replaced by a hyphen.
+claude_transcript_dir() {
     local slug
     slug=$(printf '%s' "$WORKSPACE_ROOT" | sed 's/[^a-zA-Z0-9]/-/g')
-    printf '%s/.claude/projects/%s' "$HOME" "$slug"
+    # Newline-terminated: this is read line-wise, not captured.
+    printf '%s/.claude/projects/%s\n' "$HOME" "$slug"
+}
+
+# Both clients hand a hook one JSON object on stdin carrying transcript_path.
+# Recording its directory means no client's storage layout has to be hardcoded —
+# the sweep learns where transcripts live the first time that client's hook runs.
+record_source_from_stdin() {
+    [[ -t 0 ]] && return 0
+    local payload="" path dir tmp
+    # bash's own timed read: this runs on the session-start path, so it must
+    # never block, and `timeout` is absent on macOS.
+    read -r -t 2 -d '' payload 2>/dev/null || true
+    [[ -n "$payload" ]] || return 0
+    path=$(printf '%s' "$payload" | jq -r '.transcript_path // empty' 2>/dev/null || printf '')
+    [[ -n "$path" ]] || return 0
+    dir=$(dirname "$path")
+    [[ -d "$dir" ]] || return 0
+    tmp=$(mktemp)
+    if jq --arg d "$dir" '. + [$d] | unique' "$SOURCES" > "$tmp" 2>/dev/null; then
+        mv "$tmp" "$SOURCES"
+    else
+        rm -f "$tmp"
+    fi
+}
+
+# Every directory worth sweeping: Claude's derived path, plus whatever any
+# client's hook has taught us.
+transcript_dirs() {
+    { claude_transcript_dir; jq -r '.[]' "$SOURCES" 2>/dev/null; } \
+    | while IFS= read -r d; do [[ -d "$d" ]] && printf '%s\n' "$d"; done \
+    | sort -u
 }
 
 # Unreviewed bytes across every transcript, and how many sessions they span.
 # A session marked `seeded` was never read, so all of it counts as unreviewed.
 progress() {
-    local tdir="$1"
-    find "$tdir" -maxdepth 1 -type f -name '*.jsonl' -print 2>/dev/null \
+    all_transcripts \
     | while IFS= read -r path; do
         local name size sid offset
         name=$(basename "$path"); size=$(file_size "$path")
@@ -114,6 +167,8 @@ progress() {
            END { printf "%.1f\t%d\t%d\n", total/1048576, n+0, total+0 }'
 }
 
+record_source_from_stdin
+
 if [[ $STATUS -eq 1 ]]; then
     info "knowledge-sweep status"
     if [[ -f "$STAMP" ]]; then
@@ -123,9 +178,10 @@ if [[ $STATUS -eq 1 ]]; then
     fi
     log "  sessions in ledger: $(jq 'length' "$LEDGER")"
     log "  never read (seeded): $(jq '[.[] | select(.seeded == true)] | length' "$LEDGER")"
-    IFS=$'\t' read -r mb sessions _ < <(progress "$(transcript_dir)")
+    IFS=$'\t' read -r mb sessions _ < <(progress)
     log "  unreviewed: ${mb} MB across ${sessions} session(s)"
-    log "  transcript dir: $(transcript_dir)"
+    log "  transcript sources:"
+    transcript_dirs | while IFS= read -r d; do log "    $d"; done
     if [[ -s "$PENDING" ]]; then
         log ""
         cat "$PENDING"
@@ -138,9 +194,8 @@ fi
 # Re-invokes itself so each batch gets clean state, and so the lock below is
 # held per batch rather than for the whole backfill.
 if [[ $UNTIL_DONE -eq 1 ]]; then
-    TDIR_P=$(transcript_dir)
     for (( batch = 1; batch <= ${KNOWLEDGE_SWEEP_MAX_BATCHES:-200}; batch++ )); do
-        IFS=$'\t' read -r mb sessions _ < <(progress "$TDIR_P")
+        IFS=$'\t' read -r mb sessions _ < <(progress)
         before=$(jq '[.[].offset // 0] | add // 0' "$LEDGER")
         info "backfill batch $batch — ${mb} MB unreviewed across ${sessions} session(s)"
         if [[ "$sessions" == "0" ]]; then
@@ -202,8 +257,7 @@ if [[ $FORCE -eq 0 && -f "$STAMP" ]]; then
     fi
 fi
 
-TDIR=$(transcript_dir)
-[[ -d "$TDIR" ]] || { warn "no transcript directory at $TDIR"; exit 0; }
+[[ -n "$(transcript_dirs)" ]] || { warn "no transcript directory found for this workspace"; exit 0; }
 
 # A first run faces every session ever held here. The digest cap means most of
 # that backlog would be recorded as seen without being read, so decline it
@@ -219,7 +273,7 @@ if [[ "$(jq 'length' "$LEDGER")" == "0" && $BACKFILL -eq 0 ]]; then
            '.[$s] = {offset: $o, reviewed_at: $t, seeded: true}' "$tmp" > "$tmp.next"
         mv "$tmp.next" "$tmp"
         seeded=$(( seeded + 1 ))
-    done < <(find "$TDIR" -maxdepth 1 -name '*.jsonl')
+    done < <(all_transcripts)
     mv "$tmp" "$LEDGER"
     touch "$STAMP"
     ok "first run: marked $seeded existing session(s) as seen — sweeping new activity from now on"
@@ -342,6 +396,10 @@ while IFS= read -r transcript; do
     fi
 
     if [[ ! -s "$slice" ]]; then
+        # A window with bytes in it that yields no readable turns means the
+        # extraction doesn't understand this client's transcript format. Say so
+        # — otherwise the offset advances and the history is silently consumed.
+        warn "$sid: $(( next_offset - offset ))B of new transcript produced no readable turns"
         new_offsets[$sid]=$next_offset
         continue
     fi
@@ -359,7 +417,7 @@ while IFS= read -r transcript; do
         printf '\n[digest truncated — remaining sessions deferred to the next sweep]\n' >> "$DIGEST"
         break
     fi
-done < <(list_transcripts "$TDIR")
+done < <(list_transcripts)
 
 [[ $DRY_RUN -eq 0 ]] && touch "$STAMP"
 
@@ -441,16 +499,14 @@ cp "$DIGEST" "$WORKTREE/sweep-digest.local.md"
 PROMPT_BODY=$(awk '/^---[[:space:]]*$/{c++; next} c>=2{print}' "$HARVESTER")
 [[ -n "$PROMPT_BODY" ]] || { cleanup_worktree; die "could not read harvester prompt from $HARVESTER"; }
 
+[[ -n "$HARVEST_CMD" ]] || { cleanup_worktree; die "no harvester CLI — install claude, or set KNOWLEDGE_SWEEP_HARVEST_CMD"; }
+
 set +e
 (
     cd "$WORKTREE" || exit 1
     export KNOWLEDGE_SWEEP_CHILD=1
     printf '%s\n\nThe digest is at `sweep-digest.local.md`. Write your summary to `sweep-summary.local.md`.\n' "$PROMPT_BODY" \
-    | claude -p \
-        --model "$MODEL" \
-        --permission-mode acceptEdits \
-        --allowedTools "Read" "Edit" "Write" "Grep" "Glob" "Bash(./scripts/docs-index)" \
-        > "$WORK/model.log" 2>&1
+    | $HARVEST_CMD > "$WORK/model.log" 2>&1
 )
 model_status=$?
 set -e
