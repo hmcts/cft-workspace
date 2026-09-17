@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Measure filesystem read cost for the workspace, against container-native storage as the control.
+#
+# **Why this exists.** On 2026-09-17 the clones moved from a macOS bind mount onto Docker named volumes,
+# on the strength of an ad-hoc measurement showing reads ~363x slower through the bind. That number was
+# produced by hand three times, and **the first run was invalid** — a `vitest` run was competing for the
+# same mount, which inflated the control rather than the subject. A claim that decides a devcontainer
+# change should be reproducible by someone who did not make it, so: this script, and a results file.
+#
+# **What it measures, and why three passes rather than one.** A module loader does not simply stream bytes;
+# it opens, stats and reads thousands of small files, and resolution costs more stat calls than reads. So:
+#
+#   1. bulk read   — every file in one `cat`, i.e. throughput
+#   2. per-file    — one `cat` per file, i.e. open/read/close latency, which is what a loader pays
+#   3. stat only   — no data read at all, which isolates metadata cost from transfer
+#
+# Pass 2 is the one that matters most and the one the original hand measurement did **not** isolate: `xargs`
+# batches arguments, so `xargs cat` is closer to pass 1 than to what Node does.
+#
+# **Repetition.** Each pass runs `--runs` times and the median is reported. A single sample cannot
+# distinguish a slow filesystem from a busy machine, which is exactly the mistake made the first time.
+#
+# **Cache.** The passes are deliberately *not* cache-cleared between runs, because the finding worth having
+# is whether repeated reads get cheaper. On the bind mount they did not — three consecutive passes stayed
+# slow, which is unusual and is itself the evidence. Clearing the page cache needs privileges this script
+# should not assume.
+#
+#   ./scripts/bench-workspace-io                 # default: 3 runs over libs/deed-poll/src
+#   ./scripts/bench-workspace-io --runs 5
+#   ./scripts/bench-workspace-io --path deed-poll-api/src/main/java --glob '*.java'
+#
+# Results append to `bench-io.local.md`, which is gitignored by `*.local.md` and lives on the workspace
+# repo — so a before-and-after survives the rebuild that the numbers are about.
+
+RUNS=3
+SUBJECT_PATH="deed-poll-admin/libs/deed-poll/src"
+GLOB="*.ts"
+CONTROL_ROOT="/tmp/bench-workspace-io"
+RESULTS="bench-io.local.md"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --runs) RUNS="$2"; shift 2 ;;
+    --path) SUBJECT_PATH="$2"; shift 2 ;;
+    --glob) GLOB="$2"; shift 2 ;;
+    --results) RESULTS="$2"; shift 2 ;;
+    -h|--help) sed -n '3,40p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "unknown option: $1" >&2; exit 2 ;;
+  esac
+done
+
+cd "$(dirname "$0")/.."
+WORKSPACE="$PWD"
+
+if [[ ! -d "$SUBJECT_PATH" ]]; then
+  echo "no such path: $SUBJECT_PATH — is the clone present?" >&2
+  exit 1
+fi
+
+# Competing I/O is what invalidated the first attempt, so it is reported rather than assumed away. Not
+# fatal: a warning the reader can weigh beats a check that refuses to run.
+BUSY=$(pgrep -f 'vitest|turbo|gradle|ralphex|yarn' 2>/dev/null | wc -l | tr -d ' ')
+LOAD=$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo "unknown")
+
+mapfile -t FILES < <(find "$SUBJECT_PATH" -type f -name "$GLOB" | sort)
+COUNT=${#FILES[@]}
+if [[ $COUNT -eq 0 ]]; then echo "no files matched $GLOB under $SUBJECT_PATH" >&2; exit 1; fi
+
+# The control is a byte-for-byte copy on container-native storage. Same file count, same sizes, same
+# directory shape — so the only variable is which filesystem the bytes are on.
+mkdir -p "$CONTROL_ROOT"
+CONTROL="$CONTROL_ROOT/$(date +%s)"
+mkdir -p "$CONTROL"
+for f in "${FILES[@]}"; do
+  mkdir -p "$CONTROL/$(dirname "$f")"
+  cp -p "$f" "$CONTROL/$f"
+done
+
+# The file list goes to a temp file on container-native storage, so reading the list itself is not part of
+# what is being measured. Relative paths, so the same list works from either directory.
+FILE_LIST="$CONTROL_ROOT/filelist.$$"
+printf '%s\n' "${FILES[@]}" > "$FILE_LIST"
+trap 'rm -f "$FILE_LIST"' EXIT
+
+now_ms() { date +%s%3N; }
+
+median() {
+  local sorted
+  IFS=$'\n' sorted=($(sort -n <<<"$*"))
+  echo "${sorted[$(( ${#sorted[@]} / 2 ))]}"
+}
+
+# The per-file and stat passes run **inside one Node process**, not as a shell loop.
+#
+# The first version of this script used `cat` and `stat` per file, and the numbers were nonsense: the
+# control reported ~34 ms per `stat` on overlayfs, which is impossible for a filesystem and is obviously
+# `fork`/`exec` overhead. 86 spawns swamped the thing being measured. Node opens, reads and closes in
+# process, so what is timed is the syscall — which is what a module loader actually pays.
+#
+# `bulk` stays a single `cat`, because one process for the whole set is already spawn-free.
+NODE_PASS=$(cat <<'JS'
+const fs = require("node:fs");
+const mode = process.argv[2];
+const files = fs.readFileSync(process.argv[3], "utf8").split("\n").filter(Boolean);
+const started = process.hrtime.bigint();
+for (const f of files) {
+  if (mode === "perfile") fs.readFileSync(f);
+  else fs.statSync(f);
+}
+process.stdout.write(String(Number(process.hrtime.bigint() - started) / 1e6));
+JS
+)
+
+# $1 = pass name, $2 = directory to run in. Echoes "median run1,run2,..."
+run_pass() {
+  local pass="$1" dir="$2" times=() s e i ms
+  for ((i = 0; i < RUNS; i++)); do
+    case "$pass" in
+      bulk)
+        s=$(now_ms)
+        (cd "$dir" && printf '%s\0' "${FILES[@]}" | xargs -0 cat > /dev/null 2>/dev/null)
+        e=$(now_ms)
+        times+=("$((e - s))")
+        ;;
+      perfile|stat)
+        # Timed inside Node and printed, so the interpreter's own start-up is excluded rather than
+        # attributed to the filesystem.
+        ms=$(cd "$dir" && node -e "$NODE_PASS" -- "$pass" "$FILE_LIST" 2>/dev/null || echo 0)
+        times+=("${ms%.*}")
+        ;;
+    esac
+  done
+  echo "$(median "${times[@]}") $(IFS=,; echo "${times[*]}")"
+}
+
+echo "files=$COUNT  runs=$RUNS  path=$SUBJECT_PATH"
+[[ "$BUSY" -gt 0 ]] && echo "WARNING: $BUSY build/test processes running — results will be inflated"
+echo
+
+declare -A MED
+for pass in bulk perfile stat; do
+  for side in subject control; do
+    dir=$([[ $side == subject ]] && echo "$WORKSPACE" || echo "$CONTROL")
+    read -r med all <<<"$(run_pass "$pass" "$dir")"
+    MED["$pass-$side"]=$med
+    printf "%-8s %-8s median %7s ms   runs %s\n" "$pass" "$side" "$med" "$all"
+  done
+done
+echo
+
+{
+  echo
+  echo "## $(date -u '+%Y-%m-%d %H:%M') UTC"
+  echo
+  echo "\`$SUBJECT_PATH\`, $COUNT files matching \`$GLOB\`, $RUNS runs, median reported."
+  echo "Load average $LOAD; competing build/test processes: $BUSY."
+  echo
+  echo "| Pass | Workspace | Container-native | Ratio |"
+  echo "|---|---|---|---|"
+  for pass in bulk perfile stat; do
+    s=${MED["$pass-subject"]}; c=${MED["$pass-control"]}
+    # Integer arithmetic to one decimal place: no bc or python3 in this image.
+    ratio=$([[ "$c" -gt 0 ]] && echo "$(( s * 10 / c / 10 )).$(( s * 10 / c % 10 ))x" || echo "n/a")
+    printf "| %s | %s ms | %s ms | %s |\n" "$pass" "$s" "$c" "$ratio"
+  done
+  echo
+  echo "Per-file open/read/close is the pass to compare across rebuilds: it is what a module loader pays,"
+  echo "and it is the one the original hand measurement did not isolate."
+} >> "$RESULTS"
+
+echo "appended to $RESULTS"

@@ -56,6 +56,13 @@
 
 *.local.md
 
+# Per-engineer working files that belong to a clone but must live on the host. The clones are on Docker
+# named volumes, so anything untracked inside one is lost to `docker volume prune` — these are kept here,
+# on the bind-mounted workspace repo, and symlinked back into each clone by scripts/link-local-notes.
+# Ignored rather than tracked because they are personal: `rules-of-engagement.md` is per-engineer
+# instruction (one per clone, differing by START_TOKEN) and the `steve*` files are scratch notes.
+/local-notes/
+
 # 9) The deed-poll programme's clones
 #
 # Four independently-cloned repos, ignored for the same reason apps/, libs/ and platops/ are: their

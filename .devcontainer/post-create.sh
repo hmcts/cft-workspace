@@ -6,6 +6,10 @@ set -euxo pipefail
 cd "$(dirname "$0")/.."
 if gh auth status >/dev/null 2>&1; then
     ./scripts/bootstrap || true
+    # After bootstrap, because it is what creates the clone directories the links live in. The clones are
+    # on named volumes now, so anything untracked inside one is lost on a `docker volume prune` — this puts
+    # the per-engineer files back from their host-visible copies. See scripts/link-local-notes.
+    ./scripts/link-local-notes || true
     ./scripts/doctor --quiet || true
 else
     echo
