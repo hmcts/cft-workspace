@@ -1,3 +1,15 @@
+# Mirrors the Claude Code SessionStart hook in .claude/settings.json, so a
+# Codex-only engineer contributes documentation from their sessions too. The
+# script reads the hook's stdin payload to learn where Codex keeps transcripts
+# rather than assuming a path.
+[[hooks.SessionStart]]
+matcher = "startup|resume"
+
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = './scripts/knowledge-sweep --background'
+statusMessage = "Knowledge sweep"
+
 [mcp_servers.atlassian]
 url = "https://mcp.atlassian.com/v2/mcp"
 required = false
