@@ -22,7 +22,7 @@ source "$(dirname "$0")/lib/_common.sh"
 STATE_DIR="$WORKSPACE_ROOT/.claude/knowledge-sweep"
 LEDGER="$STATE_DIR/ledger.json"
 STAMP="$STATE_DIR/last-run"
-LOCK="$STATE_DIR/sweep.lock"
+LOCKDIR="$STATE_DIR/sweep.lock.d"
 LOG="$STATE_DIR/sweep.log"
 PENDING="$STATE_DIR/PENDING"
 # Not under .claude/ — Claude Code refuses Write/Edit anywhere beneath a .claude/
@@ -40,6 +40,26 @@ MODEL=${KNOWLEDGE_SWEEP_MODEL:-sonnet}
 # pr — push the author's branch and open/update their PR; branch — commit locally
 # and never push.
 MODE=${KNOWLEDGE_SWEEP_MODE:-pr}
+
+# The devcontainer is Linux, but the workspace also bootstraps on a macOS host,
+# where stat and date take different flags and flock is absent.
+if stat -c %s . >/dev/null 2>&1; then
+    file_size()  { stat -c %s "$1"; }
+    file_mtime() { stat -c %Y "$1"; }
+    fmt_epoch()  { date -d "@$1" "+$2"; }
+else
+    file_size()  { stat -f %z "$1"; }
+    file_mtime() { stat -f %m "$1"; }
+    fmt_epoch()  { date -r "$1" "+$2"; }
+fi
+
+# Oldest first, without GNU find's -printf.
+list_transcripts() {
+    local d="$1" f
+    find "$d" -maxdepth 1 -type f -name '*.jsonl' -print 2>/dev/null \
+    | while IFS= read -r f; do printf '%s\t%s\n' "$(file_mtime "$f")" "$f"; done \
+    | sort -n | cut -f2-
+}
 
 BACKGROUND=0
 FORCE=0
@@ -81,9 +101,11 @@ transcript_dir() {
 # A session marked `seeded` was never read, so all of it counts as unreviewed.
 progress() {
     local tdir="$1"
-    find "$tdir" -maxdepth 1 -name '*.jsonl' -printf '%f\t%s\n' 2>/dev/null \
-    | while IFS=$'\t' read -r name size; do
-        local sid="${name%.jsonl}" offset
+    find "$tdir" -maxdepth 1 -type f -name '*.jsonl' -print 2>/dev/null \
+    | while IFS= read -r path; do
+        local name size sid offset
+        name=$(basename "$path"); size=$(file_size "$path")
+        sid="${name%.jsonl}"
         offset=$(jq -r --arg s "$sid" \
             'if (.[$s].seeded == true) then 0 else (.[$s].offset // 0) end' "$LEDGER")
         printf '%s\n' "$(( size - offset ))"
@@ -95,7 +117,7 @@ progress() {
 if [[ $STATUS -eq 1 ]]; then
     info "knowledge-sweep status"
     if [[ -f "$STAMP" ]]; then
-        log "  last run: $(date -r "$STAMP" '+%Y-%m-%d %H:%M:%S')"
+        log "  last run: $(fmt_epoch "$(file_mtime "$STAMP")" '%Y-%m-%d %H:%M:%S')"
     else
         log "  last run: never"
     fi
@@ -152,13 +174,29 @@ if [[ $BACKGROUND -eq 1 ]]; then
     exit 0
 fi
 
-exec 9>"$LOCK"
-if ! flock -n 9; then
-    exit 0
-fi
+# mkdir is the portable atomic lock; macOS has no flock. A lock whose owning
+# process is gone is reclaimed, so a killed run doesn't wedge every later one.
+acquire_lock() {
+    if mkdir "$LOCKDIR" 2>/dev/null; then
+        printf '%s\n' "$$" > "$LOCKDIR/pid"
+        return 0
+    fi
+    local owner
+    owner=$(cat "$LOCKDIR/pid" 2>/dev/null || printf '')
+    if [[ -z "$owner" ]] || ! kill -0 "$owner" 2>/dev/null; then
+        rm -rf "$LOCKDIR"
+        mkdir "$LOCKDIR" 2>/dev/null || return 1
+        printf '%s\n' "$$" > "$LOCKDIR/pid"
+        return 0
+    fi
+    return 1
+}
+acquire_lock || exit 0
+cleanup() { rm -rf "$LOCKDIR" "${WORK:-}"; }
+trap cleanup EXIT
 
 if [[ $FORCE -eq 0 && -f "$STAMP" ]]; then
-    age=$(( $(date +%s) - $(stat -c %Y "$STAMP") ))
+    age=$(( $(date +%s) - $(file_mtime "$STAMP") ))
     if (( age < MIN_INTERVAL_SECONDS )); then
         exit 0
     fi
@@ -176,7 +214,7 @@ if [[ "$(jq 'length' "$LEDGER")" == "0" && $BACKFILL -eq 0 ]]; then
     cp "$LEDGER" "$tmp"
     while IFS= read -r t; do
         sid=$(basename "$t" .jsonl)
-        jq --arg s "$sid" --argjson o "$(stat -c %s "$t")" \
+        jq --arg s "$sid" --argjson o "$(file_size "$t")" \
            --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
            '.[$s] = {offset: $o, reviewed_at: $t, seeded: true}' "$tmp" > "$tmp.next"
         mv "$tmp.next" "$tmp"
@@ -204,7 +242,6 @@ command -v claude >/dev/null || die "claude CLI not on PATH"
 command -v jq >/dev/null || die "jq not on PATH"
 
 WORK=$(mktemp -d)
-trap 'rm -rf "$WORK"' EXIT
 
 DIGEST="$WORK/digest.md"
 : > "$DIGEST"
@@ -241,8 +278,8 @@ while IFS= read -r transcript; do
     (( sessions_reviewed >= MAX_SESSIONS )) && break
 
     sid=$(basename "$transcript" .jsonl)
-    size=$(stat -c %s "$transcript")
-    mtime=$(stat -c %Y "$transcript")
+    size=$(file_size "$transcript")
+    mtime=$(file_mtime "$transcript")
 
     # A transcript touched moments ago belongs to a session still in progress.
     if (( $(date +%s) - mtime < QUIESCENT_SECONDS )); then
@@ -264,14 +301,19 @@ while IFS= read -r transcript; do
         # advance only by what was consumed. Successive runs cover the session
         # instead of skipping to its tail.
         #
-        # dd rather than `tail -c | head -c`: any consumer that stops early
-        # SIGPIPEs the reader, which pipefail turns into a fatal error.
+        # BSD dd has no skip_bytes/count_bytes, so read the window with
+        # tail | head. head closing the pipe SIGPIPEs tail, which pipefail
+        # would make fatal — hence the guard. The window size is checked below,
+        # so a genuinely failed read still can't pass silently.
         raw="$WORK/$sid.raw"
-        dd if="$transcript" of="$raw" status=none \
-           iflag=skip_bytes,count_bytes bs=1M \
-           skip="$offset" count="$MAX_SESSION_DELTA_BYTES"
+        { tail -c "+$(( offset + 1 ))" "$transcript" \
+            | head -c "$MAX_SESSION_DELTA_BYTES"; } > "$raw" 2>/dev/null || true
 
-        window=$(stat -c %s "$raw")
+        window=$(file_size "$raw")
+        if (( window <= 0 )); then
+            warn "$sid: read nothing at offset $offset — skipping session"
+            continue
+        fi
         if [[ -z "$(tail -c 1 "$raw")" ]]; then
             # Window happens to end on a newline, so every line in it is whole.
             consumed=$window
@@ -306,18 +348,18 @@ while IFS= read -r transcript; do
 
     {
         printf '\n## Session %s\n' "$sid"
-        printf 'Last active: %s%s\n\n' "$(date -d "@$mtime" '+%Y-%m-%d %H:%M')" "$truncated"
+        printf 'Last active: %s%s\n\n' "$(fmt_epoch "$mtime" '%Y-%m-%d %H:%M')" "$truncated"
         cat "$slice"
     } >> "$DIGEST"
 
     new_offsets[$sid]=$next_offset
     sessions_reviewed=$(( sessions_reviewed + 1 ))
 
-    if (( $(stat -c %s "$DIGEST") > MAX_DIGEST_BYTES )); then
+    if (( $(file_size "$DIGEST") > MAX_DIGEST_BYTES )); then
         printf '\n[digest truncated — remaining sessions deferred to the next sweep]\n' >> "$DIGEST"
         break
     fi
-done < <(find "$TDIR" -maxdepth 1 -name '*.jsonl' -printf '%T@ %p\n' | sort -n | cut -d' ' -f2-)
+done < <(list_transcripts "$TDIR")
 
 [[ $DRY_RUN -eq 0 ]] && touch "$STAMP"
 
@@ -340,7 +382,7 @@ if [[ ! -s "$DIGEST" ]]; then
 fi
 
 if [[ $DRY_RUN -eq 1 ]]; then
-    ok "digest built: $(stat -c %s "$DIGEST") bytes from $sessions_reviewed session(s)"
+    ok "digest built: $(file_size "$DIGEST") bytes from $sessions_reviewed session(s)"
     cp "$DIGEST" "$STATE_DIR/last-digest.md"
     log "written to $STATE_DIR/last-digest.md (ledger not advanced)"
     exit 0
