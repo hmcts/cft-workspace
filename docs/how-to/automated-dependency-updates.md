@@ -171,6 +171,13 @@ catch people out:
   (`--disallowedTools`) still apply in that mode. A workflow relying on the allow-list
   to keep an unattended agent from running `git push` or similar needs a deny rule, not
   an allow-list, once `--dangerously-skip-permissions` is in play.
+- **If the autofix job is a shared `workflow_call` reusable workflow, its `permissions:`
+  can't exceed what the caller workflow grants.** A callee job that requests
+  `contents: write` / `pull-requests: write` fails to even start if the caller's
+  top-level `permissions:` only grants `read` for those scopes — every trigger ends in
+  `startup_failure`, which produces no job log and no check-run annotation, so it looks
+  like the workflow silently never ran rather than an error. Widen the caller's
+  `permissions:` block to cover everything the callee's jobs request.
 
 ## Dependabot vs Renovate
 
