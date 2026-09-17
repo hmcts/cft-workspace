@@ -61,7 +61,11 @@ fi
 
 # Competing I/O is what invalidated the first attempt, so it is reported rather than assumed away. Not
 # fatal: a warning the reader can weigh beats a check that refuses to run.
-BUSY=$(pgrep -f 'vitest|turbo|gradle|ralphex|yarn' 2>/dev/null | wc -l | tr -d ' ')
+#
+# The `|| true` is load-bearing: pgrep exits 1 when nothing matches, and under `set -e` with `pipefail`
+# that aborted the whole script on an idle machine — so this only ran when the machine was busy, which is
+# precisely when its numbers are worthless.
+BUSY=$(pgrep -f 'vitest|turbo|gradle|ralphex|yarn' 2>/dev/null | wc -l | tr -d ' ' || true)
 LOAD=$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo "unknown")
 
 mapfile -t FILES < <(find "$SUBJECT_PATH" -type f -name "$GLOB" | sort)
