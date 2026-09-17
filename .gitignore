@@ -33,6 +33,7 @@
 /.claude/scheduled_tasks.lock
 /.claude/settings.local.json
 /.claude/*.env
+/.claude/knowledge-sweep/
 
 # 6) docs-generate pipeline working state (per-product .work/ caches: research notes,
 #    Confluence dumps, manifest). Regenerable from page frontmatter; not committed.
