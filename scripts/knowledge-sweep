@@ -533,7 +533,10 @@ if git -C "$WORKTREE" diff --unified=0 | rg -q \
     err "secret-shaped string in proposed diff — discarding branch $BRANCH"
     cleanup_worktree
     git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
-    commit_ledger
+    # Deliberately no commit_ledger: advancing here would mark the window
+    # reviewed while throwing its content away, so it could never be revisited.
+    # A backfill will stop on the no-progress guard if the block persists, which
+    # is the right outcome — it needs a human, not a silent skip.
     exit 1
 fi
 
