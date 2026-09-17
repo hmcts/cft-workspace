@@ -7,8 +7,9 @@ name: Daily knowledge consolidation
 
 on:
   schedule:
-    # 05:00 UTC daily, before the working day.
-    - cron: '0 5 * * *'
+    # 09:00 BST. GitHub cron is UTC and does not follow DST, so this drifts to
+    # 08:00 local through the GMT half of the year.
+    - cron: '0 8 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
