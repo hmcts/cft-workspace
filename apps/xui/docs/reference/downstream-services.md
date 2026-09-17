@@ -25,7 +25,8 @@ sources:
   - rpx-xui-manage-organisations:config/default.json
   - rpx-xui-manage-organisations:api/configuration/references.ts
   - rpx-xui-webapp:api/documents/index.ts
-status: draft
+status: reviewed
+last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
   - id: "276989023"
     title: "Proxy Configuration on Manage Case"

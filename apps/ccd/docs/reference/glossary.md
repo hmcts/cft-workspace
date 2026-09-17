@@ -2,7 +2,8 @@
 topic: overview
 audience: both
 sources: []
-status: draft
+status: reviewed
+last_reviewed: 2026-04-29T00:00:00Z
 title: Glossary
 diataxis: reference
 product: ccd

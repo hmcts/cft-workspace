@@ -30,7 +30,8 @@ sources:
   - em-media-viewer:projects/media-viewer/src/lib/media-viewer.module.ts
   - em-media-viewer:projects/media-viewer/src/lib/toolbar/toolbar.module.ts
   - em-media-viewer:projects/media-viewer/src/lib/annotations/annotations.module.ts
-status: draft
+status: reviewed
+last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
   - apps/xui/rpx-xui-webapp/api/auth/index.ts
   - apps/xui/rpx-xui-webapp/src/app/app.module.ts

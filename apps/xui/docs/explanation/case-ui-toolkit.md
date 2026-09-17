@@ -36,7 +36,8 @@ sources:
   - rpx-xui-webapp:package.json
   - civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn
   - civil-wa-task-configuration:src/main/resources/wa-task-configuration-civil-civil.dmn
-status: draft
+status: reviewed
+last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
   - apps/xui/ccd-case-ui-toolkit/projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts
   - apps/xui/rpx-xui-webapp/src/app/providers/providers.module.ts

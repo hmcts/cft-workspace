@@ -30,7 +30,8 @@ sources:
   - rpx-xui-node-lib:src/auth/s2s/s2s.constants.ts
   - rpx-xui-node-lib:src/session/session.constants.ts
   - rpx-xui-webapp:api/lib/processError.handler.ts
-status: draft
+status: reviewed
+last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
   - apps/xui/rpx-xui-webapp/api/application.ts
   - apps/xui/rpx-xui-webapp/api/auth/index.ts

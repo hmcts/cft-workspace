@@ -25,7 +25,8 @@ sources:
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/LocationMatcher.java
   - ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/model/casedataaccesscontrol/matcher/RegionMatcher.java
   - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/constants/RoleAssignmentConstants.java
-status: draft
+status: reviewed
+last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
   - apps/am/am-role-assignment-service/src/main/resources/db/migration/V1_1__init_tables.sql
   - apps/am/am-role-assignment-service/src/main/resources/META-INF/kmodule.xml

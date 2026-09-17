@@ -227,7 +227,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Release Categorisation | release-sizing | `docs/how-to/release-sizing.md` |
 | workspace | how-to | Sandbox Cleardown | sandbox-cleardown | `docs/how-to/sandbox-cleardown.md` |
 | workspace | how-to | Secrets Management | secrets-management | `docs/how-to/new-component/secrets-management.md` |
-| workspace | how-to | Set up the Atlassian and Jenkins MCP servers | set-up-mcp-servers | `docs/how-to/set-up-mcp-servers.md` |
+| workspace | how-to | Set up the workspace's MCP servers | set-up-mcp-servers | `docs/how-to/set-up-mcp-servers.md` |
 | workspace | how-to | Shutter Implementation and Design | shutter | `docs/how-to/path-to-live/shutter.md` |
 | workspace | how-to | TLS certificates | tls-certificates | `docs/how-to/path-to-live/tls-certificates.md` |
 | workspace | how-to | Troubleshooting issues | troubleshooting | `docs/how-to/troubleshooting.md` |

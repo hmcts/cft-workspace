@@ -29,7 +29,7 @@ sources:
   - wa-task-configuration-template:src/main/resources/wa-task-cancellation-wa-wacasetype.dmn
   - wa-task-configuration-template:src/main/resources/wa-task-completion-wa-wacasetype.dmn
   - wa-task-management-api:src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/query/CftQueryService.java
-status: draft
+status: reviewed
 examples_extracted_from:
   - apps/wa/wa-task-management-api/src/main/java/uk/gov/hmcts/reform/wataskmanagementapi/cft/enums/CFTTaskState.java
   - apps/wa/wa-task-management-api/src/main/resources/application.yaml
