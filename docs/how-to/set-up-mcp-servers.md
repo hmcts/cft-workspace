@@ -100,6 +100,8 @@ It authenticates through `DefaultAzureCredential`, which by default walks a chai
 
 With it set, a query resolves in about a second rather than minutes, reading the same `~/.azure` token cache `az` already uses — no separate login required.
 
+`monitor_resource_log_query` (Application Insights / Log Analytics) has different defaults from `az monitor app-insights query`, not just a different calling convention: it defaults to a **24-hour** window (`hours`) rather than the CLI's **1-hour** `--offset`, and to a **20-row** result cap (`limit`) that truncates a larger result set with no warning rather than erroring. It also renders timestamps to the nearest whole second, where the CLI keeps milliseconds — pass explicit `hours` and `limit` for anything that needs completeness, and use the CLI (`-o json | jq`, since `-o table` prints nothing for these analytics queries) if the query depends on sub-second ordering.
+
 ## 5. Restart and verify
 
 MCP servers are launched at startup, so restart your client to pick up new servers or changed credentials.
