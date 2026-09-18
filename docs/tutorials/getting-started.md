@@ -84,5 +84,6 @@ The first two read static state. The latter two consult `INDEX.md` — if it is 
 ## Common stumbles
 
 - **`scripts/bootstrap` errors with "GitHub SSH auth failed"** → your SSH key isn't on GitHub. Run `ssh-keygen -t ed25519` then upload `~/.ssh/id_ed25519.pub` to GitHub Settings → SSH and GPG keys.
+- **`scripts/bootstrap` prints "bootstrap complete" but most repos didn't clone** → on macOS, BSD `xargs -I{}` silently converts the tab-separated manifest fields to spaces, so each entry collapses into one string and creates an empty stub directory instead of cloning. Same trap affects `scripts/sync`. Confirm with `scripts/doctor`, which checks clones are actually present rather than trusting either script's own exit status.
 - **AAT hostnames don't resolve** → the F5 VPN started after the devcontainer; rebuild the container or run `.devcontainer/refresh-dns.sh`.
 - **`./scripts/sync` skips a repo** → it has dirty changes, is on a non-default branch, or has unpushed commits. That's by design; commit/push/clean first, then re-run.
