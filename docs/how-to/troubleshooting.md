@@ -68,6 +68,10 @@ When you run it on the master/main branch it will setup the default branch and t
 - Please see [sonarcloud status](https://status.sonarqube.com/) for any known issues with sonar cloud.
 - Remember that Platform Operation do not maintain SonarCloud, issues are usually discussed on community forums.
 
+### Static checks fail with exit code 3 and a Java stack trace about a scanner component
+
+This is a SonarCloud server-side fault, not a config or code problem, even though the surface error (`Unable to load component class org.sonar.scanner.scan.filesystem.ProjectFileIndexer` or similar) reads like one. Find the deepest `Caused by:` line in the console log — it is usually an HTTP 500 from SonarCloud's own scanner endpoint (`batch/project.protobuf`). Two tells that confirm it's infrastructure rather than your change: the unit/integration test stages already passed before the scanner ran, and no `report-task.txt` is produced because the scan never completed. Re-trigger the build rather than editing `sonar-project.properties` or bisecting commits. The GitHub `SonarCloud`/`SonarCloud Code Analysis` checks on the PR can still show pass while this Jenkins stage fails — they come from SonarCloud's separate GitHub App analysis, not from the scan that just failed, so a green Sonar tick does not mean the pipeline's scanner ran.
+
 ### Sonar scan quality gate failure
 
 If you receive this error: `Pipeline aborted due to quality gate failure: NONE` on master, try a re-run of the pipeline. This may simply be an intermittent issue caused by sonarcloud or because the GitHub repo has only just been created and this is the first time you're running the pipeline.
