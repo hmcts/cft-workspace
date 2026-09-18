@@ -98,7 +98,7 @@ The Atlassian OAuth flow needs a browser on the machine running the client. Insi
 - **Jenkins returns `401`** → you used your Entra password rather than an API token, or your username is not the Object ID GUID.
 - **Jenkins returns `403` on a write** → permissions come from the `azureAdMatrix` in `jenkins.yaml`. `DTS CFT Developers` grants read plus `Job/Build` and `Job/Cancel`; admin-only tools such as `run_groovy_script` need `DTS Platform Operations`. Add `--read-only` to the server's args if you would rather the agent could not trigger builds at all.
 - **Atlassian tools return `401`, or `/mcp` shows the server as needing auth** → the OAuth grant has expired or been revoked. Re-authenticate through `/mcp`; there is no token to edit.
-- **An Atlassian tool fails asking for `cloudId`** → pass `https://hmcts.atlassian.net` (or the UUID from `getAccessibleAtlassianResources`) explicitly. It is never inferred.
+- **An Atlassian tool fails asking for `cloudId`, or errors `No cloud ID found for hostname`** → pass `https://hmcts.atlassian.net` (or the UUID from `getAccessibleAtlassianResources`) explicitly. It is never inferred. `tools.hmcts.net` is the vanity URL used in shared Confluence/Jira links throughout this workspace's docs, but it isn't a registered Atlassian Cloud site — passing it as the `cloudId` fails with that error.
 - **An Atlassian operation name is rejected** → only Jira and Confluence basics are exposed as named tools; everything else is reached by `discover` then `executeRead` / `executeWrite`. Don't guess operation names.
 - **A server is missing from `/mcp`** → `.mcp.json` failed to parse, or the client was not restarted. Check with `jq . .mcp.json`.
 
