@@ -38,7 +38,7 @@ Tools take a `cloudId`. Pass the site URL directly — `https://hmcts.atlassian.
 
 ### Read/write access
 
-The grant is read-write on both Jira and Confluence, and the hosted server has no read-only switch — so an agent *can* comment on an issue, transition it, or edit a page. Workspace skills are written to read only, and nothing should post to Jira or Confluence on your behalf without you asking for it.
+The grant is read-write on both Jira and Confluence, and the hosted server has no read-only switch — so an agent *can* comment on an issue, transition it, or edit a page. Workspace skills are written to read only, and nothing should post to Jira or Confluence on your behalf without you asking for it. When you do ask it to write, see [Write to Jira and Confluence through the Atlassian MCP](write-to-jira-and-confluence-via-mcp.md) for the formatting and versioning behaviours that differ from the old Server instance.
 
 ## 2. Jenkins
 
