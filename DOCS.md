@@ -196,6 +196,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Database infrastructure | database-infrastructure | `docs/how-to/database-infrastructure.md` |
 | workspace | how-to | ElasticSearch | elasticsearch | `docs/how-to/new-component/elasticsearch.md` |
 | workspace | how-to | Environment schedule | auto-shutdown | `docs/how-to/auto-shutdown.md` |
+| workspace | how-to | Escape user input in GOV.UK Frontend templates | escape-user-input-in-govuk-templates | `docs/how-to/escape-user-input-in-govuk-templates.md` |
 | workspace | how-to | Expose a service on private DNS only | private-dns | `docs/how-to/path-to-live/private-dns.md` |
 | workspace | how-to | External IP addresses (Egress) | external-ip-addresses | `docs/how-to/external-ip-addresses.md` |
 | workspace | how-to | Feature flags | feature-flags | `docs/how-to/new-component/feature-flags.md` |
@@ -225,6 +226,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Publishing container images to ACR from GitHub Actions | publishing-acr-images | `docs/how-to/publishing-acr-images.md` |
 | workspace | how-to | Python services | python | `docs/how-to/new-component/python.md` |
 | workspace | how-to | Release Categorisation | release-sizing | `docs/how-to/release-sizing.md` |
+| workspace | how-to | Respond to an ITHC penetration test report | respond-to-an-ithc-report | `docs/how-to/respond-to-an-ithc-report.md` |
 | workspace | how-to | Sandbox Cleardown | sandbox-cleardown | `docs/how-to/sandbox-cleardown.md` |
 | workspace | how-to | Secrets Management | secrets-management | `docs/how-to/new-component/secrets-management.md` |
 | workspace | how-to | Set up the Atlassian and Jenkins MCP servers | set-up-mcp-servers | `docs/how-to/set-up-mcp-servers.md` |
@@ -232,6 +234,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | TLS certificates | tls-certificates | `docs/how-to/path-to-live/tls-certificates.md` |
 | workspace | how-to | Troubleshooting issues | troubleshooting | `docs/how-to/troubleshooting.md` |
 | workspace | how-to | Update Redis with Zone Redundancy | update-redis-with-zone-redundant | `docs/how-to/update-redis-with-zone-redundant.md` |
+| workspace | how-to | Write to Jira and Confluence through the Atlassian MCP | write-to-jira-and-confluence-via-mcp | `docs/how-to/write-to-jira-and-confluence-via-mcp.md` |
 | workspace | reference | API design | apis | `docs/reference/cnp-standards/apis.md` |
 | workspace | reference | APIs | apis | `docs/reference/practices/apis.md` |
 | workspace | reference | Angular | angular | `docs/reference/standards/angular.md` |
