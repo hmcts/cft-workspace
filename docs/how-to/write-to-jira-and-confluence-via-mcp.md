@@ -21,8 +21,8 @@ Older HMCTS skills and notes written for the Server instance at `tools.hmcts.net
 
 ### Parenting and epics
 
-- `parent: "DTSCCI-1234"` on `createJiraIssue` sets the epic (or any parent) directly. There is no separate Epic Link custom field to fill in, unlike Server.
-- Verify with JQL `parent = DTSCCI-1234`; the older `"Epic Link" = ...` form still resolves but `parent` is the field Cloud uses.
+- `parent: "<PROJECT>-1234"` on `createJiraIssue` sets the epic (or any parent) directly. There is no separate Epic Link custom field to fill in, unlike Server.
+- Verify with JQL `parent = <PROJECT>-1234`; the older `"Epic Link" = ...` form still resolves but `parent` is the field Cloud uses.
 - An existing Task can be converted to an Epic in place with `editJiraIssue` and `fields: {"issuetype": {"name": "Epic"}}`. No move wizard is needed as long as the project's workflows allow it.
 
 ### Fields worth knowing
