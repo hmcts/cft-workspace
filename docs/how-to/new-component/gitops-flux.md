@@ -63,6 +63,7 @@ One of our principles being <b>Everything as Code</b>, we practice [GitOps](http
         namespace: flux-system
     ```
 3. Flux configuration should be light, values should be templated within application's chart wherever possible to avoid duplication in each environment. Use `{{ .Values.global.environment }}` to refer to the environment in your chart.
+   - Helm merges maps but replaces lists wholesale, so a per-environment override of a list value (for example `nodejs.keyVaults.<vault>.secrets`) must restate every entry, not just the one you're changing — an override that lists only the secret you're adding will silently unmount the others on reconcile. Verify the rendered manifest with `kubectl kustomize` before merging.
 4. Image automation controller would automatically detect latest images published to ACR and upgrade Helm Release on cluster while committing the change to Git.
 5. <b>To avoid issues</b>, please note that any chart configuration (Environment variables) needed for application needs to be published and updated to Flux config before merging the application code that uses the new config. The change should always be non-breaking.
 6. Make sure you follow [codeowners guidelines](https://github.com/hmcts/cnp-flux-config/blob/master/CODEOWNERS.md#codeowners-guidelines) on the repo.

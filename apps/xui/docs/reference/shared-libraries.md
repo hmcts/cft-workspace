@@ -268,7 +268,7 @@ All middleware objects extend `EventEmitter`. Events propagate upward to the `Xu
 | `AUTH.EVENT.AUTHENTICATE_SUCCESS` | `auth.authenticate.success` | `request, response` | User authenticated successfully |
 | `AUTH.EVENT.SERIALIZE_USER` | `auth.serializeUser` | user | User object stored into session |
 | `AUTH.EVENT.DESERIALIZE_USER` | `auth.deserializeUser` | user | Session ID resolved back to User object |
-| `AUTH.EVENT.AUTHENTICATE_FAILURE` | `auth.authenticate.failure` | error info | User authentication failed |
+| `AUTH.EVENT.AUTHENTICATE_FAILURE` | `auth.authenticate.failure` | error info | User authentication failed. On some failure paths the library dereferences `error.message` without first checking that `error` is defined, which throws and crashes the BFF process instead of emitting the event -- observed after repeated sign-in attempts against the same session |
 | `S2S.EVENT.AUTHENTICATE_SUCCESS` | `s2s.authenticate.success` | `s2sToken, request, response` | S2S token obtained successfully |
 | `S2S.EVENT.AUTHENTICATE_FAILURE` | `s2s.authenticate.failure` | error info | S2S authentication failed |
 

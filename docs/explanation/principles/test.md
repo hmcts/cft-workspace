@@ -17,6 +17,12 @@ Tests should be automated. They should be run as part of the build process. They
 
 Tests should be reliable. They should not fail randomly. They should not fail when the system is under load.
 
+If a test compares output against a golden/expected fixture file, keep the step that regenerates that fixture separate from the `@Test` that asserts against it. A regenerator annotated as its own test will overwrite the fixture from current output on every run, before the comparison runs — so the comparison test can never fail, regardless of real regressions.
+
+Some Playwright locator methods (`isVisible()`, `isChecked()`, `count()`, `textContent()`, `.all()`, and similar) check the page once and return immediately — their `timeout` option bounds that single check, it does not make them poll, unlike a web-first assertion such as `expect(locator).toBeVisible()`. Wrapping one of these in a `toPass({ timeout })` retry loop only helps if the wrapped action's own worst-case duration fits inside that timeout on a single attempt; if it doesn't, every retry fails the same way. Treat a test that intermittently fails on one of these calls as a missing auto-retry before assuming it's a real race in the app under test.
+
+On an Angular-bound `<select>`, the underlying option values can be opaque object placeholders (e.g. `1: Object`) rather than a usable string; `selectOption(labelText)` still matches correctly by falling back to the visible label, so a diagnostic that prints the raw value is not evidence of a wrong selection. Asserting the value with `toHaveValue` immediately after calling `selectOption()` also proves nothing about a later reset, since the assertion runs before any subsequent re-render has had a chance to fire.
+
 ### Fast
 
 Tests should be fast. If they are slow, they will be ignored.

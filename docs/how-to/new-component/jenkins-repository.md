@@ -47,6 +47,48 @@ Add an entry in the following format:
 
 Scan the organisation manually in Jenkins if it does not scan automatically.
 
+## A pull request opened before onboarding may never get built
+
+Jenkins multibranch discovery for pull requests is triggered by a `pull_request` webhook
+event, not by the org scan alone. If a pull request was opened before the repository's
+GitHub topic and allowlist entry were in place, that event carried no matching Jenkins job to
+build against — merging the allowlist PR afterwards does not retroactively pick it up, and the
+multibranch project can sit with zero indexed branches. Closing and reopening the pull request
+fires a fresh `pull_request` event and triggers discovery immediately, without waiting for the
+next scheduled organisation scan.
+
+## Watch for a duplicate SonarCloud project
+
+A newly created repository can end up analysed by SonarCloud twice: once as the project the
+common pipeline scans via the repo's `sonar-project.properties`, and once by SonarCloud's own
+GitHub App "Automatic Analysis", which auto-imports any new repository under the org and creates
+a second project keyed `hmcts_<repo-name>`. Automatic Analysis reads `.sonarcloud.properties`,
+not `sonar-project.properties` — with neither file present it scans the whole repository
+(config, charts, test fixtures, SQL migrations) instead of the pipeline's configured `sonar.sources`
+scope, and can fail its own quality gate on files the pipeline-scanned project never sees. Both
+projects post a separate GitHub commit status, so a PR can show one Sonar check green and another
+red for the same commit. Either disable Automatic Analysis for the repository in SonarCloud's
+project settings, or add a `.sonarcloud.properties` matching the pipeline's source scope so both
+projects agree.
+
+## A new Node.js repo needs Renovate config and five yarn scripts before the build goes green
+
+Once discovery is working (see above), a new Node.js repo on the common pipeline hits a
+sequence of gates that are each only visible once the previous one is fixed:
+
+- `.github/renovate.json` must extend the org config (`local>hmcts/.github:renovate-config`)
+  and must not use `enabledManagers`, or `renovate-config-check.sh` fails the build. Copy the
+  shape from an existing frontend rather than writing it from scratch.
+- The build expects five yarn scripts to exist: `test`, `test:coverage`, `test:a11y` (run in
+  the unit-test stage, before anything is deployed, so it can't hit a URL — render templates
+  into a DOM implementation and run `axe-core` against that), plus `test:smoke` and
+  `test:functional` for the deploy stages (label-gated stages add `test:fullfunctional` and
+  `test:crossbrowser`). A repo that doesn't use one of these can stub it with
+  `echo '…' && exit 0` rather than have the build fail on "Couldn't find a script named …".
+- `yarn-audit-known-issues` needs to exist and be committed for any audit finding you can't
+  fix immediately (generate with
+  `yarn npm audit --recursive --environment production --json > yarn-audit-known-issues`).
+
 ## Allow production deployments
 
 To allow Jenkins to deploy to production, add your GitHub repository to the approved repositories list.

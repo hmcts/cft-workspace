@@ -5,7 +5,10 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Field.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/CCDDefinitionGenerator.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigResolver.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/HasRole.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCD.java
@@ -19,6 +22,7 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Start.java
   - ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseFieldGenerator.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java
   - ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java
   - ccd-config-generator:README.md
@@ -204,6 +208,7 @@ All field methods accept a typed property getter (`TypedPropertyGetter<T, ?>` i.
 | `label(String id, String value, String showCond, boolean showSummary)` | ReadOnly | Param | Label with CYA visibility control. |
 | `complex(getter)` | Complex | Yes | Begin nested complex type builder; returns `FieldCollectionBuilder<U,...>`. |
 | `list(getter)` | - | Yes | Begin collection (`ListValue<U>`) builder. |
+| `defaultValue(String)` | - | - | Sets the most-recently-added field's `DefaultValue` to a raw string, verbatim. Distinct from the typed `defaultValue` carried by `mandatory(getter, showCondition, defaultValue, label, hint)`; works on a member inside a `.complex(...)` scope as well as a top-level field. |
 | `done()` | - | - | Return to parent builder (exits complex/list context). |
 
 Labels support markdown-style headings (`"## Section Title"`). The two- and three-argument overloads hard-code `showSummary(false)` (`FieldCollection.java:469-482`); only the four-argument form lets a label reach the CYA page, by passing the flag straight through (`:484-493`).
@@ -251,6 +256,24 @@ Example:
 private ApplicationType applicationType;
 ```
 
+**Two type-inference gaps to know about before reaching for `typeOverride`.** The generator infers
+`MultiSelectList` only when the field's declared type is `Set<E>` with `E` an enum
+(`CaseFieldGenerator.resolveCollectionType`) — a `List<E>` of the same enum is emitted as a plain
+`Collection`, not `MultiSelectList`, with no error. And numeric inference
+(`CaseFieldGenerator.resolveSimpleType`) covers `int`/`long`/`float`/`double` and their boxed forms
+but not `BigDecimal`, which falls through to the default inferred type rather than `Number`. Both
+are worked around with an explicit `typeOverride`, but the silent fallback is easy to miss because
+the generator doesn't warn.
+
+**`displayOrder` does not reorder fields, pages, or tabs.** `FieldCollectionBuilder` derives
+`PageFieldDisplayOrder` and `PageDisplayOrder` from a sequential counter incremented as builder
+methods are called, and tab/tab-field ordering follows the same call-order rule — there is no
+builder option to set an explicit position for an ordinary field or page. The `@CCD(displayOrder
+= ...)` attribute only takes effect where a generator reads it directly: `FixedList`/`State` enum
+constant ordering, plus the few builder-level orderers that do accept an explicit number —
+`Event.EventBuilder`, NoC challenge questions, and `CaseCategoryBuilder.displayOrder(int)`. To
+reorder an ordinary field, page, or tab, move its builder call instead.
+
 ---
 
 ## `@JsonUnwrapped` pattern
@@ -278,6 +301,10 @@ public class Applicant {
 This generates CCD fields: `applicant1FirstName`, `applicant1LastName`, `applicant2FirstName`, `applicant2LastName`.
 
 The `FieldCollectionBuilder.complex()` method detects `@JsonUnwrapped` fields and shares the parent's field list/ordering state rather than creating a nested complex type (`FieldCollection.java:414-443`).
+
+`@JsonUnwrapped` prefixes compose across multiple levels of nesting: a class reached via `@JsonUnwrapped(prefix = "section")` that itself holds a field marked `@JsonUnwrapped(prefix = "party")` produces flat ids like `sectionPartyName`, with the inner prefix capitalised and concatenated onto the outer one. This makes it safe to build a shared nested type (e.g. a common "party" class reused under several sections) without a data migration, as long as the composed prefix is what's already on the case in production — verified by decompiling the field ids a real `generateCCDConfig` run produces.
+
+The composed id is not checked against CCD's 70-character `CaseField` id cap (see [json-definition-format](../reference/json-definition-format.md#id-format-rules)) anywhere in this chain — `generateCCDConfig` will happily emit an over-length id from a few levels of nesting on a long-named leaf field. The failure only surfaces at import, and if it reaches the database layer rather than the definition store's own spreadsheet-column validation, it comes back as a raw `value too long for type character varying(70)` batch-insert error with no reference to the offending field id or the Java source that produced it.
 
 ---
 
@@ -453,6 +480,39 @@ public enum UserRole implements HasRole {
 
 Marker interface implemented by service teams. Spring discovers all beans implementing it.
 
+Every `CCDConfig` bean is injected into `CCDDefinitionGenerator` as a list; each bean's
+`configure(builder)` runs against a builder shared with every other bean whose `caseDataClass` and
+`groupingKey()` match. By default `groupingKey()` returns a constant, so **all configs sharing a
+case data class are merged into one case type** — this is how most services split events, tabs and
+permissions across many `@Component` classes while still emitting a single definition. A service
+that needs two independent case types from one case data class (for example two definitions built
+from largely-shared fields) must override `groupingKey()` on each config to return a distinct value
+per case type; otherwise their events silently collapse into a single case type at generation time.
+
+This natural, per-case-data-class grouping happens independently of any manual composition a config does
+itself. A config can `@Autowired`-inject a `List<CCDConfig<T,S,R>>` of sibling beans and fan their
+`configure()` calls into its *own* builder (for example to compose one case type from many smaller
+`@Component` classes) — but every one of those sibling beans is still, separately, picked up by
+`CCDDefinitionGenerator`'s own grouping by case-data class, because that grouping considers every
+`CCDConfig` bean in the Spring context, not just the ones nobody else has already claimed. If none of the
+beans sharing that natural grouping ever calls `caseType()`/`jurisdiction()` on their own builder — because
+they were only ever meant to be composed into somebody else's case type — the group is still generated,
+just with no case-type id, and its JSON is written loose at the top level of the output directory rather
+than into a named subfolder — because the generator resolves a group's output directory as
+`new File(outputDir, caseTypeId)`, and an empty case-type id resolves to `outputDir` itself. The
+generator clears a group's output directory before writing to it, so writing the nameless group
+recursively deletes the *entire* output directory, taking with it any real case-type subdirectories
+that a different group already wrote earlier in the same run. With exactly one real case type this is
+invisible (there is nothing else to delete); from a second case type onward it is destructive, and
+which case type loses its definition depends on Spring's bean injection order — which follows the
+scanned package order of the class carrying the nameless group's beans, not the case type id or any
+alphabetical sort — so renaming a case type does not fix it. The symptom is a case type whose Java
+compiles cleanly but whose definition directory is simply missing after `generateCCDConfig`. This
+means the fan-in pattern doesn't leak one case-data class's configs into another: a `CCDConfig` on a
+different case-data class starts with an empty group of its own, unaffected by any other class's
+fan-in — but it is not safe to assume the loose output of one service's fan-in is harmless once that
+service has more than one case type.
+
 ```java
 @Component
 public class MyCaseConfig implements CCDConfig<MyCaseData, State, UserRole> {
@@ -513,6 +573,10 @@ public class MyCaseConfig implements CCDConfig<MyCaseData, State, UserRole> {
 ## Ejecting from the SDK
 
 `generateCCDConfig` is a plain `JavaExec` task running `uk.gov.hmcts.ccd.sdk.Main`, whose only output is the directory named by the `ccd.configDir` extension property, registered as a Gradle task output (`CcdSdkPlugin.java:30-53`). That directory holds the same per-sheet JSON the definition store expects, so `ccd-definition-processor`'s `json2xlsx` turns it into an importable spreadsheet with no SDK involvement (`README.md:129-156`). Running the task once and then maintaining the JSON by hand is a supported exit path.
+
+Because `uk.gov.hmcts.ccd.sdk.Main` runs inside the consuming service's own classpath to discover `CCDConfig` beans via component scanning, it also boots that service's full Spring context — including binding its configured `server.port` — not just a lightweight bean scan. Running `generateCCDConfig` while the same service is already up locally (e.g. via `bootWithCCD` or `bootRun` on the same port) fails with a "port already in use" web-server startup error. Free the port first, or override it for this task specifically (for example `environment 'SERVER_PORT', '0'` on the `generateCCDConfig` task).
+
+Freeing the port only avoids the bind conflict, not a second, subtler race: under cftlib, `CftLibConfig` regenerates `build/definitions/` on every Spring Boot devtools restart of the already-running `bootWithCCD` process, and any tooling that writes generated Java into `src/main/java` is itself a devtools restart trigger. Run `generateCCDConfig` (with `SERVER_PORT=0`) right after such a write and the two processes can write the same `build/definitions/<CaseType>/...` directory at once — `JsonUtils.mergeInto`'s read-then-write can hit a `NoSuchFileException` on a file the other side deleted moments earlier. The symptom is intermittent (a re-run right after usually succeeds) and the fix is a delay-and-retry once around `generateCCDConfig`, not a persistent fix to definition state.
 
 Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:633-647`).
 

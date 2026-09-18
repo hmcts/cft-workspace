@@ -263,6 +263,15 @@ Env-var form: `CCD_DECENTRALISED_CASE-TYPE-SERVICE-URLS_PCS=http://localhost:320
 environments set `CASE_TYPE_SUFFIX=pr-123` to namespace the case type ID
 (`CaseType.java:84-100`).
 
+> **Trap when adding a case type to a service that already hand-lists its URLs.** Under cftlib
+> this property is usually set per case type on the `bootWithCCD`/`CftlibExec` task in
+> `build.gradle`. If a team adds a new case type but the entry isn't added alongside it, CCD
+> does not fail — it silently falls back to storing that case type centrally, since the
+> resolver only checks whether a URL is present. The symptom is a case that exists in CCD's
+> central `datastore` but never appears in XUI's list, which looks like a missing or broken
+> Elasticsearch index rather than a routing gap. Drive the property from the same registry that
+> declares your case type IDs (e.g. an enum) so a new case type can't be added without one.
+
 > **Performance:** the resolver uses a Caffeine LRU cache (100k entries, ~10MB) for routing.
 > Expect ~25ms extra latency per decentralised hop.
 > <!-- CONFLUENCE-ONLY: Caffeine cache size and 25ms latency budget come from the LLD; not directly grepped from source -->
