@@ -178,6 +178,11 @@ catch people out:
   `startup_failure`, which produces no job log and no check-run annotation, so it looks
   like the workflow silently never ran rather than an error. Widen the caller's
   `permissions:` block to cover everything the callee's jobs request.
+- **Fixing that permissions gate doesn't retry the PRs that already failed under it.**
+  A `workflow_run` trigger only fires when the watched run completes, so a Renovate PR
+  whose Preview/CI run failed while the gate was broken won't be replayed once the fix
+  lands — the first real attempt happens on that PR's next natural CI run (a rebase, a
+  new commit, or a manual `workflow_dispatch`).
 
 ## Dependabot vs Renovate
 
