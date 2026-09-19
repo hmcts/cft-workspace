@@ -216,6 +216,7 @@ Work Allocation task creation is service-side configuration rather than toolkit 
 - `Complex` type has a nested switch on `field_type.id` to distinguish `AddressGlobalUK`/`AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser`, `StaffUser` from generic complex rendering (`palette.service.ts:101-118`).
 - `FieldReadComponent` defers dynamic component creation with `Promise.resolve(null).then(...)` to allow label interpolation to complete first; the field container is empty during the synchronous render pass (`field-read.component.ts:33-42`).
 - `AddressGlobal` appears in `FieldTypeEnum` but is NOT handled in the `PaletteService` switch -- it falls through to `UnsupportedFieldComponent`. Only `AddressGlobalUK`/`AddressUK` are routed to `WriteAddressFieldComponent` via the Complex branch.
+- A full-viewport loading spinner covers the page while case data loads. It only blocks Playwright actions that require pointer-event actionability -- `click`, `check`, and keyboard-triggered navigation -- which wait for the spinner to clear first; `fill` and `selectOption` don't require pointer events and proceed immediately regardless of the spinner. An E2E test that appears to wait out a loading state on a click but not on a fill into the same page is seeing this, not an inconsistency in load time.
 
 ## How case-type definitions drive the UI
 

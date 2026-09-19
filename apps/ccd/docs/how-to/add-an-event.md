@@ -162,7 +162,7 @@ Chain an additional `.page()` call after the first. Page order follows declarati
 
 Mid-event callbacks are keyed by page ID. The callback fires when the user clicks "Continue" on that page in the XUI wizard, via the CCD Validate endpoint (`FieldCollection.java:495-497`). CCD includes the case details prior to the event (the stored values, if any) and the event-so-far in the request payload.
 
-Multiple mid-event callbacks within a single event are supported by CCD as long as their URLs differ — the SDK gives each page its own URL automatically, so you don't need to do anything beyond `.page(id, midEvent)` per page. See the [`CaseEventToFieldsGenerator`](https://github.com/hmcts/ccd-config-generator) which emits the per-page `CallBackURLMidEvent` column.
+Multiple mid-event callbacks within a single event are supported by CCD as long as their URLs differ — the SDK gives each page its own URL automatically, so you don't need to do anything beyond `.page(id, midEvent)` per page. See the [`CaseEventToFieldsGenerator`](https://github.com/hmcts/dtsse-ccd-config-generator) which emits the per-page `CallBackURLMidEvent` column.
 
 ## Step 3 — Add an about-to-submit callback
 

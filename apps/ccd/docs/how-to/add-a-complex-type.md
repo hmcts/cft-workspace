@@ -338,7 +338,7 @@ With No (the default):
 <!-- source: apps/ccd/docs/.work/confluence/how-to-add-a-complex-type/1457305822.md (Confluence "Retain Hidden Values", RCCD) -->
 <!-- CONFLUENCE-ONLY: import-validation rule that RetainHiddenValue=Yes requires a FieldShowCondition is enforced server-side in ccd-definition-store-api but not visible through the SDK at generation time. -->
 
-The SDK exposes this via the `retainHiddenValue` boolean on `mandatory(...)`, `optional(...)`, `readonly(...)` and `complex(...)` — see [`FieldCollection.java`](https://github.com/hmcts/ccd-config-generator).
+The SDK exposes this via the `retainHiddenValue` boolean on `mandatory(...)`, `optional(...)`, `readonly(...)` and `complex(...)` — see [`FieldCollection.java`](https://github.com/hmcts/dtsse-ccd-config-generator).
 
 ---
 

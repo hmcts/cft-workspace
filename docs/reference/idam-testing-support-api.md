@@ -109,7 +109,7 @@ same session rather than expiring independently.
 
 | Method | Path | Auth | Notes |
 |---|---|---|---|
-| `PUT` | `/test/cft/users/{userId}` | bearer | Create IDAM user **+** RD user profile **+** caseworker profile (when the roles match a caseworker pattern). The one-call option for caseworker fixtures. **Validates the email domain** — see below. |
+| `PUT` | `/test/cft/users/{userId}` | bearer | Create IDAM user **+** RD user profile **+** caseworker profile (when the roles match a caseworker pattern). The one-call option for caseworker fixtures. **Validates the email domain** — see below. **Does not honour the path `{userId}`** — unlike `/test/idam/users/{userId}`, the service assigns its own id and returns it in the body; query the RD endpoints below with that returned id, not the one you supplied in the path. |
 | `GET` | `/test/rd/user-profiles/{userId}` | bearer | Read the `rd-user-profile-api` record. |
 | `GET` | `/test/rd/caseworker-profiles/{userId}` | bearer | Read the `rd-caseworker-ref-api` record. |
 
@@ -121,20 +121,29 @@ Which profiles `PUT /test/cft/users/{userId}` creates is decided by `cft.categor
 | `PROFESSIONAL` | `pui-.*`, `solicitor` |
 | `JUDICIARY` | `judiciary` |
 
+Matching a pattern is necessary but not sufficient: the role also has to be one your calling
+client is authorised to assign. A freshly created custom role that matches `caseworker-.*` still
+gets `403 Forbidden` on this endpoint even though the identical role works on `POST
+/test/idam/users` — verified in AAT with `pcs-frontend`'s client-credentials token, which could
+only push this endpoint through with `caseworker`. Stick to the roles your client already uses
+elsewhere rather than inventing new ones for this endpoint.
+
 `409` with `INCONSISTENT` means IDAM and RD disagree about the user's status or ID — usually a
 half-cleaned-up user from a previous run.
 
-`PUT /test/cft/users/{userId}` **rejects disposable email domains** that `/test/idam/users`
-accepts. `@mailnesia.com` returns:
+`PUT /test/cft/users/{userId}` validates the email domain against an **allowlist**, not merely a
+disposable-inbox blocklist — `/test/idam/users` has no such check. `@mailnesia.com` returns:
 
 ```
 400 {"errors":["Bad Request","You must add a valid email address",
      "3 : There is a problem with your request. Please check and try again"]}
 ```
 
-Verified working in AAT: `@justice.gov.uk`, `@hmcts.net`. The two `GET /test/rd/...` endpoints
-return `404` (`"Could not find resource from database"` / `"The Caseworker data could not be
-found"`) when no profile exists, so they're a usable assertion that the write landed.
+but so do plenty of real, non-disposable domains — `@gmail.com`, `@hmcts.gov.uk`, `@nhs.net` and
+`@cjsm.net` all 400 the same way in AAT. Verified working: `@justice.gov.uk`, `@hmcts.net`. The
+two `GET /test/rd/...` endpoints return `404` (`"Could not find resource from database"` / `"The
+Caseworker data could not be found"`) when no profile exists, so they're a usable assertion that
+the write landed.
 
 ### Notifications and invitations
 

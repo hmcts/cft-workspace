@@ -644,6 +644,7 @@ The older `ccd { decentralised = true }` flag still pulls the same module in, bu
 | Response must be stable | Idempotent replay must return the original response body, not current case state |
 | Pointer cleanup race | If CCD crashes between pointer creation and cleanup, a dangling pointer remains (cleaned by retain-and-dispose) |
 | Security classification placeholder | Pointers use `RESTRICTED` as a failsafe; the authoritative value comes from the service |
+| Every call logs a failed service-discovery lookup | `ServicePersistenceAPI` is a `@FeignClient` declared with a `name` but no `url`, even though every method already carries an explicit per-call `URI`. Spring Cloud wraps it in `RetryableFeignBlockingLoadBalancerClient`, which always tries to resolve that `name` against a service registry before falling through to the explicit URI. `ccd-data-store-api` has no discovery client configured at all, so the lookup always fails; each call still succeeds via the explicit URI, but pays a `WARN RoundRobinLoadBalancer No servers available` / `RetryableFeignBlockingLoadBalancerClient` pair of log lines and the associated overhead. Harmless, but easy to mistake for a DNS or connectivity problem. |
 
 ---
 

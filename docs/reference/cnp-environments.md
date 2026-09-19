@@ -50,6 +50,15 @@ Verified 2026-09-16 for `pcs` (`pcs-perftest`, `pcs-ithc`, `pcs-data-perftest`, 
 - `az login` may default to `DCD-CFTAPPS-DEV`. Always `az account set --subscription <name>` to the subscription you actually want before inspecting resources.
 - If a service resource group appears to be "not found", check the subscription before assuming a permissions problem — for non-prod shared infrastructure it is usually `DCD-CNP-QA` / `DCD-CNP-DEV` rather than `DCD-CFTAPPS-<ENV>`.
 - Read access to a subscription's platform resource groups does **not** imply read access to app-team resource groups (e.g. `pcs-prod`, `ccd-shared-aat`, `rpe-service-auth-provider-aat`). Once you are sure you are in the right subscription, a "not found" is more likely a permissions boundary than a missing resource — confirm with someone who has app-team access rather than assuming the resource is absent.
+- `az monitor app-insights query` defaults to a 1-hour lookback window, which is ANDed with any explicit `timestamp between (...)` filter in the KQL itself. A query for an older time range silently returns zero rows instead of erroring, which reads like missing data or expired retention rather than a query bug — pass `--offset` (e.g. `--offset 30d`) to widen the window.
+
+## Extending a service principal to a new environment
+
+A service's GitHub Actions deployment does not gain access to a new non-prod environment just because it already deploys elsewhere — each environment needs its own role assignments, requested separately via PlatOps:
+
+- **AKS access is per-cluster, not just per-subscription.** `Reader` at subscription scope lets the pipeline see the AKS resource, but Helm deploys still fail with a cluster-admin-credential denial until `Azure Kubernetes Service Cluster Admin Role` is granted on the specific cluster (some environments, e.g. ITHC and Demo, run more than one AKS cluster in the same subscription).
+- **Terraform needs separate storage-account access.** The Terraform state store lives in `DCD-CNP-DEV` (account `mgmtstatestorenonprod`, resource group `mgmt-state-store-nonprod`), not in the `DCD-CFTAPPS-*` subscription being deployed to — `Reader` on the target subscription does not include it.
+- **GitHub runners need DNS.** Resolving `<env>.platform.hmcts.net` from a hosted runner requires the `hub-github-network-github-prod` VNet link on that environment's platform private-DNS zone in [`azure-private-dns`](https://github.com/hmcts/azure-private-dns). Several non-AAT environments lack this link (or the zone itself), so smoke tests that hit the platform hostname fail with DNS resolution errors even once the deploy itself succeeds.
 
 ## See also
 
