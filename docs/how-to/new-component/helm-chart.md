@@ -16,6 +16,8 @@ We deploy all of our applications using a helm chart to Kubernetes.
 Install helm along with the other tools using the links on the
 [developer tools onboarding page](../../tutorials/cnp-onboarding/person-developer-tools.md#common-tools).
 
+Helm 4 rejects any dependency chart archive over 5MiB (`is larger than the maximum file size 5242880`). Jenkins still runs an older Helm that has no such limit, so a chart that deploys fine via Jenkins can still fail `helm dependency update`/`helm template` on your machine if one of its dependencies (especially one pinned as a version range) has grown past that size — the failure is local tooling catching up, not a sign the chart is broken.
+
 ## Base charts
 
 We provide opinionated, batteries included helm charts that give:
@@ -120,6 +122,10 @@ To make use of this feature you need the following:
 
 Providing you follow the above steps, the Jenkins library will parse the labels and form a list of templates to use, apply `envsubst` to override templated config and append the files to Helm.
 
+The label is only read when a build runs — adding it to a PR that already has a build in progress or completed does not retroactively apply the extra values. Push a new commit, or otherwise re-trigger the build, after adding the label.
+
+If you enable persistence on a StatefulSet-backed sub-chart such as `ccd`'s `elasticsearch` for preview, nothing in the pipeline deletes the resulting PVC when the PR's Helm release is uninstalled. The archived upstream `elasticsearch` chart (`https://helm.elastic.co`, pinned around 8.5.1) predates `persistentVolumeClaimRetentionPolicy` support and has no `values.schema.json`, so setting that field on it is silently ignored. `ccd` depends instead on an HMCTS fork of that chart published to `oci://hmctsprod.azurecr.io/helm/elasticsearch`, which does honour `persistentVolumeClaimRetentionPolicy` — point your own `elasticsearch` dependency at that fork if you need working PVC cleanup on preview, rather than leaving persistence disabled.
+
 ## Publishing helm charts
 
 We publish charts in two different ways depending on the type of chart.
@@ -167,6 +173,8 @@ Performing a release consists of the following steps:
 3. Merge the PR
 4. Create a GitHub release, tagging it with the same version number used in Chart.yaml
 5. The release build will be triggered, publishing the new chart version
+
+If your PR bumps a dependency on another chart to a version that hasn't been released yet, the PR validation build will fail `helm dependency update` until that dependency's own release build has published the new version to ACR. Once it has, you need a fresh commit to re-run validation -- taking the PR out of draft, editing its description, or approving it does not trigger a new build, and re-queuing a build manually needs "Queue builds" permission on the pipeline that most engineers don't have.
 
 #### Setting up an AzureDevOps chart build
 

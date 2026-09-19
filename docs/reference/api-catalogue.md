@@ -9,17 +9,20 @@ audience: both
 
 HMCTS services publish their OpenAPI specs to a central registry, [`hmcts/cnp-api-docs`](https://github.com/hmcts/cnp-api-docs). This workspace clones that registry locally at `platops/cnp-api-docs/` so developers and agents can browse, grep, and link to specs without going through the hosted site for every lookup.
 
+`reform-api-docs` resolves to the same repository via GitHub's rename redirect, so a reference to that name in an older script points at this registry rather than a separate one.
+
 ## What's in the registry
 
 - **`platops/cnp-api-docs/docs/specs/*.json`** — ~180 OpenAPI spec files (mostly OpenAPI 3.x; a few legacy Swagger 2.0). One file per published API; some services publish several (e.g. `ccd-data-store-api` publishes four versioned variants).
-- **`platops/cnp-api-docs/docs/microservices.json`** — a registry of ~110 services with `id`, `name`, `group`, `repository`, `spec` (or `urls` for multi-version services), and `dependencies`. Drives the network-graph view on the hosted site and is useful for resolving service ID → owning GitHub repo.
-- **Hosted view** — the same files rendered at <https://hmcts.github.io/cnp-api-docs/> with Swagger UI and a dependency graph.
+- **Hosted view** — the same files rendered at <https://hmcts.github.io/cnp-api-docs/>: a per-product page (`/products/<product>/`), a Swagger UI per spec (`/api/<service>/`), an architecture/dependency explorer (`/architecture/`), and a registry-health report (`/health/`) that buckets every spec as fresh, ageing, stale, unpublished, or never-published.
+
+Publishing a spec to `docs/specs/` is enough for it to appear — the site is built from that directory, and there are no Low Level Design pages to regenerate. What a spec can't express lives in the hand-maintained `registry.yaml`: product membership, dependency edges and prose descriptions. A service with no entry there is still published, but appears ungrouped and without dependency edges in the architecture explorer. Older bookmarks still resolve: `swagger.html?url=...` and `lld/<product>.html` redirect to the equivalent `/api/<service>/` or `/products/<product>/` page, as does `groups/<product>/`.
 
 The local clone is kept current by `./scripts/sync platops/cnp-api-docs` and is non-destructive.
 
 ## How specs are published
 
-Each service repo owns its own publish pipeline. Two patterns are in use across this workspace:
+Each service repo owns its own publish pipeline. Three patterns are in use across this workspace:
 
 1. **Modern, reusable workflow** (recommended; ~20 workspace repos).
    `.github/workflows/publish-openapi.yaml` delegates to `hmcts/workflow-publish-openapi-spec`:
@@ -51,10 +54,14 @@ Each service repo owns its own publish pipeline. Two patterns are in use across 
        # …commits and pushes to hmcts/cnp-api-docs
    ```
 
+3. **Composite action + reusable workflow** (`hmcts/cnp-githubactions-library`, `publish-openapi-spec`), for repos that would rather not hand-roll the git push. The composite action takes a path to an already-generated JSON spec and publishes it; a thin reusable workflow wraps it with checkout → optional `generate-command` → publish. It sets up no toolchain deliberately — generating the spec (Gradle, yarn, a bare `curl`) is entirely the caller's job.
+
+   The publish token needs care because a **composite action cannot read the `secrets` context at all** — GitHub only exposes `secrets` to reusable workflows, so a composite action must receive a token as an explicit input or an ambient env var. This action reads the org-level `SWAGGER_PUBLISHER_API_TOKEN` from the environment by default (the reusable workflow sets it once as job-level `env`, so its callers pass no token), with an `api-token` input as an override for a different secret. If you call the composite action directly inside your own multi-step job instead of via the reusable workflow, keep the token on the action's input rather than job-level `env` — job-level `env` exposes it to every other step in that job, including a preceding `yarn install`/`./gradlew` that runs third-party lifecycle scripts.
+
 The hosted Swagger UI for any spec is:
 
 ```
-https://hmcts.github.io/cnp-api-docs/swagger.html?url=https://hmcts.github.io/cnp-api-docs/specs/<filename>
+https://hmcts.github.io/cnp-api-docs/api/<service-name>/
 ```
 
 ## How the workspace links products to specs
@@ -94,7 +101,7 @@ There is nothing to do at the workspace level. Once a service repo pushes a spec
 
 ## Caveats
 
-- The registry covers ~110 services org-wide; this workspace clones ~50 of those repos. `/cft-find-endpoint` will surface paths from specs whose source repo isn't in this workspace — they're labelled `(not in workspace)`.
+- This workspace clones roughly half of the services publishing to the registry. `/cft-find-endpoint` will surface paths from specs whose source repo isn't in this workspace — they're labelled `(not in workspace)`.
 - A few services have historical duplicate spec files (e.g. `pcs-api.json`, `pcsAPI.json`, `pcs-backend-api.json`). The catalogue treats them as distinct artifacts; only `pcs-api.json` corresponds to the current `apps/pcs/pcs-api` repo.
-- `microservices.json` is hand-maintained upstream; some entries lag a service's actual published spec. When in doubt, trust the spec file in `docs/specs/`.
+- The `docs/specs/*.json` paths and filenames are a frozen contract, not just a serving convention for the hosted site. Terraform reads spec files directly from `raw.githubusercontent.com/hmcts/cnp-api-docs/master/docs/specs/*.json` at `apply` time to register APIs in Azure API Management, bypassing GitHub Pages entirely — renaming or restructuring that directory breaks infrastructure outside this repo, not just doc links.
 - Refreshing the clone (`./scripts/sync platops/cnp-api-docs`) is the only way to pick up new specs. There is no drift-detection skill yet — adding one is on the Phase-2 roadmap.
