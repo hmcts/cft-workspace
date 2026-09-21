@@ -65,7 +65,7 @@
 
 # 9) The deed-poll programme's clones
 #
-# Four independently-cloned repos, ignored for the same reason apps/, libs/ and platops/ are: their
+# Five independently-cloned repos, ignored for the same reason apps/, libs/ and platops/ are: their
 # contents belong in their own VCS history, never this one.
 
 deed-poll-admin
@@ -75,6 +75,8 @@ deed-poll-web
 deed-poll-api
 
 deed-poll-infra
+
+deed-poll-documentation
 
 .devcontainer/claudeinit.sh
 
