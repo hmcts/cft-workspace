@@ -78,6 +78,12 @@ RUN set -eux; \
     install -m 0755 /tmp/ralphex /usr/local/bin/ralphex; \
     install -D -m 0644 /tmp/completions/ralphex.zsh /usr/local/share/zsh/site-functions/_ralphex; \
     rm -rf /tmp/ralphex /tmp/completions; \
+    terraform_ver="1.16.1"; \
+    curl -fsSL "https://releases.hashicorp.com/terraform/${terraform_ver}/terraform_${terraform_ver}_linux_${arch}.zip" \
+        -o /tmp/terraform.zip; \
+    unzip -q -j /tmp/terraform.zip terraform -d /usr/local/bin; \
+    chmod +x /usr/local/bin/terraform; \
+    rm -f /tmp/terraform.zip; \
     \
     rm -rf /var/lib/apt/lists/*
 
