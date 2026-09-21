@@ -26,7 +26,7 @@ sources_sha:
   "idam-testing-support-api:README.md": "d13acc99ba8524a8d6b3231b4b680d397ef2ba4f"
   "cnp-flux-config:apps/idam/idam-testing-support-api/aat.yaml": "9206845f92b73ee20ddef7f8dd52e744d2f4e89a"
   "cnp-flux-config:apps/idam/idam-testing-support-api/demo.yaml": "115b21b5c5d91a888fbe279c9cfe5da7543d4efc"
-  "cnp-flux-config:apps/idam/idam-api/aat.yaml": "5204d6501ba153f5d4da0db0b4ab3bb98dbf4193"
+  "cnp-flux-config:apps/idam/idam-api/aat.yaml": "c556a5af394c585db00415aa9f7e0d7706402a05"
   "pcs-frontend:bin/dev/createIdamUser.sh": "22ca0050fe543484b4134a8b0119b9c66e22dbf4"
 ---
 # Create IDAM test users in AAT and demo
