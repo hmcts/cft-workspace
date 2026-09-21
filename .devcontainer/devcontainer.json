@@ -15,8 +15,6 @@
         "files.autoSave": "onFocusChange",
         "terminal.integrated.defaultProfile.linux": "zsh",
         "explorer.excludeGitIgnore": false,
-        // The git extension runs an independent fetch loop per discovered repository, and this
-        // workspace has 261 of them. Set here so it overrides any personal user setting.
         "git.autofetch": false,
         "git.repositoryScanMaxDepth": 5,
         "git.detectSubmodulesLimit": 40,
