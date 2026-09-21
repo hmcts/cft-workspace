@@ -52,4 +52,6 @@ Use playwright or cypress to test applications in the browser.
 
 Configure the Content Security Policy headers to prevent XSS attacks.
 
+Pass user-entered text to GOV.UK Frontend components as `text`, never `html`; see [Escape user input in GOV.UK Frontend templates](../../how-to/escape-user-input-in-govuk-templates.md).
+
 Add CSRF protection to forms to ensure that they cannot be submitted by a third party.
