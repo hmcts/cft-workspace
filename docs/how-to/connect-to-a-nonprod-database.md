@@ -39,16 +39,25 @@ carry the whole connection, prefixed by the Terraform `component` (**not** the p
 ```
 
 List them rather than guessing the prefix — it varies more than you'd expect
-(`professional-api-` in `rd-aat`, but bare `api-` in `pcs-perftest`):
+(`professional-api-` in `rd-aat`, but bare `api-` in `pcs-perftest`), and the casing of the
+suffix isn't guaranteed either — some services use lowercase, dash-separated names
+(`<product>-postgres-host`) rather than `<component>-POSTGRES-HOST`. `contains()` in an
+Azure CLI `--query` is case-sensitive, so a query for `POSTGRES` returns nothing against an
+all-lowercase vault and reads like "no Postgres secrets here" rather than "wrong case" —
+match on `to_lower(name)` instead:
 
 ```bash
 az keyvault secret list --vault-name rd-perftest \
-  --query "[?contains(name,'POSTGRES')].name" -o tsv
+  --query "[?contains(to_lower(name),'postgres')].name" -o tsv
 ```
 
-If the vault has no `POSTGRES-*` secrets at all, check the service's
-`infrastructure/*.tf` for the `azurerm_key_vault_secret` resources — a few services deviate
-(`-POSTGRES-PASS-FLEX`, `-POSTGRES-PASS-V15`, or a differently-named vault).
+If the vault has no matching secrets at all, check the service's `infrastructure/*.tf` for
+the `azurerm_key_vault_secret` resources — a few services deviate (`-POSTGRES-PASS-FLEX`,
+`-POSTGRES-PASS-V15`, or a differently-named vault). Some vaults also hold credentials for
+more than one consumer side by side — a bare `postgres-*` set next to a service-prefixed one
+belongs to whichever other consumer put it there, not to the service you're chasing, so
+match the full prefix rather than assuming the first Postgres-shaped secret you find is
+yours.
 
 ### 2. Export the connection and connect
 
