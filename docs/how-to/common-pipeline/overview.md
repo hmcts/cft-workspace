@@ -146,6 +146,15 @@ The `retry` wrapper around an expensive stage (e.g. a multi-branch functional/E2
 
 `enable_e2e_test` is the switch that turns on end-to-end testing for a PR build in `sectionDeployToAKS`; labels like `enable_e2e_regression` only select which suite runs once E2E is already enabled — they do nothing on their own. A PR carrying a suite-selection label but not `enable_e2e_test` still builds, deploys and reports success, having silently skipped the E2E stage entirely. Separately, `enableE2eTest()` is only wired up from the `onMaster()` path in the shared library — PR-time E2E is entirely this separate, label-gated path, not a scaled-down version of what runs on master.
 
+### `enable_keep_helm` keeps a PR's preview release instead of tearing it down
+
+By default a PR build uninstalls its Helm release once the build finishes. Adding the
+`enable_keep_helm` label leaves the preview release in place instead. The label is read
+once, during the `AKS deploy` stage, so adding it after a build has already started
+doesn't save that run — label first, then build or rebuild. Keeping the release this way
+isn't permanent: the preview namespace still gets reaped on the usual schedule, and the
+next build of that PR redeploys over it regardless of the label.
+
 ### A green PR build does not guarantee a green master build
 
 Where a repo's end-to-end suite is split by tag (for example a small `@smoke`/`@PR` set run against the preview deploy, and a wider `@regression` set run only against AAT on master), a PR build only exercises the smaller set. Removing or changing something the wider suite asserts — a UI control, a page's structure — can pass every PR check and still break the master build once it deploys to AAT and runs the suite a PR never ran. Grep the E2E specs for anything asserting the behaviour you're changing before treating a green PR as sufficient, and know that a master failure of this kind blocks that build's image promotion, so the change also isn't live until the suite is fixed and master goes green again.
