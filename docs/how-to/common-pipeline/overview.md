@@ -150,6 +150,10 @@ The `retry` wrapper around an expensive stage (e.g. a multi-branch functional/E2
 
 Where a repo's end-to-end suite is split by tag (for example a small `@smoke`/`@PR` set run against the preview deploy, and a wider `@regression` set run only against AAT on master), a PR build only exercises the smaller set. Removing or changing something the wider suite asserts — a UI control, a page's structure — can pass every PR check and still break the master build once it deploys to AAT and runs the suite a PR never ran. Grep the E2E specs for anything asserting the behaviour you're changing before treating a green PR as sufficient, and know that a master failure of this kind blocks that build's image promotion, so the change also isn't live until the suite is fixed and master goes green again.
 
+### A PR build cannot prove an infrastructure change
+
+A PR build only deploys to Preview; the `Apply … in <env>` Terraform stage that applies infrastructure changes to AAT (Staging) runs on master builds only. A PR carrying a Terraform module or provider change can pass every stage green without that change ever being applied against AAT — only the resulting master build actually exercises it.
+
 ### Docker build stage
 
 The pipeline's Docker build step uses `az acr build` (ACR Tasks), which builds with the legacy (non-BuildKit) Docker builder. That builder walks every stage declared in the Dockerfile in file order, regardless of `--target` — a stage is only skipped if it's declared *after* the target stage. A leftover or unused stage placed earlier in the file (for example an old `development` stage with its own `COPY . .`) is still built on every single run even though `--target runtime` is set; the fix is to delete or reorder the stage, not to rely on `--target` alone.
