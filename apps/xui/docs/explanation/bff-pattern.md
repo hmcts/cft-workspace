@@ -78,7 +78,7 @@ sources_sha:
   "rpx-xui-node-lib:src/auth/models/strategy.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/common/util/csp.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
-  "rpx-xui-webapp:api/workAllocation/routes.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/workAllocation/routes.ts": "82c2484c25cad7252a8cfbf71581d2c13fe20f83"
   "rpx-xui-webapp:api/lib/log4jui.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
   "rpx-xui-webapp:api/health/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-node-lib:src/auth/auth.constants.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
@@ -367,7 +367,7 @@ The `/workallocation/*` routes (handled locally, not proxied) use `router.use` f
 ```
 router.use('/task/:taskId/:action', postTaskAction);
 router.use('/task/:taskId', getTask);
-router.use('/caseworker/search', searchCaseWorker);
+router.use('/task', searchTask);
 ```
 
 While functionally this works because the handlers only process the expected method, it weakens the route contract — a `DELETE /workallocation/task/123` would match and invoke `getTask` rather than returning 404/405. This is flagged as a hardening item.

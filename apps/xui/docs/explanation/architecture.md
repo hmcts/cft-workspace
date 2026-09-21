@@ -57,9 +57,9 @@ sources_sha:
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:api/lib/middleware/auth.ts": "3b6d926b78e0815e477c8938d564099e392a8c94"
   "rpx-xui-webapp:config/default.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
-  "rpx-xui-webapp:charts/xui-webapp/values.yaml": "6ae33684c8e169add0b98858628a065e9518888c"
-  "rpx-xui-webapp:charts/xui-webapp/Chart.yaml": "6ae33684c8e169add0b98858628a065e9518888c"
-  "rpx-xui-webapp:Dockerfile": "1eea34a7ae5eeb5c43d14b0e1a3a3a16adfb6f9d"
+  "rpx-xui-webapp:charts/xui-webapp/values.yaml": "ad52739ad7e96e0105fc006665235d0b266974ac"
+  "rpx-xui-webapp:charts/xui-webapp/Chart.yaml": "4dbb4157e184d281144689bc6667c5361b3d0116"
+  "rpx-xui-webapp:Dockerfile": "279aec082d96826936844c11458b9ebe4670168c"
   "rpx-xui-webapp:infrastructure/main.tf": "6ae33684c8e169add0b98858628a065e9518888c"
   "rpx-xui-node-lib:src/common/models/xuiNode.class.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
   "rpx-xui-node-lib:src/auth/oidc/models/openid.class.ts": "e30a86772d25ac208bf938e78ef2c7308c9cdd3a"
@@ -315,7 +315,7 @@ All three apps use multi-stage Docker builds based on `hmctsprod.azurecr.io/base
 | Parameter | Value |
 |-----------|-------|
 | Namespace | `xui` |
-| Helm base chart | `chart-nodejs` (3.2.0) from `oci://hmctsprod.azurecr.io/helm` |
+| Helm base chart | `chart-nodejs` (major 3) from `oci://hmctsprod.azurecr.io/helm` — read the pinned version from `charts/xui-webapp/Chart.yaml` |
 | Application port | 3000 |
 | CPU requests / limits | 250m / 2000m |
 | Memory requests / limits | 512Mi / 2048Mi |

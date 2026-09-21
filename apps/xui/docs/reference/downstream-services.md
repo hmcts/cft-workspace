@@ -57,7 +57,7 @@ sources_sha:
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:api/lib/proxy.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
   "rpx-xui-webapp:api/lib/http/index.ts": "55079aab2a3d290fb54432007a9ee7c73183e447"
-  "rpx-xui-webapp:api/workAllocation/routes.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/workAllocation/routes.ts": "82c2484c25cad7252a8cfbf71581d2c13fe20f83"
   "rpx-xui-webapp:api/hearings/services.index.ts": "e4f7e5a99239c9a585927332382aa87dae93b797"
   "rpx-xui-webapp:api/hearings/models/serviceHearingValues.model.ts": "e4f7e5a99239c9a585927332382aa87dae93b797"
   "rpx-xui-webapp:api/noc/index.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
@@ -314,7 +314,7 @@ Errors come back from the downstream as free-text messages, and the BFF derives 
 - Manage Organisations references `ccd-data-store-api` in config (`services.ccdDataApi`) but does not call it directly — all CCD-related queries route through the AAC proxy path.
 - `services.hearings.employment.serviceApi` is configured but Employment is **not** in the default `hearingsJurisdictions` activation list (`SSCS,PRIVATELAW,CIVIL,IA`).
 - The API root router mounts `/locations` twice (`rpx-xui-webapp:api/routes.ts:54`, `:63`), leaving the second mount unreachable.
-- Work Allocation routes use `router.use` for action-specific endpoints instead of explicit HTTP method handlers (`get`/`post`/`put`/`delete`), allowing unintended methods to reach handlers (`rpx-xui-webapp:api/workAllocation/routes.ts:39-71`).
+- Work Allocation routes use `router.use` for action-specific endpoints instead of explicit HTTP method handlers (`get`/`post`/`put`/`delete`), allowing unintended methods to reach handlers (`rpx-xui-webapp:api/workAllocation/routes.ts:36-63`).
 
 ## See also
 
