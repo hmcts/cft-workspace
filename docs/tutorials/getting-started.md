@@ -86,3 +86,4 @@ The first two read static state. The latter two consult `INDEX.md` — if it is 
 - **`scripts/bootstrap` errors with "GitHub SSH auth failed"** → your SSH key isn't on GitHub. Run `ssh-keygen -t ed25519` then upload `~/.ssh/id_ed25519.pub` to GitHub Settings → SSH and GPG keys.
 - **AAT hostnames don't resolve** → the F5 VPN started after the devcontainer; rebuild the container or run `.devcontainer/refresh-dns.sh`.
 - **`./scripts/sync` skips a repo** → it has dirty changes, is on a non-default branch, or has unpushed commits. That's by design; commit/push/clean first, then re-run.
+- **A local clone can be several days behind its remote** → sync is manual and skips anything dirty/branched/unpushed, so a clone can silently drift. Before trusting a clone's content for time-sensitive state (e.g. what's actually live in `platops/cnp-flux-config` before a prod change), check `git log -1` in that clone or compare against GitHub directly.
