@@ -126,6 +126,8 @@ The label is only read when a build runs — adding it to a PR that already has 
 
 If you enable persistence on a StatefulSet-backed sub-chart such as `ccd`'s `elasticsearch` for preview, nothing in the pipeline deletes the resulting PVC when the PR's Helm release is uninstalled. The archived upstream `elasticsearch` chart (`https://helm.elastic.co`, pinned around 8.5.1) predates `persistentVolumeClaimRetentionPolicy` support and has no `values.schema.json`, so setting that field on it is silently ignored. `ccd` depends instead on an HMCTS fork of that chart published to `oci://hmctsprod.azurecr.io/helm/elasticsearch`, which does honour `persistentVolumeClaimRetentionPolicy` — point your own `elasticsearch` dependency at that fork if you need working PVC cleanup on preview, rather than leaving persistence disabled.
 
+If a sub-chart is reached only through another chart today (for example a shared umbrella chart) and you later promote it to a direct dependency of your own chart, everything the umbrella chart used to inject for it stops applying — you have to supply it yourself. The most common casualty is `releaseNameOverride`: the `java`/`nodejs` base charts name their Kubernetes resources after the Helm release unless told otherwise, so once the promoted chart carries its own instance of that base chart, it can render the same resource names as your chart's own, and the install fails with `<resource> already exists`. Any other value the umbrella chart supplied — a database name, a downstream service URL — is lost the same way, and typically fails later, at runtime, rather than at install.
+
 ## Publishing helm charts
 
 We publish charts in two different ways depending on the type of chart.
@@ -154,7 +156,8 @@ Jenkins will automatically increase the version if you don't do this, so you don
 ### Azure DevOps
 
 Chart builds are run against the 'preview' AKS cluster,
-and chart are published to 'hmctspublic' Azure Container Registry.
+and chart are published to the 'hmctsprod' Azure Container Registry (the older 'hmctspublic'
+registry is being decommissioned and no longer receives new chart versions).
 
 See the [chart-java pipeline](https://github.com/hmcts/chart-java/blob/master/azure-pipelines.yaml) for an example.
 
@@ -162,7 +165,7 @@ It does:
 
 - on pull request: trigger a build that performs helm lint, helm install and helm test
 - on tag: trigger a build that performs helm lint, helm install, helm test, helm package and
-publish to 'hmctspublic' ACR
+publish to 'hmctsprod' ACR
 
 #### Performing a Release
 
