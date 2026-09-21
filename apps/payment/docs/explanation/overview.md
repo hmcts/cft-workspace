@@ -86,7 +86,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/GovPayDelegatingPaymentService.java": "4ad418c9d46f4d82cf3cc50a83620cfe86a17d42"
   "ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/GovPayClient.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PciPalPaymentService.java": "cd90241f94938ecec08b8768ce5e2bb4fc4fa5ab"
@@ -111,7 +111,7 @@ sources_sha:
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AntennaTelephonySystem.java": "c144ef6b6c298b35f14cf2400b4d8fad4d57b3e7"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/KervTelephonySystem.java": "c144ef6b6c298b35f14cf2400b4d8fad4d57b3e7"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/PaymentServiceImpl.java": "109655a0103cf081d4da2680872c7f77351f6e16"
-  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/UserAwareDelegatingPaymentService.java": "65bcad2ffb092e534b051dbb0349914658506a57"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/UserAwareDelegatingPaymentService.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/configuration/FeatureToggler.java": "3e9ece1186c812f47690ff5020d35b37f163cb63"
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-refdata.yaml": "17f30d3afb0d93af7a34eac0e07cb5d6120c93ba"
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml": "49aa8817f619e226e00c1f1010299dba05898908"
@@ -119,7 +119,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml": "1eecc96d51c2a425d51bc20682ab252806a62ff6"
   "ccpay-payment-app:settings.gradle": "7bafc8bc5e167ac022ea09d0d178dda6df95e09b"
   "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "9dae82de2ce3d1daf2e9b3e24f16f8a2fc84d8d5"
-  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "dcd2fd5fccf71609287e2f37ba2290749fb6413a"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "80fa794fde5b91a09ad903eac9601de7cbaec1a8"
 ---
 
 ## TL;DR
@@ -310,7 +310,7 @@ Two ASB topics carry payment events to consuming services:
 
 ### Publishing to the topic
 
-`CallbackServiceImpl` (`CallbackServiceImpl.java:42-79`) publishes to the callback topic when a payment reaches a terminal state. It selects the callback URL from one of two locations:
+`CallbackServiceImpl` (`CallbackServiceImpl.java:42-85`) publishes to the callback topic when a payment reaches a terminal state. It selects the callback URL from one of two locations:
 
 | Scenario | Callback URL source (DB column) |
 |----------|-------------------------------|
@@ -445,7 +445,7 @@ A scheduled job (`PATCH /jobs/card-payments-status-update` in `MaintenanceJobsCo
 
 The candidate set is narrow. `listInitiatedStatusPaymentsReferences()` selects only payments whose provider is `GOV_PAY` and whose status is not already `success`, `failed`, `error` or `cancelled`, created earlier than `callback.payments.cutoff.time.in.minutes` ago (`PaymentServiceImpl:167-173`, `PaymentServiceImpl:62-63`). The property defaults to `0` in `application.properties:204`, so with no environment override there is no quiet period and a payment is eligible on the next run. PCI-PAL and PBA payments are excluded by the provider filter.
 
-Retrieving a payment's status through the API mutates it. `retrieve(String)` is `@Transactional` and calls `fillTransientDetails`, which sets `paymentStatus` on the managed entity from the GOV.UK Pay status (`UserAwareDelegatingPaymentService:493-506`), so the new status is flushed on commit. That overload also passes `shouldCallBack = false`, and the callback is only published when the flag is true (`UserAwareDelegatingPaymentService:415-417`, `UserAwareDelegatingPaymentService:393-397`). A service that polls its own payment before the job runs therefore moves it into a terminal status with no callback published, and the job then skips it because it no longer matches the query — the service owns the outcome from that point on.
+Retrieving a payment's status through the API mutates it. `retrieve(String)` is `@Transactional` and calls `fillTransientDetails`, which sets `paymentStatus` on the managed entity from the GOV.UK Pay status (`UserAwareDelegatingPaymentService:497-510`), so the new status is flushed on commit. That overload also passes `shouldCallBack = false`, and the callback is only published when the flag is true (`UserAwareDelegatingPaymentService:417-420`, `UserAwareDelegatingPaymentService:395-402`). A service that polls its own payment before the job runs therefore moves it into a terminal status with no callback published, and the job then skips it because it no longer matches the query — the service owns the outcome from that point on.
 
 ## Data model (core entities)
 

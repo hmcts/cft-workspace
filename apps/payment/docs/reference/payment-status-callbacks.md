@@ -63,7 +63,7 @@ confluence:
     space: "RSTR"
 confluence_checked_at: "2026-08-20"
 sources_sha:
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientService.java": "80f0421010c7b573dc2437346c6f4ba49a8cae49"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
@@ -78,12 +78,12 @@ sources_sha:
   "ccpay-service-request-cpo-update-service:src/main/java/uk/gov/hmcts/reform/dtos/requests/CpoUpdateServiceRequest.java": "f9256a429a09119a246a95a54f463e1a099031aa"
   "ccpay-service-request-cpo-update-service:src/main/resources/application.yaml": "a21fecc631d099d3e44146d87d5b7481ab2a8b24"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/CallbackService.java": "a4175ada85e256554b5aec7d53c72dc5a6fff0d2"
-  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/controllers/fees/ServiceRequestUpdateClaimIssuedCallbackController.java": "6942a3258d258dca824dee13c08e44e64b1164f6"
+  "civil-service:src/main/java/uk/gov/hmcts/reform/civil/controllers/fees/ServiceRequestUpdateClaimIssuedCallbackController.java": "65221d76ac060d03a04dcfa71bf02897f6178275"
   "probate-back-office:src/main/java/uk/gov/hmcts/probate/controller/PaymentController.java": "1f45bf631f451881fa2c24da0622cc943bf504ac"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/controller/PaymentCallbackController.java": "5e750471ffa40d01398eb1308bfbbd8957903c40"
-  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "dcd2fd5fccf71609287e2f37ba2290749fb6413a"
-  "cnp-flux-config:apps/fees-pay/dead-letter-queue-process/dead-letter-queue-process.yaml": "f32f518578f860fa2c942bd0b61587ed3246bfa9"
-  "cnp-flux-config:apps/fees-pay/unprocessed-payment-update/unprocessed-payment-update.yaml": "dcd2fd5fccf71609287e2f37ba2290749fb6413a"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "80fa794fde5b91a09ad903eac9601de7cbaec1a8"
+  "cnp-flux-config:apps/fees-pay/dead-letter-queue-process/dead-letter-queue-process.yaml": "80fa794fde5b91a09ad903eac9601de7cbaec1a8"
+  "cnp-flux-config:apps/fees-pay/unprocessed-payment-update/unprocessed-payment-update.yaml": "954e5453498f918f93cae76584b19d81d6e1c611"
   "cnp-flux-config:apps/fees-pay/ccpay-cpo-update-service/prod.yaml": "204f235858ef707acc00eb4ae24c6f72a9de6563"
   "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "9dae82de2ce3d1daf2e9b3e24f16f8a2fc84d8d5"
   "cnp-flux-config:apps/fees-pay/ccpay-callback-function/prod.yaml": "7b22eb2f6fc3bfe636d2eeb4cbb0f7eb46f76bb5"
@@ -96,7 +96,7 @@ sources_sha:
 - The external consumer `ccpay-callback-function` (Azure Function) is KEDA-scaled on the `serviceCallbackPremiumSubscription` backlog, authenticates with S2S as `payment_app`, and sends a PUT request to the service's registered callback URL (`cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml:16-24`, `cnp-flux-config:apps/fees-pay/ccpay-callback-function/prod.yaml:11-12`). Any 2XX response counts as success; otherwise it redelivers on a 30-minute interval (`DELAY_MESSAGE_MINUTES`, `ccpay-callback-function.yaml:13`) for up to 5 further attempts and then gives up.
 - The `ccpay-service-callback-topic` carries either a `PaymentDto` (legacy path) or `PaymentStatusDto` (Ways2Pay path) JSON payload with a `serviceCallbackUrl` message property.
 - The `ccpay-service-request-cpo-update-topic` carries a `ServiceRequestCpoDto` (snake_case JSON) consumed by `ccpay-service-request-cpo-update-service`.
-- Publishing is ungated: `CallbackServiceImpl.callback()` publishes whenever a callback URL is set, with no feature check (`CallbackServiceImpl.java:42-79`). The Payment Status Update Job runs every 30 minutes to check for outstanding initiated card payments (`status-payment-job.yaml:11`).
+- Publishing is ungated: `CallbackServiceImpl.callback()` publishes whenever a callback URL is set, with no feature check (`CallbackServiceImpl.java:42-85`). The Payment Status Update Job runs every 30 minutes to check for outstanding initiated card payments (`status-payment-job.yaml:11`).
 
 ## Topics
 
@@ -137,7 +137,7 @@ Services register their callback URL at payment/service-request creation time. T
 
 ## Message format: `ccpay-service-callback-topic`
 
-Two payload shapes are published depending on which callback path is triggered in `CallbackServiceImpl.callback()` (`CallbackServiceImpl.java:42-79`). The method is `synchronized`, so concurrent status updates on different payments serialise through a single publish path.
+Two payload shapes are published depending on which callback path is triggered in `CallbackServiceImpl.callback()` (`CallbackServiceImpl.java:42-85`). The method is `synchronized`, so concurrent status updates on different payments serialise through a single publish path.
 
 ### Path 1 -- `payment.serviceCallbackUrl` is set (legacy card payments)
 
@@ -227,8 +227,8 @@ The job only ever responds to **online card payments**. Failed/disputed payments
 
 ### Feature gate
 
-<!-- DIVERGENCE: Confluence (Service Callback LLD 1958058001) states publishing is controlled by an FF4j feature flag that can be switched off to suppress callbacks. ccpay-payment-app declares the flag name CallbackService.FEATURE = "payment-callback-service" (CallbackService.java:8) but never reads it, and no FF4j dependency is declared in its build; the repo's runtime toggle mechanism is LaunchDarklyFeatureToggler. CallbackServiceImpl.callback() (CallbackServiceImpl.java:42-79) publishes unconditionally once a callback URL is present. Source wins. -->
-The callback path has no runtime switch. `CallbackService` declares `String FEATURE = "payment-callback-service"` (`CallbackService.java:8`), and that string is the only occurrence of the name in the repository -- nothing reads the constant. `CallbackServiceImpl.callback()` branches only on which callback URL is populated (`CallbackServiceImpl.java:43,59`).
+<!-- DIVERGENCE: Confluence (Service Callback LLD 1958058001) states publishing is controlled by an FF4j feature flag that can be switched off to suppress callbacks. ccpay-payment-app declares the flag name CallbackService.FEATURE = "payment-callback-service" (CallbackService.java:8) but never reads it, and no FF4j dependency is declared in its build; the repo's runtime toggle mechanism is LaunchDarklyFeatureToggler. CallbackServiceImpl.callback() (CallbackServiceImpl.java:42-85) publishes unconditionally once a callback URL is present. Source wins. -->
+The callback path has no runtime switch. `CallbackService` declares `String FEATURE = "payment-callback-service"` (`CallbackService.java:8`), and that string is the only occurrence of the name in the repository -- nothing reads the constant. `CallbackServiceImpl.callback()` branches only on which callback URL is populated (`CallbackServiceImpl.java:43,62`).
 
 Runtime toggling in `ccpay-payment-app` goes through `LaunchDarklyFeatureToggler`, and the flags present in the callback-publishing path govern other behaviour: `apportion-feature`, default `false`, gates fee/payment apportionment either side of the publish calls (`ServiceRequestDomainServiceImpl.java:238,303`).
 

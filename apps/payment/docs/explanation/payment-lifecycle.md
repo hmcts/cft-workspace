@@ -84,7 +84,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/mapper/PBAStatusErrorMapper.java": "89b67ec9107bf106e0f07b0e31bf3bb996a30ba8"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/IdempotencyServiceImpl.java": "7a5df2f161deebfb9cf3e7e0941bd0cdc21318de"
   "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/Payment.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentFeeLink.java": "5c28ea10564258d9c193bead87675b85afa50c21"
@@ -102,7 +102,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml": "49aa8817f619e226e00c1f1010299dba05898908"
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.8.yaml": "c0cb9c298edd78221ec9c47f0fc43e71f1df4e4a"
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml": "1eecc96d51c2a425d51bc20682ab252806a62ff6"
-  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "dcd2fd5fccf71609287e2f37ba2290749fb6413a"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "80fa794fde5b91a09ad903eac9601de7cbaec1a8"
 ---
 
 ## TL;DR
@@ -432,7 +432,7 @@ Once cancelled, a Service Request will no longer accept further payment attempts
 | `ccpay-service-callback-topic` | Notifies service teams of payment status changes | `CallbackServiceImpl`, `ServiceRequestDomainServiceImpl` | Service teams (civil, ia, pcs, etc.) |
 | `ccpay-service-request-cpo-update-topic` | Triggers CPO creation/update | `ServiceRequestDomainServiceImpl` | `ccpay-service-request-cpo-update-service` |
 
-`CallbackServiceImpl.callback()` (`CallbackServiceImpl.java:42-79`) is a `synchronized` method with no feature gate — publishing is unconditional once a callback URL is present. It sends messages via `TopicClientProxy` with `serviceCallbackUrl` as a message property. Serialisation or send failures are swallowed: the `catch` blocks only set the thread's interrupt flag and return, so a payment can reach a terminal status with its callback silently undelivered (`CallbackServiceImpl.java:56-58`, `CallbackServiceImpl.java:75-77`).
+`CallbackServiceImpl.callback()` (`CallbackServiceImpl.java:42-85`) is a `synchronized` method with no feature gate — publishing is unconditional once a callback URL is present. It sends messages via `TopicClientProxy` with `serviceCallbackUrl` as a message property. Serialisation or send failures are logged and then swallowed: the `catch` blocks write an ERROR line, re-raise the interrupt flag only for an `InterruptedException`, and return, so a payment can reach a terminal status with its callback undelivered and nothing beyond that log line to show it (`CallbackServiceImpl.java:56-61`, `CallbackServiceImpl.java:78-83`).
 
 The callback has two code paths depending on where the callback URL is stored:
 
@@ -530,7 +530,10 @@ public synchronized void callback(PaymentFeeLink paymentFeeLink, Payment payment
             topicClient.send(msg);
 
         } catch (Exception e) {
-            Thread.currentThread().interrupt();
+            LOG.error("Error sending payment callback message", e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
         }
     } else if (null != paymentFeeLink.getCallBackUrl()) {
         // Ways2Pay path: lighter PaymentStatusDto published; callback URL from SR record
@@ -550,7 +553,10 @@ public synchronized void callback(PaymentFeeLink paymentFeeLink, Payment payment
             topicClient.send(msg);
 
         } catch (Exception e) {
-            Thread.currentThread().interrupt();
+            LOG.error("Error sending service request callback message", e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }

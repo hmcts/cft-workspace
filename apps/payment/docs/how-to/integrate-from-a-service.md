@@ -74,7 +74,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CreditAccountPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/pcipal/TelephonyController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/v1/model/govpay/GovPayConfig.java": "bf63d4597038e8e184cc52ab230549c3a372ec3c"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/ServiceToTokenMap.java": "109655a0103cf081d4da2680872c7f77351f6e16"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/servicerequest/ServiceRequestDto.java": "5c28ea10564258d9c193bead87675b85afa50c21"
@@ -91,10 +91,10 @@ sources_sha:
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml": "b8d4f674f4f79c6505b4b4869ee3e96d0925ae3e"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/aat.yaml": "aba3724191bdd2ac64022358054550f863f7e715"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "1f0efdef1eabb8a0a04df64d3ce697eaf8d1090a"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/ithc.yaml": "b69c40b8b6a564eddc644305a0647d80697ddeb0"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/perftest.yaml": "dd6d705d6be20b8906b900a236b692b60e3d008d"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api-int/demo.yaml": "dd6d705d6be20b8906b900a236b692b60e3d008d"
-  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "dcd2fd5fccf71609287e2f37ba2290749fb6413a"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/ithc.yaml": "fccab24b94a0dd51ea999867cd177435a1631a4f"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/perftest.yaml": "fccab24b94a0dd51ea999867cd177435a1631a4f"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api-int/demo.yaml": "fccab24b94a0dd51ea999867cd177435a1631a4f"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "80fa794fde5b91a09ad903eac9601de7cbaec1a8"
 ---
 
 ## TL;DR
@@ -431,12 +431,12 @@ The payment service publishes status updates to the Azure Service Bus topic `ccp
 
 1. Your service's registered callback URL (the `call_back_url` from the Service Request, or the `service-callback-url` header from a legacy card payment) determines the destination.
 2. The callback message is a JSON body containing either:
-   - `PaymentDto` -- when `payment.serviceCallbackUrl` is set (legacy card payments), `CallbackServiceImpl.java:42-58`
-   - `PaymentStatusDto` -- when `paymentFeeLink.callBackUrl` is set (Service Request flow), `:59-78`
+   - `PaymentDto` -- when `payment.serviceCallbackUrl` is set (legacy card payments), `CallbackServiceImpl.java:43-61`
+   - `PaymentStatusDto` -- when `paymentFeeLink.callBackUrl` is set (Service Request flow), `:62-84`
 
    The two are mutually exclusive branches of one `if`/`else if`, so a payment carrying both a `service-callback-url` header and a Service Request `call_back_url` gets the legacy `PaymentDto` shape only.
-3. The message has a `serviceCallbackUrl` property in the Service Bus message properties indicating the delivery endpoint (`CallbackServiceImpl.java:52`, `:71`). Both branches catch every exception and only interrupt the current thread (`:56-58`, `:75-77`), so a failure to publish is not surfaced to the caller of the payment API and does not fail the payment.
-4. The callback is published whenever a card payment status changes — triggered by `GET /card-payments/{internal-reference}/status` or by the scheduled status-update job. Publishing is ungated: `CallbackServiceImpl.callback` branches only on which callback URL is populated and consults no feature toggle (`CallbackServiceImpl.java:42-79`). A `FEATURE` constant naming `payment-callback-service` is declared on the interface (`CallbackService.java:8`) but is read nowhere in the codebase, so there is no switch to turn callbacks off short of clearing the registered URL.
+3. The message has a `serviceCallbackUrl` property in the Service Bus message properties indicating the delivery endpoint (`CallbackServiceImpl.java:52`, `:74`). Both branches catch every exception, log it at ERROR and re-raise the interrupt flag only when the cause was an `InterruptedException` (`:56-61`, `:78-83`), so a failure to publish is not surfaced to the caller of the payment API and does not fail the payment.
+4. The callback is published whenever a card payment status changes — triggered by `GET /card-payments/{internal-reference}/status` or by the scheduled status-update job. Publishing is ungated: `CallbackServiceImpl.callback` branches only on which callback URL is populated and consults no feature toggle (`CallbackServiceImpl.java:42-85`). A `FEATURE` constant naming `payment-callback-service` is declared on the interface (`CallbackService.java:8`) but is read nowhere in the codebase, so there is no switch to turn callbacks off short of clearing the registered URL.
 
 <!-- DIVERGENCE: Confluence's "Service Callback LLD" describes callback publishing as gated by a feature flag it calls "service-callback". Source publishes unconditionally — no toggle is evaluated on the publish path, and the only flag-shaped identifier (CallbackService.FEATURE = "payment-callback-service") has no readers. Source wins. -->
 
@@ -465,7 +465,7 @@ The payment service publishes status updates to the Azure Service Bus topic `ccp
 Two details of the mapping matter to a consumer:
 
 - `service_request_amount` is populated from the individual payment's amount, not from the Service Request total (`PaymentDtoMapper.java:128`). For a partly-paid Service Request it does not report the outstanding or total balance.
-- `account_number` is passed as an empty string by the Service Request branch (`CallbackServiceImpl.java:64`), and an empty string survives `NON_NULL`, so the field is always present and always blank on this payload. Payment status is conveyed by `service_request_status`; there is no per-payment status field.
+- `account_number` is passed as an empty string by the Service Request branch (`CallbackServiceImpl.java:67`), and an empty string survives `NON_NULL`, so the field is always present and always blank on this payload. Payment status is conveyed by `service_request_status`; there is no per-payment status field.
 
 ## Step 6: Query payment status
 
