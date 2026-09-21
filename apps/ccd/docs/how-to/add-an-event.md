@@ -46,14 +46,14 @@ diataxis: how-to
 product: ccd
 sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java": "fd407422cd1c80859f3374209a54562d6dbf38f3"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/AboutToSubmit.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/MidEvent.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventGenerator.java": "1cbfd5e5ff570633940a978541823f6ca1241c3d"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java": "5aac4f32ba9d903d5fde3474938c9afaaee510b8"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CaseworkerAddNote.java": "f2937b890660ee43a4bf8242ea3def26cfcdf0f0"
-  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java": "c831f1fcc6e033c87eccd503aa4076c59ea85476"
+  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java": "c4f550a5f0fcc1fb7ceea2f7bcf60188f2dd80f2"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/Permissions.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventPostStateParser.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventParser.java": "be7be6a7f5cf2f4688e2c4a80337022ef32ca318"
@@ -145,7 +145,7 @@ public class MyEvent implements CCDConfig<CaseData, State, UserRole> {
 Key points:
 - `PageBuilder` is a thin project-local wrapper around `EventBuilder.fields()` — copy from `test-projects/e2e/src/main/java/.../common/ccd/PageBuilder.java` or inline the calls directly on `EventBuilder.fields()`.
 - `forAllStates()` makes the event available in every state. Scope it with `.forStates(State.Draft, State.Submitted)` when needed.
-- `aboutToSubmitCallback` and `submitHandler` (decentralised mode) are mutually exclusive — the SDK throws `IllegalStateException` at startup if both are set (`Event.java:196-203`).
+- `aboutToSubmitCallback` and `submitHandler` (decentralised mode) are mutually exclusive — the SDK throws `IllegalStateException` at startup if both are set (`Event.java:208-215`).
 
 ## Step 2 — Add a second page (optional)
 
@@ -200,7 +200,7 @@ Permissions attach to the event via `.grant()` on the `EventTypeBuilder` (before
 | `CREATE_READ_UPDATE` | CRU |
 | `READ` | R |
 
-To prevent a role from inheriting state-level permissions on this event, call `.explicitGrants()` on the builder — this disables permission inheritance (`Event.java:142`).
+To prevent a role from inheriting state-level permissions on this event, call `.explicitGrants()` on the builder — this disables permission inheritance (`Event.java:154`).
 
 To allow a role to see the event in history without triggering it, use `.grantHistoryOnly(UserRole.SOLICITOR)` (`CaseworkerAddNote.java:56`).
 
@@ -231,11 +231,11 @@ The `EventBuilder` exposes several flags that the generated CCD definition emits
 .retries(5, 10, 15)                     // override retry timeouts for all webhooks (default 15s, 3 tries, 0/1/3s pauses)
 ```
 
-The retry vocabulary is comma-separated seconds: `5,10,15` means three retries waiting 5, 10, 15 seconds respectively (`Event.java:230-235`). `Webhook.values()` covers all four CCD callback types — about-to-start, mid, about-to-submit, submitted.
+The retry vocabulary is comma-separated seconds: `5,10,15` means three retries waiting 5, 10, 15 seconds respectively (`Event.java:242-247`). `Webhook.values()` covers all four CCD callback types — about-to-start, mid, about-to-submit, submitted.
 
 Field-level CYA inclusion is per-field via the `FieldCollectionBuilder`; the field flag is honoured only when `.showSummary()` is set on the event.
 
-<!-- DIVERGENCE: SDK default for endButtonLabel is "Save and continue" (Event.java:57); CCD's documented default in the definition glossary is "Submit". The SDK injects the override at generation time, so the label users see is "Save and continue" unless overridden — source wins. -->
+<!-- DIVERGENCE: SDK default for endButtonLabel is "Save and continue" (Event.java:58); CCD's documented default in the definition glossary is "Submit". The SDK injects the override at generation time, so the label users see is "Save and continue" unless overridden — source wins. -->
 
 ## Step 5c — Mid-event callback security (CCD-5344)
 

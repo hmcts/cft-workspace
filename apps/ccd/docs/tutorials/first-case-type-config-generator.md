@@ -45,16 +45,16 @@ diataxis: tutorials
 product: ccd
 sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java": "d925e0bcf4b8d40287b797d56b658cd7d044b8e5"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventTypeBuilder.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/HasRole.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java": "fd407422cd1c80859f3374209a54562d6dbf38f3"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/NoFaultDivorce.java": "a000eefc369f6bfa1b17291ea3c5aebbb3ebf4f7"
-  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java": "c831f1fcc6e033c87eccd503aa4076c59ea85476"
+  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java": "c4f550a5f0fcc1fb7ceea2f7bcf60188f2dd80f2"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CaseworkerAddNote.java": "f2937b890660ee43a4bf8242ea3def26cfcdf0f0"
-  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/DecentralisedCaseworkerAddNote.java": "2c55c7f6770dd5364f9faed449cd2b63597dfa1f"
+  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/DecentralisedCaseworkerAddNote.java": "73403a3d8446e060dff1ca3349e432faa32cb8f2"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java": "cde80e20584d39f3f3a890f473db818f79449fae"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/UserRole.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/DefaultAccess.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
@@ -321,11 +321,11 @@ public class CreateMyCase implements CCDConfig<MyCaseData, MyState, UserRole> {
 
 Key points:
 - `.initialState(state)` marks this as a creation event — no pre-state.
-- `.grant(permissions, roles...)` sets which roles can trigger this event (`Event.java:160`).
+- `.grant(permissions, roles...)` sets which roles can trigger this event (`Event.java:172`).
 - `.fields().page("page1")` opens the first wizard page; subsequent `.mandatory()` / `.optional()` calls add fields to it (`FieldCollection.java:500`).
-- The `aboutToSubmitCallback` lambda is a `AboutToSubmit<T,S>` functional interface; mutually exclusive with `submitHandler` (decentralised mode) (`Event.java:196-203`).
+- The `aboutToSubmitCallback` lambda is a `AboutToSubmit<T,S>` functional interface; mutually exclusive with `submitHandler` (decentralised mode) (`Event.java:208-215`).
 
-The e2e reference for a full three-callback creation event is `test-projects/e2e/src/main/java/.../sow014/nfd/CreateTestCase.java:85-103` (configure method; callback methods follow through line 129).
+The e2e reference for a full three-callback creation event is `test-projects/e2e/src/main/java/.../sow014/nfd/CreateTestCase.java:85-104` (configure method; callback methods follow through line 130).
 
 ---
 
@@ -380,7 +380,7 @@ public class DecentralisedCaseworkerAddNote implements CCDConfig<MyCaseData, MyS
 ```
 
 Key points:
-- `CCDConfig.configureDecentralised` defaults to delegating to `configure`, so existing centralised configs are unaffected (`CCDConfig.java:37`).
+- `CCDConfig.configureDecentralised` defaults to delegating to `configure`, so existing centralised configs are unaffected (`CCDConfig.java:49-51`).
 - `decentralisedEvent(id, submitHandler[, startHandler])` is exposed only on `DecentralisedConfigBuilder` (`DecentralisedConfigBuilder.java:16-22`).
 - The `submitHandler` runs **in-process** in your service; CCD calls a single `POST /ccd-persistence/cases` endpoint instead of the legacy `aboutToSubmit`/`submitted` callback pair. Transactional control sits with your service.
 - `aboutToStart` and `midEvent` callbacks still fire on a decentralised event; only `aboutToSubmit` and `submitted` are replaced by the in-process `submitHandler`.

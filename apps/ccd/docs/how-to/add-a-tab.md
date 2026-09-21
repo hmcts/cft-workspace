@@ -48,7 +48,7 @@ product: ccd
 sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Tab.java": "0115317280dd5794d0fbd0f1bf6cc21a4e013ee3"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java": "8bc7f5ed083cdd72928169585b9bc89819707792"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseTypeTabGenerator.java": "e7e93f75d554917dda9b750161232701c096f1b1"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/NoFaultDivorce.java": "a000eefc369f6bfa1b17291ea3c5aebbb3ebf4f7"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/access/DefaultAccess.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
@@ -88,7 +88,7 @@ public void configure(ConfigBuilder<CaseData, State, UserRole> configBuilder) {
 }
 ```
 
-`tab(tabId, tabLabel)` is declared at `ConfigBuilder.java:41` and implemented at `ConfigBuilderImpl.java:260`. `tabId` must be unique within the case type. `tabLabel` is the string shown in the UI.
+`tab(tabId, tabLabel)` is declared at `ConfigBuilder.java:41` and implemented at `ConfigBuilderImpl.java:262`. `tabId` must be unique within the case type. `tabLabel` is the string shown in the UI.
 
 Length limits enforced by the definition-store importer (`CCD - Import Domain - Validation Rules`, rules 11.1–11.6):
 
@@ -217,7 +217,7 @@ The generator increments `TabDisplayOrder` starting at `1` (or `2` if it auto-in
 
 If your `configure()` method does **not** define a tab with `tabId == "CaseHistory"`, the SDK automatically adds one as the first tab on the case view (`CaseTypeTabGenerator.java:30–32`). To relocate or relabel it, define your own `tab("CaseHistory", "...")` explicitly.
 
-The auto-injected tab is written once, with no role, so it is not hidden per role by tab configuration. Hide it for particular roles with `ConfigBuilder.omitHistoryForRoles(...)` (`ConfigBuilder.java:50`, `ConfigBuilderImpl.java:155-157`):
+The auto-injected tab is written once, with no role, so it is not hidden per role by tab configuration. Hide it for particular roles with `ConfigBuilder.omitHistoryForRoles(...)` (`ConfigBuilder.java:50`, `ConfigBuilderImpl.java:157-159`):
 
 ```java
 configBuilder.omitHistoryForRoles(UserRole.SYSTEM_UPDATE);

@@ -271,7 +271,7 @@ sequenceDiagram
 
 **Imperative.** `ConfigBuilder.accessType(String accessTypeId)` and `ConfigBuilder.accessTypeRole(String accessTypeId)` return builders that populate a row directly (`ConfigBuilder.java:87-89`).
 
-**Declarative.** Implement `CCDAccessGroup` as an enum, one constant per `(accessTypeId, organisationProfileId)` pair, and attach constants to role constants via `HasRole.getAccessGroups()` — which returns `List<CCDAccessGroup>` and defaults to empty, so existing role enums need no change. `ConfigBuilderImpl.deriveAccessTypesFromRoles()` translates them at build time (`ConfigBuilderImpl.java:263`).
+**Declarative.** Implement `CCDAccessGroup` as an enum, one constant per `(accessTypeId, organisationProfileId)` pair, and attach constants to role constants via `HasRole.getAccessGroups()` — which returns `List<CCDAccessGroup>` and defaults to empty, so existing role enums need no change. `ConfigBuilderImpl.deriveAccessTypesFromRoles()` translates them at build time (`ConfigBuilderImpl.java:265`).
 
 Either way, declare the collection data store writes into on your case model, so the values are generated as a field and can be displayed and debugged:
 
@@ -291,7 +291,7 @@ Four details of the shipped design are worth knowing because they encode gotchas
 
 Both sheets also carry the standard `LiveTo` column, parsed by `AccessTypesParser.java:89` and `AccessTypeRolesParser.java:94`; the SDK supplies it from `CCDAccessGroup.getLiveTo()`, which defaults to null.
 
-Teams pinned to an SDK release predating #1063 still need the fallback: ship `AccessType` / `AccessTypeRole` as raw JSON fragments matching the column schema above and merge them via the SDK's `static/` directory pattern, the README's documented route for features the generator does not cover (`README.md:591`):
+Teams pinned to an SDK release predating #1063 still need the fallback: ship `AccessType` / `AccessTypeRole` as raw JSON fragments matching the column schema above and merge them via the SDK's `static/` directory pattern, the README's documented route for features the generator does not cover (`README.md:636-650`):
 
 ```groovy
 task generateCCDDefinition(type: Copy) {

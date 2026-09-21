@@ -91,7 +91,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getevents/AuditEventLoader.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/CaseAuditEventRepository.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2a5833f94c41ffd6e32f473deaf910fc2ecc2a53"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseDataRepository.java": "f03c01ae7b0d0d73be7b623a42d42f329ae80e4b"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseDataRepository.java": "de9accc08fb79ed80ecc4a5e7d6b3c46a2607261"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/LegacyCallbackSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
@@ -108,8 +108,8 @@ sources_sha:
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0020__prioritise_live_es_queue_updates.sql"
   : "303b6617c09391e0700c6ae904b6dc54e119f9c0"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "a133054d701a8a8b18b5416e76ee46606a5aec6b"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseEventTransactionCoordinator.java": "dd278838230209d05a9b0a91b883b18d0fb0c9c6"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "ec92d4394a2eabf0ef58b7b25253ab93a2b608ae"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseEventTransactionCoordinator.java": "3061d32495f88f2507033825cbc3341c4482e8e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "1d626d75c816fc34fd7b73e6e3633749ffaeb9a6"
@@ -378,12 +378,12 @@ Three distinct things get called "event data" in this design, and they land in d
 | `ccd.case_data.data` — legacy JSON blob | Service DB, `ccd` schema | only on the legacy-callback path (see below) |
 | Case pointer row (`data = {}`) | CCD DB | `CasePointerRepository` |
 
-The SDK's Flyway migrations create `ccd.case_data`, `ccd.case_event`, `case_event_audit`, `es_queue`, `submitted_callback_queue`, and `message_queue_candidates` in the **same datasource** as the service's domain tables (`dataruntime-db/migration/V0001.sql`; ordering enforced by `DecentralisedDataConfiguration.java:29-49`). That co-location is what allows a single transaction to cover the domain write, the audit row, and the outbox insert. The ordering inside that transaction — idempotency lock, reserve the case-event id, run the handler, upsert the case, snapshot the audit row — belongs to `CaseEventTransactionCoordinator.execute` (`CaseEventTransactionCoordinator.java:31-61`), which `CaseSubmissionService` delegates to.
+The SDK's Flyway migrations create `ccd.case_data`, `ccd.case_event`, `case_event_audit`, `es_queue`, `submitted_callback_queue`, and `message_queue_candidates` in the **same datasource** as the service's domain tables (`dataruntime-db/migration/V0001.sql`; ordering enforced by `DecentralisedDataConfiguration.java:29-49`). That co-location is what allows a single transaction to cover the domain write, the audit row, and the outbox insert. The ordering inside that transaction — idempotency lock, reserve the case-event id, run the handler, upsert the case, snapshot the audit row — belongs to `CaseEventTransactionCoordinator.execute` (`CaseEventTransactionCoordinator.java:31-63`), which `CaseSubmissionService` delegates to.
 
 Two details worth knowing:
 
-- The audit snapshot is **not** the payload CCD sent in. `CaseEventTransactionCoordinator.java:49-50` flushes pending JPA writes and then re-reads the case through `caseProjectionService.load(...)` *after* the handler has written, and stores that. So `ccd.case_event.data` is your `CaseView` projection of your own committed state.
-- `ccd.case_data.data` stays `{}` for `Submit<T,S>` events. `CaseDataRepository.upsertCase` only touches the `data` column when `has_data` is true (`CaseDataRepository.java:143,156`), and `DecentralisedSubmissionHandler` passes `Optional.empty()`. Only `LegacyCallbackSubmissionHandler.java:82` supplies a blob, snapshotted from the about-to-submit callback response.
+- The audit snapshot is **not** the payload CCD sent in. `CaseEventTransactionCoordinator.java:51-52` flushes pending JPA writes and then re-reads the case through `caseProjectionService.load(...)` *after* the handler has written, and stores that. So `ccd.case_event.data` is your `CaseView` projection of your own committed state.
+- `ccd.case_data.data` stays `{}` for `Submit<T,S>` events. `CaseDataRepository.upsertCase` only touches the `data` column when `has_data` is true (`CaseDataRepository.java:144,157`), and `DecentralisedSubmissionHandler` passes `Optional.empty()`. Only `LegacyCallbackSubmissionHandler.java:82` supplies a blob, snapshotted from the about-to-submit callback response.
 
 ## Implementing a decentralised service with the SDK
 
@@ -456,7 +456,7 @@ private SubmitResponse<State> handleCreate(EventPayload<PCSCase, State> payload)
 
 `EventPayload` is a Java record (`EventPayload.java:7`) carrying `caseReference`, `caseData`, and `urlParams`. `SubmitResponse.defaultResponse()` is the no-op variant when the service handles persistence internally and has nothing to signal back.
 
-`submitHandler` and `aboutToSubmitCallback` are mutually exclusive — setting both throws `IllegalStateException` (`Event.java:196-203`).
+`submitHandler` and `aboutToSubmitCallback` are mutually exclusive — setting both throws `IllegalStateException` (`Event.java:208-215`).
 
 ### 4. Configure CCD routing (env var)
 

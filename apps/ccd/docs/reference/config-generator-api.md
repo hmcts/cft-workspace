@@ -49,9 +49,9 @@ diataxis: reference
 product: ccd
 sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java": "fd407422cd1c80859f3374209a54562d6dbf38f3"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java": "d925e0bcf4b8d40287b797d56b658cd7d044b8e5"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/HasRole.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCD.java": "6b11c958ff5a6acaebbd19987c9b4706158b108b"
@@ -67,7 +67,7 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java": "5aac4f32ba9d903d5fde3474938c9afaaee510b8"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
-  "ccd-config-generator:README.md": "0369912738ba37759a4cc1534260f9bef71d5b8b"
+  "ccd-config-generator:README.md": "3b8dd94146b7642c4ce05ea2d2a0e1110a5762bd"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventCaseFieldParser.java": "843130d6c79bef2ad7718def447cf88bedfef23d"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
 ---
@@ -162,7 +162,7 @@ Returned by calling a state-selector method. All methods return `this` (fluent).
 | `retries(int... intervals)` | Set retry intervals (ms) for all webhooks on this event. |
 | `fields()` | Access the `FieldCollectionBuilder` for this event's pages/fields. |
 
-> **Constraint**: `submitHandler` and `aboutToSubmitCallback`/`submittedCallback` are mutually exclusive. Setting both throws `IllegalStateException` at startup (`Event.java:188-199`).
+> **Constraint**: `submitHandler` and `aboutToSubmitCallback`/`submittedCallback` are mutually exclusive. Setting both throws `IllegalStateException` at startup (`Event.java:200-211`).
 
 ---
 
@@ -512,9 +512,9 @@ public class MyCaseConfig implements CCDConfig<MyCaseData, State, UserRole> {
 
 ## Ejecting from the SDK
 
-`generateCCDConfig` is a plain `JavaExec` task running `uk.gov.hmcts.ccd.sdk.Main`, whose only output is the directory named by the `ccd.configDir` extension property, registered as a Gradle task output (`CcdSdkPlugin.java:30-53`). That directory holds the same per-sheet JSON the definition store expects, so `ccd-definition-processor`'s `json2xlsx` turns it into an importable spreadsheet with no SDK involvement (`README.md:129-156`). Running the task once and then maintaining the JSON by hand is a supported exit path.
+`generateCCDConfig` is a plain `JavaExec` task running `uk.gov.hmcts.ccd.sdk.Main`, whose only output is the directory named by the `ccd.configDir` extension property, registered as a Gradle task output (`CcdSdkPlugin.java:30-53`). That directory holds the same per-sheet JSON the definition store expects, so `ccd-definition-processor`'s `json2xlsx` turns it into an importable spreadsheet with no SDK involvement (`README.md:132-159`). Running the task once and then maintaining the JSON by hand is a supported exit path.
 
-Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:633-647`).
+Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:636-650`).
 
 ---
 

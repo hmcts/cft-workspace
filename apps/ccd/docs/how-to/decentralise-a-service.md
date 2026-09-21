@@ -60,9 +60,9 @@ diataxis: how-to
 product: ccd
 sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "a133054d701a8a8b18b5416e76ee46606a5aec6b"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "ec92d4394a2eabf0ef58b7b25253ab93a2b608ae"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "d8da78cb8858bde94150c173cc38217b01f8381f"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "3061d32495f88f2507033825cbc3341c4482e8e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
@@ -72,7 +72,7 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventPayload.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPI.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/client/ServicePersistenceAPIInterceptor.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/resources/application.properties": "a3bd23b7e2a57b903a610b651b7a6f33c1781b15"
@@ -212,7 +212,7 @@ Key types (`ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/h
 
 > `decentralisedEvent` is only available on `DecentralisedConfigBuilder`, not the base
 > `ConfigBuilder`. Setting `aboutToSubmitCallback` and a `submitHandler` on the same event
-> throws `IllegalStateException` at startup (`Event.java:188-199`).
+> throws `IllegalStateException` at startup (`Event.java:200-211`).
 
 ---
 
@@ -483,8 +483,8 @@ The five SDK-provided endpoints (`ServicePersistenceController.java:35-107`):
 Every `POST /ccd-persistence/cases` carries an `Idempotency-Key` UUID header. The SDK
 enforces this in two steps inside the submission transaction: a `SELECT ... FOR UPDATE` on the
 `ccd.case_data` row to lock the case, then a lookup of `ccd.case_event` by `case_data_id` and
-`idempotency_key` (`IdempotencyEnforcer.java:23-64`). On duplicate keys it replays the
-historical response (`CaseSubmissionService.java:104-109`). CCD will **not** retry on failure
+`idempotency_key` (`IdempotencyEnforcer.java:29-98`). On duplicate keys it replays the
+historical response (`CaseSubmissionService.java:109-114`). CCD will **not** retry on failure
 (unlike legacy callbacks); upstream clients may retry on ambiguous responses.
 <!-- CONFLUENCE-ONLY: "CCD will not retry" comes from the LLD; the retry policy lives on the CCD data-store side, not in the SDK source. -->
 

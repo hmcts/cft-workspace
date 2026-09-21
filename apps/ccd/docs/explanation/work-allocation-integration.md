@@ -56,7 +56,7 @@ sources_sha:
   "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskOutboxService.java": "f21eba4c359e7630356daf50092dfbc47b6ab4ca"
   "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskOutboxPoller.java": "49f46689ca2fdd6eb78000b1f0e1310bd1bc30db"
   "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/delay/DelayUntilResolver.java": "f21eba4c359e7630356daf50092dfbc47b6ab4ca"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/CaseEventMessageService.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/message/AbstractMessageService.java": "9c7139a70732f6dca95acb412c36706fa9e79be8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/message/MessageQueueCandidateEntity.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
@@ -123,7 +123,7 @@ For services using raw JSON definitions (e.g. SSCS), the flag is set per event i
 
 The placeholder is resolved at definition-build time, letting each environment opt in or out independently (`sscs-tribunals-case-api:definitions/benefit/sheets/CaseEvent/CaseEvent-WA-nonprod.json`).
 
-For services using `ccd-config-generator`, the equivalent is calling `EventBuilder.publishToCamunda()` on the event definition (`ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java:131-134`). This sets the `publishToCamunda` boolean field (`Event.java:37`), which the SDK emits as the `Publish` column when generating the definition spreadsheet.
+For services using `ccd-config-generator`, the equivalent is calling `EventBuilder.publishToCamunda()` on the event definition (`ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java:133-136`). This sets the `publishToCamunda` boolean field (`Event.java:37`), which the SDK emits as the `Publish` column when generating the definition spreadsheet.
 
 ### Per-case ordering and request priority
 
