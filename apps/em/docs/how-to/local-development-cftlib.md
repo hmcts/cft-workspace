@@ -46,7 +46,7 @@ sources_sha:
   "em-hrs-api:src/cftlib/java/uk/gov/hmcts/reform/em/hrs/cftlib/CftLibConfig.java": "09d0666eddbb43def7dcdb2cd91574fe21a0835c"
   "em-hrs-api:src/cftlib/resources/docker-compose-local.yml": "02a2b73d70fbc57f454d35f00a04541d9d3bca2d"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
-  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "e3587808bd1477ab4a47aa39c0b6ac5468479f7d"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "469a229c1fca6a0ba8256ec8584801c822ef18ee"
   "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java": "9098a05a1f349631f606f4831c0c024deb6a4b5a"
   "ccd-data-store-api:src/main/resources/application.properties": "a3bd23b7e2a57b903a610b651b7a6f33c1781b15"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
@@ -244,7 +244,7 @@ Once `em-stitching-api` is running via `bootWithCCD`:
   ```groovy
   jvmArgs = ['-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5006']
   ```
-  Then create a Remote Debug run configuration in IntelliJ on port `5006`. The task will wait for the debugger to attach before proceeding. `jvmArgs` is available because `bootWithCCD` is a `CftlibExec`, which extends Gradle's `JavaExec` (`rse-cft-lib:CftlibExec.java:17`, `rse-cft-lib:CftLibPlugin.java:174-182`). The plugin's own arguments are appended at execution time rather than assigned (`rse-cft-lib:CftlibExec.java:115-126`), so assigning `jvmArgs` in `build.gradle` does not discard them.
+  Then create a Remote Debug run configuration in IntelliJ on port `5006`. The task will wait for the debugger to attach before proceeding. `jvmArgs` is available because `bootWithCCD` is a `CftlibExec`, which extends Gradle's `JavaExec` (`rse-cft-lib:CftlibExec.java:17`, `rse-cft-lib:CftLibPlugin.java:156-164`). The plugin's own arguments are appended at execution time rather than assigned (`rse-cft-lib:CftlibExec.java:115-126`), so assigning `jvmArgs` in `build.gradle` does not discard them.
 
 - **IntelliJ Gradle panel**: The `bootWithCCD` task is accessible in the Gradle tool window under Tasks. You can run or debug it directly from there without using the terminal.
   <!-- CONFLUENCE-ONLY: not verified in source -->

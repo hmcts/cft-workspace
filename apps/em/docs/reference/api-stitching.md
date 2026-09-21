@@ -79,8 +79,8 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
   "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "b0fce4cea53bd12e3cbc810d9d4d590100fb521b"
-  "cnp-flux-config:apps/em/em-stitching/prod.yaml": "f8c9392b084b99a982aeadfd89b758b53b05885f"
-  "cnp-flux-config:apps/em/em-stitching/demo.yaml": "327f1bac9ef128caada1d89a15b165371b4bc696"
+  "cnp-flux-config:apps/em/em-stitching/prod.yaml": "057e91708d3c90ec7ad265d0afba2715c28ca65b"
+  "cnp-flux-config:apps/em/em-stitching/demo.yaml": "0d95866b3cfe5bf50aaa00732ac11655c6badac7"
 ---
 
 ## TL;DR
