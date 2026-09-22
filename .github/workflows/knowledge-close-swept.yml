@@ -1,0 +1,69 @@
+name: Close swept PRs on consolidation merge
+
+# The consolidation PR carries the content of every open knowledge-sweep PR,
+# reconciled. Once it lands on master those PRs are superseded, so close them.
+#
+# Their branches are deliberately left alone: the sweep bases on origin/master
+# whenever an author has no open PR, so the next run resets the branch and opens
+# a fresh PR without any cleanup here.
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  close:
+    # GITHUB_TOKEN rather than the app token: closing needs no downstream
+    # workflow run, and GITHUB_TOKEN deliberately cannot cause one.
+    permissions:
+      pull-requests: write
+    if: >
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == 'knowledge/consolidated'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close the sweep PRs it consolidated
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          CONSOLIDATION: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          gh pr list --label knowledge-sweep --state open \
+            --json number,author --jq '.[] | "\(.number)\t\(.author.login)"' > /tmp/sweeps.tsv
+
+          if [[ ! -s /tmp/sweeps.tsv ]]; then
+            echo "::notice::no open sweep PRs to close"
+            exit 0
+          fi
+
+          cat > /tmp/comment.md <<EOF
+          Superseded by #${CONSOLIDATION}, which has been merged — its content was
+          reconciled and landed on \`master\`, so this PR is closed.
+
+          Your next knowledge sweep will open a fresh PR from \`master\`; the branch
+          needs no cleaning up.
+
+          If something proposed here is missing from \`master\` it will **not** be
+          re-proposed, because the local ledger has already marked those sessions
+          reviewed. The content is still in this branch's history, and
+          \`scripts/knowledge-sweep --backfill --force\` can re-read the sessions
+          behind it.
+          EOF
+          # The heredoc is indented to stay inside the YAML block scalar.
+          sed -i 's/^          //' /tmp/comment.md
+
+          while IFS=$'\t' read -r number author; do
+            gh pr comment "$number" --body-file /tmp/comment.md
+            gh pr close "$number"
+            echo "::notice::closed #$number ($author)"
+          done < /tmp/sweeps.tsv
+
+          {
+            echo "## Closed as superseded by #${CONSOLIDATION}"
+            awk -F'\t' '{print "- #" $1 " by @" $2}' /tmp/sweeps.tsv
+          } >> "$GITHUB_STEP_SUMMARY"
