@@ -183,13 +183,7 @@ Sonar's JS/TS ruleset scores a `.sort()` call with no comparator as a bug: the d
 
 ### OWASP dependency-check results can flip without a code change
 
-The pipeline's `dependencyCheckAggregate` step scores dependencies against the live NVD feed at the moment it runs, not against a pinned snapshot. Two builds of the same commit, minutes apart, can disagree: a master build can report "Found 0 vulnerabilities" and a PR build of unchanged dependencies can report dozens a short time later, because new CVEs were published to NVD in between. When this happens it typically fails every open PR in the repo at once, not just one — check the master build's timestamp against the PR build's before assuming the PR's own changes are at fault, and add a suppression in `config/owasp/suppressions.xml` (following the existing entries' reachability-analysis and `until=` convention) rather than treating it as a regression to bisect.
-
-The NVD database each build scores against is cached per Jenkins build agent (`nvd.api.check.validforhours=24`), not fetched fresh centrally. Once new CVEs are published, two builds of the same commit minutes apart can still disagree depending on which agent picks up the job — one whose cache predates the publication won't see the new CVEs and passes, one whose cache has since refreshed will and fails. Retriggering a build changes nothing about your code but can still change the outcome, because it may land on a different agent.
-
-A long-running branch can fail this gate even when master already has the fix: if the branch is behind master, it hasn't picked up a suppression that has already been merged there. Before writing a new suppression, check whether the flagged CVEs are already suppressed on master and merge master in rather than duplicating the entry.
-
-A PR build whose commit already has a matching image in ACR skips the image build (and with it `dependencyCheckAggregate`) entirely, logging `skipped - same as current registry` rather than a scan result. A SUCCESS on such a build is not evidence the gate currently passes — it never ran. Only trust a build whose log shows `dependencyCheckAggregate` actually executing; re-running the same commit without a new one just repeats the skip.
+See [Troubleshooting — a build fails on the dependency check with no dependency or code changes](../troubleshooting.md#---a-build-fails-on-the-dependency-check-with-no-dependency-or-code-changes) — the pipeline's `dependencyCheckAggregate` step scores against the live NVD feed on every run, so identical commits can pass or fail depending purely on feed timing and per-agent caching.
 
 ### Yarn quarantines packages published in the last 24 hours
 
