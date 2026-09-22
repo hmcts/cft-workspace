@@ -42,6 +42,24 @@ Once you've joined GitHub make sure you add your user to the [Slack to GitHub ma
 - Check whether the team is linked to the correct Microsoft Entra ID group.
 - If no one from your team has access, ask the org admins in [#platops-help (Slack)](https://hmcts-reform.slack.com/app_redirect?channel=platops-help) — the upstream "asking for help" page was not ported.
 
+### Cannot add someone to a GitHub team
+
+Teams are populated in one of two ways, and the fix depends on which:
+
+- **Linked to a Microsoft Entra ID group** — members are added automatically when they join the group, so the change belongs in [azure-access](https://github.com/hmcts/azure-access), not in GitHub.
+- **Managed manually** — a team maintainer or org admin adds members by hand, and adding someone to an Entra ID group will not do it.
+
+Both kinds exist, so check the team's settings on GitHub before deciding which change to make. [Team onboarding](team-github.md#github-teams) asks teams to link "where possible" and notes that an unlinked team has its membership managed by a senior member of the team.
+
+A `DTS <Team>` Entra ID group and a GitHub team of the same name are separate objects, and matching names do not mean they are linked. Being added to `DTS Civil` grants the Azure and application access listed under [Common access groups](person-entra-id.md#common-access-groups); it changes the `Civil` GitHub team only if that team is linked to that group.
+
+Two things apply either way:
+
+- Organisation membership comes before team membership. If a new starter cannot be found in the team member picker, they have not finished joining the organisation — have them complete [Join GitHub](#join-github) first.
+- `DTS GitHub Access` grants organisation eligibility only. It surfaces the GitHub tile on [myapps.microsoft.com](https://myapps.microsoft.com/hmcts.net) and triggers the org invite; it does not add anyone to a team.
+
+Team membership was once managed as code in `hmcts/github-management`. That repository was archived in March 2023 and now points at Entra ID group linking, so an unlinked team is managed through GitHub itself.
+
 ### Removed because SSO was not used
 
 If you have been removed because you did not sign in using SSO within 30 days:
