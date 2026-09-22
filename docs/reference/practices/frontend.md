@@ -48,14 +48,24 @@ Use Pa11y for accessibility testing to WCAG 2.1 AA.
 
 Use playwright or cypress to test applications in the browser.
 
-Playwright locator methods such as `isVisible()`, `isChecked()`, `count()` and `textContent()`
-accept a `timeout` option, but it only bounds how long that one check waits before returning —
-it does not retry. Pairing one of these with a fixed `sleep`/`waitForTimeout` to cover a race
-(the element appearing late) is fragile: if the sleep is later removed or shortened, the check
-can return a stale `false`/empty result within milliseconds of being called, well before the
-element actually appears. Use the retrying equivalents instead — `locator.waitFor()` or
-`expect(locator).toBeVisible()` / `.toBeChecked()` — which poll until the condition holds or the
-timeout elapses.
+Playwright locator methods such as `isVisible()`, `isChecked()`, `count()`, `textContent()` and
+`.all()` check the page once and return immediately — their `timeout` option bounds that single
+check, it does not make them poll, unlike a web-first assertion such as
+`expect(locator).toBeVisible()`. This bites in two common shapes: pairing one of these with a
+fixed `sleep`/`waitForTimeout` to cover a race is fragile, since a stale `false`/empty result can
+return within milliseconds of the call, well before the element actually appears; and wrapping
+one in a `toPass({ timeout })` retry loop only helps if the wrapped action's own worst-case
+duration fits inside that timeout on a single attempt, otherwise every retry fails the same way.
+Treat a test that intermittently fails on one of these calls as a missing auto-retry before
+assuming it's a real race in the app under test — use the retrying equivalents instead,
+`locator.waitFor()` or `expect(locator).toBeVisible()` / `.toBeChecked()`.
+
+On an Angular-bound `<select>`, the underlying option values can be opaque object placeholders
+(e.g. `1: Object`) rather than a usable string; `selectOption(labelText)` still matches correctly
+by falling back to the visible label, so a diagnostic that prints the raw value is not evidence
+of a wrong selection. Asserting the value with `toHaveValue` immediately after calling
+`selectOption()` also proves nothing about a later reset, since the assertion runs before any
+subsequent re-render has had a chance to fire.
 
 Playwright's `--grep`/`--grep-invert` tag filters match as an unanchored substring (or regex),
 not an exact tag match. A new tag that is a substring of an existing one — `@health` inside
