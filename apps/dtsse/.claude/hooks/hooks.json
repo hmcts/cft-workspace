@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/wip\" stale --days 30 2>&1 | head -12 || true"
+          }
+        ]
+      }
+    ]
+  }
+}
