@@ -644,6 +644,7 @@ The older `ccd { decentralised = true }` flag still pulls the same module in, bu
 | Response must be stable | Idempotent replay must return the original response body, not current case state |
 | Pointer cleanup race | If CCD crashes between pointer creation and cleanup, a dangling pointer remains (cleaned by retain-and-dispose) |
 | Security classification placeholder | Pointers use `RESTRICTED` as a failsafe; the authoritative value comes from the service |
+| Load-balancer WARN noise on every call | `ServicePersistenceAPI` has no hardcoded `url`, so Spring Cloud OpenFeign routes each call through its client-side load balancer; with no discovery client registered this logs `No servers available for service` at WARN per call. Harmless — the retryable Feign client's fallback still sends the request to the resolved hostname, so the call succeeds anyway |
 
 ---
 
