@@ -183,7 +183,7 @@ Sonar's JS/TS ruleset scores a `.sort()` call with no comparator as a bug: the d
 
 ### OWASP dependency-check results can flip without a code change
 
-See [Troubleshooting — a build fails on the dependency check with no dependency or code changes](../troubleshooting.md#---a-build-fails-on-the-dependency-check-with-no-dependency-or-code-changes) — the pipeline's `dependencyCheckAggregate` step scores against the live NVD feed on every run, so identical commits can pass or fail depending purely on feed timing and per-agent caching.
+See [Troubleshooting](../troubleshooting.md) — "A build fails on the dependency check with no dependency or code changes" — the pipeline's `dependencyCheckAggregate` step scores against the live NVD feed on every run, so identical commits can pass or fail depending purely on feed timing and per-agent caching.
 
 ### Yarn quarantines packages published in the last 24 hours
 
