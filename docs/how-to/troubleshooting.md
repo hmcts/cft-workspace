@@ -76,11 +76,35 @@ This is a SonarCloud server-side fault, not a config or code problem, even thoug
 
 If you receive this error: `Pipeline aborted due to quality gate failure: NONE` on master, try a re-run of the pipeline. This may simply be an intermittent issue caused by sonarcloud or because the GitHub repo has only just been created and this is the first time you're running the pipeline.
 
-### Sonar scan succeeds but no PR comment appears
+### SonarCloud "Automatic Analysis" creates a second, separate project
 
-Analysis completing and the quality gate evaluating correctly does not mean SonarCloud will comment on the PR. PR decoration also requires the receiving SonarCloud project to have a **DevOps Platform binding** to the GitHub repo, plus the SonarCloud GitHub App installed with access to that repo. Both live in SonarCloud's own project settings (Administration → DevOps Platform Integration) — nothing in `build.gradle`, `Jenkinsfile_CNP` or `sonar-project.properties` can create or fix that binding, so changing `sonar.projectKey` will not restore comments; it can only move the (still unbound) analysis to a different project.
+Repos with the SonarCloud GitHub App installed get a second, independent scan — GitHub's
+"Automatic Analysis" — alongside the pipeline's own Sonar step, auto-created and keyed
+`hmcts_<repo-name>`. It reads its scope from `.sonarcloud.properties`, not
+`sonar-project.properties` (which only the pipeline's scanner reads); with neither file present
+it falls back to scanning the whole repository (config, charts, test fixtures, SQL migrations)
+rather than the pipeline's configured `sonar.sources`. This produces two distinct symptoms:
 
-A repo can end up with more than one SonarCloud project for the same GitHub repo — typically one created by SonarCloud's GitHub-import/Automatic Analysis (source-only, so it reports 0% coverage, but bound and therefore able to comment) and one fed by the Jenkins `sonarqube` task (full coverage data, but not bound unless someone did it manually). If comments stopped after previously working, check for duplicate/orphaned projects for the repo and confirm which one Jenkins is actually publishing to before asking platform/Sonar admins to bind it.
+- **A failing `SonarCloud Code Analysis` PR check unrelated to your change.** Automatic Analysis
+  can flag files the pipeline scan never looks at, including files an analyser aimed at the wrong
+  dialect misreads (e.g. Sonar's PL/SQL rules firing on a PostgreSQL migration). Both projects
+  post a separate GitHub commit status, so a PR can show one Sonar check green and another red
+  for the same commit.
+- **No PR comment even though the pipeline's own scan and quality gate pass.** PR decoration
+  needs the specific project analysis ran on to have a **DevOps Platform binding** to the GitHub
+  repo (SonarCloud → Administration → DevOps Platform Integration) — nothing in `build.gradle`,
+  `Jenkinsfile_CNP` or `sonar-project.properties` can create or fix that binding. Automatic
+  Analysis's project (source-only, so it reports 0% coverage) is often the one that's bound, while
+  the pipeline-fed project (full coverage data) may not be — so comments can come from the wrong
+  project's analysis, or not appear at all. Changing `sonar.projectKey` will not restore comments;
+  it only moves the still-unbound analysis to a different project.
+
+Fix by adding a `.sonarcloud.properties` that mirrors the pipeline's
+`sonar.sources`/`sonar.tests`/`sonar.exclusions` key-for-key so both scans agree on scope, or —
+the more durable fix — have an org admin disable Automatic Analysis for the repo so there's only
+one Sonar project to satisfy. If comments stopped after previously working, check for
+duplicate/orphaned projects for the repo and confirm which one Jenkins is actually publishing to
+before asking platform/Sonar admins to bind it.
 
 ### Coverage percentage doesn't match the raw jacoco XML
 
