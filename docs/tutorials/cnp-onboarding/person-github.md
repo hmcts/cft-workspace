@@ -39,8 +39,26 @@ Once you've joined GitHub make sure you add your user to the [Slack to GitHub ma
 ### Cannot access a repository
 
 - Check that access is granted through the correct GitHub team.
-- Check whether the team is linked to the correct Microsoft Entra ID group.
+- Check the team's own repository list. GitHub teams are populated by hand, so a missing repository is a change to the team's settings, not to an access group.
 - If no one from your team has access, ask the org admins in [#platops-help (Slack)](https://hmcts-reform.slack.com/app_redirect?channel=platops-help) — the upstream "asking for help" page was not ported.
+
+### Cannot add someone to a GitHub team
+
+Microsoft Entra ID groups do not populate GitHub teams. The `hmcts` organisation is not an externally managed enterprise, so no team can be linked to an Entra ID group:
+
+```console
+$ gh api /orgs/hmcts/teams/civil/external-groups
+"This organization is not part of externally managed enterprise."
+```
+
+Two things follow:
+
+- A `DTS <Team>` Entra ID group and a GitHub team of the same name are unrelated objects. Adding someone to `DTS Civil` grants Azure and application access; it has no effect on the `Civil` GitHub team.
+- `DTS GitHub Access` grants organisation eligibility only. It surfaces the GitHub tile on [myapps.microsoft.com](https://myapps.microsoft.com/hmcts.net) and triggers the org invite, and does nothing about teams.
+
+GitHub also requires organisation membership before team membership. If a new starter cannot be found in the team member picker, they have not finished joining the organisation — have them complete [Join GitHub](#join-github) first, then ask a team maintainer or org admin to add them to the team.
+
+Team membership was once managed as code in `hmcts/github-management`. That repository was archived in March 2023, so this is now a manual action.
 
 ### Removed because SSO was not used
 

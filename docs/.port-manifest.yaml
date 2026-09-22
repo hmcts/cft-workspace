@@ -43,6 +43,14 @@ entries:
   - target: tutorials/cnp-onboarding/person-github.md
     source: cloud-native-platform/onboarding/person/github.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+    notes: >-
+      deliberately not taking upstream's "check whether the team is linked to
+      the correct Microsoft Entra ID group" bullet under "Cannot access a
+      repository" — the hmcts org is not an externally managed enterprise, so
+      teams cannot be linked to Entra groups at all
+      (/orgs/hmcts/teams/<team>/external-groups returns 400). Replaced with a
+      repo-list check, plus a local "Cannot add someone to a GitHub team"
+      section upstream does not have. Do not re-port these two sections.
   - target: tutorials/cnp-onboarding/person-jenkins.md
     source: cloud-native-platform/onboarding/person/jenkins.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
