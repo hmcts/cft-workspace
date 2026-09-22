@@ -4,7 +4,7 @@ topic: work-allocation
 status: in-progress
 owner: ed14537
 since: 2026-09-22
-last_updated: 2026-09-22
+last_updated: "2026-09-22"
 integrate_now: false
 promote_to:
   product: ccd
@@ -138,7 +138,8 @@ allow-list step to change; the Java surface is stable.
   `application.yaml` or moves to a self-service mechanism.
 - Which SDK release will carry the `task_mgmt_in_order` changes (multi-create, per-case ordering,
   blocking completion), and whether the core WA-integration page is updated in the same release.
-- Whether `nfdiv` proceeds as the second integration (it is already in the server allow-list).
+- Which service integrates second. None is confirmed; `nfdiv_case_api` appears in the server
+  allow-list but has no integration branch.
 
 ## Promotion criteria
 
