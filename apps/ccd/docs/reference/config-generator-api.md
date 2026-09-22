@@ -574,15 +574,11 @@ public class MyCaseConfig implements CCDConfig<MyCaseData, State, UserRole> {
 
 `generateCCDConfig` is a plain `JavaExec` task running `uk.gov.hmcts.ccd.sdk.Main`, whose only output is the directory named by the `ccd.configDir` extension property, registered as a Gradle task output (`CcdSdkPlugin.java:30-53`). That directory holds the same per-sheet JSON the definition store expects, so `ccd-definition-processor`'s `json2xlsx` turns it into an importable spreadsheet with no SDK involvement (`README.md:132-159`). Running the task once and then maintaining the JSON by hand is a supported exit path.
 
-<<<<<<< HEAD
-Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:636-650`).
-=======
 Because `uk.gov.hmcts.ccd.sdk.Main` runs inside the consuming service's own classpath to discover `CCDConfig` beans via component scanning, it also boots that service's full Spring context — including binding its configured `server.port` — not just a lightweight bean scan. Running `generateCCDConfig` while the same service is already up locally (e.g. via `bootWithCCD` or `bootRun` on the same port) fails with a "port already in use" web-server startup error. Free the port first, or override it for this task specifically (for example `environment 'SERVER_PORT', '0'` on the `generateCCDConfig` task).
 
 Freeing the port only avoids the bind conflict, not a second, subtler race: under cftlib, `CftLibConfig` regenerates `build/definitions/` on every Spring Boot devtools restart of the already-running `bootWithCCD` process, and any tooling that writes generated Java into `src/main/java` is itself a devtools restart trigger. Run `generateCCDConfig` (with `SERVER_PORT=0`) right after such a write and the two processes can write the same `build/definitions/<CaseType>/...` directory at once — `JsonUtils.mergeInto`'s read-then-write can hit a `NoSuchFileException` on a file the other side deleted moments earlier. The symptom is intermittent (a re-run right after usually succeeds) and the fix is a delay-and-retry once around `generateCCDConfig`, not a persistent fix to definition state.
 
 Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:633-647`).
->>>>>>> origin/knowledge/linusnorton
 
 ---
 
