@@ -87,4 +87,8 @@ The first two read static state. The latter two consult `INDEX.md` — if it is 
 - **`scripts/bootstrap` prints "bootstrap complete" but most repos didn't clone** → on macOS, BSD `xargs -I{}` silently converts the tab-separated manifest fields to spaces, so each entry collapses into one string and creates an empty stub directory instead of cloning. Same trap affects `scripts/sync`. Confirm with `scripts/doctor`, which checks clones are actually present rather than trusting either script's own exit status.
 - **AAT hostnames don't resolve** → the F5 VPN started after the devcontainer; rebuild the container or run `.devcontainer/refresh-dns.sh`.
 - **`./scripts/sync` skips a repo** → it has dirty changes, is on a non-default branch, or has unpushed commits. That's by design; commit/push/clean first, then re-run.
+<<<<<<< HEAD
 - **A local clone can be several days behind its remote** → sync is manual and skips anything dirty/branched/unpushed, so a clone can silently drift. Before trusting a clone's content for time-sensitive state (e.g. what's actually live in `platops/cnp-flux-config` before a prod change), check `git log -1` in that clone or compare against GitHub directly.
+=======
+- **A scripted `docker run ... bash -c` against the devcontainer image reports `command not found` for `node`, `claude` or `codex`** → all three are installed via nvm, which is sourced from the shell's rc file and only runs in an interactive shell. VS Code's integrated terminal is interactive, so this doesn't show up there; a non-interactive invocation needs to source nvm itself first, e.g. `export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh"`.
+>>>>>>> origin/knowledge/linusnorton

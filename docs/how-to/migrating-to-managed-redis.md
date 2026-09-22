@@ -281,7 +281,12 @@ are already standard variables in HMCTS Terraform configurations.
     Azure keyvault encodes keys with base64 encoding so you may see %3D (=) padding
 
 - Clustering (-c flag)
-Azure Managed Redis runs as a clustered Redis Enterprise instance with two shards (slots 0-8191 and 8192-16383). When you connect with redis-cli, your session lands on one shard. When initiating a connection,remember to connect to the cluster rather than a single shard. Commands against keys owned by the other shard return nothing or a MOVED redirect.
+Azure Managed Redis runs as a clustered Redis Enterprise instance with two shards (slots 0-8191 and 8192-16383) by default. When you connect with redis-cli, your session lands on one shard. When initiating a connection,remember to connect to the cluster rather than a single shard. Commands against keys owned by the other shard return nothing or a MOVED redirect.
+
+    The shard topology is controlled by the module's `clustering_policy` input (`EnterpriseCluster` / `OSSCluster` / `NoCluster`), which defaults to `OSSCluster`. If your application connects with a plain, non-cluster-aware client (for example a Node app doing `new Redis(connectionString)` with `ioredis` rather than its cluster client), set `clustering_policy = "EnterpriseCluster"` so the instance presents a single endpoint — otherwise the client will not follow `MOVED` redirects and keys on the other shard become unreachable.
+
+- Minimum provider version
+`azurerm_managed_redis` was only added in `hashicorp/azurerm` provider `4.50.0` (October 2025). Repos still pinned below that — `cnp-module-redis` consumers are commonly on `4.14.0` — must bump the `azurerm` version in `provider.tf` (and `.terraform-version` if it also needs raising) before this module will plan.
 
 - Database number
 Azure Managed Redis supports only a single database (database 0). If your application uses multiple databases, you need to refactor your data model to use a single database or use key prefixes to logically separate data before migrating.

@@ -12,6 +12,7 @@ Look-up information. Information-dense, no narrative.
 
 - [API catalogue](api-catalogue.md) — every OpenAPI spec published to `cnp-api-docs`.
 - [IDAM testing-support API](idam-testing-support-api.md) — test-user/role/client endpoints, auth, and per-environment cleanup lifespans.
+- [AI Gateway](ai-gateway.md) — the platform route to LLMs (APIM in front of Azure AI Foundry), its request contract, and onboarding.
 
 ## Cloud Native Platform
 

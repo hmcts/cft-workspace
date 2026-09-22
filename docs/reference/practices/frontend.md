@@ -48,6 +48,26 @@ Use Pa11y for accessibility testing to WCAG 2.1 AA.
 
 Use playwright or cypress to test applications in the browser.
 
+Playwright locator methods such as `isVisible()`, `isChecked()`, `count()` and `textContent()`
+accept a `timeout` option, but it only bounds how long that one check waits before returning —
+it does not retry. Pairing one of these with a fixed `sleep`/`waitForTimeout` to cover a race
+(the element appearing late) is fragile: if the sleep is later removed or shortened, the check
+can return a stale `false`/empty result within milliseconds of being called, well before the
+element actually appears. Use the retrying equivalents instead — `locator.waitFor()` or
+`expect(locator).toBeVisible()` / `.toBeChecked()` — which poll until the condition holds or the
+timeout elapses.
+
+Playwright's `--grep`/`--grep-invert` tag filters match as an unanchored substring (or regex),
+not an exact tag match. A new tag that is a substring of an existing one — `@health` inside
+`@healthCheck`, or `@rent` inside `@rentNonRent` — is silently pulled into any run that filters
+on the shorter tag. Check new tag names against the existing tag list for this before adding one.
+
+`expect.soft(...)` records a failure but does not throw, so a step immediately after it runs
+regardless of the outcome. Wrapping that later step in `try`/`catch` to detect the soft
+assertion's failure will never fire — the catch only reacts to a thrown error, and there isn't
+one. This applies to any accessibility audit helper (such as axe-based ones) built on
+`expect.soft`, not just to test assertions written directly.
+
 ### Security
 
 Configure the Content Security Policy headers to prevent XSS attacks.
@@ -55,3 +75,17 @@ Configure the Content Security Policy headers to prevent XSS attacks.
 Pass user-entered text to GOV.UK Frontend components as `text`, never `html`; see [Escape user input in GOV.UK Frontend templates](../../how-to/escape-user-input-in-govuk-templates.md).
 
 Add CSRF protection to forms to ensure that they cannot be submitted by a third party.
+
+Server-side templating engines (Nunjucks, and Jinja-derivatives generally) autoescape
+output by default — that is the primary XSS defence for any value that reaches a template,
+not just CSP. A `| safe` filter (or equivalent raw-output helper) disables autoescaping for
+that value, so only apply it to content that is verifiably server-constructed or static;
+using it on any field editable by an admin, caseworker, or other user and then rendered on a
+publicly accessible page reopens a stored-XSS hole that CSP alone will not close.
+
+Shared Helmet-based CSP presets commonly default `form-action` to `'self'` only. Any form
+whose action or redirect chain ends at IDAM's sign-in domain — including a session that has
+expired mid-journey and bounces the user back through `/login` — is then silently blocked by
+the browser with no client-side error to catch: the POST simply never completes. If the
+application signs in through IDAM (or posts to any other external origin), explicitly widen
+`form-action` to include that origin.
