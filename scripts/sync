@@ -67,6 +67,6 @@ export -f sync_one
 
 info "Syncing ${#entries[@]} repo(s) (jobs=$JOBS)…"
 printf '%s\n' "${entries[@]}" | \
-    xargs -P "$JOBS" -I{} bash -c 'IFS=$'\''\t'\'' read -r p u r d <<< "{}"; sync_one "$p" "$u" "$r"'
+    xargs -P "$JOBS" -I{} bash -c 'IFS=$'\'' \t'\'' read -r p u r d <<< "{}"; sync_one "$p" "$u" "$r"'
 
 ok "sync complete"

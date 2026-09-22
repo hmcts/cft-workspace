@@ -65,6 +65,6 @@ export C_RESET C_DIM C_BOLD C_RED C_GREEN C_YELLOW C_BLUE
 
 info "Cloning into ${#entries[@]} paths (jobs=$JOBS)…"
 printf '%s\n' "${entries[@]}" | \
-    xargs -P "$JOBS" -I{} bash -c 'IFS=$'\''\t'\'' read -r p u r d <<< "{}"; clone_one "$p" "$u" "$r" "$d"'
+    xargs -P "$JOBS" -I{} bash -c 'IFS=$'\'' \t'\'' read -r p u r d <<< "{}"; clone_one "$p" "$u" "$r" "$d"'
 
 ok "bootstrap complete"
