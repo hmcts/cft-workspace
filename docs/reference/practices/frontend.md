@@ -48,6 +48,36 @@ Use Pa11y for accessibility testing to WCAG 2.1 AA.
 
 Use playwright or cypress to test applications in the browser.
 
+Playwright locator methods such as `isVisible()`, `isChecked()`, `count()`, `textContent()` and
+`.all()` check the page once and return immediately — their `timeout` option bounds that single
+check, it does not make them poll, unlike a web-first assertion such as
+`expect(locator).toBeVisible()`. This bites in two common shapes: pairing one of these with a
+fixed `sleep`/`waitForTimeout` to cover a race is fragile, since a stale `false`/empty result can
+return within milliseconds of the call, well before the element actually appears; and wrapping
+one in a `toPass({ timeout })` retry loop only helps if the wrapped action's own worst-case
+duration fits inside that timeout on a single attempt, otherwise every retry fails the same way.
+Treat a test that intermittently fails on one of these calls as a missing auto-retry before
+assuming it's a real race in the app under test — use the retrying equivalents instead,
+`locator.waitFor()` or `expect(locator).toBeVisible()` / `.toBeChecked()`.
+
+On an Angular-bound `<select>`, the underlying option values can be opaque object placeholders
+(e.g. `1: Object`) rather than a usable string; `selectOption(labelText)` still matches correctly
+by falling back to the visible label, so a diagnostic that prints the raw value is not evidence
+of a wrong selection. Asserting the value with `toHaveValue` immediately after calling
+`selectOption()` also proves nothing about a later reset, since the assertion runs before any
+subsequent re-render has had a chance to fire.
+
+Playwright's `--grep`/`--grep-invert` tag filters match as an unanchored substring (or regex),
+not an exact tag match. A new tag that is a substring of an existing one — `@health` inside
+`@healthCheck`, or `@rent` inside `@rentNonRent` — is silently pulled into any run that filters
+on the shorter tag. Check new tag names against the existing tag list for this before adding one.
+
+`expect.soft(...)` records a failure but does not throw, so a step immediately after it runs
+regardless of the outcome. Wrapping that later step in `try`/`catch` to detect the soft
+assertion's failure will never fire — the catch only reacts to a thrown error, and there isn't
+one. This applies to any accessibility audit helper (such as axe-based ones) built on
+`expect.soft`, not just to test assertions written directly.
+
 ### Security
 
 Configure the Content Security Policy headers to prevent XSS attacks.
@@ -55,3 +85,17 @@ Configure the Content Security Policy headers to prevent XSS attacks.
 Pass user-entered text to GOV.UK Frontend components as `text`, never `html`; see [Escape user input in GOV.UK Frontend templates](../../how-to/escape-user-input-in-govuk-templates.md).
 
 Add CSRF protection to forms to ensure that they cannot be submitted by a third party.
+
+Server-side templating engines (Nunjucks, and Jinja-derivatives generally) autoescape
+output by default — that is the primary XSS defence for any value that reaches a template,
+not just CSP. A `| safe` filter (or equivalent raw-output helper) disables autoescaping for
+that value, so only apply it to content that is verifiably server-constructed or static;
+using it on any field editable by an admin, caseworker, or other user and then rendered on a
+publicly accessible page reopens a stored-XSS hole that CSP alone will not close.
+
+Shared Helmet-based CSP presets commonly default `form-action` to `'self'` only. Any form
+whose action or redirect chain ends at IDAM's sign-in domain — including a session that has
+expired mid-journey and bounces the user back through `/login` — is then silently blocked by
+the browser with no client-side error to catch: the POST simply never completes. If the
+application signs in through IDAM (or posts to any other external origin), explicitly widen
+`form-action` to include that origin.

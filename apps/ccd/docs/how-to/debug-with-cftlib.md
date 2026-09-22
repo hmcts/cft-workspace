@@ -200,7 +200,7 @@ curl http://localhost:9200/global_search/_search?pretty
 
 ### Decentralised mode
 
-When the SDK runs in decentralised mode, the cftlib indexer is a no-op — it is annotated `@ConditionalOnProperty(value = "ccd.sdk.decentralised", havingValue = "false", matchIfMissing = true)` (`ESIndexer.java:21`), so setting `ccd.sdk.decentralised=true` removes the bean entirely. In that case ES indexing is the responsibility of your service's own logstash/indexer runtime — see [decentralised CCD](../explanation/decentralised-ccd.md).
+When the SDK runs in decentralised mode, the cftlib indexer is a no-op — it is annotated `@ConditionalOnProperty(value = "ccd.sdk.decentralised", havingValue = "false", matchIfMissing = true)` (`ESIndexer.java:21`), so setting `ccd.sdk.decentralised=true` removes the bean entirely. In that case ES indexing is the responsibility of your service's own logstash/indexer runtime — see [Decentralisation](../explanation/decentralisation.md).
 
 ### Verify
 

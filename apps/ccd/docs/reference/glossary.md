@@ -107,7 +107,7 @@ The CCD mechanism that grants whole-organisation case visibility to professional
 A CDAM-issued token embedded in document URLs. Proves that the requesting user held a valid role assignment at the time of document access. Validated on every document fetch.
 
 **IDAM** (Identity and Access Management)
-The HMCTS identity service (`idam-web-public` / `idam-service`). Issues JWT bearer tokens that CCD and surrounding services use to identify the caller's user ID and roles.
+The HMCTS identity service. Issues JWT bearer tokens that CCD and surrounding services use to identify the caller's user ID and roles. `idam-web-public` serves the browser-facing sign-in/OIDC flow; the separate `idam-api` host serves the REST API — including `GET /api/v1/users/{id}`, which the data store calls to resolve the acting user. A CCD-based service's `global.idamApiUrl` chart value must point at `idam-api`: pointing it at `idam-web-public` 404s on that route and breaks case creation.
 
 **jurisdiction**
 The top-level grouping in CCD (e.g. `DIVORCE`, `PROBATE`). A jurisdiction contains one or more case types and owns a set of user roles. Maps roughly to a service team's domain.

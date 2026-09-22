@@ -268,6 +268,14 @@ Step 1's PR hasn't merged yet, or `AZURE_CLIENT_ID` is the wrong value. The IDs 
 **Workflow fails at `Get OIDC token`**
 The `permissions:` block is missing `id-token: write`, or it's set on the job but the workflow has a stricter top-level `permissions:` that overrides it.
 
+## Pulling private images instead of publishing them
+
+The same OIDC mechanism applies in reverse: a workflow that only needs to *pull* a private image — for example a CI job that runs `docker compose` against service images hosted on `hmctsprod.azurecr.io`, such as `rse-cft-lib`'s `cftlibTest` — doesn't need `AcrPush`. Use the `AcrPull` role instead, scoped the same way as in step 2 above.
+
+Several platform and service repos that only consume `hmctsprod` images (including `rse-cft-lib` itself and its consumers) share dedicated "ACR Puller" app registrations in `azure-github-federation-config` rather than each minting their own — check for an existing one with spare federated-credential slots before creating a new registration.
+
+Unauthenticated pulls don't fail fast. `hmctsprod.azurecr.io` has anonymous pull disabled (unlike `hmctspublic`), but a `docker compose pull` against it on a runner with no Azure session doesn't error immediately — it retries the failed manifest fetch until the job's own `timeout-minutes` kills it. A CI job that hangs for its full timeout on a compose/pull step, rather than erroring in seconds, is this problem, not a slow test suite. The fix is the same `azure/login` + `az acr login --name hmctsprod` step as the publish side, wired in before whatever step does the pull.
+
 ## Related docs
 
 - [Federated credentials](federated-credentials.md) — OIDC mechanics, subject formats, the 20-credential cap.

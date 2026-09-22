@@ -130,6 +130,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | payment | explanation | Pci Pal Telephony | telephony | `apps/payment/docs/explanation/pci-pal-telephony.md` |
 | payment | explanation | Reconciliation | reconciliation | `apps/payment/docs/explanation/reconciliation.md` |
 | payment | explanation | Refunds Flow | refunds | `apps/payment/docs/explanation/refunds-flow.md` |
+| pcs | explanation | Welsh Language and Wales Jurisdiction | welsh-language | `apps/pcs/docs/explanation/welsh-language-and-wales-jurisdiction.md` |
 | rd | how-to | Onboard Common Data | commondata | `apps/rd/docs/how-to/onboard-common-data.md` |
 | rd | how-to | Query Reference Data | overview | `apps/rd/docs/how-to/query-reference-data.md` |
 | rd | how-to | Register As S2s Caller | architecture | `apps/rd/docs/how-to/register-as-s2s-caller.md` |
@@ -229,12 +230,13 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | how-to | Respond to an ITHC penetration test report | respond-to-an-ithc-report | `docs/how-to/respond-to-an-ithc-report.md` |
 | workspace | how-to | Sandbox Cleardown | sandbox-cleardown | `docs/how-to/sandbox-cleardown.md` |
 | workspace | how-to | Secrets Management | secrets-management | `docs/how-to/new-component/secrets-management.md` |
-| workspace | how-to | Set up the Atlassian and Jenkins MCP servers | set-up-mcp-servers | `docs/how-to/set-up-mcp-servers.md` |
+| workspace | how-to | Set up the workspace's MCP servers | set-up-mcp-servers | `docs/how-to/set-up-mcp-servers.md` |
 | workspace | how-to | Shutter Implementation and Design | shutter | `docs/how-to/path-to-live/shutter.md` |
 | workspace | how-to | TLS certificates | tls-certificates | `docs/how-to/path-to-live/tls-certificates.md` |
 | workspace | how-to | Troubleshooting issues | troubleshooting | `docs/how-to/troubleshooting.md` |
 | workspace | how-to | Update Redis with Zone Redundancy | update-redis-with-zone-redundant | `docs/how-to/update-redis-with-zone-redundant.md` |
 | workspace | how-to | Write to Jira and Confluence through the Atlassian MCP | write-to-jira-and-confluence-via-mcp | `docs/how-to/write-to-jira-and-confluence-via-mcp.md` |
+| workspace | reference | AI Gateway | ai-gateway | `docs/reference/ai-gateway.md` |
 | workspace | reference | API design | apis | `docs/reference/cnp-standards/apis.md` |
 | workspace | reference | APIs | apis | `docs/reference/practices/apis.md` |
 | workspace | reference | Angular | angular | `docs/reference/standards/angular.md` |

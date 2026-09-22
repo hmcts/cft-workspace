@@ -68,9 +68,47 @@ When you run it on the master/main branch it will setup the default branch and t
 - Please see [sonarcloud status](https://status.sonarqube.com/) for any known issues with sonar cloud.
 - Remember that Platform Operation do not maintain SonarCloud, issues are usually discussed on community forums.
 
+### Static checks fail with exit code 3 and a Java stack trace about a scanner component
+
+This is a SonarCloud server-side fault, not a config or code problem, even though the surface error (`Unable to load component class org.sonar.scanner.scan.filesystem.ProjectFileIndexer` or similar) reads like one. Find the deepest `Caused by:` line in the console log — it is usually an HTTP 500 from SonarCloud's own scanner endpoint (`batch/project.protobuf`). Two tells that confirm it's infrastructure rather than your change: the unit/integration test stages already passed before the scanner ran, and no `report-task.txt` is produced because the scan never completed. Re-trigger the build rather than editing `sonar-project.properties` or bisecting commits. The GitHub `SonarCloud`/`SonarCloud Code Analysis` checks on the PR can still show pass while this Jenkins stage fails — they come from SonarCloud's separate GitHub App analysis, not from the scan that just failed, so a green Sonar tick does not mean the pipeline's scanner ran.
+
 ### Sonar scan quality gate failure
 
 If you receive this error: `Pipeline aborted due to quality gate failure: NONE` on master, try a re-run of the pipeline. This may simply be an intermittent issue caused by sonarcloud or because the GitHub repo has only just been created and this is the first time you're running the pipeline.
+
+### SonarCloud "Automatic Analysis" creates a second, separate project
+
+Repos with the SonarCloud GitHub App installed get a second, independent scan — GitHub's
+"Automatic Analysis" — alongside the pipeline's own Sonar step, auto-created and keyed
+`hmcts_<repo-name>`. It reads its scope from `.sonarcloud.properties`, not
+`sonar-project.properties` (which only the pipeline's scanner reads); with neither file present
+it falls back to scanning the whole repository (config, charts, test fixtures, SQL migrations)
+rather than the pipeline's configured `sonar.sources`. This produces two distinct symptoms:
+
+- **A failing `SonarCloud Code Analysis` PR check unrelated to your change.** Automatic Analysis
+  can flag files the pipeline scan never looks at, including files an analyser aimed at the wrong
+  dialect misreads (e.g. Sonar's PL/SQL rules firing on a PostgreSQL migration). Both projects
+  post a separate GitHub commit status, so a PR can show one Sonar check green and another red
+  for the same commit.
+- **No PR comment even though the pipeline's own scan and quality gate pass.** PR decoration
+  needs the specific project analysis ran on to have a **DevOps Platform binding** to the GitHub
+  repo (SonarCloud → Administration → DevOps Platform Integration) — nothing in `build.gradle`,
+  `Jenkinsfile_CNP` or `sonar-project.properties` can create or fix that binding. Automatic
+  Analysis's project (source-only, so it reports 0% coverage) is often the one that's bound, while
+  the pipeline-fed project (full coverage data) may not be — so comments can come from the wrong
+  project's analysis, or not appear at all. Changing `sonar.projectKey` will not restore comments;
+  it only moves the still-unbound analysis to a different project.
+
+Fix by adding a `.sonarcloud.properties` that mirrors the pipeline's
+`sonar.sources`/`sonar.tests`/`sonar.exclusions` key-for-key so both scans agree on scope, or —
+the more durable fix — have an org admin disable Automatic Analysis for the repo so there's only
+one Sonar project to satisfy. If comments stopped after previously working, check for
+duplicate/orphaned projects for the repo and confirm which one Jenkins is actually publishing to
+before asking platform/Sonar admins to bind it.
+
+### Coverage percentage doesn't match the raw jacoco XML
+
+`sonar.coverage.exclusions` in `sonar-project.properties` strips whole categories of classes (generated code, config, domain/model classes are common exclusions) before SonarCloud computes its coverage percentage. Computing coverage by hand from the jacoco XML report — summing covered/total lines across every class — includes those excluded classes and can read tens of percentage points lower than what SonarCloud actually reports for the project. If you need the real figure, query the SonarCloud API (or read the dashboard) rather than the raw jacoco XML.
 
 ### Build / Docker Build / Unit Test failure
 
@@ -138,6 +176,12 @@ Find your Slack ID by clicking on `View profile` within the Slack app, then clic
 
 Update your GitHub to Slack user mapping by following [Slack onboarding](../tutorials/cnp-onboarding/person-slack.md#github-to-slack-mapping) and try running the pipeline again.
 
+### Pushing to a PR while its build is running wastes a build, not just a build slot
+
+A new push does not cancel the build already running for the previous commit. The CNP pipeline serialises preview deploys on a per-PR lock (`Trying to acquire lock on [Resource: <product>-aat-deploy]`), so the new build queues behind the old one rather than replacing it — and if you push again before either finishes, a third build queues too. Only the build for your current head commit's result matters, so batch fixes into one push per PR per cycle rather than pushing after each small change; check `gh api repos/<org>/<repo>/commits/<sha>/statuses` or the Jenkins job's build list directly, since a superseded build that finishes with a real result never posts a commit status and can be missed entirely.
+
+Manually stopping a superseded build in Jenkins is worse than leaving it queued: the abort posts an `ERROR`/`ABORTED` GitHub commit status for the PR, and that can land after — and overwrite — a newer, still-running build's status for the current head commit. `gh pr view --json statusCheckRollup` then reports the PR as failed even though a relevant build is still in progress. Read the Jenkins build directly (build number and its `building` flag) rather than trusting the GitHub status rollup when a stop/retrigger race is possible.
+
 ### Sandbox Jenkins is not automatically picking up my changes
 
 Because we have a prod and sandbox Jenkins instance, sometimes your pushes to master may be picked up by prod Jenkins instead.
@@ -152,6 +196,8 @@ If this happens, simply run the master build manually on sandbox jenkins.
     - There is not enough space in the cluster to fit in a new pod.
     - Pod is scheduled, but fails to pass readiness (`/health/readiness`) or  liveness (`/health/liveness`) checks.
     - A misconfigured environment variable, example - incorrect URL of a dependent service.
+    - The product's shared preview PostgreSQL server has run out of connections — see [Preview database creation fails](#preview-database-creation-fails).
+    - The pod is OOMKilled despite a generous `memoryLimits` — see [OOMKilled despite a generous memoryLimits](#oomkilled-despite-a-generous-memorylimits).
 
 - Below are some handy kubectl commands to debug the issues
 
@@ -189,6 +235,46 @@ If this happens, simply run the master build manually on sandbox jenkins.
      kubectl logs <pod-name> -n <your-namespace> -p
 
      ```
+
+### `coalesce.go` warnings in a CCD-chart deploy log are usually noise
+
+A CCD-based preview/PR deploy routinely logs Helm's `coalesce.go: warning: cannot overwrite table with non table for <release>.ccd.<subchart>.<key>` for dozens of unrelated keys (`keyVaults`, `draft-store-service`, `rpe-service-auth-provider`, several subchart levels deep) — including on builds that deploy and pass cleanly. It's composition noise from how the CCD subcharts merge nested values, not evidence that a specific values key (e.g. `postgresql.setup.databases`) resolved to an empty map. Confirm an actual values regression against the rendered output (`helm template` / `helm get values`) rather than treating this warning as diagnostic.
+
+### Preview database creation fails
+
+Every PR preview namespace for a product gets its own database on one small shared flexible server. When idle JDBC pool connections accumulate across many previews — a `*_MIN_IDLE` setting that keeps connections open on an otherwise-idle release, or a scheduler thread count that keeps the pool fully warm — the server approaches `max_connections` and its control-plane API starts failing. New PRs then can't get a database created at all, and pods crashloop on `FATAL: database "..." does not exist` or a Hikari connection timeout, even though the failing PR's own Helm values are correct.
+
+Check connection counts against `max_connections` and look for oversized `*_MIN_IDLE` settings rather than raising the server's limit. `*_MAX_POOL_SIZE` is only a ceiling on connections drawn during active load, not a reservation — raising it doesn't by itself add to what an idle release holds open across dozens of concurrent previews.
+
+### Raising E2E parallelism against a CCD-backed preview exhausts the Hikari pool, not CPU
+
+Increasing Playwright (or similar) worker count against a single preview release without also raising `DATA_STORE_DB_MAX_POOL_SIZE`/`DEFINITION_STORE_DB_MAX_POOL_SIZE` causes CCD's data-store/definition-store Hikari pools to saturate (logged as `total=N, active=N, waiting=M`) even though the pod's CPU and memory usage stay well under its request. This looks like a compute-bound ceiling but is actually a connection-pool ceiling — worker count and pool size both need raising together, roughly in proportion, to get a real parallelism gain.
+
+### OOMKilled despite a generous memoryLimits
+
+Jenkins-driven helm deploys (`helmInstall.groovy`) always pass `--set global.devMode=true` — Preview, PR builds and the Jenkins-managed AAT "staging" release alike. In devMode the chart reads `devmemoryLimits`/`devmemoryRequests`/`devcpuLimits`/`devcpuRequests` with no fallback to the non-dev keys, so a chart setting only `memoryLimits` gets the base chart's default instead (512Mi on chart-base and chart-nodejs, 1Gi on chart-java). Set `devmemoryLimits` alongside `memoryLimits` for anything Jenkins deploys. GitHub Actions deploys and Flux-managed `HelmRelease`s never set `global.devMode`.
+
+The same app in the same AAT namespace can run under two independent releases with different memory behaviour: a Jenkins-managed `<app>-staging` (devMode on) and a Flux-managed `<app>` (devMode off, tracking a prod image tag). Check which one a pod belongs to before changing chart values:
+
+```bash
+kubectl get pod -n <namespace> <pod> -o jsonpath='{.metadata.labels.app\.kubernetes\.io/instance}{"\n"}'
+```
+
+`kubectl top pods` reports the cgroup working set the OOM-killer compares against the limit, but it's a live snapshot and resets once a pod restarts. To confirm a kill actually happened:
+
+```bash
+kubectl get pod -n <namespace> <pod> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}{"\n"}'
+```
+
+For history, Container Insights (`oms_agent`) is only enabled on perftest and prod — but `kube-prometheus-stack` runs on every CFT cluster and scrapes cAdvisor via the kubelet `ServiceMonitor` regardless of any chart's own `prometheus.enabled`, so `container_memory_working_set_bytes` is available for 30 days on AAT too. AAT is two clusters with a Prometheus each; only one runs Grafana, and that Grafana has both wired in as datasources.
+
+### Preview pod is healthy but the pipeline's startup checker still fails
+
+Every pod reaches `condition met`, then the pipeline's startup checker fails anyway with no HTTP status logged, just a private-DNS record for the PR's hostname being created seconds before the check runs (`the resource record '...' does not exist` followed immediately by `Registering DNS for ... with ttl = 300`). This is a DNS-propagation race, not an application problem — the checker (from the shared `cnp-jenkins-library`) can hit the hostname before the new A record has propagated, and its retry budget isn't reliable against a cold record (it may log only one attempt before giving up). Retriggering the build is the practical fix; re-reading the app logs as the checker's error message suggests will not show anything, since the app was never unhealthy.
+
+### ACR tag dates are not build times
+
+`createdTime`/`lastUpdateTime` from `az acr manifest list-metadata` record when a tag was last pointed at a manifest, so re-pushing `:latest` updates them without a new build. To date the code in a running pod, read file timestamps inside the container instead.
 
 ## VPN
 ---
@@ -301,6 +387,7 @@ VPN access and troubleshooting has moved to [VPN onboarding](../tutorials/cnp-on
 ---
 - By Default, all developers have read access to non-prod AKS clusters and slightly higher privileges to their namespaces.
 - You can connect to AKS clusters using `az aks get-credentials`. Below are some handy commands:
+- CFT clusters run a Gatekeeper policy (`azurepolicy-k8sazurev1blocknakedpods`) that rejects any Pod not owned by a controller. If you want an ad-hoc container to poke around the cluster with (e.g. to check DNS or connectivity from inside the namespace), wrap it in a `Job` rather than applying a bare Pod manifest — the latter is rejected outright.
 
 ### CFT clusters
 
@@ -380,6 +467,16 @@ kubectl config use-context cft-aat-00-aks
 
 ## Golden Path
 ---
+### IDAM / OIDC Errors
+
+#### - A strict OIDC client rejects sign-in against real AAT/demo IDAM on an issuer mismatch
+
+Deployed AAT/demo IDAM's OIDC discovery document advertises the public `idam-web-public.<env>.platform.hmcts.net` hostname as the issuer, but the id_tokens it actually signs carry the internal ForgeRock hostname as `iss`. A strict client (for example `openid-client` v6) validates the id_token's `iss` against the discovery document and rejects every sign-in on that mismatch. This is a different failure from the local `rse-idam-simulator` issuer drift described in [Running with cftlib](../../apps/ccd/docs/tutorials/running-with-cftlib.md#troubleshooting) — it affects any client integrating with a real deployed IDAM, not just the local stack.
+
+Once the client is reconciled to expect the internal issuer, a second, opposite-direction mismatch appears: the unsigned `iss` query parameter IDAM appends to the OAuth callback URL carries the *public* hostname, which now conflicts with the internal issuer the id_token check expects. That callback parameter is not signed and should be ignored rather than validated against the id_token's `iss`.
+
+To discover the real signed issuer without a full sign-in flow, run a scope-restricted `client_credentials` grant against the environment at boot time and read the `iss` claim of the token it returns, rather than assuming either hostname.
+
 ### NodeJS Errors
 
 #### - URL.canParse is not a function
@@ -397,6 +494,10 @@ Node.js v18.16.0
 #### Solution
 
 Bump the node version in `.nvmrc` to `18.17`
+
+### - A Docker image with `packageManager` pinned in `package.json` tries to download Yarn at container start
+
+When `package.json` pins a `packageManager` version, `yarn` on `PATH` inside the image is really a Corepack shim, which resolves the pinned version from Corepack's own cache — separate from the `.yarn/cache` folder Yarn itself populates. That cache is normally only populated as a side effect of running `yarn install` in the image. If a Docker build trims the image by removing what looks like a redundant cache directory without checking whether it's Corepack's, the built image passes `tsc`, lint, and unit tests (none of which start a fresh shim) but tries to fetch Yarn from the network the first time a container actually runs `yarn` — invisible until you run the built image itself, ideally with `--network none`, rather than trusting static checks.
 
 ### - After(build) is deprecated
 
@@ -714,6 +815,22 @@ dependencyCheck {
 Here is an example of how to configure the suppression file [build.gradle](https://github.com/hmcts/template-spring-boot/blob/2b93593d233b4e3590e5a6d01054b1dd79bfd7c6/skeleton/build.gradle#L153)
 Here is the aforementioned [suppression file](https://github.com/hmcts/template-spring-boot/blob/master/skeleton/config/owasp/suppressions.xml)
 
+When writing a suppression, match it against the `packageUrl`/CPE actually reported for that CVE in the HTML report, not the artifact name you'd expect. The checker matches CVEs against a shared CPE, so a CVE against one artifact can be reported against a different (but related) artifact on the same release line — for example a CVE in `spring-cloud-commons` reported against `spring-cloud-starter`. A suppression regex written for the "obvious" artifact name silently fails to suppress it, and this is only caught by running the real scan — checking a suppression regex against a predicted purl instead of the one actually in the report gives false confidence that it works.
+
+
+#### - A build fails on the dependency check with no dependency or code changes
+
+The checker matches your dependencies against the live NVD CVE feed on every run, not a pinned snapshot, so an identical build can pass in the morning and fail later the same day purely because a new CVE was published against one of your dependencies in the meantime. Two builds of the same commit minutes apart can disagree for the same reason — a master build can report "Found 0 vulnerabilities" and a PR build of unchanged dependencies can report dozens a short time later. This typically fails every open PR in the repo at once, not just one — check the master build's timestamp against the PR build's before assuming the PR's own changes are at fault, and add a suppression in `config/owasp/suppressions.xml` (following the existing entries' reachability-analysis and `until=` convention) rather than treating it as a regression to bisect.
+
+The NVD data each build scores against is also cached per Jenkins build agent (`nvd.api.check.validforhours=24`), not fetched fresh centrally — so two builds of the same commit minutes apart can disagree depending on which agent picks up the job, independent of the feed-timing effect above: one whose cache predates a new CVE's publication passes, one whose cache has since refreshed fails. Retriggering a build changes nothing about your code but can still change the outcome if it lands on a different agent.
+
+A related but distinct failure is `DatabaseException: Error connecting to the database` (or similar wording) with an otherwise-empty vulnerability report — this is the checker losing its connection to the NVD data mirror mid-scan, not a scan result. Re-run the build; if it goes green with no changes, it was transient.
+
+A long-running branch can fail this gate even when master already has the fix: if the branch is behind master, it hasn't picked up a suppression that has already been merged there. Before writing a new suppression, check whether the flagged CVEs are already suppressed on master and merge master in rather than duplicating the entry.
+
+The same feed volatility cuts the other way when deciding whether to remove a suppression: a suppressed CVE not appearing in one report is not proof it's gone. Because the checker re-queries the live feed each run, the same suppressed CVE can be absent from one build's report and present in the next even with no dependency change. Only remove a suppression once you've confirmed via `dependencyInsight` (or equivalent resolved-coordinate evidence) that the vulnerable version range no longer resolves anywhere in the dependency graph — not because it "hasn't shown up in a few runs".
+
+A PR build whose commit already has a matching image in ACR skips the image build (and with it `dependencyCheckAggregate`) entirely, logging `skipped - same as current registry` rather than a scan result. A SUCCESS on such a build is not evidence the gate currently passes — it never ran. Only trust a build whose log shows `dependencyCheckAggregate` actually executing; re-running the same commit without a new one just repeats the skip.
 
 #### - "NoSuchMethodError" when running the OWASP Dependency Checker
 

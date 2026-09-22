@@ -23,6 +23,8 @@ sources:
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/CategoryValidator.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/RoleToAccessProfilesValidator.java
   - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/UserRoleController.java
+  - ccd-config-generator:sdk/ccd-definition-converter/src/main/java/uk/gov/hmcts/ccd/sdk/converter/link/DefaultDefinitionLinker.java
+  - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/WizardPageParser.java
 status: confluence-augmented
 confluence:
   - id: "277949114"
@@ -119,8 +121,8 @@ Sheet name: `CaseEvent` | DB table: `event`
 | `CaseTypeID` | Yes | FK to parent case type |
 | `Description` | No | `varchar(100)` |
 | `DisplayOrder` | No | Numeric; display ordering for event list |
-| `PreConditionState(s)` | No | Comma-separated state IDs; `*` means any state. Empty means event creates a case. |
-| `PostConditionState` | No | Target state after event; `*` keeps current state |
+| `PreConditionState(s)` | No | State IDs, separated by `;` or `,`; `*` means any state. Empty means event creates a case. Each entry may carry an optional `(showCondition)` predicate and a `:priority` suffix, e.g. `appealStartedByAdmin(isAdmin!="" AND isAdmin="Yes"):2;appealStarted` — strip that decoration before treating the segment as a bare state `ID`. |
+| `PostConditionState` | No | Target state after event; `*` keeps current state. Can use the same decorated, `;`/`,`-separated syntax as `PreConditionState(s)` to express conditional or multiple candidate post-states. |
 | `SecurityClassification` | No | |
 | `Publish` | No | Boolean; if `Yes`/`True`, event is published to CCD message queue |
 | `ShowSummary` | No | Boolean (`Y`/`N`/empty). `Y` shows Check Your Answers page. |
@@ -201,6 +203,8 @@ Controls per-element display within complex-type fields when `DisplayContext=COM
 | `Publish` | No | Boolean; publish element to message queue |
 | `PublishAs` | No | Alias (max 70) |
 | `LiveFrom` / `LiveTo` | No | |
+
+`WizardPageParser` reads `PageLabel`, `PageDisplayOrder` and `PageFieldDisplayOrder` only from the `CaseEventToFields` sheet. The same column names on this sheet are not mapped to anything and are silently ignored — no validation error, no effect on the imported definition.
 
 Rows on this sheet override display metadata and ordering for elements that already belong to the complex type; they do not select which elements appear. Data store hands the rows to `CompoundFieldOrderService.sortNestedFieldsFromCaseEventComplexFields()`, which promotes the children that carry a `FieldDisplayOrder` and appends every remaining child in definition order (`CompoundFieldOrderService.java:32-48`, `:77-80`, `:100-105`), reached from `CaseViewFieldBuilder.java:74-80`. Leaving an element off the sheet leaves it on the form in its definition position; hiding it takes a `FieldShowCondition` or withholding read access on the sub-field via `AuthorisationComplexType`.
 
@@ -535,8 +539,8 @@ Source: `SheetName.java:32`, `ColumnName.java:99–103`, `RoleToAccessProfilesVa
 
 - `CaseField.CaseTypeID` must match a CaseType `ID`
 - `CaseField.FieldType` must be a known base type, or match a ComplexTypes `ID`, or match a FixedLists `ID`
-- `CaseEvent.PreConditionState(s)` values must match State `ID` values (or be empty/`*`)
-- `CaseEvent.PostConditionState` must match a State `ID` (or `*`)
+- `CaseEvent.PreConditionState(s)` values must match State `ID` values once any `(showCondition)`/`:priority` decoration and `;`/`,` separators are stripped (or be empty/`*`)
+- `CaseEvent.PostConditionState` must match a State `ID` under the same decoration rules (or `*`)
 - `CaseEventToFields.CaseFieldID` must match CaseField `ID` for the same CaseTypeID
 - `CaseTypeTab.CaseFieldID` must match CaseField `ID` or be a metadata field name
 

@@ -265,10 +265,21 @@ curl -s "http://rd-professional-api-$ENV.service.core-compute-$ENV.internal/refd
   | jq '[.organisations[] | select(.name|test("YOUR-PREFIX")) | {name,organisationIdentifier}]'
 ```
 
+**The response shape depends on `status`.** `?status=PENDING` wraps the list in
+`{"organisations": [...]}` as above, but `?status=ACTIVE` returns a bare JSON array — a `jq`
+filter written against one will error or silently return nothing against the other, so check
+`type` before assuming the shape.
+
 Deleting is only possible while the org is `PENDING`/`REVIEW` — an `ACTIVE` org with users is much
 harder to remove, which is another reason not to approve one casually.
 
 ### 5. Add more users to the organisation
+
+**Hits the same `403` as approval, for the same reason.** Inviting a user makes PRD call
+`rd-user-profile-api` to create that user's profile (`SuperController.inviteUserToOrganisation` →
+`createUserProfileFor`), so it needs your microservice on `rd-user-profile-api`'s allowlist —
+verified in AAT: creating and listing orgs worked from a service that then 403'd on every invite,
+regardless of the target org's status. An `ACTIVE` org is not enough on its own.
 
 ```bash
 curl -s -X POST "http://rd-professional-api-$ENV.service.core-compute-$ENV.internal/refdata/external/v1/organisations/users/" \
