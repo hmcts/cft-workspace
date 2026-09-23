@@ -19,6 +19,11 @@
 
 source "$(dirname "$0")/lib/_common.sh"
 
+# A background sweep's only record is sweep.log, and a failure there is useless
+# without knowing which run it belongs to.
+warn() { printf '%s%s %s%s\n' "$C_YELLOW" "$(date '+%F %T')" "$*" "$C_RESET" >&2; }
+err()  { printf '%s%s %s%s\n' "$C_RED"    "$(date '+%F %T')" "$*" "$C_RESET" >&2; }
+
 STATE_DIR="$WORKSPACE_ROOT/.claude/knowledge-sweep"
 LEDGER="$STATE_DIR/ledger.json"
 STAMP="$STATE_DIR/last-run"
@@ -101,8 +106,10 @@ mkdir -p "$STATE_DIR"
 # harvester is written as one of its agents; a Codex-only engineer needs
 # KNOWLEDGE_SWEEP_HARVEST_CMD, which receives the prompt on stdin.
 HARVEST_CMD=${KNOWLEDGE_SWEEP_HARVEST_CMD:-}
+HARVEST_IS_CLAUDE=0
 if [[ -z "$HARVEST_CMD" ]]; then
     if command -v claude >/dev/null; then
+        HARVEST_IS_CLAUDE=1
         HARVEST_CMD="claude -p --model $MODEL --permission-mode acceptEdits"
         HARVEST_CMD+=" --allowedTools Read Edit Write Grep Glob Bash(./scripts/docs-index)"
     elif command -v codex >/dev/null; then
@@ -456,6 +463,21 @@ if [[ -z "$GH_LOGIN" ]]; then
     [[ "$MODE" == "pr" ]] && die "gh unavailable — deferring this batch, nothing consumed"
     GH_LOGIN=local
 fi
+
+# The harvester takes its API route from the launching session's environment,
+# which can point it at an endpoint it holds no credentials for. Probe before
+# building the worktree, and defer the batch the same way as a gh outage.
+if (( HARVEST_IS_CLAUDE )); then
+    set +e
+    probe=$(cd "$WORKSPACE_ROOT" && KNOWLEDGE_SWEEP_CHILD=1 \
+        claude -p --model "$MODEL" 'Reply with the single word ok.' </dev/null 2>&1)
+    probe_status=$?
+    set -e
+    if (( probe_status != 0 )); then
+        die "harvester cannot reach the model — deferring this batch, nothing consumed: $(printf '%s' "$probe" | head -1)"
+    fi
+fi
+
 BRANCH="knowledge/$GH_LOGIN"
 
 git -C "$WORKSPACE_ROOT" fetch --quiet origin master 2>/dev/null || true
