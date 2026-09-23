@@ -32,7 +32,7 @@ A cost-benefit analysis should precede any work on this recommendation.
 
 Brotli, a lossless compression algorithm developed by Google, which offers up to 20% smaller file sizes than Gzip for web assets like CSS and JavaScript. Widely supported by browsers and CDNs [since late 2017](https://caniuse.com/brotli), Brotli seamlessly falls back to Gzip if unsupported, this browser decision is based on the `Accept-Encoding` and `Content-Encoding` headers during HTTP negotiation.
 
-**Important Note**: Enable Brotli only if available on the platform hosting the service.
+**Important Note**: Enable Brotli only if available on the platform hosting the service. Don't assume this is the case by default — neither Traefik (the ingress used by CFT and SDS clusters) nor Azure Front Door compress responses out of the box, so a service that wants compressed static assets has to compress them itself, for example at build time.
 
 ## Use Image compression
 
@@ -142,3 +142,5 @@ If you like to overwrite the default caching rule to include more static file ty
 If you like to completely turn off caching, please see below example.
 
 [Example](https://github.com/hmcts/sds-azure-platform/blob/master/environments/stg/stg.tfvars#L427)
+
+Note that Front Door Standard/Premium's compression is not a separate toggle — it only applies to routes that have caching enabled. A route left with caching disabled serves every response identity-encoded regardless of the `Accept-Encoding` header a browser sends, so getting the cache headers right (as above) is also a precondition for getting compression.
