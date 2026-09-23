@@ -16,6 +16,10 @@
 #   scripts/knowledge-sweep --backfill     # work forward through unreviewed history
 #   scripts/knowledge-sweep --backfill --until-done   # repeat until history is exhausted
 #   scripts/knowledge-sweep --max-sessions=N          # override the per-run session cap
+#
+# Only the background sweep writes a log, to .claude/knowledge-sweep/sweep.log.
+# A foreground run prints to the terminal, so redirect it if you want to keep it:
+#   scripts/knowledge-sweep --backfill > .claude/knowledge-sweep/backfill.log 2>&1
 
 source "$(dirname "$0")/lib/_common.sh"
 
@@ -333,7 +337,12 @@ digest_slice() {
 }
 
 sessions_reviewed=0
-declare -A new_offsets=()
+# Tab-separated "sid<TAB>offset" lines rather than an associative array: macOS
+# ships bash 3.2, where `declare -A` is rejected outright and, under the
+# set -euo pipefail from _common.sh, takes the whole run with it — so the sweep
+# never reaches a single session.
+# Duplicate ids are harmless — commit_ledger replays them in order, last wins.
+new_offsets=""
 
 while IFS= read -r transcript; do
     (( sessions_reviewed >= MAX_SESSIONS )) && break
@@ -390,7 +399,9 @@ while IFS= read -r transcript; do
 
         next_offset=$(( offset + consumed ))
         head -c "$consumed" "$raw" | digest_slice > "$slice"
-        truncated=" (backfill: bytes $offset–$next_offset of $size)"
+        # Braces are load-bearing: bash 3.2 folds the en-dash's UTF-8 bytes into
+        # the preceding name, looks up "offset<dash>", and set -u aborts the run.
+        truncated=" (backfill: bytes ${offset}–${next_offset} of ${size})"
     else
         # Forward sweeping favours recent activity; a session that grew faster
         # than the cap loses its middle, so say so rather than failing quietly.
@@ -407,7 +418,8 @@ while IFS= read -r transcript; do
         # extraction doesn't understand this client's transcript format. Say so
         # — otherwise the offset advances and the history is silently consumed.
         warn "$sid: $(( next_offset - offset ))B of new transcript produced no readable turns"
-        new_offsets[$sid]=$next_offset
+        new_offsets="${new_offsets}${sid}	${next_offset}
+"
         continue
     fi
 
@@ -417,7 +429,8 @@ while IFS= read -r transcript; do
         cat "$slice"
     } >> "$DIGEST"
 
-    new_offsets[$sid]=$next_offset
+    new_offsets="${new_offsets}${sid}	${next_offset}
+"
     sessions_reviewed=$(( sessions_reviewed + 1 ))
 
     if (( $(file_size "$DIGEST") > MAX_DIGEST_BYTES )); then
@@ -431,12 +444,13 @@ done < <(list_transcripts)
 commit_ledger() {
     local tmp="$WORK/ledger.json"
     cp "$LEDGER" "$tmp"
-    for sid in "${!new_offsets[@]}"; do
-        jq --arg s "$sid" --argjson o "${new_offsets[$sid]}" \
+    while IFS="$(printf '\t')" read -r sid off; do
+        [[ -n "$sid" ]] || continue
+        jq --arg s "$sid" --argjson o "$off" \
            --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
            '.[$s] = {offset: $o, reviewed_at: $t}' "$tmp" > "$tmp.next"
         mv "$tmp.next" "$tmp"
-    done
+    done <<< "$new_offsets"
     mv "$tmp" "$LEDGER"
 }
 
@@ -546,7 +560,12 @@ fi
 
 # This repo is public, so a pasted command line carrying a live token must not
 # reach a branch even though the harvester is told never to quote a transcript.
-if git -C "$WORKTREE" diff --unified=0 | rg -q \
+#
+# POSIX grep rather than rg on purpose. rg is not installed by default, and a
+# missing command here exits 127, which `if` reads as "no match" — so the gate
+# passed silently on any machine without it, which is the one failure this check
+# must never have.
+if git -C "$WORKTREE" diff --unified=0 | grep -Eq \
     -e 'eyJ[A-Za-z0-9_-]{20,}\.' \
     -e 'gh[pousr]_[A-Za-z0-9]{20,}' \
     -e 'AccountKey=' \

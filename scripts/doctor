@@ -43,11 +43,12 @@ check "GitHub SSH ok"     bash -c 'out=$(ssh -T -o BatchMode=yes -o ConnectTimeo
 check "manifest parses"   yq '.repos | length' "$MANIFEST"
 
 # Per-repo presence and basic git health
-mapfile -t entries < <(manifest_tsv)
+entries=()
+while IFS= read -r line || [[ -n "$line" ]]; do entries+=("$line"); done < <(manifest_tsv)
 missing=0
 unexpected_branch=0
 dirty=0
-for e in "${entries[@]}"; do
+for e in ${entries[@]+"${entries[@]}"}; do
     IFS=$'\t' read -r path url ref _depth <<< "$e"
     [[ "$ref" == "-" ]] && ref=""
     if [[ ! -d "$path/.git" ]]; then

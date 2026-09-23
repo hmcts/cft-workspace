@@ -67,9 +67,10 @@ created=0
 preserved=0
 
 # Iterate keys under .pages
-mapfile -t pages < <(yq -r '.pages | keys | .[]' "$PLAN")
+pages=()
+while IFS= read -r line || [[ -n "$line" ]]; do pages+=("$line"); done < <(yq -r '.pages | keys | .[]' "$PLAN")
 
-for page in "${pages[@]}"; do
+for page in ${pages[@]+"${pages[@]}"}; do
     topic=$(yq -r ".pages[\"$page\"].topic" "$PLAN")
     diataxis=$(diataxis_of "$page")
     mkdir -p "$(dirname "$page")"
