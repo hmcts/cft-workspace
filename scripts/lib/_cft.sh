@@ -33,7 +33,7 @@ digits() {
     printf '%s' "$out"
 }
 
-# Internal *.service.core-compute-<env>.internal hostnames need the VPN.
+# For hostnames that only resolve over the VPN.
 require_internal_dns() {
     local host="$1"
     if command -v getent >/dev/null; then

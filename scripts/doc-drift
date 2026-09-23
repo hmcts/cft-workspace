@@ -271,13 +271,15 @@ run_port_mode() {
     done < <(yq -r '.entries[] | [.target, .source, .synced_sha] | @tsv' "$manifest")
 
     # new-upstream scan
-    mapfile -t known < <(yq -r '.entries[].source' "$manifest")
-    mapfile -t dropped < <(yq -r '.dropped[]' "$manifest")
+    known=()
+    while IFS= read -r line || [[ -n "$line" ]]; do known+=("$line"); done < <(yq -r '.entries[].source' "$manifest")
+    dropped=()
+    while IFS= read -r line || [[ -n "$line" ]]; do dropped+=("$line"); done < <(yq -r '.dropped[]' "$manifest")
     while IFS= read -r src_full; do
         local rel="${src_full#"$upstream_dir/$upstream_root/"}"
         local skip=0
-        for k in "${known[@]}";   do [[ "$rel" == "$k" ]] && skip=1; done
-        for g in "${dropped[@]}"; do
+        for k in ${known[@]+"${known[@]}"};   do [[ "$rel" == "$k" ]] && skip=1; done
+        for g in ${dropped[@]+"${dropped[@]}"}; do
             if [[ "$g" == *'**' ]]; then [[ "$rel" == "${g%\*\*}"* ]] && skip=1
             else [[ "$rel" == "$g" ]] && skip=1; fi
         done
@@ -408,7 +410,7 @@ run_source_mode() {
         if (( DO_RECORD )); then
             if (( ${#broken_sources[@]} )); then
                 broken+=("$page: ${broken_sources[*]}")
-            elif write_sources_sha "$page" "${record_pairs[@]}"; then
+            elif write_sources_sha "$page" ${record_pairs[@]+"${record_pairs[@]}"}; then
                 recorded_pages+=("$page (${#record_pairs[@]} SHAs)")
             fi
             continue

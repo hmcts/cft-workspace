@@ -55,8 +55,9 @@ sources_sha:
 https://idam-testing-support-api.<env>.platform.hmcts.net
 ```
 
-Available for `aat`, `demo`, `ithc`, `perftest`, `preview`, `sandbox`. Public ingress — no VPN
-required. Not deployed to prod.
+Available for `aat`, `demo`, `ithc`, `perftest`, `preview`, `sandbox`. Not deployed to prod.
+Needs the VPN: despite the `platform.hmcts.net` name, the host only resolves over the tunnel and
+returns NXDOMAIN on a public resolver. `idam-web-public.<env>`, used for tokens, is public.
 
 ## Endpoints
 

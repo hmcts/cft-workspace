@@ -22,7 +22,8 @@ done
 
 cd "$WORKSPACE_ROOT"
 
-mapfile -t entries < <(manifest_tsv "$PREFIX")
+entries=()
+while IFS= read -r line || [[ -n "$line" ]]; do entries+=("$line"); done < <(manifest_tsv "$PREFIX")
 [[ ${#entries[@]} -gt 0 ]] || die "No manifest entries match prefix: $PREFIX"
 
 sync_one() {

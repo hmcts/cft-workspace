@@ -67,9 +67,10 @@ created=0
 preserved=0
 
 # Iterate keys under .pages
-mapfile -t pages < <(yq -r '.pages | keys | .[]' "$PLAN")
+pages=()
+while IFS= read -r line || [[ -n "$line" ]]; do pages+=("$line"); done < <(yq -r '.pages | keys | .[]' "$PLAN")
 
-for page in "${pages[@]}"; do
+for page in ${pages[@]+"${pages[@]}"}; do
     topic=$(yq -r ".pages[\"$page\"].topic" "$PLAN")
     diataxis=$(diataxis_of "$page")
     mkdir -p "$(dirname "$page")"
@@ -77,7 +78,8 @@ for page in "${pages[@]}"; do
     if [[ -f "$page" ]]; then
         # Preserve drafted / linked / reviewed pages. Re-stub only if status is
         # absent or already stub.
-        existing_status=$(yq -r 'select(.status) | .status // "stub"' "$page" 2>/dev/null || echo stub)
+        existing_status=$(awk 'NR==1 && /^---/ {f=1; next} f && /^---/ {exit} f' "$page" \
+            | yq -r '.status // "stub"' 2>/dev/null || echo stub)
         if [[ -n "$existing_status" && "$existing_status" != "stub" ]]; then
             echo "  \"$page\": { topic: \"$topic\", status: \"$existing_status\" }" >>"$manifest"
             preserved=$((preserved+1))
