@@ -78,34 +78,38 @@ done
 # keeps gitignored workspace files (credentials, *.local.md) hidden, and parent
 # ignores stay on so each clone's gitignored output stays hidden too.
 roots=()
-add_root() {
-    local r
-    for r in ${roots[@]+"${roots[@]}"}; do [[ $r == "$1" ]] && return 0; done
-    roots+=("$1")
-}
 for abs in "${paths[@]}"; do
     if [[ $abs == "$WORKSPACE_ROOT" ]]; then
         rel=.
     elif [[ $abs == "$WORKSPACE_ROOT"/* ]]; then
         rel=${abs#"$WORKSPACE_ROOT"/}
     else
-        add_root "$abs"
+        roots+=("$abs")
         continue
     fi
     for clone in ${clones[@]+"${clones[@]}"}; do
         if [[ $rel == "$clone" || $rel == "$clone"/* ]]; then
-            add_root "$rel"
+            roots+=("$rel")
             continue 2
         fi
     done
     while IFS= read -r -d '' file; do
-        [[ -e $file ]] && add_root "$file"
+        [[ -e $file ]] && roots+=("$file")
     done < <(git ls-files -z --cached --others --exclude-standard -- "$rel")
     for clone in ${clones[@]+"${clones[@]}"}; do
-        [[ $rel == . || $clone == "$rel"/* ]] && add_root "$clone"
+        [[ $rel == . || $clone == "$rel"/* ]] && roots+=("$clone")
     done
 done
 (( ${#roots[@]} )) || die "scripts/grep: nothing to search under ${paths[*]}"
+
+# Overlapping paths yield the same root twice. Dedupe once at the end: a
+# per-add scan is quadratic, around 300 ms for the ~500 unscoped roots, and
+# declare -A needs bash 4, which stock macOS lacks.
+unique=()
+while IFS= read -r root; do
+    unique+=("$root")
+done < <(printf '%s\n' "${roots[@]}" | awk '!seen[$0]++')
+roots=("${unique[@]}")
 
 exec rg \
     --hidden \
