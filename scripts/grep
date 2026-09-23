@@ -43,9 +43,15 @@ roots=()
 (( path_count > 0 )) || roots=(apps libs platops)
 
 # By default search apps/ libs/ platops/ — never the workspace's own .git or scaffolding.
+# --no-ignore-parent: the workspace .gitignore ignores every clone by design, and
+# rg applying it as a parent ignore silently empties searches of apps/<product>/
+# or libs/, and intermittently the unscoped search too. Each clone's own
+# .gitignore still applies.
 exec rg \
     --hidden \
+    --no-ignore-parent \
     --glob '!**/.git' \
+    --glob '!**/docs/.work' \
     --glob '!**/node_modules' \
     --glob '!**/build' \
     --glob '!**/.gradle' \
