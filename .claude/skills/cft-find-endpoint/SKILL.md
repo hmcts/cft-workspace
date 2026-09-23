@@ -42,21 +42,23 @@ Locate which HMCTS service exposes an HTTP path by searching the OpenAPI specs p
 
 2. **Parse the input.** Split off an HTTP method (`GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS`) if present; the rest is the path pattern. Lowercase the method, or leave it empty for any method.
 
-3. **Scan every spec in one `jq` pass.** One process over all the files takes well under a second; looping `yq` per spec and per path is slow enough to matter.
+3. **Scan every spec with `jq`.** Run one `jq` per spec from the workspace root. Don't `cd` into the specs directory, because steps 4 and 5 use workspace-relative paths. One spec that fails to parse must not hide the rest, so each spec gets its own process. The whole loop takes well under a second; looping `yq` per spec and per path is slow enough to matter.
    ```bash
-   cd platops/cnp-api-docs/docs/specs
-   jq -r --arg p '<path-pattern>' --arg m '<method or empty>' '
-     input_filename as $f
-     | (.paths // {}) | to_entries[]
-     | select(.key | contains($p))
-     | .key as $path
-     | .value | to_entries[]
-     | select(.key | test("^(get|post|put|patch|delete|head|options)$"))
-     | select($m == "" or .key == $m)
-     | [$f, (.key | ascii_upcase), $path, (.value.summary // "")] | @tsv
-   ' *.json
+   for f in platops/cnp-api-docs/docs/specs/*.json; do
+     grep -q "[^[:space:]]" "$f" || { echo "EMPTY $f" >&2; continue; }
+     jq -r --arg p '<path-pattern>' --arg m '<method or empty>' '
+       (input_filename | split("/") | last) as $f
+       | (.paths // {}) | to_entries[]
+       | select(.key | contains($p))
+       | .key as $path
+       | .value | to_entries[]
+       | select(.key | test("^(get|post|put|patch|delete|head|options)$"))
+       | select($m == "" or .key == $m)
+       | [$f, (.key | ascii_upcase), $path, (.value.summary // "")] | @tsv
+     ' "$f" 2>/dev/null || echo "UNPARSEABLE $f" >&2
+   done
    ```
-   Matching is case-sensitive, as OpenAPI paths are. A few published specs are empty files; `jq` skips them silently, which is correct.
+   Matching is case-sensitive, as OpenAPI paths are. Specs reported as `EMPTY` or `UNPARSEABLE` were not searched. Some published specs are empty stubs (for example `wa-task-management-api.json`), so an endpoint can be real without appearing here. Name the unsearched specs after the results.
 
 4. **Resolve the owning product.** Map the spec filename → workspace product by greping every `<product>/CLAUDE.md` for the spec filename in its `api_specs:` list:
    ```bash
@@ -87,10 +89,11 @@ Found <N> match(es) for <method> <pattern>:
 
 If there are many hits (>10), summarise: list the spec + path + method, but skip the operation summary and links.
 
-If there are zero hits, count the specs (`ls platops/cnp-api-docs/docs/specs/*.json | wc -l`) rather than quoting a number:
+If there are zero hits, count the specs step 3 actually searched (all `*.json` minus the `EMPTY` and `UNPARSEABLE` ones) rather than quoting a number:
 
 ```
 No paths matching "<pattern>" found across <count> specs in platops/cnp-api-docs/docs/specs/.
+Not searched (empty or unparseable): <spec>, …
 
 Common reasons:
 - Try a shorter substring (e.g. "cases" instead of "/cases/{caseId}/events").
@@ -102,5 +105,5 @@ Common reasons:
 
 - Don't read entire spec JSON files into your context — they can be megabytes. Extract only the fields you need with `jq`.
 - Don't auto-fetch specs from GitHub. Always use the local clone. If it's missing, tell the user to clone it.
-- Don't invent paths or guess. If `jq` returns nothing, report nothing.
+- Don't invent paths or guess. If `jq` returns nothing, report no matches.
 - Don't conflate `pcs-api.json`, `pcsAPI.json`, and `pcs-backend-api.json` — they are separate published files and may all match. Report each separately.

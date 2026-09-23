@@ -32,7 +32,10 @@ The taxonomy schema is defined in `docs/reference/taxonomy.md`. The `product-ana
    ```
 
 2. **Fan out subagents**
-   For each target product, spawn one `product-analyser` Agent in parallel. Cap parallelism at ~5 — each subagent spawns its own tool calls and the layer multiplies fast. The Agent's `subagent_type` is `product-analyser`. The prompt is a single line: the absolute path to the product directory (`"$(git rev-parse --show-toplevel)/<product>"` — the workspace root differs between the devcontainer and a local checkout).
+   For each target product, spawn one `product-analyser` Agent in parallel. Cap parallelism at ~5 — each subagent spawns its own tool calls and the layer multiplies fast. The Agent's `subagent_type` is `product-analyser`. The prompt is a single line: the absolute path to the product directory, `<workspace-root>/<product>`. Find the workspace root as the nearest directory holding `workspace.yaml`. `git rev-parse --show-toplevel` is wrong here because every clone is its own git repo, so it returns the clone when the shell's cwd is inside one:
+   ```bash
+   root=$PWD; until [ -f "$root/workspace.yaml" ] || [ "$root" = / ]; do root=$(dirname "$root"); done
+   ```
 
    Each subagent reads its product's clones (READMEs, build files, application config, CCD definitions) and writes one `CLAUDE.md` at `<product>/CLAUDE.md`. It does **not** edit anything inside a clone, and does not commit.
 

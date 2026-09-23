@@ -150,7 +150,7 @@ These are hints, not constraints — the augmenter expands beyond them if hits a
 
 ### `repos`
 
-The workspace-relative paths to the constituent clones. The same paths appear in `workspace.yaml`. This list lets `scripts/index` and `/cft-ccd-find-feature` jump from product to clones without re-parsing the manifest.
+The workspace-relative paths to the constituent clones. The same paths appear in `workspace.yaml`. This list lets `scripts/index`, the `docs-generate` pipeline and its `confluence-augmenter` and `examples-curator` agents jump from product to clones without re-parsing the manifest.
 
 ## Worked examples
 

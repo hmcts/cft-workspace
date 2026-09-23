@@ -14,9 +14,9 @@ HMCTS services publish their OpenAPI specs to a central registry, [`hmcts/cnp-ap
 ## What's in the registry
 
 - **`platops/cnp-api-docs/docs/specs/*.json`** — ~180 OpenAPI spec files (mostly OpenAPI 3.x; a few legacy Swagger 2.0). One file per published API; some services publish several (e.g. `ccd-data-store-api` publishes four versioned variants).
-- **Hosted view** — the same files rendered at <https://hmcts.github.io/cnp-api-docs/>: a per-product page (`/products/<product>/`), a Swagger UI per spec (`/api/<service>/`), an architecture/dependency explorer (`/architecture/`), and a registry-health report (`/health/`) that buckets every spec as fresh, ageing, stale, unpublished, or never-published.
+- **Hosted view** — the same files rendered at <https://hmcts.github.io/cnp-api-docs/>: a per-product page (`/products/<product>/`), a page per spec (`/api/<spec filename without .json>/`), an architecture/dependency explorer (`/architecture/`), and a registry-health report (`/health/`) that buckets every spec as fresh, ageing, stale, unpublished, or never-published.
 
-Publishing a spec to `docs/specs/` is enough for it to appear — the site is built from that directory, and there are no Low Level Design pages to regenerate. What a spec can't express lives in the hand-maintained `registry.yaml`: product membership, dependency edges and prose descriptions. A service with no entry there is still published, but appears ungrouped and without dependency edges in the architecture explorer. Older bookmarks still resolve: `swagger.html?url=...` and `lld/<product>.html` redirect to the equivalent `/api/<service>/` or `/products/<product>/` page, as does `groups/<product>/`.
+Publishing a spec to `docs/specs/` is enough for it to appear — the site is built from that directory, and there are no Low Level Design pages to regenerate. What a spec can't express lives in the hand-maintained `registry.yaml`: product membership, dependency edges and prose descriptions. A service with no entry there is still published, but appears ungrouped and without dependency edges in the architecture explorer. Older bookmarks still resolve: `swagger.html?url=...` and `lld/<product>.html` redirect to the equivalent `/api/<spec>/` or `/products/<product>/` page, as does `groups/<product>/`.
 
 The local clone is kept current by `./scripts/sync platops/cnp-api-docs` and is non-destructive.
 
@@ -58,10 +58,11 @@ Each service repo owns its own publish pipeline. Three patterns are in use acros
 
    The publish token needs care because a **composite action cannot read the `secrets` context at all** — GitHub only exposes `secrets` to reusable workflows, so a composite action must receive a token as an explicit input or an ambient env var. This action reads the org-level `SWAGGER_PUBLISHER_API_TOKEN` from the environment by default (the reusable workflow sets it once as job-level `env`, so its callers pass no token), with an `api-token` input as an override for a different secret. If you call the composite action directly inside your own multi-step job instead of via the reusable workflow, keep the token on the action's input rather than job-level `env` — job-level `env` exposes it to every other step in that job, including a preceding `yarn install`/`./gradlew` that runs third-party lifecycle scripts.
 
-The hosted Swagger UI for any spec is:
+The hosted catalogue page for any spec is keyed by its filename in `docs/specs/`, not the service name. `ccd-data-store-api` publishes four specs, so it has four pages:
 
 ```
-https://hmcts.github.io/cnp-api-docs/api/<service-name>/
+https://hmcts.github.io/cnp-api-docs/api/<spec filename without .json>/
+# e.g. https://hmcts.github.io/cnp-api-docs/api/ccd-data-store-api.v2_internal/
 ```
 
 ## How the workspace links products to specs
@@ -87,8 +88,8 @@ Two read-only skills operate over the local clone. They never hit the network; r
 
 | Skill | What it does | Example |
 |---|---|---|
-| [`/cft-find-endpoint`](../../.claude/skills/cft-find-endpoint/SKILL.md) | Search every spec for a path pattern (optionally filtered by HTTP method). Returns the spec filename, methods, owning product, local file path, and hosted Swagger UI link. | `/cft-find-endpoint POST /cases/{caseId}/events` |
-| [`/cft-api-spec`](../../.claude/skills/cft-api-spec/SKILL.md) | Summarise one spec: title, version, OpenAPI version, server, endpoint count by tag, auth schemes, owning product, local file path, hosted UI link. | `/cft-api-spec pcs-api` |
+| [`/cft-find-endpoint`](../../.claude/skills/cft-find-endpoint/SKILL.md) | Search every spec for a path pattern (optionally filtered by HTTP method). Returns the spec filename, methods, owning product, local file path, and hosted catalogue page. | `/cft-find-endpoint POST /cases/{caseId}/events` |
+| [`/cft-api-spec`](../../.claude/skills/cft-api-spec/SKILL.md) | Summarise one spec: title, version, OpenAPI version, server, endpoint count by tag, auth schemes, owning product, local file path, hosted catalogue page. | `/cft-api-spec pcs-api` |
 
 For workspace-wide grep across spec contents (not just paths), `./scripts/grep <pattern> platops/cnp-api-docs/` works — the script's excludes don't touch JSON.
 

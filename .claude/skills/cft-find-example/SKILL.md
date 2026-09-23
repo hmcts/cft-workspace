@@ -40,7 +40,7 @@ Locate real implementations of a feature across the workspace and return file pa
    exemplar_dirs=$(awk '/^---[[:space:]]*$/{c++; if(c==2)exit; if(c>0)next} c==1{print}' \
        apps/<product>/CLAUDE.md | yq -r '.exemplar_dirs[]?')
    ```
-   - If non-empty, grep those paths first.
+   - If non-empty, grep those paths first. The command prints one directory per line; pass each one to `./scripts/grep` as a separate argument. An unquoted `$exemplar_dirs` stays one argument in zsh.
    - If empty or missing, fall through to grepping the whole `apps/<product>/` tree.
 
 4. **Build search terms.** Map common features to anchor patterns:
@@ -55,8 +55,8 @@ Locate real implementations of a feature across the workspace and return file pa
 
 5. **Grep, in this order**:
    ```bash
-   # Layer 1: curated exemplar_dirs (if any).
-   ./scripts/grep -l '<pattern>' <exemplar_dirs>
+   # Layer 1: curated exemplar_dirs (if any), one argument per directory.
+   ./scripts/grep -l '<pattern>' <exemplar_dir> [<exemplar_dir> …]
    # Layer 2: the rest of the product tree.
    ./scripts/grep -l '<pattern>' apps/<product>/
    ```
