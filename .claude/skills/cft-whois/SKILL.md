@@ -71,10 +71,6 @@ strangers who share the name. Prefer a login or work email when you have one.
 3. **If the name came out `unknown`**, say so plainly rather than guessing. It
    means the profile is blank *and* every sampled commit was authored under the
    bare login with a GitHub-private email. Suggest the fallbacks:
-   - the org-graph database in `apps/dtsse/dtsse-github-metrics` caches
-     `name`/`company`/`email` in `org_people.payload` for members who *have*
-     set them (roughly 344 of 778 at time of writing) — same source as the
-     profile, so it will not help a blank one, but it is worth a check;
    - a Slack/Confluence search for the login;
    - the teams the script *did* find usually identify the area even without a name.
 

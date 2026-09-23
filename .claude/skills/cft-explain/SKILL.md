@@ -21,7 +21,6 @@ Route the user's question to the right page across the workspace doc trees (`doc
 - The user wants a **how-to recipe** for a task ("how do I add an event") — use `/cft-how-to <task>`.
 - The user wants to **trace a specific CCD callback** through to a controller — use `/cft-ccd-trace-callback`.
 - The user wants to **find which products use a CCD feature** — use `/cft-ccd-find-feature`.
-- The user wants a **product tour** — use `/cft-tour <product>`.
 
 ## Procedure
 

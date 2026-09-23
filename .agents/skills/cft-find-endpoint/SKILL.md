@@ -1,6 +1,6 @@
 ---
 name: cft-find-endpoint
-description: Find which HMCTS API service exposes a given HTTP path. Searches cnp-api-docs for matching OpenAPI paths and reports the owning service, methods, local spec, hosted Swagger UI, and owning product. Use when the user asks which service has a path or endpoint.
+description: Find which HMCTS API service exposes a given HTTP path. Searches cnp-api-docs for matching OpenAPI paths and reports the owning service, methods, local spec, hosted API catalogue page, and owning product. Use when the user asks which service has a path or endpoint.
 ---
 
 # Shared workflow adapter

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Ripgrep wrapper that searches across all cloned repos with sensible CFT excludes.
 # Anything you'd pass to rg works — just `scripts/grep "Notice of Change"` etc.
+#
+# Paths after the pattern replace the default roots (apps libs platops), so
+# `scripts/grep -l foo docs/ apps/*/docs/` searches only the doc trees. Paths
+# are relative to the workspace root.
 
 source "$(dirname "$0")/lib/_common.sh"
 
@@ -8,7 +12,37 @@ command -v rg >/dev/null || die "ripgrep (rg) not installed"
 
 cd "$WORKSPACE_ROOT"
 
-# Search apps/ libs/ platops/ — never the workspace's own .git or scaffolding.
+# Find the positional arguments rg will read as paths: everything after the
+# pattern, skipping the values of options that take one. With -e / -f the
+# pattern comes from the option, so every positional is a path.
+has_pattern_opt=0
+positionals=()
+skip_next=0
+after_dashdash=0
+for arg in "$@"; do
+    if (( skip_next )); then skip_next=0; continue; fi
+    if (( after_dashdash )); then positionals+=("$arg"); continue; fi
+    case "$arg" in
+        --) after_dashdash=1 ;;
+        -e|--regexp|-f|--file) has_pattern_opt=1; skip_next=1 ;;
+        -e*|--regexp=*|-f?*|--file=*) has_pattern_opt=1 ;;
+        -t|-T|-g|-A|-B|-C|-m|-M|-j|-d|-E|-r|--type|--type-not|--glob|--iglob|--after-context|--before-context|--context|--max-count|--max-columns|--threads|--max-depth|--encoding|--replace|--type-add|--sort|--sortr|--max-filesize)
+            skip_next=1 ;;
+        -*) ;;
+        *) positionals+=("$arg") ;;
+    esac
+done
+
+if (( has_pattern_opt )); then
+    path_count=${#positionals[@]}
+else
+    path_count=$(( ${#positionals[@]} > 0 ? ${#positionals[@]} - 1 : 0 ))
+fi
+
+roots=()
+(( path_count > 0 )) || roots=(apps libs platops)
+
+# By default search apps/ libs/ platops/ — never the workspace's own .git or scaffolding.
 exec rg \
     --hidden \
     --glob '!**/.git' \
@@ -24,4 +58,4 @@ exec rg \
     --glob '!**/package-lock.json' \
     --glob '!**/gradle/wrapper/gradle-wrapper.jar' \
     "$@" \
-    apps libs platops 2>/dev/null
+    ${roots[@]+"${roots[@]}"} 2>/dev/null

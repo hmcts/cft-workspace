@@ -88,4 +88,4 @@ Keep to ≤5 examples unless the user asked for more. If the curated `exemplar_d
 - Don't dump entire files. Excerpts only.
 - Don't search build/test output dirs — `./scripts/grep` already excludes them.
 - Don't invent a feature name. If the keyword doesn't resolve, list known feature tokens from `docs/reference/taxonomy.md`.
-- Don't grep all clones blindly — start in `exemplar_dirs`, then the product tree. Use `/cft-cross-repo-search` only when the user explicitly wants a workspace-wide sweep.
+- Don't grep all clones blindly — start in `exemplar_dirs`, then the product tree. Search every clone (`./scripts/grep` with no path) only when the user explicitly wants a workspace-wide sweep.

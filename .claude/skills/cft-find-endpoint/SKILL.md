@@ -1,6 +1,6 @@
 ---
 name: cft-find-endpoint
-description: Find which HMCTS API service exposes a given HTTP path. Searches cnp-api-docs for matching OpenAPI paths and reports the owning service, methods, the local spec file, the hosted Swagger UI link and the workspace product that publishes it. Use when the user asks "which service has POST /cases/{id}/...", "what exposes /hearings", "where is /case-types defined", etc.
+description: Find which HMCTS API service exposes a given HTTP path. Searches cnp-api-docs for matching OpenAPI paths and reports the owning service, methods, the local spec file, the hosted API catalogue page and the workspace product that publishes it. Use when the user asks "which service has POST /cases/{id}/...", "what exposes /hearings", "where is /case-types defined", etc.
 ---
 
 # Find an API endpoint
@@ -40,18 +40,23 @@ Locate which HMCTS service exposes an HTTP path by searching the OpenAPI specs p
    }
    ```
 
-2. **Parse the input.** Split off an HTTP method (`GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS`) if present; the rest is the path pattern. Lowercase the method.
+2. **Parse the input.** Split off an HTTP method (`GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS`) if present; the rest is the path pattern. Lowercase the method, or leave it empty for any method.
 
-3. **Scan specs.** For each `platops/cnp-api-docs/docs/specs/*.json`:
+3. **Scan every spec in one `jq` pass.** One process over all the files takes well under a second; looping `yq` per spec and per path is slow enough to matter.
    ```bash
-   yq -p=json -o=json '.paths | keys | .[]' "$spec" 2>/dev/null
+   cd platops/cnp-api-docs/docs/specs
+   jq -r --arg p '<path-pattern>' --arg m '<method or empty>' '
+     input_filename as $f
+     | (.paths // {}) | to_entries[]
+     | select(.key | contains($p))
+     | .key as $path
+     | .value | to_entries[]
+     | select(.key | test("^(get|post|put|patch|delete|head|options)$"))
+     | select($m == "" or .key == $m)
+     | [$f, (.key | ascii_upcase), $path, (.value.summary // "")] | @tsv
+   ' *.json
    ```
-   Filter path keys whose string contains the pattern (case-sensitive — OpenAPI paths are case-sensitive). For each matching path, list the operations:
-   ```bash
-   yq -p=json -o=json ".paths[\"$path\"] | keys | .[]" "$spec"
-   ```
-   Skip non-HTTP keys (`parameters`, `summary`, `description`).
-   If a method filter was given, keep only matching operations.
+   Matching is case-sensitive, as OpenAPI paths are. A few published specs are empty files; `jq` skips them silently, which is correct.
 
 4. **Resolve the owning product.** Map the spec filename → workspace product by greping every `<product>/CLAUDE.md` for the spec filename in its `api_specs:` list:
    ```bash
@@ -63,7 +68,7 @@ Locate which HMCTS service exposes an HTTP path by searching the OpenAPI specs p
    - Spec filename + which product publishes it (or `(not in workspace)`).
    - Each matching path with its method(s) and (if available) the operation's `summary`.
    - Local file path: `platops/cnp-api-docs/docs/specs/<filename>`.
-   - Hosted Swagger UI link: `https://hmcts.github.io/cnp-api-docs/swagger.html?url=https://hmcts.github.io/cnp-api-docs/specs/<filename>`.
+   - Hosted catalogue page: `https://hmcts.github.io/cnp-api-docs/api/<filename without .json>/`.
 
 ## Output format
 
@@ -73,19 +78,19 @@ Found <N> match(es) for <method> <pattern>:
 1. ccd-data-store-api.v2_external.json  (product: apps/ccd)
      POST  /cases/{caseId}/events    — Submit an event for a case
    local: platops/cnp-api-docs/docs/specs/ccd-data-store-api.v2_external.json
-   docs:  https://hmcts.github.io/cnp-api-docs/swagger.html?url=https://hmcts.github.io/cnp-api-docs/specs/ccd-data-store-api.v2_external.json
+   docs:  https://hmcts.github.io/cnp-api-docs/api/ccd-data-store-api.v2_external/
 
-2. aac-manage-case-assignment.json  (product: apps/ccd)
-     POST  /cases/{caseId}/events    — Proxy to data store
+2. ccd-data-store-api.v1_external.json  (product: apps/ccd)
+     POST  /cases/{caseId}/events    — Submit an event for a case
    ...
 ```
 
 If there are many hits (>10), summarise: list the spec + path + method, but skip the operation summary and links.
 
-If there are zero hits:
+If there are zero hits, count the specs (`ls platops/cnp-api-docs/docs/specs/*.json | wc -l`) rather than quoting a number:
 
 ```
-No paths matching "<pattern>" found across 181 specs in platops/cnp-api-docs/docs/specs/.
+No paths matching "<pattern>" found across <count> specs in platops/cnp-api-docs/docs/specs/.
 
 Common reasons:
 - Try a shorter substring (e.g. "cases" instead of "/cases/{caseId}/events").
@@ -95,7 +100,7 @@ Common reasons:
 
 ## Don't
 
-- Don't read entire spec JSON files into your context — they can be megabytes. Use `yq -p=json` or `jq` to extract only what you need, one path at a time.
+- Don't read entire spec JSON files into your context — they can be megabytes. Extract only the fields you need with `jq`.
 - Don't auto-fetch specs from GitHub. Always use the local clone. If it's missing, tell the user to clone it.
-- Don't invent paths or guess. If `yq` returns nothing, report nothing.
+- Don't invent paths or guess. If `jq` returns nothing, report nothing.
 - Don't conflate `pcs-api.json`, `pcsAPI.json`, and `pcs-backend-api.json` — they are separate published files and may all match. Report each separately.
