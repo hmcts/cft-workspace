@@ -102,7 +102,7 @@ CLIENT_SECRET=$(az keyvault secret show \
   --vault-name "$PRODUCT-$ENV" --name "$SECRET_NAME" \
   --query value -o tsv)
 
-TOKEN=$(curl -s -X POST "https://idam-web-public.$ENV.platform.hmcts.net/o/token" \
+TOKEN=$(curl -sS -X POST "https://idam-web-public.$ENV.platform.hmcts.net/o/token" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   --data-urlencode 'grant_type=client_credentials' \
   --data-urlencode "client_id=$CLIENT_ID" \
@@ -124,7 +124,7 @@ this. Either works — client credentials avoids depending on another user's acc
 ### 2. Create the user
 
 ```bash
-curl -s -X POST "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/users" \
+curl -sS -X POST "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/users" \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{
@@ -153,7 +153,7 @@ The password you supplied is set and the account is activated immediately — th
 activation step for users created this way.
 
 ```bash
-curl -s -X POST "https://idam-web-public.$ENV.platform.hmcts.net/o/token" \
+curl -sS -X POST "https://idam-web-public.$ENV.platform.hmcts.net/o/token" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   --data-urlencode 'grant_type=password' \
   --data-urlencode "client_id=$CLIENT_ID" \
@@ -171,7 +171,7 @@ so it's safe to re-run.
 
 ```bash
 USER_ID=$(cat /proc/sys/kernel/random/uuid)
-curl -s -X PUT "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/users/$USER_ID" \
+curl -sS -X PUT "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/users/$USER_ID" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"password":"Pa55word11","user":{"email":"fixture-1@mailnesia.com","forename":"Fixture","surname":"One","roleNames":["caseworker"]}}'
 ```
@@ -184,12 +184,12 @@ does this — see [Worked examples](#worked-examples).
 
 ```bash
 # Create an IDAM role
-curl -s -X POST "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/roles" \
+curl -sS -X POST "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/roles" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"name":"my-new-role","description":"scratch role"}'
 
 # Register an OAuth client (service provider)
-curl -s -X POST "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/services" \
+curl -sS -X POST "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/services" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"clientId":"my-client","clientSecret":"...","redirectUris":["https://localhost:3000/oauth2/callback"],"scope":"openid profile roles"}'
 ```
@@ -205,7 +205,7 @@ IDAM user **and** the matching user profile, plus a caseworker profile when the 
 a caseworker.
 
 ```bash
-curl -s -X PUT "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/cft/users/$USER_ID" \
+curl -sS -X PUT "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/cft/users/$USER_ID" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"password":"Pa55word11","user":{"email":"doc-cw-1@justice.gov.uk","forename":"Case","surname":"Worker","roleNames":["caseworker"]}}'
 ```
@@ -220,8 +220,8 @@ curl -s -X PUT "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/cf
 Verify the profiles landed — a `200` from both means RD is populated:
 
 ```bash
-curl -s "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/rd/user-profiles/$USER_ID" -H "Authorization: Bearer $TOKEN"
-curl -s "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/rd/caseworker-profiles/$USER_ID" -H "Authorization: Bearer $TOKEN"
+curl -sS "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/rd/user-profiles/$USER_ID" -H "Authorization: Bearer $TOKEN"
+curl -sS "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/rd/caseworker-profiles/$USER_ID" -H "Authorization: Bearer $TOKEN"
 ```
 
 Which profiles get created is driven by role-name patterns in the service's
@@ -262,7 +262,7 @@ lifespan. It's rate-limited (1 token, refilled every 3 minutes) and strips "pois
 else.
 
 ```bash
-curl -s -X POST "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/burner/users" \
+curl -sS -X POST "https://idam-testing-support-api.$ENV.platform.hmcts.net/test/idam/burner/users" \
   -H 'Content-Type: application/json' \
   -d '{"password":"Pa55word11","user":{"email":"burn-1@mailnesia.com","forename":"B","surname":"U","roleNames":["citizen"]}}'
 ```

@@ -136,8 +136,8 @@ az keyvault secret list --vault-name "s2s-$ENV" -o tsv --query "[].name" | grep 
 
 **VPN required from here on.** Both `rpe-service-auth-provider` and `rd-professional-api` are
 only exposed on internal `*.service.core-compute-<env>.internal` hostnames — PRD's chart
-declares no public ingress. See [Connect via VPN](connect-via-vpn.md), and note the
-[devcontainer DNS gotcha](connect-via-vpn.md) if you're working inside the container and
+declares no public ingress. See [VPN](../tutorials/cnp-onboarding/person-vpn.md), and note the
+[devcontainer DNS gotcha](connect-to-a-nonprod-database.md#vpn-connected-after-the-devcontainer-started) if you're working inside the container and
 connected the VPN afterwards.
 
 ### 3. Create the organisation
