@@ -560,7 +560,12 @@ fi
 
 # This repo is public, so a pasted command line carrying a live token must not
 # reach a branch even though the harvester is told never to quote a transcript.
-if git -C "$WORKTREE" diff --unified=0 | rg -q \
+#
+# POSIX grep rather than rg on purpose. rg is not installed by default, and a
+# missing command here exits 127, which `if` reads as "no match" — so the gate
+# passed silently on any machine without it, which is the one failure this check
+# must never have.
+if git -C "$WORKTREE" diff --unified=0 | grep -Eq \
     -e 'eyJ[A-Za-z0-9_-]{20,}\.' \
     -e 'gh[pousr]_[A-Za-z0-9]{20,}' \
     -e 'AccountKey=' \
