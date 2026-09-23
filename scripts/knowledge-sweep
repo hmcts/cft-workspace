@@ -16,6 +16,10 @@
 #   scripts/knowledge-sweep --backfill     # work forward through unreviewed history
 #   scripts/knowledge-sweep --backfill --until-done   # repeat until history is exhausted
 #   scripts/knowledge-sweep --max-sessions=N          # override the per-run session cap
+#
+# Only the background sweep writes a log, to .claude/knowledge-sweep/sweep.log.
+# A foreground run prints to the terminal, so redirect it if you want to keep it:
+#   scripts/knowledge-sweep --backfill > .claude/knowledge-sweep/backfill.log 2>&1
 
 source "$(dirname "$0")/lib/_common.sh"
 

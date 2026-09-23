@@ -21,8 +21,9 @@
 #   2. environment variables (IDAM_PRODUCT/IDAM_CLIENT_ID/IDAM_SECRET_NAME)
 #   3. auto-detection of the secret name by listing the product's Key Vault
 #
-# Requires: az (logged in), curl, jq. No VPN needed — the testing-support API
-# is on public *.platform.hmcts.net ingress.
+# Requires: az (logged in), curl, jq, and the HMCTS VPN. Despite the public-looking
+# name, idam-testing-support-api.<env>.platform.hmcts.net resolves only over the
+# tunnel — a public resolver returns NXDOMAIN and the VPN returns an RFC1918 address.
 
 source "$(dirname "$0")/lib/_cft.sh"
 

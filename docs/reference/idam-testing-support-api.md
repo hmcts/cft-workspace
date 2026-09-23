@@ -55,8 +55,9 @@ sources_sha:
 https://idam-testing-support-api.<env>.platform.hmcts.net
 ```
 
-Available for `aat`, `demo`, `ithc`, `perftest`, `preview`, `sandbox`. Public ingress — no VPN
-required. Not deployed to prod.
+Available for `aat`, `demo`, `ithc`, `perftest`, `preview`, `sandbox`. **VPN required** — the
+hostname looks public but resolves only over the tunnel, to an RFC1918 address. Not deployed to
+prod.
 
 ## Endpoints
 
