@@ -15,6 +15,7 @@ sources:
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CaseCategory.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Tab.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/NoticeOfChange.java
+  - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/AnswerBuilder.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/AboutToSubmit.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Submitted.java
   - ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/MidEvent.java
@@ -431,6 +432,28 @@ Returned by `ConfigBuilder.noticeOfChange()`.
 | `aboutToSubmitCallback(AboutToSubmit<T,S>)` | NoC about-to-submit callback. |
 | `submittedCallback(Submitted<T,S>)` | NoC submitted callback. |
 | `build()` | Finalise the NoC configuration. |
+
+### `AnswerBuilder` — `answer` vs `answerAsDeclared`
+
+Inside a `challenge(...)`, each `question(...)` binds to a field path and a role. The two ways of
+naming that role are not interchangeable:
+
+| Method | Emits | Use for |
+|---|---|---|
+| `answer(role)` | `${path}:[ROLE]` — the role is auto-wrapped in brackets | a CCD case role, the historical default |
+| `answerAsDeclared(role)` | `${path}:role` — exactly as declared, no wrapping | a Group Access role such as `defendant-solicitor` |
+
+`answer` auto-brackets whatever it is given, so passing an unbracketed access-profile name through
+it produces `[defendant-solicitor]`, which matches neither an `OrganisationPolicy` nor a registered
+case role. An already-bracketed role is unaffected by either method.
+
+`answerAsDeclared` is only half of what an unbracketed role needs — the definition-store importer
+must also accept the resulting expression, and older versions reject anything whose role segment is
+not bracketed. Both sides have to be in place, in the environment doing the import.
+
+Whichever is used, the role must equal the `OrganisationPolicy.OrgPolicyCaseAssignedRole` on the
+case: `aac-manage-case-assignment` compares them as plain strings. See
+[Implement Notice of Change for a decentralised service](../how-to/implement-noc-decentralised.md#the-answer-role-and-orgpolicycaseassignedrole-are-one-decision-not-two).
 
 ---
 
