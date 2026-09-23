@@ -130,7 +130,9 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | payment | explanation | Pci Pal Telephony | telephony | `apps/payment/docs/explanation/pci-pal-telephony.md` |
 | payment | explanation | Reconciliation | reconciliation | `apps/payment/docs/explanation/reconciliation.md` |
 | payment | explanation | Refunds Flow | refunds | `apps/payment/docs/explanation/refunds-flow.md` |
+| pcs | explanation | Group Access and Notice of Change | group-access | `apps/pcs/docs/explanation/group-access-and-noc.md` |
 | pcs | explanation | Welsh Language and Wales Jurisdiction | welsh-language | `apps/pcs/docs/explanation/welsh-language-and-wales-jurisdiction.md` |
+| pcs | how-to | Test Notice of Change on a preview | group-access | `apps/pcs/docs/how-to/test-notice-of-change-on-a-preview.md` |
 | rd | how-to | Onboard Common Data | commondata | `apps/rd/docs/how-to/onboard-common-data.md` |
 | rd | how-to | Query Reference Data | overview | `apps/rd/docs/how-to/query-reference-data.md` |
 | rd | how-to | Register As S2s Caller | architecture | `apps/rd/docs/how-to/register-as-s2s-caller.md` |

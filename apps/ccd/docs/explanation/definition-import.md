@@ -118,6 +118,10 @@ CSRF is intentionally not applied to `/import` (`app.ts:87`).
 
 **Pipeline flow.** The Jenkins **High Level Data Setup** stage (Java/Node/Angular `preview`/`master`/`demo`/`ithc`/`perftest` builds) loads `DEFINITION_IMPORTER_USERNAME`/`DEFINITION_IMPORTER_PASSWORD` from the product Key Vault, fetches an IDAM token, and POSTs the spreadsheet to `${DEFINITION_STORE_URL_BASE}/import` (or via the gateway). BEFTA's tooling can fill in environment-specific callback URLs in JSON definitions before converting them to xlsx.
 
+**Which store receives it is not the same per branch, and it decides when you can merge.** A preview deploys its own CCD stack, so `values.ccd.preview.template.yaml` can pin `ccd-definition-store-api` to any image — including one built from an unmerged PR. `onMaster` cannot: `DEFINITION_STORE_URL_BASE` points at the shared per-environment store (`ccd-definition-store-api-aat.service.core-compute-aat.internal`), which is whatever version is deployed there.
+
+So a definition that relies on a **new importer behaviour** imports cleanly on a preview and fails the moment it reaches master, with the importer's own validation message rather than anything naming the cause. When a service's definition depends on a definition-store change, the gate is that the change is **deployed to the shared environment**, not that its PR is merged — sequence the service PR behind the deployment, not behind the merge.
+
 ### 2. Ingestion in ccd-definition-store-api
 
 `ImportController.processUpload()` (`ImportController.java:62`) receives the multipart POST at `POST /import`. Optional query params `reindex` (bool, default `false`) and `deleteOldIndex` (bool, default `false`) control Elasticsearch behaviour.

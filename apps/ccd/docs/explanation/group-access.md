@@ -202,6 +202,10 @@ One row per role granted under an access type. Maps to `AccessTypeRoleEntity`.
 
 Both sheets are **optional** and are parsed only after `RoleToAccessProfiles` in the import pipeline (`ImportServiceImpl.java:330`), and only when the feature flag is on (`ImportServiceImpl.java:412`). `AccessType` is parsed first; the resulting entities plus the already-parsed `RoleToAccessProfiles` entities are passed into the `AccessTypeRole` parse step (`ImportServiceImpl.java:430`). If `enable-case-group-access-filtering` is `false` (the default), both sheets are silently skipped even when present in the spreadsheet.
 
+**`caseAssignedRoleField` and `groupRoleName` may be the same value.** Nothing requires the NoC-facing role to differ from the group role — the worked example above uses `applicant-solicitor` and `applicant-solicitor-all-cases` because that service chose to, not because the shape demands it. Setting both to the group role means the `OrganisationPolicy` on the case names it too, and Notice of Change can key its challenge question on the group role directly.
+
+That matters when a service is retiring per-case solicitor roles. The usual reason a bracketed case role such as `[DEFENDANTSOLICITOR]` survives a Group Access migration is not that anything still grants through it — it is that NoC needed *some* role to name, and both the SDK and the definition-store importer historically required that role to be bracketed. Once neither does, the case role can be deleted rather than kept registered with zero grants. See [Implement Notice of Change for a decentralised service](../how-to/implement-noc-decentralised.md#using-a-group-access-role-instead-of-a-case-role).
+
 ## GroupAccessEnabled
 
 `GroupAccessEnabled` is a boolean on each `AccessTypeRole` row. Definition-store stores it (`AccessTypeRoleEntity.java:60`) and serves it verbatim via `POST /retrieve-access-types` (`AccessTypeRoleResult.groupAccessEnabled`), but **does not branch on it** beyond one import-time rule:
