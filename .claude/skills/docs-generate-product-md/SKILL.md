@@ -1,6 +1,6 @@
 ---
 name: docs-generate-product-md
-description: Regenerate product-level CLAUDE.md files and refresh INDEX.md. Fans out the product-analyser subagent across every product directory in the workspace, then runs ./scripts/index. Use when the user asks to populate, refresh, or re-run the workspace taxonomy, asks "what's in the workspace?", or when INDEX.md looks stale — and as the first step to make /cft-ccd-find-feature, /cft-list-integrations, and /cft-tour useful.
+description: Regenerate product-level CLAUDE.md files and refresh INDEX.md. Fans out the product-analyser subagent across every product directory in the workspace, then runs ./scripts/index. Use when the user asks to populate, refresh, or re-run the workspace taxonomy, asks "what's in the workspace?", or when INDEX.md looks stale — and as the first step to make /cft-ccd-find-feature and /cft-list-integrations useful.
 ---
 
 # Generate product CLAUDE.md
@@ -32,7 +32,10 @@ The taxonomy schema is defined in `docs/reference/taxonomy.md`. The `product-ana
    ```
 
 2. **Fan out subagents**
-   For each target product, spawn one `product-analyser` Agent in parallel. Cap parallelism at ~5 — each subagent spawns its own tool calls and the layer multiplies fast. The Agent's `subagent_type` is `product-analyser`. The prompt is a single line: the absolute path to the product directory (`/workspaces/hmcts/<product>`).
+   For each target product, spawn one `product-analyser` Agent in parallel. Cap parallelism at ~5 — each subagent spawns its own tool calls and the layer multiplies fast. The Agent's `subagent_type` is `product-analyser`. The prompt is a single line: the absolute path to the product directory, `<workspace-root>/<product>`. Find the workspace root as the nearest directory holding `workspace.yaml`. `git rev-parse --show-toplevel` is wrong here because every clone is its own git repo, so it returns the clone when the shell's cwd is inside one:
+   ```bash
+   root=$PWD; until [ -f "$root/workspace.yaml" ] || [ "$root" = / ]; do root=$(dirname "$root"); done
+   ```
 
    Each subagent reads its product's clones (READMEs, build files, application config, CCD definitions) and writes one `CLAUDE.md` at `<product>/CLAUDE.md`. It does **not** edit anything inside a clone, and does not commit.
 

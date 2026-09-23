@@ -61,7 +61,7 @@ Start your preferred client from the workspace root. In Claude Code, try one of:
 
 ```
 /repo-doctor
-/cft-tour ccd
+/cft-explain callbacks
 /cft-ccd-find-feature notice_of_change
 /cft-list-integrations work_allocation
 ```
@@ -70,7 +70,7 @@ In Codex, invoke the equivalent skills with `$`:
 
 ```
 $repo-doctor
-$cft-tour ccd
+$cft-explain callbacks
 $cft-ccd-find-feature notice_of_change
 $cft-list-integrations work_allocation
 ```

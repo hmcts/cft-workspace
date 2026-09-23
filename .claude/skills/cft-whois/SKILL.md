@@ -17,7 +17,7 @@ Resolve an HMCTS GitHub login to a real person — or a person to their login �
 
 ## When NOT to use
 
-- For *repository* ownership rather than a person — that's `RepositoryOwnership` in the metrics app, or `INDEX.md` for products.
+- For *repository* ownership rather than a person — that's `RepositoryOwnership` in `apps/dtsse/dtsse-github-metrics`, or `INDEX.md` for products.
 - For what a service exposes — `/cft-api-spec`, `/cft-find-endpoint`.
 
 ## The key fact about this lookup
@@ -71,10 +71,11 @@ strangers who share the name. Prefer a login or work email when you have one.
 3. **If the name came out `unknown`**, say so plainly rather than guessing. It
    means the profile is blank *and* every sampled commit was authored under the
    bare login with a GitHub-private email. Suggest the fallbacks:
-   - the org-graph database in `apps/dtsse/dtsse-github-metrics` caches
-     `name`/`company`/`email` in `org_people.payload` for members who *have*
-     set them (roughly 344 of 778 at time of writing) — same source as the
-     profile, so it will not help a blank one, but it is worth a check;
+   - the org-graph database behind `apps/dtsse/dtsse-github-metrics` stores
+     each member's Entra SSO display name in `org_people.payload.displayName`,
+     read through the GitHub App's SAML/SCIM identity mapping. A user token
+     can't see that mapping, so the database can name someone whose profile is
+     blank;
    - a Slack/Confluence search for the login;
    - the teams the script *did* find usually identify the area even without a name.
 
@@ -113,7 +114,7 @@ their team memberships are likely private to your token rather than absent.
 - Don't fall back to scraping github.com HTML — if the API says nothing, say nothing.
 - Don't hit the search API in a loop across many logins; it is rate-limited to
   30 requests/minute and one lookup already spends three. For bulk questions,
-  query `org_people` / `org_team_memberships` in the metrics database instead.
+  query `org_people` / `org_team_memberships` in the `apps/dtsse/dtsse-github-metrics` database instead.
 - Don't treat a `justice.gov.uk` address as proof of civil-service employment —
   contractors get one too. The supplier domain is the better employer signal.
 - Don't report the derived name as certain when `name_source` is
