@@ -236,7 +236,10 @@ if [[ $UNTIL_DONE -eq 1 ]]; then
 fi
 
 if [[ $BACKGROUND -eq 1 ]]; then
-    nohup "$0" ${FORCE:+--force} >> "$LOG" 2>&1 &
+    relaunch=()
+    (( FORCE )) && relaunch+=(--force)
+    (( DRY_RUN )) && relaunch+=(--dry-run)
+    nohup "$0" ${relaunch[@]+"${relaunch[@]}"} >> "$LOG" 2>&1 &
     exit 0
 fi
 
@@ -481,10 +484,11 @@ fi
 # The harvester takes its API route from the launching session's environment,
 # which can point it at an endpoint it holds no credentials for. Probe before
 # building the worktree, and defer the batch the same way as a gh outage.
+# Unpersisted, or the next sweep would review the probe's own transcript.
 if (( HARVEST_IS_CLAUDE )); then
     set +e
     probe=$(cd "$WORKSPACE_ROOT" && KNOWLEDGE_SWEEP_CHILD=1 \
-        claude -p --model "$MODEL" 'Reply with the single word ok.' </dev/null 2>&1)
+        claude -p --no-session-persistence --model "$MODEL" 'Reply with the single word ok.' </dev/null 2>&1)
     probe_status=$?
     set -e
     if (( probe_status != 0 )); then
@@ -558,30 +562,13 @@ if (( model_status != 0 )); then
     exit 1
 fi
 
-# This repo is public, so a pasted command line carrying a live token must not
-# reach a branch even though the harvester is told never to quote a transcript.
-#
-# POSIX grep rather than rg on purpose. rg is not installed by default, and a
-# missing command here exits 127, which `if` reads as "no match" — so the gate
-# passed silently on any machine without it, which is the one failure this check
-# must never have.
-if git -C "$WORKTREE" diff --unified=0 | grep -Eq \
-    -e 'eyJ[A-Za-z0-9_-]{20,}\.' \
-    -e 'gh[pousr]_[A-Za-z0-9]{20,}' \
-    -e 'AccountKey=' \
-    -e 'BEGIN (RSA|EC|OPENSSH|PRIVATE) ' \
-    -e '(client_secret|api[_-]?key|password)["'\'':= ]+[A-Za-z0-9/+_-]{16,}'; then
-    err "secret-shaped string in proposed diff — discarding branch $BRANCH"
-    cleanup_worktree
-    git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
-    # Deliberately no commit_ledger: advancing here would mark the window
-    # reviewed while throwing its content away, so it could never be revisited.
-    # A backfill will stop on the no-progress guard if the block persists, which
-    # is the right outcome — it needs a human, not a silent skip.
-    exit 1
-fi
+summary_text="(no summary written)"
+[[ -s "$SUMMARY" ]] && summary_text=$(cat "$SUMMARY")
+rm -f "$SUMMARY"
 
-if [[ -z "$(git -C "$WORKTREE" status --porcelain)" ]]; then
+git -C "$WORKTREE" add -A
+
+if git -C "$WORKTREE" diff --cached --quiet; then
     log "$(date '+%F %T') reviewed $sessions_reviewed session(s), no documentation changes proposed"
     cleanup_worktree
     git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
@@ -589,11 +576,39 @@ if [[ -z "$(git -C "$WORKTREE" status --porcelain)" ]]; then
     exit 0
 fi
 
-summary_text="(no summary written)"
-[[ -s "$SUMMARY" ]] && summary_text=$(cat "$SUMMARY")
-rm -f "$SUMMARY"
+discard_proposal() {
+    err "$1 — discarding branch $BRANCH"
+    cleanup_worktree
+    git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
+    # Deliberately no commit_ledger: advancing here would mark the window
+    # reviewed while throwing its content away, so it could never be revisited.
+    # A backfill will stop on the no-progress guard if the block persists, which
+    # is the right outcome — it needs a human, not a silent skip.
+    exit 1
+}
 
-git -C "$WORKTREE" add -A
+# This repo is public. The summary is published as the commit message, PR body
+# and PR comment, so it is scanned with the staged diff. From a file, not a pipe:
+# grep -q exiting early SIGPIPEs the writer and pipefail hides the match. Any
+# status but 1 blocks. LC_ALL=C so an invalid byte can't hide a line.
+SCAN="$WORK/secret-scan.txt"
+git -C "$WORKTREE" diff --cached --no-ext-diff --no-textconv --unified=0 > "$SCAN" \
+    || discard_proposal "could not build the diff to scan"
+printf '%s\n' "$summary_text" >> "$SCAN"
+scan_status=0
+LC_ALL=C grep -Eq \
+    -e 'eyJ[A-Za-z0-9_-]{20,}\.' \
+    -e 'gh[pousr]_[A-Za-z0-9]{20,}' \
+    -e 'AccountKey=' \
+    -e 'BEGIN (RSA|EC|OPENSSH|PRIVATE) ' \
+    -e '(client_secret|api[_-]?key|password)["'\'':= ]+[A-Za-z0-9/+_-]{16,}' \
+    "$SCAN" || scan_status=$?
+case $scan_status in
+    1) ;;
+    0) discard_proposal "secret-shaped string in proposed changes" ;;
+    *) discard_proposal "secret scan failed (grep exit $scan_status)" ;;
+esac
+
 git -C "$WORKTREE" commit --quiet -m "docs: knowledge sweep $(date +%F)" \
     -m "Proposed from $sessions_reviewed reviewed session(s) by scripts/knowledge-sweep. Unreviewed — verify before merging." \
     -m "$summary_text"
