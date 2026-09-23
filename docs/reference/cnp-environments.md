@@ -51,6 +51,7 @@ Verified 2026-09-16 for `pcs` (`pcs-perftest`, `pcs-ithc`, `pcs-data-perftest`, 
 - If a service resource group appears to be "not found", check the subscription before assuming a permissions problem — for non-prod shared infrastructure it is usually `DCD-CNP-QA` / `DCD-CNP-DEV` rather than `DCD-CFTAPPS-<ENV>`.
 - Read access to a subscription's platform resource groups does **not** imply read access to app-team resource groups (e.g. `pcs-prod`, `ccd-shared-aat`, `rpe-service-auth-provider-aat`). Once you are sure you are in the right subscription, a "not found" is more likely a permissions boundary than a missing resource — confirm with someone who has app-team access rather than assuming the resource is absent.
 - `az monitor app-insights query` defaults to a 1-hour lookback window, which is ANDed with any explicit `timestamp between (...)` filter in the KQL itself. A query for an older time range silently returns zero rows instead of erroring, which reads like missing data or expired retention rather than a query bug — pass `--offset` (e.g. `--offset 30d`) to widen the window.
+- The `environment` Azure tag groups PTL in with Prod — both carry `environment=production`. A Resource Graph query filtered on that tag to find production AKS clusters also returns PTL's cluster; filter by cluster name (`cft-prod-*` vs `cft-ptl-*`) rather than by this tag alone when the distinction matters.
 
 ## Extending a service principal to a new environment
 

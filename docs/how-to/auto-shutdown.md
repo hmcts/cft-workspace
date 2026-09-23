@@ -42,6 +42,8 @@ This manual job will start or stop the below resources for a specific environmen
 
 This job selects resources by Azure tag (business area and environment), not by name. For example, running a Postgres Flexible Server stop/start for `CFT` + `Preview` acts on every shared preview flexible server carrying those tags — across every product in that environment — not just the one you're trying to fix. Check with `#platops-help` before using this to restart a single stuck server outside its own resource-specific tooling.
 
+A green workflow run does not guarantee the resource actually started. The underlying start script swallows `az` errors, so dispatching a start while the environment's nightly auto-shutdown is still mid-stop causes Azure to reject the start — the workflow still reports success, and the cluster stays stopped. Confirm the real power state directly (e.g. `az aks show -n <cluster> -g <resource-group> --query powerState.code`) rather than trusting the run's conclusion, especially if you dispatch close to the scheduled shutdown or start times.
+
 ### Skip shutdown functionality
 In the event that an environment or environments are needed outside of the default hours, you can raise a request to automatically exclude it from the shutdown schedule.
 You can view more details in the auto-shutdown [README](https://github.com/hmcts/auto-shutdown/blob/master/README.md)

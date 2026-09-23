@@ -323,6 +323,8 @@ Role assignments expire naturally when `endTime` passes — they are no longer r
 
 This keeps the live table compact and query-performant, while preserving a full audit trail in history.
 
+Case-level assignments typically have no `endTime`, so this expiry batch never catches them — they leave the live table only through explicit deletion, most commonly via `ccd_case_disposer` when the case itself is disposed. If a case is never disposed, its role-assignment rows persist indefinitely. Because `GET /am/role-assignments/actors/{actorId}` latency scales with how many live rows an actor holds, an automation or test account that keeps creating cases without those cases ever being disposed can accumulate a large number of rows over time, and every access-control check for that actor — in data store, XUI and WA alike — measurably slows down as a result. Periodically retiring or rotating such accounts is the practical mitigation.
+
 ## Deletion
 
 Explicit deletion (before natural expiry) follows a similar pattern to creation:
