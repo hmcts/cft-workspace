@@ -272,6 +272,10 @@ For history, Container Insights (`oms_agent`) is only enabled on perftest and pr
 
 Every pod reaches `condition met`, then the pipeline's startup checker fails anyway with no HTTP status logged, just a private-DNS record for the PR's hostname being created seconds before the check runs (`the resource record '...' does not exist` followed immediately by `Registering DNS for ... with ttl = 300`). This is a DNS-propagation race, not an application problem — the checker (from the shared `cnp-jenkins-library`) can hit the hostname before the new A record has propagated, and its retry budget isn't reliable against a cold record (it may log only one attempt before giving up). Retriggering the build is the practical fix; re-reading the app logs as the checker's error message suggests will not show anything, since the app was never unhealthy.
 
+### A destructive migration survives a rolled-back deploy
+
+A Flyway migration runs and commits the moment the new pod boots, before the deploy's own health/smoke gate has passed. If that migration is destructive (a `DROP TABLE`/column) and the deploy then fails its gate and gets rolled back to the previous image, Kubernetes only swaps the container back — it does not reverse the migration. The database ends up ahead of the running app's migration version, and the old code faults or misbehaves against the now-missing schema. Recovery is to roll the app **forward** to the build that contains the migration, not back to the pre-migration image, since Flyway won't recreate what was dropped.
+
 ### ACR tag dates are not build times
 
 `createdTime`/`lastUpdateTime` from `az acr manifest list-metadata` record when a tag was last pointed at a manifest, so re-pushing `:latest` updates them without a new build. To date the code in a running pod, read file timestamps inside the container instead.
