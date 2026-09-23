@@ -26,7 +26,7 @@ Given an event-id and a service, follow the callback URL from where it's declare
 
 1. **Detect the definition style for the service.**
    - SDK (ccd-config-generator) — most service-team Java repos (nfdiv, civil, sptribs, adoption, pcs, finrem, prl, sscs, et, …):
-     - `rg -l "implements CCDConfig" apps/<service>/` returns ≥1 hit.
+     - `./scripts/grep -l "implements CCDConfig" apps/<service>/` returns ≥1 hit.
    - JSON — e.g. probate, iac, and similar legacy services:
      - `find apps/<service> -path '*/definitions/*/CaseEvent.json'` returns hits.
    - If both look present, the SDK is the source of truth — JSON files in an SDK repo are usually generated artefacts.
@@ -35,8 +35,8 @@ Given an event-id and a service, follow the callback URL from where it's declare
 
    **SDK style** — the event lives in its own class implementing `CCDConfig<CaseData, State, UserRole>`, typically under `…/event/<EventName>.java`. Inside its `configure(...)` method it calls `configBuilder.event("<event-id>")` (often via a constant whose string value matches):
    ```
-   rg -n 'configBuilder\.event\("<event-id>"\)' apps/<service>/
-   rg -n '= *"<event-id>"' apps/<service>/      # if declared via a constant
+   ./scripts/grep -n 'configBuilder\.event\("<event-id>"\)' apps/<service>/
+   ./scripts/grep -n '= *"<event-id>"' apps/<service>/      # if declared via a constant
    ```
    Then locate `.event(<CONSTANT>)` on the result. The case-type class (the class implementing `CCDConfig<CaseData, State, UserRole>` near the top of the package — e.g. `…/ccd/CaseType.java`, `…/ciccase/<Domain>.java`, `…/divorcecase/NoFaultDivorce.java`) is useful context but not required to trace a single event. Class names are domain-specific — there is no fixed suffix like `*Definitions.java`.
 

@@ -33,7 +33,7 @@ For **organisations and their users**, use `/cft-manage-test-org` instead.
 2. **Resolve `-p` (product) and `--client-id`.** The script auto-detects the Key Vault secret. If
    the product isn't obvious from the request or cwd, ask; don't reuse another product's values.
    ```bash
-   ./scripts/grep -n "client_id\|idam-secret\|IDAM_CLIENT" apps/<product>/<repo>/ | head -20
+   ./scripts/grep -n "client_id|idam-secret|IDAM_CLIENT" apps/<product>/<repo>/ | head -20
    ```
 
 3. **State the cleanup consequence before creating anything.** AAT deletes test data after ~3h;

@@ -40,8 +40,8 @@ To create a case in the first place, use `/pcs:create-case`.
   `link-defendant-solicitor-to-party`, then mint that solicitor's token. That link endpoint is
   the one place a feature flag is enforced server-side and returns `412` unless both
   `release-1.2-enabled` and `cui-respond-to-claim-lr-enabled` are on.
-- **Case links** — `createCaseLink` returns a 500 from pcs-api's `/ccd-persistence/cases`
-  callback for every payload tried, down to a minimal
+- **Case links** — as of September 2026, `createCaseLink` returns a 500 from pcs-api's
+  `/ccd-persistence/cases` callback for every payload tried, down to a minimal
   `{caseLinks:[{value:{caseReference}}]}`, so it is broken server-side rather than a payload
   to get right. Sending `LinkedCasesComponentLauncher` instead fails earlier inside CCD with
   "No validator found for ComponentLauncher". `inspect` reports the link count; nothing here
@@ -60,7 +60,7 @@ To create a case in the first place, use `/pcs:create-case`.
   AM role there, so it cannot even read a case (CCD answers 404). `inspect`, `pay`,
   `set-state` and the hearing operations all depend on it. `add-note` (CTSC), `flags`,
   `roles` and the S2S-only reads still work. This is role provisioning, not feature flags —
-  verified identical flag values in aat, demo, perftest and ithc.
+  flag values were identical in aat, demo, perftest and ithc when checked in September 2026.
 - **Production** — the script refuses.
 
 ## Procedure
@@ -84,8 +84,8 @@ To create a case in the first place, use `/pcs:create-case`.
    ```bash
    ${CLAUDE_PLUGIN_ROOT}/scripts/manage-case demo 1712-3456-7890-1234 flags
    ```
-   Reach for it before assuming a flag is the cause — as of the last check all five were on
-   in every non-prod environment, and the real differences were in AM role provisioning.
+   Reach for it before assuming a flag is the cause — when checked in September 2026 all five
+   were on in every non-prod environment, and the real differences were in AM role provisioning.
 
 3. **Resolve the environment and the case reference from `$ARGUMENTS`.** The reference is
    accepted with or without dashes. If the environment is missing, ask — these operations

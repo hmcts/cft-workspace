@@ -5,7 +5,7 @@ description: Detect documentation drift across the workspace. Three modes — so
 
 # Doc drift
 
-Reports drift between the workspace's documentation and its authoritative sources. Replaces the old `/docs-ccd-drift` (source-citation only) and `/docs-hmcts-way-drift` (port-manifest only) skills with a single dispatcher.
+Reports drift between the workspace's documentation and its authoritative sources.
 
 A page can declare its authoritative source in three ways. The skill checks each that applies:
 
@@ -14,6 +14,18 @@ A page can declare its authoritative source in three ways. The skill checks each
 | `sources:` list in frontmatter | source-citation | git SHA of each cited source file vs `sources_sha:` map (reported as `unpinned` if no recorded SHA) |
 | Listed in `docs/.port-manifest.yaml` | port-manifest | `git log <synced_sha>..HEAD -- <upstream-source>` against `platops/hmcts.github.io` |
 | `confluence:` array in frontmatter | Confluence-revision | Current Confluence page version via MCP vs the entry's cached `version` / `last_modified` |
+
+## When to use
+
+- The user asks about doc freshness, refresh, or sync.
+- After a `./scripts/sync` pulls new commits into source repos.
+- After a deliberate `git -C platops/hmcts.github.io pull`.
+- Periodically as maintenance.
+
+## When NOT to use
+
+- Single-page edits that don't touch ported content or `sources:`. The drift modes only catch upstream changes.
+- The upstream / source clones aren't present (clean workspace before bootstrap). Port mode bails early; source mode reports `broken` for unresolvable repos.
 
 ## How to invoke
 
@@ -53,7 +65,7 @@ actually accurate, or you'll pin a baseline over real drift. It rewrites frontma
 page bodies are copied verbatim. Pages with unresolvable citations are skipped and listed
 for hand-fixing rather than pinned.
 
-The first three modes are run by `scripts/doc-drift`. The Confluence mode is split: the script lists the candidate pages (with their `confluence_checked_at:` timestamps), and this skill iterates them, comparing the current revision of each cached page ID.
+`scripts/doc-drift` runs the port and source modes in full. For the Confluence mode it only lists the candidate pages (with their `confluence_checked_at:` timestamps); this skill then iterates them, comparing the current revision of each cached page ID.
 
 > **Cached IDs predating the Cloud move are dead.** Confluence now lives on `hmcts.atlassian.net`, which reassigned every page ID during migration. A `confluence:` entry carrying a `tools.hmcts.net`-era ID resolves to a 404 no matter what the page's state is, and the title often changed too. Report those as `confluence-restale` (see below) rather than `confluence-removed` — the fix is re-augmentation, not human triage.
 
@@ -109,21 +121,9 @@ End with one of:
 
 The script exits non-zero when there's actionable drift in port or source modes. The skill should pass that through — if the user is calling `/docs-drift` in CI or a hook, a non-zero exit means "something to do".
 
-## When to use
-
-- The user asks about doc freshness, refresh, or sync.
-- After a `./scripts/sync` pulls new commits into source repos.
-- After a deliberate `git -C platops/hmcts.github.io pull`.
-- Periodically as maintenance.
-
-## When NOT to use
-
-- Single-page edits that don't touch ported content or `sources:`. The drift modes only catch upstream changes.
-- The upstream / source clones aren't present (clean workspace before bootstrap). Port mode bails early; source mode reports `broken` for unresolvable repos.
-
 ## Don't
 
 - Don't fix drift here — only report it. Fixes go through `/docs-generate` (e.g. `--rephase synth` or `--rephase confluence`).
 - Don't write to Confluence. The hosted Atlassian MCP grant is read-write, so nothing stops you but this rule — use read operations only (`searchConfluence`, `getConfluenceContent`, `executeRead`).
 - Don't follow links to non-cited sources. The contract is that `sources:` is the page's verifiable surface.
-- Don't try to refresh ported pages automatically — they need hand-fixing for link/image churn (see `scripts/port-page` and the manual-fixes notes that used to live in `/docs-hmcts-way-drift`'s "How to act on the report" section).
+- Don't try to refresh ported pages automatically — they need hand-fixing for link/image churn. Follow the refresh steps in the `docs/.port-manifest.yaml` header and respect the entry's `notes:`. `scripts/port-page` overwrites the target page: it drops the Diátaxis frontmatter (`title`, `topic`, `diataxis`, `product`, `audience`) and any local edits, so port to a scratch path and merge the upstream changes into the existing page by hand. Then bump the entry's `synced_sha`, or the page keeps reporting `needs-update`.
