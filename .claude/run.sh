@@ -14,7 +14,7 @@ export AWS_REGION=eu-west-2
 export ANTHROPIC_BEDROCK_BASE_URL=https://ai-gateway.sandbox.platform.hmcts.net/ai/platform/v1/bedrock
 export ANTHROPIC_CUSTOM_HEADERS="Ocp-Apim-Subscription-Key: $KEY"
 export ANTHROPIC_DEFAULT_HAIKU_MODEL='eu.anthropic.claude-haiku-4-5-20251001-v1:0'
-export ANTHROPIC_DEFAULT_OPUS_MODEL='eu.anthropic.claude-opus-5[1m]'
+export ANTHROPIC_DEFAULT_OPUS_MODEL='eu.anthropic.claude-opus-5-5[1m]'
 export ANTHROPIC_DEFAULT_SONNET_MODEL='eu.anthropic.claude-sonnet-5[1m]'
 
 exec claude --settings $SCRIPT_DIR/cnp.settings.json --dangerously-skip-permissions "$@"
