@@ -333,7 +333,11 @@ digest_slice() {
 }
 
 sessions_reviewed=0
-declare -A new_offsets=()
+# Tab-separated "sid<TAB>offset" lines rather than an associative array: macOS
+# ships bash 3.2, where `declare -A` is not a syntax error but a runtime one, so
+# every write lands in nothing and the sweep silently reviews no sessions.
+# Duplicate ids are harmless — commit_ledger replays them in order, last wins.
+new_offsets=""
 
 while IFS= read -r transcript; do
     (( sessions_reviewed >= MAX_SESSIONS )) && break
@@ -390,7 +394,9 @@ while IFS= read -r transcript; do
 
         next_offset=$(( offset + consumed ))
         head -c "$consumed" "$raw" | digest_slice > "$slice"
-        truncated=" (backfill: bytes $offset–$next_offset of $size)"
+        # Braces are load-bearing: bash 3.2 folds the en-dash's UTF-8 bytes into
+        # the preceding name, looks up "offset<dash>", and set -u aborts the run.
+        truncated=" (backfill: bytes ${offset}–${next_offset} of ${size})"
     else
         # Forward sweeping favours recent activity; a session that grew faster
         # than the cap loses its middle, so say so rather than failing quietly.
@@ -407,7 +413,8 @@ while IFS= read -r transcript; do
         # extraction doesn't understand this client's transcript format. Say so
         # — otherwise the offset advances and the history is silently consumed.
         warn "$sid: $(( next_offset - offset ))B of new transcript produced no readable turns"
-        new_offsets[$sid]=$next_offset
+        new_offsets="${new_offsets}${sid}	${next_offset}
+"
         continue
     fi
 
@@ -417,7 +424,8 @@ while IFS= read -r transcript; do
         cat "$slice"
     } >> "$DIGEST"
 
-    new_offsets[$sid]=$next_offset
+    new_offsets="${new_offsets}${sid}	${next_offset}
+"
     sessions_reviewed=$(( sessions_reviewed + 1 ))
 
     if (( $(file_size "$DIGEST") > MAX_DIGEST_BYTES )); then
@@ -431,12 +439,13 @@ done < <(list_transcripts)
 commit_ledger() {
     local tmp="$WORK/ledger.json"
     cp "$LEDGER" "$tmp"
-    for sid in "${!new_offsets[@]}"; do
-        jq --arg s "$sid" --argjson o "${new_offsets[$sid]}" \
+    while IFS="$(printf '\t')" read -r sid off; do
+        [[ -n "$sid" ]] || continue
+        jq --arg s "$sid" --argjson o "$off" \
            --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
            '.[$s] = {offset: $o, reviewed_at: $t}' "$tmp" > "$tmp.next"
         mv "$tmp.next" "$tmp"
-    done
+    done <<< "$new_offsets"
     mv "$tmp" "$LEDGER"
 }
 
