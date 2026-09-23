@@ -17,8 +17,9 @@
 #   scripts/knowledge-sweep --backfill --until-done   # repeat until history is exhausted
 #   scripts/knowledge-sweep --max-sessions=N          # override the per-run session cap
 #
-# Only the background sweep writes a log, to .claude/knowledge-sweep/sweep.log.
-# A foreground run prints to the terminal, so redirect it if you want to keep it:
+# A background run logs everything to .claude/knowledge-sweep/sweep.log. A
+# foreground run appends only the harvester's output and push/PR errors there,
+# so redirect it to keep the rest:
 #   scripts/knowledge-sweep --backfill > .claude/knowledge-sweep/backfill.log 2>&1
 
 source "$(dirname "$0")/lib/_common.sh"
@@ -402,8 +403,8 @@ while IFS= read -r transcript; do
 
         next_offset=$(( offset + consumed ))
         head -c "$consumed" "$raw" | digest_slice > "$slice"
-        # Braces are load-bearing: bash 3.2 folds the en-dash's UTF-8 bytes into
-        # the preceding name, looks up "offset<dash>", and set -u aborts the run.
+        # Braces are load-bearing: with macOS's C library, bash reads the
+        # en-dash's UTF-8 bytes as part of the preceding name and set -u aborts.
         truncated=" (backfill: bytes ${offset}–${next_offset} of ${size})"
     else
         # Forward sweeping favours recent activity; a session that grew faster
@@ -421,8 +422,7 @@ while IFS= read -r transcript; do
         # extraction doesn't understand this client's transcript format. Say so
         # — otherwise the offset advances and the history is silently consumed.
         warn "$sid: $(( next_offset - offset ))B of new transcript produced no readable turns"
-        new_offsets="${new_offsets}${sid}	${next_offset}
-"
+        new_offsets="${new_offsets}${sid}"$'\t'"${next_offset}"$'\n'
         continue
     fi
 
@@ -432,8 +432,7 @@ while IFS= read -r transcript; do
         cat "$slice"
     } >> "$DIGEST"
 
-    new_offsets="${new_offsets}${sid}	${next_offset}
-"
+    new_offsets="${new_offsets}${sid}"$'\t'"${next_offset}"$'\n'
     sessions_reviewed=$(( sessions_reviewed + 1 ))
 
     if (( $(file_size "$DIGEST") > MAX_DIGEST_BYTES )); then
@@ -447,7 +446,7 @@ done < <(list_transcripts)
 commit_ledger() {
     local tmp="$WORK/ledger.json"
     cp "$LEDGER" "$tmp"
-    while IFS="$(printf '\t')" read -r sid off; do
+    while IFS=$'\t' read -r sid off; do
         [[ -n "$sid" ]] || continue
         jq --arg s "$sid" --argjson o "$off" \
            --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
@@ -458,7 +457,7 @@ commit_ledger() {
 }
 
 if [[ ! -s "$DIGEST" ]]; then
-    commit_ledger
+    (( DRY_RUN )) || commit_ledger
     log "$(date '+%F %T') nothing new to review"
     exit 0
 fi
@@ -503,7 +502,9 @@ git -C "$WORKSPACE_ROOT" fetch --quiet origin "$BRANCH" 2>/dev/null || true
 
 EXISTING_PR=""
 if [[ "$MODE" == "pr" ]]; then
-    EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // ""' 2>/dev/null || printf '')
+    # A failed lookup would rebuild the branch from master and overwrite the open PR.
+    EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // ""' 2>/dev/null) \
+        || die "gh pr list failed — deferring this batch, nothing consumed"
 fi
 
 REBASED=0

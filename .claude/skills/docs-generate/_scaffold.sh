@@ -78,7 +78,8 @@ for page in ${pages[@]+"${pages[@]}"}; do
     if [[ -f "$page" ]]; then
         # Preserve drafted / linked / reviewed pages. Re-stub only if status is
         # absent or already stub.
-        existing_status=$(yq -r 'select(.status) | .status // "stub"' "$page" 2>/dev/null || echo stub)
+        existing_status=$(awk 'NR==1 && /^---/ {f=1; next} f && /^---/ {exit} f' "$page" \
+            | yq -r '.status // "stub"' 2>/dev/null || echo stub)
         if [[ -n "$existing_status" && "$existing_status" != "stub" ]]; then
             echo "  \"$page\": { topic: \"$topic\", status: \"$existing_status\" }" >>"$manifest"
             preserved=$((preserved+1))

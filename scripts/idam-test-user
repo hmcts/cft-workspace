@@ -246,6 +246,8 @@ report() {
 
 # --- subcommands -----------------------------------------------------------
 
+[[ "$SUBCOMMAND" == token ]] || require_internal_dns "${TSA#https://}"
+
 case "$SUBCOMMAND" in
     token)
         get_token; echo
