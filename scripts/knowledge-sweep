@@ -338,8 +338,9 @@ digest_slice() {
 
 sessions_reviewed=0
 # Tab-separated "sid<TAB>offset" lines rather than an associative array: macOS
-# ships bash 3.2, where `declare -A` is not a syntax error but a runtime one, so
-# every write lands in nothing and the sweep silently reviews no sessions.
+# ships bash 3.2, where `declare -A` is rejected outright and, under the
+# set -euo pipefail from _common.sh, takes the whole run with it — so the sweep
+# never reaches a single session.
 # Duplicate ids are harmless — commit_ledger replays them in order, last wins.
 new_offsets=""
 

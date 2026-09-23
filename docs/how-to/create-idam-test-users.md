@@ -62,10 +62,10 @@ own repo, or when something fails and you want to know why.
 - `az login` done, and read access to your service's `<product>-<env>` Key Vault (to fetch the
   IDAM client secret). See [Subscriptions](../reference/cnp-environments.md#azure-subscriptions).
 - `curl` and `jq`.
-- **VPN required.** `*.platform.hmcts.net` is not uniformly public: `portal.platform.hmcts.net`
-  resolves on a public resolver, but `*.aat.platform.hmcts.net` and
-  `*.preview.platform.hmcts.net` return NXDOMAIN and resolve to RFC1918 addresses over the
-  tunnel. Without it you get `curl: (6) Could not resolve host`, not a timeout.
+- **VPN required for the testing-support API.** Hosts under `*.platform.hmcts.net` differ:
+  `idam-web-public.<env>` — used by the token snippets below — is publicly resolvable, but
+  `idam-testing-support-api.<env>` is not, and returns NXDOMAIN on a public resolver. Without the
+  tunnel you get `curl: (6) Could not resolve host`, not a timeout.
 
 The snippets below read `/proc/sys/kernel/random/uuid` for unique emails and user IDs rather than
 `uuidgen`, which is **not installed in the devcontainer**. On macOS use `uuidgen`.
