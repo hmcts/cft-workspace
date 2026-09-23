@@ -410,7 +410,7 @@ run_source_mode() {
         if (( DO_RECORD )); then
             if (( ${#broken_sources[@]} )); then
                 broken+=("$page: ${broken_sources[*]}")
-            elif write_sources_sha "$page" "${record_pairs[@]}"; then
+            elif write_sources_sha "$page" ${record_pairs[@]+"${record_pairs[@]}"}; then
                 recorded_pages+=("$page (${#record_pairs[@]} SHAs)")
             fi
             continue
