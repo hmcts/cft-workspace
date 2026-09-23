@@ -185,6 +185,10 @@ Sonar's JS/TS ruleset scores a `.sort()` call with no comparator as a bug: the d
 
 See [Troubleshooting](../troubleshooting.md) — "A build fails on the dependency check with no dependency or code changes" — the pipeline's `dependencyCheckAggregate` step scores against the live NVD feed on every run, so identical commits can pass or fail depending purely on feed timing and per-agent caching.
 
+### Pact `canIDeploy` blocks on the latest registered provider version, not the latest verified one
+
+The pipeline's `canIDeploy` gate asks the shared Pact broker whether the *latest* version registered for each provider has verified your consumer's pact — not whether *any* verified version exists. A provider's branch/PR build (for example a Renovate bump) that registers a new participant version in the broker without publishing a verification masks that provider's genuinely verified master version. Every downstream consumer's `canIDeploy` then fails with "there is no verified pact between version X of \<consumer\> and the latest version of \<provider\>", and re-running the consumer's build does nothing — the fault and the fix are both on the provider's side. Ask the provider team to merge/re-run their master pipeline (registers a newer verified version and self-heals for every consumer), or have someone with broker access delete the stray provider version.
+
 ### Yarn quarantines packages published in the last 24 hours
 
 Yarn 4.15+ ships `npmMinimalAgeGate`, a client-side gate (default one day) that refuses to install any npm package version published more recently than that window. A Renovate PR bumping to a version published within the last day fails `yarn install` outright — including Renovate's own lockfile-update step — with an error (`YN0016: ... quarantined`) that reads like an npm registry restriction but is yarn refusing the install locally. The PR stays red until the version ages past the gate, or until `minimumReleaseAge` is set in `renovate.json` so Renovate never proposes a version yarn will still refuse.
