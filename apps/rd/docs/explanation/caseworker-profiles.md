@@ -218,6 +218,8 @@ The derivation logic (`CaseWorkerIdamRoleAssociation.java`):
 3. Call IDAM to add these roles to the user. Roles are **only added, never removed** by this process (CRD11.2 was withdrawn as too risky for services not yet using WA/Staff Upload).
 4. The role `cwd-user` is added to every user provisioned through CRD, unconditionally and independently of the mapping table — on the spreadsheet path (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/CaseWorkerServiceImpl.java:813`) and on the Staff admin path (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/service/impl/StaffRefDataServiceImpl.java:312`, `:935`). It is defined as `ROLE_CWD_USER` (`rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java:128`) and is what marks a user as CRD-onboarded to downstream consumers, so removing it in IDAM detaches the user from CRD without deleting the profile.
 
+This additive-only rule does not extend to the Staff UI's own `userAdmin` flag: sending it explicitly as `false`, or omitting it from an update payload, strips the `staff-admin` role from the account rather than leaving it untouched. Admin accounts must always send `userAdmin: true` explicitly.
+
 <!-- DIVERGENCE: Confluence "Caseworker Reference Data - High Level Design" (id 1391526853) spells the mandatory role `CWD_user`. Source uses `cwd-user`, hyphenated and lowercase (rd-caseworker-ref-api:src/main/java/uk/gov/hmcts/reform/cwrdapi/util/CaseWorkerConstants.java:128). Source wins. -->
 
 The mapping is loaded via the `POST /refdata/case-worker/upload-file` API using a separate Excel file/sheet named "Service to CW Roles Mapping" (sheet must contain exactly one service code per file).
@@ -293,6 +295,8 @@ The following state transitions govern how CRD handles profile operations, based
 | Yes | Yes | Active | Y | Suspend in IDAM + UP, set CRD suspended flag |
 | Yes | Yes | Pending | N | Trigger re-invite via UP; if successful, update CRD |
 | Yes | Yes | Suspended | N | **Blocked** — cannot re-activate previously suspended user |
+
+For a new Staff UI user, create the IDAM account before creating the CRD profile. If the CRD profile is created first, CRD auto-creates the IDAM user via User Profile, but it lands `Pending` with no password and can't be activated through the normal invite flow. Creating the IDAM account first avoids this, because CRD's profile-create call treats both a `201` and an existing-user `409` as success and merges in whatever CRD-specific data and roles are missing.
 
 Name synchronisation: when CRD detects a name mismatch between its records and IDAM, it updates IDAM to match the incoming file data (CRD is the source of truth for staff names).
 
