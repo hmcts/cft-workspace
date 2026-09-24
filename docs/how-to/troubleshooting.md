@@ -555,6 +555,21 @@ This is a **temporary** measure and all packages **must** be updated when new ve
 
 The Renovate tool should raise pull requests automatically when a new package version is released. You can simply approve this change and merge the PR to mitigate the vulnerabilities.
 
+### - Security Checks branch fails with an empty `yarn-audit-result` file
+
+#### Error
+
+```
+You have an empty json file: yarn-audit-result.
+jq: parse error: Invalid numeric literal at line 1, column 4
+```
+
+followed by `Failed in branch Security Checks` and `ERROR: script returned exit code 5`.
+
+#### Solution
+
+This is `yarn-audit-with-suppressions.sh` failing to parse the output of `yarn npm audit` because the npm registry's audit/advisory endpoint returned nothing usable — a registry-side outage, not a real vulnerability (a genuine finding produces a populated report with `new_vulnerabilities` and advisory IDs, not an empty file). Check [status.npmjs.org](https://status.npmjs.org) for an open incident on the audit/security-advisory service; master and every open PR fail identically while the incident is live, so a clean master build failing this way is a strong signal it's the registry, not your change. Re-run once the incident clears — `yarn npm audit --recursive --json` from the affected repo returning real advisory JSON again confirms it's safe to rebuild.
+
 ### - Yarn test failures
 
 #### Error
