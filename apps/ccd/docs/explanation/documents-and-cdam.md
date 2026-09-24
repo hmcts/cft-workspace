@@ -204,6 +204,12 @@ New documents are registered with CDAM by calling `CaseDocumentAmApiClient.apply
 (`CaseDocumentService.java:104`). `CaseDocumentsMetadata` is a batch payload carrying the case reference and the
 list of document URLs to associate with it.
 
+This attach step is an unguarded, mandatory part of the submit transaction on both the centralised and
+decentralised paths (`SubmitCaseTransaction`), not a best-effort call. If any referenced document id fails to
+resolve in CDAM/DM Store — for example a fixture pointing at a document that no longer exists — the exception
+propagates straight out of the submit call and the whole case creation or event submission fails before any
+caller-side assertions run.
+
 Finally, `stripDocumentHashes()` (`CaseDocumentService.java:41-48`) removes every `document_hash` key from the
 case data before it is written to the `case_data` table or returned to the caller.
 
@@ -259,6 +265,10 @@ CDAM introduces, on top of raw DM Store:
   onboarding and gotchas*).
 - **S2S whitelist** — the calling service must be added to the case-document-am-api S2S whitelist
   (cnp-flux-config) in addition to having `service_config.json` entries.
+- **Server-generated, immutable document ids** — DM Store assigns each document's id itself (a Hibernate
+  `@GeneratedValue` UUID); the upload API takes no id parameter. A document can never be re-created at a
+  previously-used id — a hardcoded id that stops resolving (e.g. a test fixture whose document was deleted)
+  can only be fixed by uploading a replacement under a new id and updating every reference to it.
 - **Hash-token tamper detection** — the upload returns a short-lived token; data-store validates it on submit.
 - **Audit attachment** — `applyPatch` creates an association between the document and the CCD case reference
   in CDAM's own store, enabling case-level document listing independent of the case data JSON.
