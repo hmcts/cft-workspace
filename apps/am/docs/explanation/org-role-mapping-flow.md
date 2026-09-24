@@ -45,6 +45,8 @@ sources:
   - rpx-xui-webapp:src/booking/containers/booking-home/booking-home.component.html
   - rpx-xui-webapp:src/booking/containers/utils/booking-error-handler.ts
   - rpx-xui-webapp:api/accessManagement/index.ts
+  - am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/controller/RefreshController.java
+  - rpx-xui-manage-organisations:api/refresh-user/index.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -184,6 +186,17 @@ The ASB message is the only *automatic* trigger, and in ephemeral environments �
 This is what preview-environment seeding scripts call. Note the same feature-flag rules still apply: with `ORM_ENV: pr`, only Drools rules whose `flag_config` row is enabled for the `pr` environment will fire, so a seeding call can succeed and still write nothing. See [Feature flag taxonomy](#feature-flag-taxonomy).
 
 Whether an ephemeral environment needs its own ORM at all is a separate question — if the role assignments it depends on already exist in the RAS it reads from, it doesn't. See [How-to: Set Up WA in Preview → When ORM and RAS are actually needed](../../../wa/docs/how-to/set-up-wa-in-preview.md#when-orm-and-ras-are-actually-needed).
+
+### Professional (solicitor) users: no topic subscription at all
+
+Unlike CRD and JRD, `rd-professional-api` does not publish change events to an Azure Service Bus topic, and ORM has no consumer for it. There is no event-driven path that mints organisation role assignments for professional users when they are created or invited.
+
+Instead, professional-user role assignments are minted only by one of two explicit triggers:
+
+- `POST /am/role-mapping/professional/refresh?userId=<uid>` — a synchronous, single-user refresh that recalculates and persists that user's organisation roles in RAS immediately. It is gated by `PROFESSIONAL_REFRESH_API_ENABLED` (`role.mapping.refreshApi.enabled`), separate from the CRD/JRD scheduling flag. The Manage Organisations UI (`rpx-xui-manage-organisations`) calls this endpoint automatically as part of its invite and edit-user flows — this is what makes new solicitors' cases visible "immediately" in environments where it feels automatic.
+- A bulk PRM (professional refresh) run against `rd-professional-api`, which drains its refresh queue for all pending users in one pass.
+
+A professional user created directly against PRD's API — bypassing the Manage Organisations UI, for example via a scripted test-data setup — gets no organisation role assignment in RAS until one of these two triggers runs for them. Until then, CCD's access filtering treats every case scoped to that user's organisation as invisible, which surfaces in XUI as an empty search result rather than an authorisation error.
 
 ## Step 2: profile retrieval and flattening
 

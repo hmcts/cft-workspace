@@ -219,6 +219,14 @@ perftest), pending-user self-registration, invitation expiry, Service Bus user-e
 a Pact state-change hook. Two endpoints — `deleteTestService` and `patchService` — are
 `@Deprecated(since = "8.2.0", forRemoval = true)`.
 
+`GET /testing-support/accounts/{accountId}` needs no bearer token and returns the same eight
+fields (`id, forename, surname, email, active, locked, roles, lastModified`) for any account,
+testing-support-created or not. There is no provenance field anywhere in IDAM that marks an
+account as testing-support-created — `ssoProvider` is a caller-supplied value on the create
+request, not something IDAM stamps, so its absence proves nothing either. Do not rely on this
+endpoint, or on any IDAM field, to programmatically identify or bulk-clean up testing-support
+accounts outside the session-based cleanup this API already does.
+
 Prefer this API for new code. `libs/rd-commons-lib`'s `IdamOpenId` still uses the legacy path and
 is inherited by many RD/service-team functional tests.
 

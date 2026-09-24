@@ -289,7 +289,7 @@ XUI Manage Organisations is the primary UI for both admin and solicitor interact
 
 1. **Organisation registration**: Solicitors submit a registration form that calls `POST /refdata/external/v1/organisations` (S2S auth only — no IDAM token required since the user does not yet have an account).
 2. **Admin approval**: Back-office staff list pending orgs via `GET /refdata/internal/v1/organisations?status=PENDING`, review details, then activate via `PUT /refdata/internal/v1/organisations/{orgId}`.
-3. **User management**: Organisation admins (with `pui-user-manager`) invite colleagues via `POST /refdata/external/v1/organisations/users/`.
+3. **User management**: Organisation admins (with `pui-user-manager`) invite colleagues via `POST /refdata/external/v1/organisations/users/`. This call only creates the user in PRD and IDAM — it does not, by itself, grant the new user any organisation role assignment. `rpx-xui-manage-organisations` separately calls AM's ORM service to mint that user's role assignments; a user created directly against PRD's API without going through that UI flow (or a later batch refresh) has no case access until that call is made. See [Org Role Mapping Flow → Professional (solicitor) users](../../../am/docs/explanation/org-role-mapping-flow.md#professional-solicitor-users-no-topic-subscription-at-all).
 4. **PBA management**: Finance managers (`pui-finance-manager`) add PBAs that enter `PENDING` state; back-office admins review and accept/reject them.
 
 ## How AAC consumes PRD

@@ -110,6 +110,7 @@ sources_sha:
 |--------|------|------|----------|-------------|
 | POST | `/am/role-mapping/refresh?jobId={id}` | S2S (restricted) | 202 Accepted | Triggers async organisational role refresh for a batch job. Optional `UserRequest` body for specific user IDs. |
 | POST | `/am/role-mapping/judicial/refresh` | S2S (restricted) | 200 OK | Synchronous judicial refresh. Body is `JudicialRefreshRequest` containing a `UserRequest`. |
+| POST | `/am/role-mapping/professional/refresh?userId={id}` | S2S | 200 OK | Synchronous single-user refresh for a professional (solicitor) user. Gated by `PROFESSIONAL_REFRESH_API_ENABLED`. This is the only automatic trigger for professional-user org roles -- there is no ASB topic for PRD -- and it is called by `rpx-xui-manage-organisations` on invite/edit-user. |
 
 **Restricted callers** for the staff refresh endpoint: only services listed in `refresh.Job.authorisedServices` (default: `am_org_role_mapping_service`, `am_role_assignment_refresh_batch`) -- `RefreshOrchestrator.java:99-101`.
 
@@ -423,6 +424,7 @@ up rather than of live behaviour.
 | `refresh.judicial.filterSoftDeletedUsers` | `REFRESH_JUDICIAL_FILTER_SOFT_DELETED_USERS` | false | Skip soft-deleted judicial users during refresh |
 | `amqp.crd.enabled` | `AMQP_ENABLED` | true | Enable CRD ASB consumer |
 | `amqp.jrd.enabled` | `AMQP_ENABLED` | true | Enable JRD ASB consumer |
+| `role.mapping.refreshApi.enabled` | `PROFESSIONAL_REFRESH_API_ENABLED` | false | Enable the single-user professional refresh endpoint (no equivalent ASB path exists for PRD) |
 | `testing.support.enabled` | `TESTING_SUPPORT_ENABLED` | false | Enable test-support endpoints |
 | `dbFeature.flags.enable` | `DB_FEATURE_FLAG_ENABLE` | (empty) | Comma-separated flags to force-enable on startup |
 | `dbFeature.flags.disable` | `DB_FEATURE_FLAG_DISABLE` | (empty) | Comma-separated flags to force-disable on startup |
