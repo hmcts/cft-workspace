@@ -37,7 +37,7 @@ This manual job will start or stop the below resources for a specific environmen
 
 1. Navigate to [Manual Start / Stop](https://github.com/hmcts/auto-shutdown/actions/workflows/manual-start-stop.yaml) action on the auto-shutdown repository.
 2. Select 'Run Workflow'
-3. Ensure the 'master' branch and the correct Mode, Business Area and Environment options are selected. Then select 'Run Workflow'
+3. Ensure the 'master' branch and the correct Mode, Business Area and Environment options are selected. Then select 'Run Workflow'. Double-check the Business Area — `CFT` and `SDS` each have their own environment of the same name (for example `Preview`/`Dev`, `AAT`/`Staging`), so picking the wrong area starts or stops another business area's shared clusters instead of the one you meant.
 4. Select the new build which will appear at the top under Workflow Runs and will be identifiable by an orange dot which means the build is currently running.
 
 This job selects resources by Azure tag (business area and environment), not by name. For example, running a Postgres Flexible Server stop/start for `CFT` + `Preview` acts on every shared preview flexible server carrying those tags — across every product in that environment — not just the one you're trying to fix. Check with `#platops-help` before using this to restart a single stuck server outside its own resource-specific tooling.
