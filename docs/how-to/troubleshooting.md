@@ -570,6 +570,14 @@ followed by `Failed in branch Security Checks` and `ERROR: script returned exit 
 
 This is `yarn-audit-with-suppressions.sh` failing to parse the output of `yarn npm audit` because the npm registry's audit/advisory endpoint returned nothing usable — a registry-side outage, not a real vulnerability (a genuine finding produces a populated report with `new_vulnerabilities` and advisory IDs, not an empty file). Check [status.npmjs.org](https://status.npmjs.org) for an open incident on the audit/security-advisory service; master and every open PR fail identically while the incident is live, so a clean master build failing this way is a strong signal it's the registry, not your change. Re-run once the incident clears — `yarn npm audit --recursive --json` from the affected repo returning real advisory JSON again confirms it's safe to rebuild.
 
+### - A Fortify open-redirect (CWE-601) finding survives after adding a "safe redirect" helper
+
+Wrapping a redirect in a project-local helper function does not clear a Fortify open-redirect finding on its own — Fortify's dataflow analysis has no built-in rule that treats a custom helper as a taint cleanse, so it keeps tracing straight through to the `res.redirect()` sink regardless of what the helper does internally. The fix Fortify actually credits is validating or whitelisting the tainted value at its source — for example a strict regex on the route parameter that ends up in the redirect target — before it reaches the helper.
+
+### - Fortify flags every `*-secret`/`*-password` key in node-config's `custom-environment-variables.json` as a hardcoded credential
+
+By node-config convention, every value in `custom-environment-variables.json` is the *name* of an environment variable to read at startup, not an actual secret — but Fortify's hardcoded-password rule matches on the key shape alone and can't tell the difference. There is no code change that satisfies the rule without renaming env vars and breaking deployment wiring, so triage this as a suppressed false positive rather than trying to "fix" it.
+
 ### - Yarn test failures
 
 #### Error
