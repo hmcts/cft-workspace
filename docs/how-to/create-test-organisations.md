@@ -19,6 +19,8 @@ sources:
   - rd-professional-api:src/functionalTest/java/uk/gov/hmcts/reform/professionalapi/AuthorizationFunctionalTest.java
   - cnp-flux-config:apps/xui/xui-mo-webapp/aat.yaml
   - cnp-flux-config:apps/xui/xui-ao-webapp/aat.yaml
+  - idam-access-config:apps/pcs/base/services.yaml
+  - idam-access-config:apps/idam/base/services.yaml
 sources_sha:
   "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/external/OrganisationExternalController.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
   "rd-professional-api:src/main/java/uk/gov/hmcts/reform/professionalapi/controller/internal/OrganisationInternalController.java": "2021f547d82578c6748fd13cdbb8d815576ba3a3"
@@ -246,6 +248,19 @@ accept a `statusMessage`; PRD's own functional tests exercise all of them.
 > Practical consequence: **use the UI (Route B) to approve**, or call from a microservice on
 > `rd-user-profile-api`'s allowlist. Creating a `PENDING` org via the API and approving it in the
 > Administer Organisations UI is a fine hybrid.
+>
+> **Before concluding it's the allowlist, check the calling user token's OAuth scopes.** Approve
+> and the internal `add-user` both need the `prd-admin`/caller token itself to carry `manage-user`,
+> `create-user` and `search-user` scopes — and most product IDAM clients (`pcs-api`,
+> `pcs-frontend`, and similar, declared in `idam-access-config`) are never given them, so a token
+> minted through your own client 403s even when both S2S allowlists already include your
+> microservice. IDAM's shared `test-public-service` client does carry those scopes; requesting a
+> password-grant token from it (secret in the environment's IDAM key vault — see
+> [S2S microservice keys](#2-get-an-s2s-token) for the vault-naming pattern) with
+> `scope=openid profile roles create-user manage-user search-user` and using that token in place of
+> your own client's turns the same `403` into a normal `200`/`409` — verified on ITHC for both
+> approve and add-user. Worth trying before reaching for the UI.
+<!-- REVIEW: original finding named the specific secret key and vault for the shared test-public-service client; removed from this public repo. Confirm the vault/secret name with the team before relying on this. -->
 
 ### Cleaning up after yourself
 

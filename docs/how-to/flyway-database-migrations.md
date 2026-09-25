@@ -139,3 +139,8 @@ public class PendingMigrationScriptException extends RuntimeException {
     }
 }
  ```
+
+### Common gotchas
+
+- Flyway only picks up locations explicitly listed in its config. A `db/testdata` folder alongside `db/migration` is invisible unless `classpath:db/testdata` is added to `spring.flyway.locations` (or the Gradle plugin's `locations`) for that environment. A common pattern is to add it only to the `dev` profile and preview Helm values, so seed data reaches local and preview environments but never AAT, demo, perftest or prod.
+- An unconfigured placeholder in a migration (e.g. `${env}`) is not skipped or treated as literal text — Flyway throws `No value provided for placeholder` and fails the whole migration, and with it application startup, on every path where that placeholder isn't wired in.

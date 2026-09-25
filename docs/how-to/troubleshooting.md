@@ -254,7 +254,7 @@ Increasing Playwright (or similar) worker count against a single preview release
 
 Jenkins-driven helm deploys (`helmInstall.groovy`) always pass `--set global.devMode=true` — Preview, PR builds and the Jenkins-managed AAT "staging" release alike. In devMode the chart reads `devmemoryLimits`/`devmemoryRequests`/`devcpuLimits`/`devcpuRequests` with no fallback to the non-dev keys, so a chart setting only `memoryLimits` gets the base chart's default instead (512Mi on chart-base and chart-nodejs, 1Gi on chart-java). Set `devmemoryLimits` alongside `memoryLimits` for anything Jenkins deploys. GitHub Actions deploys and Flux-managed `HelmRelease`s never set `global.devMode`.
 
-The same app in the same AAT namespace can run under two independent releases with different memory behaviour: a Jenkins-managed `<app>-staging` (devMode on) and a Flux-managed `<app>` (devMode off, tracking a prod image tag). Check which one a pod belongs to before changing chart values:
+The same app in the same AAT namespace can run under two independent releases: a Jenkins-managed `<app>-staging` (devMode on) and a Flux-managed `<app>` (devMode off, tracking a prod image tag). Check which one a pod belongs to before changing chart values:
 
 ```bash
 kubectl get pod -n <namespace> <pod> -o jsonpath='{.metadata.labels.app\.kubernetes\.io/instance}{"\n"}'
@@ -267,6 +267,10 @@ kubectl get pod -n <namespace> <pod> -o jsonpath='{.status.containerStatuses[0].
 ```
 
 For history, Container Insights (`oms_agent`) is only enabled on perftest and prod — but `kube-prometheus-stack` runs on every CFT cluster and scrapes cAdvisor via the kubelet `ServiceMonitor` regardless of any chart's own `prometheus.enabled`, so `container_memory_working_set_bytes` is available for 30 days on AAT too. AAT is two clusters with a Prometheus each; only one runs Grafana, and that Grafana has both wired in as datasources.
+
+### Config set only in the pipeline's AAT template never reaches the Flux-managed release
+
+A Jenkins-managed `<app>-staging` release and its Flux-managed `<app>` counterpart in the same AAT namespace (see [OOMKilled](#oomkilled-despite-a-generous-memorylimits) above for how to tell which pod belongs to which) share a database but not their config source. A value set only in the pipeline's AAT chart template (e.g. `values.aat.template.yaml`) reaches the staging release alone; the Flux-managed live release needs the same key added to its own patch in `cnp-flux-config` before it takes effect there. This isn't limited to memory settings — scheduled-task cadence, feature flags, and any other env-driven behaviour can silently diverge between the two releases the same way.
 
 ### Preview pod is healthy but the pipeline's startup checker still fails
 
@@ -554,6 +558,29 @@ yarn npm audit --recursive --environment production --json > yarn-audit-known-is
 This is a **temporary** measure and all packages **must** be updated when new versions are released to ensure security vulnerabilities are mitigated.
 
 The Renovate tool should raise pull requests automatically when a new package version is released. You can simply approve this change and merge the PR to mitigate the vulnerabilities.
+
+### - Security Checks branch fails with an empty `yarn-audit-result` file
+
+#### Error
+
+```
+You have an empty json file: yarn-audit-result.
+jq: parse error: Invalid numeric literal at line 1, column 4
+```
+
+followed by `Failed in branch Security Checks` and `ERROR: script returned exit code 5`.
+
+#### Solution
+
+This is `yarn-audit-with-suppressions.sh` failing to parse the output of `yarn npm audit` because the npm registry's audit/advisory endpoint returned nothing usable — a registry-side outage, not a real vulnerability (a genuine finding produces a populated report with `new_vulnerabilities` and advisory IDs, not an empty file). Check [status.npmjs.org](https://status.npmjs.org) for an open incident on the audit/security-advisory service; master and every open PR fail identically while the incident is live, so a clean master build failing this way is a strong signal it's the registry, not your change. Re-run once the incident clears — `yarn npm audit --recursive --json` from the affected repo returning real advisory JSON again confirms it's safe to rebuild.
+
+### - A Fortify open-redirect (CWE-601) finding survives after adding a "safe redirect" helper
+
+Wrapping a redirect in a project-local helper function does not clear a Fortify open-redirect finding on its own — Fortify's dataflow analysis has no built-in rule that treats a custom helper as a taint cleanse, so it keeps tracing straight through to the `res.redirect()` sink regardless of what the helper does internally. The fix Fortify actually credits is validating or whitelisting the tainted value at its source — for example a strict regex on the route parameter that ends up in the redirect target — before it reaches the helper.
+
+### - Fortify flags every `*-secret`/`*-password` key in node-config's `custom-environment-variables.json` as a hardcoded credential
+
+By node-config convention, every value in `custom-environment-variables.json` is the *name* of an environment variable to read at startup, not an actual secret — but Fortify's hardcoded-password rule matches on the key shape alone and can't tell the difference. There is no code change that satisfies the rule without renaming env vars and breaking deployment wiring, so triage this as a suppressed false positive rather than trying to "fix" it.
 
 ### - Yarn test failures
 
