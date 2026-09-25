@@ -130,6 +130,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | payment | explanation | Pci Pal Telephony | telephony | `apps/payment/docs/explanation/pci-pal-telephony.md` |
 | payment | explanation | Reconciliation | reconciliation | `apps/payment/docs/explanation/reconciliation.md` |
 | payment | explanation | Refunds Flow | refunds | `apps/payment/docs/explanation/refunds-flow.md` |
+| pcs | explanation | Bulk Print Pack Selection and Holds | bulk-print-pack-selection | `apps/pcs/docs/explanation/bulk-print-pack-selection-and-holds.md` |
 | pcs | explanation | Welsh Language and Wales Jurisdiction | welsh-language | `apps/pcs/docs/explanation/welsh-language-and-wales-jurisdiction.md` |
 | rd | how-to | Onboard Common Data | commondata | `apps/rd/docs/how-to/onboard-common-data.md` |
 | rd | how-to | Query Reference Data | overview | `apps/rd/docs/how-to/query-reference-data.md` |
