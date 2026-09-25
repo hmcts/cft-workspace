@@ -198,6 +198,7 @@ If this happens, simply run the master build manually on sandbox jenkins.
     - A misconfigured environment variable, example - incorrect URL of a dependent service.
     - The product's shared preview PostgreSQL server has run out of connections — see [Preview database creation fails](#preview-database-creation-fails).
     - The pod is OOMKilled despite a generous `memoryLimits` — see [OOMKilled despite a generous memoryLimits](#oomkilled-despite-a-generous-memorylimits).
+    - AAT is off for its nightly shutdown window and a CCD pod elsewhere restarted during it — see [CCD pods crash-loop when AAT is powered off overnight](#ccd-pods-crash-loop-when-aat-is-powered-off-overnight).
 
 - Below are some handy kubectl commands to debug the issues
 
@@ -249,6 +250,12 @@ Check connection counts against `max_connections` and look for oversized `*_MIN_
 ### Raising E2E parallelism against a CCD-backed preview exhausts the Hikari pool, not CPU
 
 Increasing Playwright (or similar) worker count against a single preview release without also raising `DATA_STORE_DB_MAX_POOL_SIZE`/`DEFINITION_STORE_DB_MAX_POOL_SIZE` causes CCD's data-store/definition-store Hikari pools to saturate (logged as `total=N, active=N, waiting=M`) even though the pod's CPU and memory usage stay well under its request. This looks like a compute-bound ceiling but is actually a connection-pool ceiling — worker count and pool size both need raising together, roughly in proportion, to get a real parallelism gain.
+
+### CCD pods crash-loop when AAT is powered off overnight
+
+Every CCD-based service, in any environment, authenticates against **AAT's** IDAM instance — it resolves `https://idam-web-public.aat.platform.hmcts.net/o/.well-known/openid-configuration` while building its `ClientRegistrationRepository` bean at Spring context startup. When AAT's AKS cluster is off for its nightly [shutdown window](auto-shutdown.md), that discovery call 504s (`OriginTimeout`), so any CCD pod that starts or restarts during the window fails to boot and enters `CrashLoopBackOff` — even though the pod's own cluster and namespace are otherwise healthy. This affects every product's Preview/PR deploys at once, not just one, and resolves itself with no redeploy once AAT restarts and the affected pods pick up the discovery document on their next automatic restart.
+
+If `kubectl --context cft-aat-00-aks ...` fails with `no such host` right after AAT comes back up, that's a stale kubeconfig, not AAT still being down — the cluster's API server FQDN can change across a stop/start, so re-run `az aks get-credentials` for that context (see [Connecting to AKS Clusters](#connecting-to-aks-clusters)).
 
 ### OOMKilled despite a generous memoryLimits
 
