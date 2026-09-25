@@ -16,7 +16,7 @@ The workspace declares its MCP servers in [`.mcp.json`](../../.mcp.json), which 
 | `playwright` | Local stdio (`npx @playwright/mcp`) | None | Browser automation — navigate, click, fill forms, take snapshots/screenshots |
 | `Azure MCP Server` | Local stdio (`npx @azure/mcp@latest`) | `az login` session, pinned via `AZURE_TOKEN_CREDENTIALS` | Subscription, resource and Azure Monitor/Log Analytics queries |
 
-Only Jenkins needs a local env file, and only Jenkins needs the Docker CLI (the devcontainer mounts the host socket).
+Only Jenkins needs a local env file, and only Jenkins needs the Docker CLI (the devcontainer mounts the host socket). For pipeline analysis across many builds, you can also connect the data sources in [section 5](#5-pipeline-analysis-data-sources-optional); these aren't MCP servers.
 
 ## 1. Atlassian (Jira + Confluence)
 
@@ -102,7 +102,61 @@ With it set, a query resolves in about a second rather than minutes, reading the
 
 `monitor_resource_log_query` (Application Insights / Log Analytics) has different defaults from `az monitor app-insights query`, not just a different calling convention: it defaults to a **24-hour** window (`hours`) rather than the CLI's **1-hour** `--offset`, and to a **20-row** result cap (`limit`) that truncates a larger result set with no warning rather than erroring. It also renders timestamps to the nearest whole second, where the CLI keeps milliseconds — pass explicit `hours` and `limit` for anything that needs completeness, and use the CLI (`-o json | jq`, since `-o table` prints nothing for these analytics queries) if the query depends on sub-second ordering.
 
-## 5. Restart and verify
+## 5. Pipeline analysis data sources (optional)
+
+To answer questions like "which stage is slow", "why does this pipeline keep failing" or "how has build time changed this quarter", you need more than one build's console log. There are three complementary sources:
+
+| Source | Where | Answers | Access |
+|---|---|---|---|
+| Pipeline metrics | Cosmos account `pipeline-metrics` (subscription `DCD-CNP-Prod`), database `jenkins`, container `pipeline-metrics` | Stage timings and outcomes for every build, across all products | *Cosmos DB Built-in Data Reader* data-plane role, or a read-only account key |
+| Failed-build archive | Storage account `mgmtbuildlogstoresandbox` (resource group `mgmt-buildlog-store-sandbox`), container `jenkins-build-archive` | The console log and artifacts of failed builds that Jenkins has already deleted | *Storage Blob Data Reader*, or permission to list the account keys |
+| Application Insights | For example `et-aat` (`DCD-CNP-DEV`), `et-perftest` (`DCD-CNP-QA`), `et-prod` (`DCD-CNP-Prod`) | Whether a failed deploy or test lines up with runtime errors in the environment | Your `az login`, via the Azure MCP Server or `az monitor app-insights query` |
+
+Cosmos tells you *which* stage is slow or failing, and Jenkins or the archive tells you *why*.
+
+### Pipeline metrics (Cosmos DB)
+
+Subscription `Reader` is not enough to query documents. The account is discoverable, but reads return `403` until you hold the *Cosmos DB Built-in Data Reader* role on the account, database or container. If you can't get the role, a read-only account key works too. Keep it in a gitignored env file, never in the chat:
+
+```bash
+printf 'COSMOS_PIPELINE_METRICS_KEY=%s\n' "$(pbpaste)" > .claude/.cosmos.env && chmod 600 .claude/.cosmos.env
+```
+
+The Azure MCP Server's Cosmos tool authenticates with your `az` login rather than a key. With only a key, query with the `azure-cosmos` Python SDK, reading the key from the file at runtime so it never appears in output.
+
+How the documents behave:
+
+- **One document per stage event, not per build.** `MetricsPublisher` writes a document when each stage *ends* (the `after:all` callback, which also runs when the stage fails), plus a final `Pipeline Succeeded` or `Pipeline Failed` event. Group by `job_name` + `build_number` to rebuild a build. A stage's duration is the difference between successive `current_build_duration` values (milliseconds since the build started); there is no per-stage duration field.
+- **`component` is the Jenkinsfile's `component`, not the repo name.** For example, `et-ccd-callbacks` publishes as `product='et'`, `component='cos'`. Check `def component` in the repo's `Jenkinsfile_CNP`.
+- **Team hooks count towards the stage they're attached to.** Work in an `afterSuccess('akschartsinstall')` or `afterAlways('functionalTest:preview')` block, such as a preview-configuration script or extra UI tests, is timed and blamed as that stage.
+- **Stage attribution is unreliable for parallel stages.** The first event with a non-`SUCCESS` result is usually the failing stage, but parallel branches (`test`, `sonarscan`, `dockerbuild`, `securitychecks`, and Fortify and dependency-check on nightlies) can emit `FAILURE` after another branch failed.
+- **Superseded builds are logged as failures.** With `disableConcurrentBuilds(abortPrevious: true)`, a build cancelled by a newer push still emits `Pipeline Failed`. Treat a failed build whose end time is after the next build's start as superseded before quoting failure rates.
+- **Cross-partition `GROUP BY` isn't supported by the Python SDK** (`Query contains the following features, which the calling client does not support`). Use `SELECT DISTINCT VALUE` / `COUNT` queries, or pull the rows and aggregate on your side.
+
+### Failed-build archive (Blob Storage)
+
+Jenkins keeps only a handful of builds per branch and deletes PR jobs once the PR closes, so logs for most historical failures return `404` from Jenkins. Since 2026-07-28, the top-level *Archive Completed Builds* job (defined in `cnp-jenkins-config/jobdsl/organisations-beta.groovy`) has copied builds that ended in `FAILURE` to blob storage. From library `2.9.0`, `withPipeline` and `withNightlyPipeline` queue it through `queueBuildArchive`, but builds pinned to older library versions also appear in the archive, so don't assume a pipeline's builds are missing just because of its version. Coverage varies by repo: for ET over August–September it held 74–82% of the frontends' failures but only about 21% of `et-ccd-callbacks`'s. Layout:
+
+```
+jenkins-build-archive/builds/<job path>/completed-build_<n>_FAILURE[_<stage>]/
+    console.txt  artifacts.zip  build.json  test-results.json  archive-metadata.json
+```
+
+`<job path>` mirrors the Jenkins folder, for example `HMCTS_d_to_i/et-ccd-callbacks/PR-3196`. Only `FAILURE` is archived; `ABORTED` builds (such as a helm install that timed out) and `NOT_BUILT` builds (superseded) are not, so the archive under-represents deploy timeouts. In practice `workflow.json` isn't present and `failedStage` is empty, so take the cause from `console.txt`. Jenkins prints `Failed in branch <name>` for a failed parallel branch.
+
+Listing containers only needs management-plane access, but reading blobs needs *Storage Blob Data Reader*. If your account can list the storage account keys, `az` can fetch one for you without it being printed:
+
+```bash
+az storage blob list --account-name mgmtbuildlogstoresandbox --subscription bf308a5c-0624-4334-8ff8-8dca9fd43783 --auth-mode key -c jenkins-build-archive --prefix builds/HMCTS_d_to_i/et-ccd-callbacks/ -o table
+```
+
+Logs can be tens of megabytes, so download ranges (the last few hundred KB) rather than whole files when surveying many builds.
+
+### Pulling Jenkins logs in bulk
+
+For more than a handful of builds, the Jenkins MCP tools are slow and their regex filtering is noisy. Call the Jenkins API directly with the same `.claude/.jenkins.env` credentials, and allow a generous `curl --max-time`: logs for CCD-based services often run past 20 MB. `…/logText/progressiveText?start=<bytes>` returns just the end of a large log; `X-Text-Size` on a `HEAD` request gives its length. List a job's surviving builds with `…/api/json?tree=jobs[name,builds[number,result,timestamp,url]]`.
+
+## 6. Restart and verify
 
 MCP servers are launched at startup, so restart your client to pick up new servers or changed credentials.
 
@@ -125,10 +179,14 @@ The Atlassian OAuth flow needs a browser on the machine running the client. Insi
 - **An Atlassian tool fails asking for `cloudId`, or errors `No cloud ID found for hostname`** → pass `https://hmcts.atlassian.net` (or the UUID from `getAccessibleAtlassianResources`) explicitly. It is never inferred. `tools.hmcts.net` is the vanity URL used in shared Confluence/Jira links throughout this workspace's docs, but it isn't a registered Atlassian Cloud site — passing it as the `cloudId` fails with that error.
 - **An Atlassian operation name is rejected** → only Jira and Confluence basics are exposed as named tools; everything else is reached by `discover` then `executeRead` / `executeWrite`. Don't guess operation names.
 - **A server is missing from `/mcp`** → `.mcp.json` failed to parse, or the client was not restarted. Check with `jq . .mcp.json`.
+- **Cosmos queries return `403` although you can see the `pipeline-metrics` account** → you have control-plane `Reader` but no data-plane role. Ask for *Cosmos DB Built-in Data Reader*, or use a read-only key (see [section 5](#pipeline-metrics-cosmos-db)).
+- **A query for a repo in `pipeline-metrics` returns nothing** → you filtered on the repo name. `component` is the Jenkinsfile's `component` value (for example `cos` for `et-ccd-callbacks`).
+- **Jenkins returns `404` for a build URL taken from Cosmos** → the PR has closed and Jenkins has deleted its job. Look in the failed-build archive instead.
+- **`az storage blob list --auth-mode login` fails with "You do not have the required permissions"** → reading blobs needs a *Storage Blob Data* role even when you can list containers. Use `--auth-mode key` if you can list account keys, or ask for *Storage Blob Data Reader*.
 - **An Azure MCP tool call hangs for minutes with no error** → `DefaultAzureCredential` is walking its full credential chain before reaching the `az` CLI credential. Set `AZURE_TOKEN_CREDENTIALS=AzureCliCredential` in the server's `env` block in `.mcp.json`.
 
 ## Credential hygiene
 
-`.gitignore` excludes `/.claude/*.env`, so `.claude/.jenkins.env` is the one place a live credential sits in plaintext in the workspace. Only that rule keeps it out of a commit. Set an expiry on the Jenkins token, prefer the narrowest permissions that work, and revoke through the UI that issued it if the file is ever staged by accident. Never commit an env file, and never paste a token into a doc, a `.example` file, or a commit message.
+`.gitignore` excludes `/.claude/*.env`, so `.claude/.jenkins.env` (and `.claude/.cosmos.env`, if you use a Cosmos key) are the places a live credential sits in plaintext in the workspace. Only that rule keeps them out of a commit. Prefer RBAC roles over account keys where you can get them: a Cosmos read-only key can't be scoped to one container, and a storage account key grants full read-write on the whole account. Set an expiry on the Jenkins token, prefer the narrowest permissions that work, and revoke through the UI that issued it if the file is ever staged by accident. Never commit an env file, and never paste a token into a doc, a `.example` file, or a commit message.
 
 Atlassian holds no credential here at all now — the OAuth grant lives in the client's own storage. Revoke it from your Atlassian account's connected-apps page rather than by deleting anything in the repo.
