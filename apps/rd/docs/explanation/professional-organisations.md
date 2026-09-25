@@ -177,6 +177,8 @@ Professional users also have a status lifecycle, independent of their organisati
 
 The super user (first user for an organisation) starts as `PENDING` and transitions to `ACTIVE` upon organisation activation, when PRD registers them in IDAM via `rd-user-profile-api`.
 
+This status is a one-time snapshot, not a live check. When `rd-user-profile-api` resolves a duplicate-user conflict from IDAM (for example the target user already exists because it was activated moments earlier), it queries IDAM's status exactly once and persists whatever it sees at that instant. Subsequent reads only re-query IDAM if the stored status is already `ACTIVE`; a user stamped `PENDING` because of IDAM activation lag stays `PENDING` indefinitely with no background reconciliation. Forcing a re-check requires re-inviting the user with `resendInvite: true`, which routes to a re-registration path instead of the cached read.
+
 ## Internal vs external API surface
 
 All controllers extend `SuperController` which holds shared business logic. The split is purely about who can call what:

@@ -10,7 +10,7 @@ audience: both
 This page describes how to profile a java application which is deployed in one of our AKS clusters.
 
 ## Prerequisites
-1. Your user will need to have permissions to run kubectl exec and to ssh to a node. (Subscription contributor role works)
+1. Your user will need to have permissions to run kubectl exec and to ssh to a node. (Subscription contributor role works). This is granted per namespace — having exec/port-forward rights in your own team's namespace does not carry over to another namespace on the same cluster, even though listing or getting pods across namespaces may still work. Request access to the other namespace from PlatOps if you need to profile a service outside your own team's namespace.
 2. Install [kubectl node-shell](https://github.com/kvaps/kubectl-node-shell) which in turn requires [krew](https://krew.sigs.k8s.io/)
 3. Something to open .jfr files with like [Java Mission Control](https://adoptopenjdk.net/jmc.md)
 

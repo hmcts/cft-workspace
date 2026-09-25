@@ -198,6 +198,7 @@ If this happens, simply run the master build manually on sandbox jenkins.
     - A misconfigured environment variable, example - incorrect URL of a dependent service.
     - The product's shared preview PostgreSQL server has run out of connections — see [Preview database creation fails](#preview-database-creation-fails).
     - The pod is OOMKilled despite a generous `memoryLimits` — see [OOMKilled despite a generous memoryLimits](#oomkilled-despite-a-generous-memorylimits).
+    - AAT is off for its nightly shutdown window and a CCD pod elsewhere restarted during it — see [CCD pods crash-loop when AAT is powered off overnight](#ccd-pods-crash-loop-when-aat-is-powered-off-overnight).
 
 - Below are some handy kubectl commands to debug the issues
 
@@ -250,11 +251,17 @@ Check connection counts against `max_connections` and look for oversized `*_MIN_
 
 Increasing Playwright (or similar) worker count against a single preview release without also raising `DATA_STORE_DB_MAX_POOL_SIZE`/`DEFINITION_STORE_DB_MAX_POOL_SIZE` causes CCD's data-store/definition-store Hikari pools to saturate (logged as `total=N, active=N, waiting=M`) even though the pod's CPU and memory usage stay well under its request. This looks like a compute-bound ceiling but is actually a connection-pool ceiling — worker count and pool size both need raising together, roughly in proportion, to get a real parallelism gain.
 
+### CCD pods crash-loop when AAT is powered off overnight
+
+Every CCD-based service, in any environment, authenticates against **AAT's** IDAM instance — it resolves `https://idam-web-public.aat.platform.hmcts.net/o/.well-known/openid-configuration` while building its `ClientRegistrationRepository` bean at Spring context startup. When AAT's AKS cluster is off for its nightly [shutdown window](auto-shutdown.md), that discovery call 504s (`OriginTimeout`), so any CCD pod that starts or restarts during the window fails to boot and enters `CrashLoopBackOff` — even though the pod's own cluster and namespace are otherwise healthy. This affects every product's Preview/PR deploys at once, not just one, and resolves itself with no redeploy once AAT restarts and the affected pods pick up the discovery document on their next automatic restart.
+
+If `kubectl --context cft-aat-00-aks ...` fails with `no such host` right after AAT comes back up, that's a stale kubeconfig, not AAT still being down — the cluster's API server FQDN can change across a stop/start, so re-run `az aks get-credentials` for that context (see [Connecting to AKS Clusters](#connecting-to-aks-clusters)).
+
 ### OOMKilled despite a generous memoryLimits
 
 Jenkins-driven helm deploys (`helmInstall.groovy`) always pass `--set global.devMode=true` — Preview, PR builds and the Jenkins-managed AAT "staging" release alike. In devMode the chart reads `devmemoryLimits`/`devmemoryRequests`/`devcpuLimits`/`devcpuRequests` with no fallback to the non-dev keys, so a chart setting only `memoryLimits` gets the base chart's default instead (512Mi on chart-base and chart-nodejs, 1Gi on chart-java). Set `devmemoryLimits` alongside `memoryLimits` for anything Jenkins deploys. GitHub Actions deploys and Flux-managed `HelmRelease`s never set `global.devMode`.
 
-The same app in the same AAT namespace can run under two independent releases with different memory behaviour: a Jenkins-managed `<app>-staging` (devMode on) and a Flux-managed `<app>` (devMode off, tracking a prod image tag). Check which one a pod belongs to before changing chart values:
+The same app in the same AAT namespace can run under two independent releases with different memory behaviour: a Jenkins-managed `<app>-staging` (devMode on) and a Flux-managed `<app>` (devMode off, tracking a prod image tag). This split applies to any environment variable, not just memory: a value set only in the pipeline's AAT chart template (e.g. `values.aat.template.yaml`) reaches the staging release alone, and the flux-managed live release needs the same key added to its own patch in `cnp-flux-config` before it takes effect there — the two releases share a database but not their config source, so scheduled-task cadence, feature flags, and similar env-driven behaviour can silently diverge between them. Check which one a pod belongs to before changing chart values:
 
 ```bash
 kubectl get pod -n <namespace> <pod> -o jsonpath='{.metadata.labels.app\.kubernetes\.io/instance}{"\n"}'
@@ -554,6 +561,29 @@ yarn npm audit --recursive --environment production --json > yarn-audit-known-is
 This is a **temporary** measure and all packages **must** be updated when new versions are released to ensure security vulnerabilities are mitigated.
 
 The Renovate tool should raise pull requests automatically when a new package version is released. You can simply approve this change and merge the PR to mitigate the vulnerabilities.
+
+### - Security Checks branch fails with an empty `yarn-audit-result` file
+
+#### Error
+
+```
+You have an empty json file: yarn-audit-result.
+jq: parse error: Invalid numeric literal at line 1, column 4
+```
+
+followed by `Failed in branch Security Checks` and `ERROR: script returned exit code 5`.
+
+#### Solution
+
+This is `yarn-audit-with-suppressions.sh` failing to parse the output of `yarn npm audit` because the npm registry's audit/advisory endpoint returned nothing usable — a registry-side outage, not a real vulnerability (a genuine finding produces a populated report with `new_vulnerabilities` and advisory IDs, not an empty file). Check [status.npmjs.org](https://status.npmjs.org) for an open incident on the audit/security-advisory service; master and every open PR fail identically while the incident is live, so a clean master build failing this way is a strong signal it's the registry, not your change. Re-run once the incident clears — `yarn npm audit --recursive --json` from the affected repo returning real advisory JSON again confirms it's safe to rebuild.
+
+### - A Fortify open-redirect (CWE-601) finding survives after adding a "safe redirect" helper
+
+Wrapping a redirect in a project-local helper function does not clear a Fortify open-redirect finding on its own — Fortify's dataflow analysis has no built-in rule that treats a custom helper as a taint cleanse, so it keeps tracing straight through to the `res.redirect()` sink regardless of what the helper does internally. The fix Fortify actually credits is validating or whitelisting the tainted value at its source — for example a strict regex on the route parameter that ends up in the redirect target — before it reaches the helper.
+
+### - Fortify flags every `*-secret`/`*-password` key in node-config's `custom-environment-variables.json` as a hardcoded credential
+
+By node-config convention, every value in `custom-environment-variables.json` is the *name* of an environment variable to read at startup, not an actual secret — but Fortify's hardcoded-password rule matches on the key shape alone and can't tell the difference. There is no code change that satisfies the rule without renaming env vars and breaking deployment wiring, so triage this as a suppressed false positive rather than trying to "fix" it.
 
 ### - Yarn test failures
 

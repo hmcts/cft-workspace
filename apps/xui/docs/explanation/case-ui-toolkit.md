@@ -28,6 +28,8 @@ sources:
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read-label.scss
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/grey-bar.scss
   - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/grey-bar.service.ts
+  - ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/waystopay/waystopay-field.component.html
+  - ccpay-web-component:projects/payment-lib/src/lib/components/case-transactions/case-transactions.component.ts
   - rpx-xui-webapp:src/cases/containers/query-management-container/query-management-container.component.ts
   - rpx-xui-webapp:src/cases/query-management.routes.ts
   - rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts
@@ -209,6 +211,10 @@ If the `#ARGUMENT(...)` value does not match any registry key, `UnsupportedField
 **Query Management flow**: Services onboard by defining a "Queries" tab with a `componentLauncher` field using `#ARGUMENT(QueryManagement)`, plus `CaseQueriesCollection` fields per party role. The qualifying questions offered when a user raises a query are held in the LaunchDarkly flag `qm-qualifying-questions` and read by the host app, not by the toolkit: `rpx-xui-webapp` treats the flag value as a map of case type ID to question list and matches the current case type with both sides upper-cased, so a service can add or reword its questions without a deploy (`rpx-xui-webapp:src/cases/containers/query-management-container/query-management-container.component.ts:45`, `:421-469`). Each question supplies a `url`, and the literal `${[CASE_REFERENCE]}` inside it is substituted with the case reference — a flag payload that hard-codes a reference instead sends every user to the same case.
 
 Work Allocation task creation is service-side configuration rather than toolkit behaviour. The case type's `wa-task-initiation` table fires on the `queryManagementRaiseQuery` event, and its `wa-task-configuration` table builds the task description as a markdown link to `/query-management/query/<case reference>/3/<query id>` (`civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn:53322`, `civil-wa-task-configuration:src/main/resources/wa-task-configuration-civil-civil.dmn:3619`). The matching route is `query/:cid/:qid/:dataid` under the `query-management` path (`rpx-xui-webapp:src/cases/query-management.routes.ts:8-26`), so the `3` is not a query ID: it is the fixed `qid` value that puts the container into respond mode, alongside `1` for the qualifying-question detail page, `raiseAQuery` for a new query and `4` for a follow-up (`rpx-xui-webapp:src/cases/containers/query-management-container/query-management-container.component.ts:49-53`, `:398-408`). A task link that omits or changes that segment opens a different journey on the same case.
+
+### WaysToPay renders every payment on the case, not just the viewer's
+
+`WaysToPay` is a marker type: `WaysToPayFieldComponent`'s template instantiates `<ccpay-payment-lib>` keyed only on `[CCD_CASE_NUMBER]="caseReference"` — the field's own CCD value is never read (`waystopay-field.component.html`). Inside `@hmcts/ccpay-web-component`, `case-transactions.component.ts` fetches every payment group for that case number from Fee & Pay and renders all of them; there is no input that scopes the result to particular parties or payment references. On a multi-party case where one party's payments should stay hidden from another, a service cannot achieve that through the `WaysToPay` field value or a CCD `showCondition` — a `showCondition` can only hide the whole tab for everyone, not filter its contents. Scoping payment visibility per viewer requires either a change to `ccpay-web-component`/the toolkit to accept a filtered list of service-request references, or a service-side workaround that avoids the shared tab.
 
 ### Notable behaviours
 
