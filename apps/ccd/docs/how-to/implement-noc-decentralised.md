@@ -79,6 +79,7 @@ sources_sha:
 - The ccd-config-generator SDK provides a `builder.noticeOfChange()` block with two parts: **challenge questions** (generated into `ChallengeQuestion.json` and imported into definition-store, exactly as before — this is what XUI reads to render the form) and a **runtime endpoint** (`validate` + `submit` handlers) served by `NocController` in the `decentralised-runtime` at `POST /noc/verify-noc-answers` and `POST /noc/noc-requests`. The controller is opt-in via `ccd.decentralised-runtime.noc.enabled: true`.
 - **Getting XUI to call you is configuration, not code.** XUI resolves the verify/submit base URL per case type from the `DECENTRALISED_CASE_TYPE_CONFIG` JSON map; add an entry with a `nocBaseUrl` for your case-type prefix. Questions still go to AAC regardless. See [Step 7](#step-7--route-xui-at-your-service).
 - **You do not need a `ChangeOrganisationRequest` field**, and the PCS verify/submit *logic* never reads an `OrganisationPolicy` — representation state lives in the service's own entities (PCS: `LegalRepresentativeEntity` linked to `PartyEntity`). **But you almost certainly still need at least one `OrganisationPolicy` field on the case**, because the questions-rendering path still goes through AAC, which refuses to return challenge questions for a case that has no matching OrganisationPolicy. This is exactly what blocks XUI from rendering the form. See [Do you still need OrganisationPolicy?](#do-you-still-need-organisationpolicy) for the precise mechanism and the "put them in a list" nuance.
+- **You also still need one placeholder CCD event**, for the same reason: AAC's questions endpoint requires exactly one event that its `caseworker-caa` system user can trigger, independently of the OrganisationPolicy gate and of your own `submit` handler. See [Do you still need a CCD event for AAC?](#do-you-still-need-a-ccd-event-for-aac).
 - **Who sends the email?** The service does — there is no AAC to do it. The PoC has not wired Notify yet; the `noc-provider-routing` branch leaves an explicit `TODO` to send the outgoing-representative email from the service's own job queue, using AAC's Notify template as the content baseline.
 - **Multi-party** works because the service writes its own matching logic. AAC's "one Role filled by one Org" assumption lives in `OrganisationPolicy` + COR; once you drop those and match parties in your own code, a case can have any number of represented parties.
 
@@ -94,7 +95,7 @@ sources_sha:
 | Answer verification | AAC `ChallengeAnswerValidator` against CCD case fields | Your `validate` handler against your own DB |
 | In-flight request holder | `ChangeOrganisationRequest` complex field on the case | None — service tracks state in its own entities |
 | Representation model | `OrganisationPolicy` per role (one org ↔ one role) | Service entities (PCS: `LegalRepresentativeEntity`) — but an `OrganisationPolicy` field is still needed to satisfy AAC's question-rendering gate |
-| CCD events | 2–4 events (Request / Approval / Rejection / Decision) | None required — the submit handler does the work synchronously |
+| CCD events | 2–4 events (Request / Approval / Rejection / Decision) | None needed by your own submit logic, but AAC's questions endpoint still requires one placeholder event granting `caseworker-caa` (see below) |
 | Role assignment | AAC → data-store `/case-users` → AMRAS | Service → data-store `addCaseUserRoles`/`removeCaseUserRoles` → AMRAS |
 | Audit trail | `OrganisationPolicy.PreviousOrganisations` collection | Service entities (PCS: `ClaimPartyLegalRepresentative` rows marked `active = NO` with `endDate`) |
 | Outgoing-solicitor email | AAC via GOV.UK Notify | The service must do this itself (not yet wired in PoC) |
@@ -447,6 +448,23 @@ there too.
 - The **"put them in a list"** advice fits here: AAC's COR + `OrganisationPolicy` model assumes one role is filled by one organisation, which breaks for multi-party. Your decentralised handlers sidestep that (your DB decides cardinality), but AAC still needs to *see* an OrgPolicy per question role, so modelling the policies as a collection is the pragmatic way to cover multiple parties while keeping AAC's questions endpoint happy.
 
 This requirement disappears only once the questions endpoint also moves off AAC. The one exploration that would have done so — a service-side `questions(...)` handler — has since been abandoned: the SDK half was deleted from origin, so there is currently **no** route by which a service can serve its own challenge questions. **Keep the OrganisationPolicy field(s).** See [Open questions](#open-questions-and-gaps) item 1.
+
+---
+
+## Do you still need a CCD event for AAC?
+
+Yes — for the same reason as OrganisationPolicy above: AAC still serves the questions endpoint, and it applies its usual actionable-event check on top of the OrgPolicy check. AAC loads the case as its `caseworker-caa` system user and requires **exactly one** event that role can trigger (`NoticeOfChangeQuestions.checkForCaseEvents`): zero matching events fail with "No NoC events available for this case type", more than one fail with "Multiple NoC Request events found for the user". This runs independently of your `validate`/`submit` handlers, which need no CCD event of their own.
+
+The fix is a no-op placeholder event that grants only `ORGANISATION_CASE_ACCESS_ADMINISTRATOR` (`caseworker-caa`) and does nothing on submit:
+
+```java
+builder.decentralisedEvent("caseworkerNoticeOfChange", this::noOpSubmit)
+    .forStates(State.PENDING_CASE_ISSUED, State.CASE_ISSUED)
+    .name("Notice of change")
+    .grant(Permission.CRU, UserRole.ORGANISATION_CASE_ACCESS_ADMINISTRATOR);
+```
+
+Two consequences follow: NoC only works while the case is in one of that placeholder event's `forStates` — outside them, AAC's "no events" error fires before your `validate`/`submit` handlers ever run — and no other event in your config should grant `caseworker-caa`, or AAC's "more than one" check breaks question rendering instead.
 
 ---
 
