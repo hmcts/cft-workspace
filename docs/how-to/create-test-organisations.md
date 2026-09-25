@@ -254,11 +254,13 @@ accept a `statusMessage`; PRD's own functional tests exercise all of them.
 > `create-user` and `search-user` scopes — and most product IDAM clients (`pcs-api`,
 > `pcs-frontend`, and similar, declared in `idam-access-config`) are never given them, so a token
 > minted through your own client 403s even when both S2S allowlists already include your
-> microservice. IDAM's shared `test-public-service` client does carry those scopes (secret
-> `test-service-secret-key` in vault `idam-idam-<env>`); requesting a password-grant token from it
-> with `scope=openid profile roles create-user manage-user search-user` and using that token in
-> place of your own client's turns the same `403` into a normal `200`/`409` — verified on ITHC for
-> both approve and add-user. Worth trying before reaching for the UI.
+> microservice. IDAM's shared `test-public-service` client does carry those scopes; requesting a
+> password-grant token from it (secret in the environment's IDAM key vault — see
+> [S2S microservice keys](#2-get-an-s2s-token) for the vault-naming pattern) with
+> `scope=openid profile roles create-user manage-user search-user` and using that token in place of
+> your own client's turns the same `403` into a normal `200`/`409` — verified on ITHC for both
+> approve and add-user. Worth trying before reaching for the UI.
+<!-- REVIEW: original finding named the specific secret key and vault for the shared test-public-service client; removed from this public repo. Confirm the vault/secret name with the team before relying on this. -->
 
 ### Cleaning up after yourself
 
