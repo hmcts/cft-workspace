@@ -254,7 +254,7 @@ Increasing Playwright (or similar) worker count against a single preview release
 
 Jenkins-driven helm deploys (`helmInstall.groovy`) always pass `--set global.devMode=true` — Preview, PR builds and the Jenkins-managed AAT "staging" release alike. In devMode the chart reads `devmemoryLimits`/`devmemoryRequests`/`devcpuLimits`/`devcpuRequests` with no fallback to the non-dev keys, so a chart setting only `memoryLimits` gets the base chart's default instead (512Mi on chart-base and chart-nodejs, 1Gi on chart-java). Set `devmemoryLimits` alongside `memoryLimits` for anything Jenkins deploys. GitHub Actions deploys and Flux-managed `HelmRelease`s never set `global.devMode`.
 
-The same app in the same AAT namespace can run under two independent releases with different memory behaviour: a Jenkins-managed `<app>-staging` (devMode on) and a Flux-managed `<app>` (devMode off, tracking a prod image tag). This split applies to any environment variable, not just memory: a value set only in the pipeline's AAT chart template (e.g. `values.aat.template.yaml`) reaches the staging release alone, and the flux-managed live release needs the same key added to its own patch in `cnp-flux-config` before it takes effect there — the two releases share a database but not their config source, so scheduled-task cadence, feature flags, and similar env-driven behaviour can silently diverge between them. Check which one a pod belongs to before changing chart values:
+The same app in the same AAT namespace can run under two independent releases: a Jenkins-managed `<app>-staging` (devMode on) and a Flux-managed `<app>` (devMode off, tracking a prod image tag). Check which one a pod belongs to before changing chart values:
 
 ```bash
 kubectl get pod -n <namespace> <pod> -o jsonpath='{.metadata.labels.app\.kubernetes\.io/instance}{"\n"}'
@@ -267,6 +267,10 @@ kubectl get pod -n <namespace> <pod> -o jsonpath='{.status.containerStatuses[0].
 ```
 
 For history, Container Insights (`oms_agent`) is only enabled on perftest and prod — but `kube-prometheus-stack` runs on every CFT cluster and scrapes cAdvisor via the kubelet `ServiceMonitor` regardless of any chart's own `prometheus.enabled`, so `container_memory_working_set_bytes` is available for 30 days on AAT too. AAT is two clusters with a Prometheus each; only one runs Grafana, and that Grafana has both wired in as datasources.
+
+### Config set only in the pipeline's AAT template never reaches the Flux-managed release
+
+A Jenkins-managed `<app>-staging` release and its Flux-managed `<app>` counterpart in the same AAT namespace (see [OOMKilled](#oomkilled-despite-a-generous-memorylimits) above for how to tell which pod belongs to which) share a database but not their config source. A value set only in the pipeline's AAT chart template (e.g. `values.aat.template.yaml`) reaches the staging release alone; the Flux-managed live release needs the same key added to its own patch in `cnp-flux-config` before it takes effect there. This isn't limited to memory settings — scheduled-task cadence, feature flags, and any other env-driven behaviour can silently diverge between the two releases the same way.
 
 ### Preview pod is healthy but the pipeline's startup checker still fails
 
