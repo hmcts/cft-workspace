@@ -13,6 +13,8 @@ sources:
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/caseworker/manageparty/AddPartyService.java
   - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/CaseIssueService.java
   - pcs-api:src/main/resources/application.yaml
+  - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/service/bulkprint/LetterType.java
+  - pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/domain/claimactivitylog/PackDetails.java
 ---
 # Bulk Print Pack Selection and Holds
 
@@ -23,3 +25,5 @@ The nightly bulk-print sweep (`BulkPrintScheduledTask`, a db-scheduler `Recurrin
 **Pack holds (`PackSkipRules`) are recomputed fresh every sweep from ordinary business columns, with no separate "held" state stored anywhere.** Behind the `RELEASE_1_DOT_3` flag, the claim, defence, and gen-app packs can each be held for translation (Welsh language) or, for the claim and defence packs, for an expected general application or an outstanding help-with-fees reference on a counterclaim. There are two different kinds of hold signal underneath this, with very different lifecycles: a `case_flag`/`case_party_flag` row's `status` (the Welsh Communications flag) is released the normal way — a caseworker deactivates it via "Manage Case Flags" — but `claim.language_used`, `claim.gen_app_expected`, and the equivalent counterclaim/response/gen-app language and HWF columns are written once at submission and never updated by any other code path. Once one of those columns puts a pack on hold, only the flag-based half of the same `OR` condition can still change; the column itself has no release mechanism today.
 
 **A defendant added to a case after issue never gets an access code.** `CaseIssueService` schedules access-code generation for every defendant at issue time, but the "Add Litigation Party" event (`AddPartyService.addParty`) only creates the party — it never schedules that same task. Since `ClaimPackSelector` withholds a defendant's claim pack until their access-code document exists, a defendant added after the case was issued has their claim pack held indefinitely, with nothing to ever unblock it.
+
+**A `claim_activity_log` row's `packType` (for example `DEFENCE_PACK_LEGAL_REP`) describes who *filed* the enclosed documents, not who the pack was sent to.** The recipient is always the row's `party_id`; a legal representative is never a `party_id` and is never a bulk-print recipient, because a represented defendant and their representative are both excluded from selection while the representation is active. So a `DEFENCE_PACK_LEGAL_REP` row against an unrepresented, by-post defendant records that defendant being posted another defendant's legal-rep-filed defence — not a pack going to a legal rep. Reading `party_id` as anything other than the recipient is the likeliest way to misdiagnose a bulk-print incident from the activity log alone.
