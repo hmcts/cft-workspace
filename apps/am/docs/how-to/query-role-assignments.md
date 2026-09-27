@@ -93,7 +93,7 @@ Available filter fields on `QueryRequest`:
 | `classification` | `List<String>` | `PUBLIC`, `PRIVATE`, `RESTRICTED` (in increasing security level) |
 | `grantType` | `List<String>` | `BASIC`, `SPECIFIC`, `STANDARD`, `CHALLENGED`, `EXCLUDED` |
 | `roleCategory` | `List<String>` | `JUDICIAL`, `LEGAL_OPERATIONS`, `ADMIN`, `PROFESSIONAL`, `CITIZEN`, `SYSTEM`, `OTHER_GOV_DEPT`, `CTSC` |
-| `validAt` | `LocalDateTime` | Point-in-time filter: returns assignments where `(beginTime IS NULL OR beginTime <= validAt) AND (endTime IS NULL OR endTime >= validAt)` |
+| `validAt` | `LocalDateTime` | Point-in-time filter: returns assignments where `(beginTime IS NULL OR beginTime <= validAt) AND (endTime IS NULL OR endTime >= validAt)`. Omit it and no time filtering happens at all, so `EXPIRED` assignments come back alongside live ones. |
 | `attributes` | `Map<String, List<String>>` | Match against JSONB attributes (see attribute keys below). Supports `null` values to match records where the attribute key is absent. |
 | `authorisations` | `List<String>` | Returns assignments where ANY queried authorisation matches (uses PostgreSQL `array_position`) |
 | `hasAttributes` | `List<String>` | Returns assignments that have at least one of these attribute keys present (non-null) |

@@ -16,6 +16,7 @@ audience: both
 - [VPN](#vpn)
 - [Flux and Gitops](#flux-and-gitops)
 - [Connecting to AKS Clusters](#connecting-to-aks-clusters)
+- [Application Insights](#application-insights)
 - [Golden Path](#golden-path)
 
 ## GitHub
@@ -475,6 +476,12 @@ Once you have logged in, you can switch between clusters using [kubectx](https:/
 kubectl config use-context cft-perftest-00-aks
 kubectl config use-context cft-aat-00-aks
 ```
+
+## Application Insights
+---
+### `az monitor app-insights query` silently defaults to the last hour
+
+Omitting both `--start-time` and `--end-time` does not error — the query still runs, but scoped to only the last hour, so a genuine "no matching telemetry in this window" result looks identical to "you queried the wrong window entirely". An `--offset` value outside what the command accepts (e.g. `30d`) fails with a generic `BadArgumentError: The request had some invalid properties` rather than naming the bad argument. Always pass explicit `--start-time`/`--end-time` in UTC when investigating anything more than an hour old, and treat an empty result with no explicit time range as inconclusive rather than as evidence nothing happened.
 
 ## Golden Path
 ---

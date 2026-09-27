@@ -136,6 +136,7 @@ This OAT is to ensure the data can be reliably and frequently backed up.
 This OAT ensures service checks for all possible points of failure and alerts triggered in the event of a failure.
 
 - SOG to be updated with monitoring and alerting details either in Application Insights or Dynatrace.
+- Dynatrace alert rules are configured at the platform level (an agent on the clusters), not in any product repository or `cnp-flux-config`. You cannot confirm from source whether a given error pattern will raise a Dynatrace alert — check the Dynatrace UI or ask the platform team.
 
 ### Micro Service Separation
 

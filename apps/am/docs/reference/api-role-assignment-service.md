@@ -374,7 +374,7 @@ Add `?includeLabels=true` as a query parameter to populate `roleLabel` on each a
 |---|---|---|
 | `actorId` | `IN` clause | No filter applied (returns all) |
 | `attributes` | PostgreSQL `contains_jsonb` function on JSONB column | NULL values match via `jsonb_extract_path_text IS NULL` |
-| `validAt` | `beginTime <= validAt AND (endTime >= validAt OR endTime IS NULL)` | -- |
+| `validAt` | `beginTime <= validAt AND (endTime >= validAt OR endTime IS NULL)` | Filter is skipped entirely when omitted — the query then returns assignments regardless of expiry, including `EXPIRED` ones |
 | `authorisations` | PostgreSQL `array_position` (ANY match) | -- |
 | `hasAttributes` | OR across listed keys (present check) | -- |
 | `roleType`, `roleName`, `classification`, `grantType`, `roleCategory` | `IN` clause | No filter when null/empty |
