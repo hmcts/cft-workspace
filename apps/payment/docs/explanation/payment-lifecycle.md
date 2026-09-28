@@ -102,7 +102,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.6.yaml": "49aa8817f619e226e00c1f1010299dba05898908"
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.8.yaml": "c0cb9c298edd78221ec9c47f0fc43e71f1df4e4a"
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml": "1eecc96d51c2a425d51bc20682ab252806a62ff6"
-  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "80fa794fde5b91a09ad903eac9601de7cbaec1a8"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "ce5161c8e1a9122579f3aa5f1fca29d5a7bb42e4"
 ---
 
 ## TL;DR

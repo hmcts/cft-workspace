@@ -119,7 +119,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-0.0.9.yaml": "1eecc96d51c2a425d51bc20682ab252806a62ff6"
   "ccpay-payment-app:settings.gradle": "7bafc8bc5e167ac022ea09d0d178dda6df95e09b"
   "cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml": "9dae82de2ce3d1daf2e9b3e24f16f8a2fc84d8d5"
-  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "80fa794fde5b91a09ad903eac9601de7cbaec1a8"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "ce5161c8e1a9122579f3aa5f1fca29d5a7bb42e4"
 ---
 
 ## TL;DR

@@ -91,10 +91,10 @@ sources_sha:
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/prod.yaml": "b8d4f674f4f79c6505b4b4869ee3e96d0925ae3e"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/aat.yaml": "aba3724191bdd2ac64022358054550f863f7e715"
   "cnp-flux-config:apps/fees-pay/ccpay-payment-api/demo.yaml": "1f0efdef1eabb8a0a04df64d3ce697eaf8d1090a"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/ithc.yaml": "fccab24b94a0dd51ea999867cd177435a1631a4f"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/perftest.yaml": "fccab24b94a0dd51ea999867cd177435a1631a4f"
-  "cnp-flux-config:apps/fees-pay/ccpay-payment-api-int/demo.yaml": "fccab24b94a0dd51ea999867cd177435a1631a4f"
-  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "80fa794fde5b91a09ad903eac9601de7cbaec1a8"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/ithc.yaml": "ccfcb05a601874d6cdf24093301b6785e15826cb"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api/perftest.yaml": "ccfcb05a601874d6cdf24093301b6785e15826cb"
+  "cnp-flux-config:apps/fees-pay/ccpay-payment-api-int/demo.yaml": "ccfcb05a601874d6cdf24093301b6785e15826cb"
+  "cnp-flux-config:apps/fees-pay/status-payment-job/status-payment-job.yaml": "ce5161c8e1a9122579f3aa5f1fca29d5a7bb42e4"
 ---
 
 ## TL;DR
