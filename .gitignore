@@ -59,7 +59,7 @@
 # named volumes, so anything untracked inside one is lost to `docker volume prune` — these are kept here,
 # on the bind-mounted workspace repo, and symlinked back into each clone by scripts/link-local-notes.
 # Ignored rather than tracked because they are personal: `rules-of-engagement.md` is per-engineer
-# instruction (one per clone, differing by START_TOKEN) and the `steve*` files are scratch notes.
+# instruction (one per clone, differing by START_TOKEN) and `steves_notes.md` is scratch.
 /local-notes/
 
 # 9) The deed-poll programme's clones

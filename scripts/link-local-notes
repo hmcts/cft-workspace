@@ -9,7 +9,11 @@ set -euo pipefail
 # scratch — so committing them is wrong and losing them is worse. Keeping the content under
 # `local-notes/`, which is on the bind-mounted workspace repo, puts it on the host where the Mac's own
 # backup covers it, while the symlink keeps the path each file is habitually referred to by
-# (`deed-poll-admin/rules-of-engagement.md`) working unchanged.
+# (`deed-poll-admin/rules-of-engagement.local.md`) working unchanged.
+#
+# **The link gets a `.local.md` suffix; the source keeps its plain name.** Every clone ignores
+# `*.local.md` and none ignores `rules-of-engagement.md`, so a link under the plain name would be an
+# untracked file that a stray `git add -A` commits into the clone.
 #
 # **The four `rules-of-engagement.md` files are NOT copies of each other** — they differ by START_TOKEN
 # (`ADMIN - 👵`, `API - 🐦`, …), which is how the engineer tells which agent is working in which repo. So
@@ -26,8 +30,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 NOTES_DIR="local-notes"
 
-# repo:filename pairs. Filenames are the originals rather than something tidier, because the point is that
-# the habitual path keeps working — renaming them here would defeat it.
+# repo:filename pairs, naming the source under `local-notes/<repo>/`. The link in the clone is the same name
+# with `.md` replaced by `.local.md`.
 ENTRIES=(
   "deed-poll-admin:rules-of-engagement.md"
   "deed-poll-api:rules-of-engagement.md"
@@ -43,7 +47,7 @@ for entry in "${ENTRIES[@]}"; do
   repo="${entry%%:*}"
   file="${entry##*:}"
   source_file="$NOTES_DIR/$repo/$file"
-  target="$repo/$file"
+  target="$repo/${file%.md}.local.md"
 
   if [[ ! -d "$repo" ]]; then
     echo "skip   $target — $repo not cloned"
