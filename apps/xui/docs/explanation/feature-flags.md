@@ -119,7 +119,7 @@ Feature flags support trunk-based development by allowing incomplete features to
 
 ## Server-side BFF flags
 
-All BFF flags live under `feature.*` in `config/default.json:163-181` and are accessed via `showFeature(ref)` from `api/configuration/index.ts`. Those with an env var are set as JSON-encoded boolean strings (`"true"` / `"false"`) because `custom-environment-variables.json` declares `__format: "json"` for each; two (`roleEnabled`, `caseworkerRefEnabled`) are not mapped to env vars at all and can only be changed in `default.json`.
+All BFF flags live under `feature.*` in `config/default.json:165-183` and are accessed via `showFeature(ref)` from `api/configuration/index.ts`. Those with an env var are set as JSON-encoded boolean strings (`"true"` / `"false"`) because `custom-environment-variables.json` declares `__format: "json"` for each; two (`roleEnabled`, `caseworkerRefEnabled`) are not mapped to env vars at all and can only be changed in `default.json`.
 
 | Flag key (config path) | Env var | Default | Purpose |
 |---|---|---|---|
@@ -333,14 +333,16 @@ WA service configuration is not a flag. `LaunchDarklyDefaultsConstants.getWaServ
 | `localhost` | `LOCAL` |
 | Default (unrecognised) | `PROD` |
 
-Those eight environments collapse onto only three constants: `PROD` selects `WASERVICECONFIGPROD`, `DEMO` selects `WASERVICECONFIGTESTQM`, and every other value — `AAT`, `PERFTEST`, `ITHC`, `PREVIEW`, `LOCAL` — falls through to `WASERVICECONFIGTEST` (`rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts:246-254`). Each defines case-type-to-service mappings (`Asylum`/`Bail` -> `IA`, `CIVIL`/`GENERALAPPLICATION` -> `CIVIL`, and so on), and the DEMO constant carries QM-only case types such as `CaseViewCallbackMessages2` (`:225`).
+Those eight environments collapse onto only three constants: `PROD` selects `WASERVICECONFIGPROD`, `DEMO` selects `WASERVICECONFIGTESTQM`, and every other value — `AAT`, `PERFTEST`, `ITHC`, `PREVIEW`, `LOCAL` — falls through to `WASERVICECONFIGTEST` (`rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts:263-271`). Each defines case-type-to-service mappings (`Asylum`/`Bail` -> `IA`, `CIVIL`/`GENERALAPPLICATION` -> `CIVIL`, and so on), and the DEMO constant carries QM-only case types such as `CaseViewCallbackMessages2` (`:232`).
 
-The three blocks are maintained by hand and do diverge. `WASERVICECONFIGTEST` lists both `PCS` and
-`PCS-staging` (`:79-83`), `WASERVICECONFIGTESTQM` lists `PCS` (`:232-235`), and
-`WASERVICECONFIGPROD` has no PCS entry at all. Since the constant is the only input,
-`isWAEnabled` finds no matching service for a PCS case in production and Work Allocation is off
-there while working in AAT and DEMO — and no flag change can turn it on. Adding a service to Work
-Allocation means editing all three blocks.
+The three blocks are maintained by hand and do diverge. All three now carry PCS, but not
+identically: `WASERVICECONFIGTEST` lists both `PCS` and `PCS-staging` (`:79-83`), while
+`WASERVICECONFIGTESTQM` (`:239-242`) and `WASERVICECONFIGPROD` (`:152-158`) list `PCS` alone, so a
+`PCS-staging` case gets no WA config outside the AAT-style environments. PROBATE is the current
+one-sided entry: only `WASERVICECONFIGTESTQM` has it (`:244-253`), so Probate case types match no
+service on the fallback path in production. Since the constant is the only input on that path,
+`isWAEnabled` finds no matching service and Work Allocation is off there — and no flag change can
+turn it on. Adding a service to Work Allocation means editing all three blocks.
 
 ## Race conditions and initialisation ordering
 

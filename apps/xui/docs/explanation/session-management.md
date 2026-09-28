@@ -194,7 +194,7 @@ The last entry with pattern `"."` acts as the catch-all default (480 minutes = 8
 | `-solicitor` | 50 min | 10 min | 40 min |
 | `.` (catch-all / caseworkers) | 480 min (8 hr) | 10 min | 470 min |
 
-<!-- DIVERGENCE: Confluence (page 1211990378) says solicitors get 60 minutes and DWP/Home Office get 15 minutes. Source (rpx-xui-webapp:config/default.json:203-223) shows solicitors get 50 minutes, DWP gets 30 minutes, and Home Office gets 240 minutes. Source wins. -->
+<!-- DIVERGENCE: Confluence (page 1211990378) says solicitors get 60 minutes and DWP/Home Office get 15 minutes. Source (rpx-xui-webapp:config/default.json:205-225) shows solicitors get 50 minutes, DWP gets 30 minutes, and Home Office gets 240 minutes. Source wins. -->
 
 **Information Assurance design intent** (from Confluence): The original IA recommendation was 8 hours for internal users, 1 hour for solicitors, and 15 minutes for DWP/Home Office. Deployed values differ as shown above, reflecting operational adjustments made since the original design.
 

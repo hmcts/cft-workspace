@@ -302,7 +302,7 @@ Publishing is automated via `.github/workflows/npmpublish.yml`:
 
 | Trigger | Job | Action |
 |---------|-----|--------|
-| PR or push to `master`/`Release` | `build` | Install, audit, lint, build, test (coverage uploaded as artifact) |
+| PR or push to `master`/`Release` | `build` | Install, audit, lint (app and Playwright), Jenkins publication-contract check, build, packaged-consumer smoke test, test (coverage uploaded as artifact) |
 | PR or push to `master`/`Release` | `sonarcloud` | SonarQube analysis on coverage report |
 | GitHub Release created | `release-build` | Install, build (no test -- tests run on the prior push) |
 | GitHub Release created | `publish-npm` | Publish to npm via OIDC Trusted Publishing (no token needed) |
@@ -339,7 +339,7 @@ Version pinning is exact (not caret/tilde) because SRT validates a specific vers
 
 ### Peer dependencies
 
-`projects/ccd-case-ui-toolkit/package.json` is the manifest ng-packagr publishes, and it declares **only** peer dependencies — no runtime `dependencies` block at all. The peers cover the Angular 20 framework packages and NgRx 20, plus `rxjs`, `moment`, `underscore`, `ngx-chips`, `ngx-editor`, `ngx-markdown`, `ngx-pagination`, the ProseMirror packages and `rpx-xui-translation`. `@angular/cdk` and `@angular/material` are peers on their own earlier major lines (17 and 16), not on 20, so a consuming app has to satisfy both generations at once (`projects/ccd-case-ui-toolkit/package.json:4-37`).
+`projects/ccd-case-ui-toolkit/package.json` is the manifest ng-packagr publishes, and it declares **only** peer dependencies — no runtime `dependencies` block at all. The peers cover the Angular 20 framework packages and NgRx 20, plus `rxjs`, `moment`, `underscore`, `ngx-chips`, `ngx-editor`, `ngx-markdown`, `ngx-pagination`, the ProseMirror packages, `rpx-xui-translation`, `class-transformer` and `lodash`. `@angular/cdk` and `@angular/material` are peers on their own earlier major lines (17 and 16), not on 20, so a consuming app has to satisfy both generations at once (`projects/ccd-case-ui-toolkit/package.json:4-39`).
 
 `@hmcts/media-viewer`, `@hmcts/ccpay-web-component` and `@edium/fsm` are not declared by the published package in any form, even though library code imports them. Consuming apps install them directly and choose their own versions — `rpx-xui-webapp` lists all three in its own `dependencies` (`rpx-xui-webapp:package.json:120-124`) — which means a version skew between the app and what the toolkit was built against surfaces as a runtime error, not an install-time conflict.
 

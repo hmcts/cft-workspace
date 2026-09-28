@@ -284,7 +284,7 @@ yarn test
 yarn build:library
 ```
 
-This invokes `ng build ccd-case-ui-toolkit-lib`, whose builder is `@angular-devkit/build-angular:ng-packagr` driven by `projects/ccd-case-ui-toolkit/ng-package.json` (`angular.json:113-130`). Output lands in `dist/ccd-case-ui-toolkit/` (`ng-package.json:3`) — bundle formats are whatever the pinned `ng-packagr` emits, so read them from the build output rather than assuming.
+This invokes `ng build ccd-case-ui-toolkit-lib`, whose builder is `@angular-devkit/build-angular:ng-packagr` driven by `projects/ccd-case-ui-toolkit/ng-package.json` (`angular.json:143-160`). Output lands in `dist/ccd-case-ui-toolkit/` (`ng-package.json:3`) — bundle formats are whatever the pinned `ng-packagr` emits, so read them from the build output rather than assuming.
 
 ## 8. Publish a new version
 

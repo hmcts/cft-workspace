@@ -165,7 +165,7 @@ These routes are handled locally by Express controllers that make targeted Axios
 
 Work Allocation routes are handled locally by Express routing (`api/workAllocation/routes.ts`), not via prefix-based proxying. The controller makes Axios calls to the downstream WA Task Management API.
 
-**Supported WA jurisdictions** are configured via `waSupportedJurisdictions` (default: `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC`).
+**Supported WA jurisdictions** are configured via `waSupportedJurisdictions` (default: `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC,PCS`).
 
 ### Hearings (HMC)
 
@@ -239,7 +239,7 @@ The `/documents` route handler also enforces its own per-session upload throttle
 | LAU (Challenged Access) | `services.lau.specificChallengedAccessApi` (`SERVICES_LAU_SPECIFIC_CHALLENGED_ACCESS_API_PATH`) | Log and Audit challenged-access records |
 | Global Search | `services.ccd.dataApi` (same as CCD Data Store) | Cross-jurisdiction case search via CCD Data Store `/globalSearch` endpoint |
 
-**Global Search supported services:** configured via `globalSearchServices` (default: `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC`).
+**Global Search supported services:** configured via `globalSearchServices` (default: `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC,PROBATE,PCS`).
 
 ### Authentication & Infrastructure
 

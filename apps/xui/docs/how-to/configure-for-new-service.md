@@ -237,14 +237,14 @@ If your service introduces a new CCD jurisdiction (not just a new downstream API
 | `globalSearchServices` | Jurisdictions included in global search results | `GLOBAL_SEARCH_SERVICES` |
 | `staffSupportedJurisdictions` | Jurisdictions visible in staff admin UI | `STAFF_SUPPORTED_JURISDICTIONS` |
 
-Current values (`config/default.json:122-127`):
+Current values (`config/default.json:122-129`):
 
 ```json
 {
   "jurisdictions": "DIVORCE,PROBATE,FR,PUBLICLAW,IA,SSCS,EMPLOYMENT,HRS,CIVIL,CMC,PRIVATELAW,PCS",
-  "waSupportedJurisdictions": "IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC",
-  "globalSearchServices": "IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC",
-  "staffSupportedJurisdictions": "ST_CIC,CIVIL,EMPLOYMENT,PRIVATELAW,PUBLICLAW,IA,SSCS,DIVORCE,FR,PROBATE,HRS"
+  "waSupportedJurisdictions": "IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC,PCS",
+  "globalSearchServices": "IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC,PROBATE,PCS",
+  "staffSupportedJurisdictions": "ST_CIC,CIVIL,EMPLOYMENT,PRIVATELAW,PUBLICLAW,IA,SSCS,DIVORCE,FR,PROBATE,HRS,PCS"
 }
 ```
 
