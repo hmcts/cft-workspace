@@ -55,7 +55,10 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java": "fd407422cd1c80859f3374209a54562d6dbf38f3"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Field.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java": "d925e0bcf4b8d40287b797d56b658cd7d044b8e5"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/CCDDefinitionGenerator.java": "2f4abb68b0c53978072ffb474c5fceefc1106c7f"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigResolver.java": "d925e0bcf4b8d40287b797d56b658cd7d044b8e5"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/HasRole.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCD.java": "6b11c958ff5a6acaebbd19987c9b4706158b108b"
@@ -69,9 +72,10 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/Start.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseEventToFieldsGenerator.java": "5aac4f32ba9d903d5fde3474938c9afaaee510b8"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/CaseFieldGenerator.java": "febdd856ecd2875f6dd1490c7c5ab9afb8dd2dd7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/generator/JsonUtils.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
-  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
-  "ccd-config-generator:README.md": "3b8dd94146b7642c4ce05ea2d2a0e1110a5762bd"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "c91b5448e2b2b796e2320cd1feb2f5b8acb884e6"
+  "ccd-config-generator:README.md": "c91b5448e2b2b796e2320cd1feb2f5b8acb884e6"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/EventCaseFieldParser.java": "843130d6c79bef2ad7718def447cf88bedfef23d"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
 ---
@@ -572,13 +576,13 @@ public class MyCaseConfig implements CCDConfig<MyCaseData, State, UserRole> {
 
 ## Ejecting from the SDK
 
-`generateCCDConfig` is a plain `JavaExec` task running `uk.gov.hmcts.ccd.sdk.Main`, whose only output is the directory named by the `ccd.configDir` extension property, registered as a Gradle task output (`CcdSdkPlugin.java:30-53`). That directory holds the same per-sheet JSON the definition store expects, so `ccd-definition-processor`'s `json2xlsx` turns it into an importable spreadsheet with no SDK involvement (`README.md:132-159`). Running the task once and then maintaining the JSON by hand is a supported exit path.
+`generateCCDConfig` is a plain `JavaExec` task running `uk.gov.hmcts.ccd.sdk.Main`, whose only output is the directory named by the `ccd.configDir` extension property, registered as a Gradle task output (`CcdSdkPlugin.java:38-64`). That directory holds the same per-sheet JSON the definition store expects, so `ccd-definition-processor`'s `json2xlsx` turns it into an importable spreadsheet with no SDK involvement (`README.md:136-163`). Running the task once and then maintaining the JSON by hand is a supported exit path.
 
 Because `uk.gov.hmcts.ccd.sdk.Main` runs inside the consuming service's own classpath to discover `CCDConfig` beans via component scanning, it also boots that service's full Spring context — including binding its configured `server.port` — not just a lightweight bean scan. Running `generateCCDConfig` while the same service is already up locally (e.g. via `bootWithCCD` or `bootRun` on the same port) fails with a "port already in use" web-server startup error. Free the port first, or override it for this task specifically (for example `environment 'SERVER_PORT', '0'` on the `generateCCDConfig` task).
 
 Freeing the port only avoids the bind conflict, not a second, subtler race: under cftlib, `CftLibConfig` regenerates `build/definitions/` on every Spring Boot devtools restart of the already-running `bootWithCCD` process, and any tooling that writes generated Java into `src/main/java` is itself a devtools restart trigger. Run `generateCCDConfig` (with `SERVER_PORT=0`) right after such a write and the two processes can write the same `build/definitions/<CaseType>/...` directory at once — `JsonUtils.mergeInto`'s read-then-write can hit a `NoSuchFileException` on a file the other side deleted moments earlier. The symptom is intermittent (a re-run right after usually succeeds) and the fix is a delay-and-retry once around `generateCCDConfig`, not a persistent fix to definition state.
 
-Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:633-647`).
+Short of ejecting entirely, the generated directory can be merged with a hand-written one — the documented pattern is a `Copy` task consuming `tasks.generateCCDConfig.outputs` alongside a `static/` folder holding sheets the generator does not cover, such as Challenge Questions (`README.md:637-651`).
 
 ---
 

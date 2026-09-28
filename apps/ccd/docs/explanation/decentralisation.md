@@ -84,7 +84,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/common/PersistenceStrategyResolver.java": "079679807d1f7becaaef398a2991ddcaf5c46235"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/casedetails/DelegatingCaseDetailsRepository.java": "3f31c2b5662bbfbe8d341fb02ce3688124b5cdd6"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/SubmitCaseTransaction.java": "e3fca30b92506584a590ae203811d60202129d2d"
-  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java": "4115bfbac27231f22862f68bcabeddb10aeb645f"
   "ccd-data-store-api:src/main/resources/application.properties": "a3bd23b7e2a57b903a610b651b7a6f33c1781b15"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/CreateCaseEventService.java": "e3fca30b92506584a590ae203811d60202129d2d"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/getcasedocument/CaseDocumentTimestampService.java": "b58f7f447730bf5ec8f9bca0bd831c1abe2b6db0"
@@ -99,7 +99,7 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java": "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java": "303b6617c09391e0700c6ae904b6dc54e119f9c0"
-  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "c91b5448e2b2b796e2320cd1feb2f5b8acb884e6"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0008.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql"
   : "85f32117928bda311dd7c752f185ba9cd47c7464"
@@ -110,7 +110,7 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "ec92d4394a2eabf0ef58b7b25253ab93a2b608ae"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseEventTransactionCoordinator.java": "3061d32495f88f2507033825cbc3341c4482e8e9"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "12426f7174c87f81d709ff41d2650473b67295db"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/PCSCaseView.java": "1d626d75c816fc34fd7b73e6e3633749ffaeb9a6"
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "ea9b6604f04086472937e4df3cafb31a03b3f79f"
@@ -295,7 +295,7 @@ Key constraints enforced by `ServicePersistenceClient`:
 
 ### Idempotency key derivation
 
-CCD generates the `Idempotency-Key` deterministically from the start-event token. `IdempotencyKeyHolder` calls `UUID.nameUUIDFromBytes(digest)` (`IdempotencyKeyHolder.java:27`), so any two submissions backed by the same start token produce the same UUID. Services use this as a deduplication key:
+CCD generates the `Idempotency-Key` deterministically from the start-event token. `IdempotencyKeyHolder` calls `UUID.nameUUIDFromBytes(digest)` (`IdempotencyKeyHolder.java:29`), so any two submissions backed by the same start token produce the same UUID. Services use this as a deduplication key:
 
 - First request with a new key: process and return `201 Created` with the new case state.
 - Repeat request with the same key: do **not** re-process — reconstruct the response from the event history and return `200 OK`.
@@ -401,7 +401,7 @@ ccd {
 
 Setting `decentralised = true` pulls in the `decentralised-runtime` dependency and wires `ServicePersistenceController` automatically (`build.gradle` in pcs-api). The service does **not** write this controller itself. `runtimeIndexing` is the separate opt-in for the SDK's Elasticsearch indexer — see [Opting in](#opting-in).
 
-Both flags are now deprecated. The plugin imports a `ccd-sdk-bom` platform into `implementation`, `configGeneration` and (when the cftlib plugin is applied) `cftlibImplementation`, so the same modules can be declared as ordinary version-less dependencies instead (`CcdSdkPlugin.java:38-41`, `:124-127`):
+Both flags are now deprecated. The plugin imports a `ccd-sdk-bom` platform into `implementation`, `configGeneration` and (when the cftlib plugin is applied) `cftlibImplementation`, so the same modules can be declared as ordinary version-less dependencies instead (`CcdSdkPlugin.java:46-49`, `:124-127`):
 
 ```groovy
 dependencies {
@@ -410,7 +410,7 @@ dependencies {
 }
 ```
 
-The flags still work — the plugin adds the same dependencies for them — but each setter logs `ccd.<flag> is deprecated. Remove this flag and declare … in dependencies when needed; the CCD SDK BOM supplies the version.` during Gradle configuration (`CcdSdkPlugin.java:154-170`, `:172-175`).
+The flags still work — the plugin adds the same dependencies for them — but each setter logs `ccd.<flag> is deprecated. Remove this flag and declare … in dependencies when needed; the CCD SDK BOM supplies the version.` during Gradle configuration (`CcdSdkPlugin.java:289-305`, `:172-175`).
 
 ### 2. Implement `CaseView`
 
@@ -488,7 +488,7 @@ The earlier design called for each adopting service to provision its own dedicat
 
 ### Opting in
 
-`ccd { runtimeIndexing = true }` in the service's `build.gradle` adds `com.github.hmcts:ccd-runtime-indexing` to `implementation`; with it left `false` the same artefact is added only to `cftlibImplementation`, so the indexer runs in local/cftlib runs but not in the deployed service. Declaring `implementation 'com.github.hmcts:ccd-runtime-indexing'` directly has the same effect and is the non-deprecated route — the plugin skips the `cftlibImplementation` fallback when the module is already on the runtime classpath (`CcdSdkPlugin.java:87-93`, `:118-122`). The bean itself is additionally gated on `ccd.sdk.decentralised.es-indexer.enabled`, which defaults to on (`DecentralisedESIndexer.java:47-50`). The target cluster comes from `ELASTIC_SEARCH_HOSTS` (comma-separated, defaults to `http://localhost:9200`).
+`ccd { runtimeIndexing = true }` in the service's `build.gradle` adds `com.github.hmcts:ccd-runtime-indexing` to `implementation`; with it left `false` the same artefact is added only to `cftlibImplementation`, so the indexer runs in local/cftlib runs but not in the deployed service. Declaring `implementation 'com.github.hmcts:ccd-runtime-indexing'` directly has the same effect and is the non-deprecated route — the plugin skips the `cftlibImplementation` fallback when the module is already on the runtime classpath (`CcdSdkPlugin.java:98-104`, `:118-122`). The bean itself is additionally gated on `ccd.sdk.decentralised.es-indexer.enabled`, which defaults to on (`DecentralisedESIndexer.java:47-50`). The target cluster comes from `ELASTIC_SEARCH_HOSTS` (comma-separated, defaults to `http://localhost:9200`).
 
 PCS sets `runtimeIndexing` from an env check so it can be switched off when the service runs without the CCD stack (`apps/pcs/pcs-api/build.gradle:102-106`).
 

@@ -83,13 +83,13 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/dto/DecentralisedEventDetails.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/service/SynchronisedCaseProcessor.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/decentralised/service/DecentralisedCreateCaseEventService.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
-  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java": "e492e2aceaf88592e102b0363fddaa50ca4fc278"
+  "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/infrastructure/IdempotencyKeyHolder.java": "4115bfbac27231f22862f68bcabeddb10aeb645f"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseSubmissionService.java": "ec92d4394a2eabf0ef58b7b25253ab93a2b608ae"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/CaseEventTransactionCoordinator.java": "3061d32495f88f2507033825cbc3341c4482e8e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "3061d32495f88f2507033825cbc3341c4482e8e9"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "12426f7174c87f81d709ff41d2650473b67295db"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2a5833f94c41ffd6e32f473deaf910fc2ecc2a53"
   "ccd-config-generator:sdk/ccd-servicebus-support/src/main/java/uk/gov/hmcts/ccd/sdk/servicebus/CcdCaseEventPublisher.java": "7d89554b6041589e987b918b9811a97d9e54524b"
@@ -100,7 +100,7 @@ sources_sha:
   : "0fe3c2b693c558395d2e6227fe7e6062e782afff"
   "ccd-config-generator:sdk/ccd-runtime-indexing/src/main/java/uk/gov/hmcts/ccd/sdk/DecentralisedESIndexer.java": "fea39d85bad1b0ef3ab12fc6f4ea5ce9a4bf1de5"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/CaseReindexingService.java": "303b6617c09391e0700c6ae904b6dc54e119f9c0"
-  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "c91b5448e2b2b796e2320cd1feb2f5b8acb884e6"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0017__enhance_indexing.sql": "7173ae8de9e9ae1e004042e2a4ecc28b39a6c842"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0019__notify_es_queue_changes.sql": "6ae803d3750d132178091c4fb578c11ce70cedcb"
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0020__prioritise_live_es_queue_updates.sql"
@@ -577,7 +577,7 @@ The centralised Logstash never re-indexes decentralised case pointers — pointe
 
 | Aspect | Value | Source |
 |---|---|---|
-| Enabled by | `implementation 'com.github.hmcts:ccd-runtime-indexing'` (or the deprecated `ccd { runtimeIndexing = true }`); otherwise `cftlib`-only | `CcdSdkPlugin.java:87-93` |
+| Enabled by | `implementation 'com.github.hmcts:ccd-runtime-indexing'` (or the deprecated `ccd { runtimeIndexing = true }`); otherwise `cftlib`-only | `CcdSdkPlugin.java:98-104` |
 | Bean gate | `ccd.sdk.decentralised.es-indexer.enabled` (default on) | `DecentralisedESIndexer.java:47-50` |
 | Cluster | `ELASTIC_SEARCH_HOSTS` (comma-separated) | `DecentralisedESIndexer.java:82` |
 | Queue | `ccd.es_queue`, keyed on `reference`, upserted by an `after insert or update` trigger on `ccd.case_data` | `V0020__prioritise_live_es_queue_updates.sql` |
@@ -624,7 +624,7 @@ dependencies {
 }
 ```
 
-The older `ccd { decentralised = true }` flag still pulls the same module in, but it now logs a deprecation warning during Gradle configuration telling you to declare the dependency instead (`CcdSdkPlugin.java:154-158`, `:172-175`).
+The older `ccd { decentralised = true }` flag still pulls the same module in, but it now logs a deprecation warning during Gradle configuration telling you to declare the dependency instead (`CcdSdkPlugin.java:289-293`, `:172-175`).
 
 ---
 

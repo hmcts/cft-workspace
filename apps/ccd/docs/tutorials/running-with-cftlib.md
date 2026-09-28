@@ -44,14 +44,14 @@ title: Running with cftlib
 diataxis: tutorials
 product: ccd
 sources_sha:
-  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "469a229c1fca6a0ba8256ec8584801c822ef18ee"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "0817d783ad0e77506beb150a2dfdc6789819ab3f"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/Service.java": "732ec28c7a68359452f0e767b5bd605d10608e61"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
-  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLib.java": "71544992866ebc3f02139e17b9782c9437213a22"
+  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLib.java": "0817d783ad0e77506beb150a2dfdc6789819ab3f"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLibConfigurer.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
   "rse-cft-lib:cftlib/lib/cftlib-agent/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibAgent.java": "1af3bf04972042b8b6c862d4a3dbed93c7753e29"
-  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/CFTLibApiImpl.java": "d236f578d0d6e38d53fd22feae441d67229f555b"
+  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/CFTLibApiImpl.java": "0817d783ad0e77506beb150a2dfdc6789819ab3f"
   "rse-cft-lib:cftlib/lib/cftlib-agent/src/main/java/uk/gov/hmcts/rse/ccd/lib/IdamInterceptor.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
   "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java": "9098a05a1f349631f606f4831c0c024deb6a4b5a"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/Database.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
@@ -60,6 +60,8 @@ sources_sha:
   "rse-cft-lib:cftlib/lib/runtime/src/main/resources/application.yml": "3ba38c64b8733c7a0074f1cb54d41293b91e5f03"
   "rse-cft-lib:cftlib/test-project/src/cftlib/java/uk/gov/hmcts/libconsumer/CFTLibConfig.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
   "rse-cft-lib:cftlib/lib/test-runner/src/main/java/uk/gov/hmcts/rse/ccd/lib/test/CftlibTest.java": "1b82c829cfc6fb569ee0086afbbc520b27882ec4"
+  "rpx-xui-webapp:api/configuration/references.ts": "80ffd957bb00a352500b82de63891138f6e23570"
+  "rpx-xui-webapp:api/auth/index.ts": "d984fb0c8c433578b99d01360d669b40996a8316"
 ---
 
 # Running with cftlib
@@ -149,9 +151,10 @@ Key API methods (`CFTLib.java`, implemented in `CFTLibApiImpl.java`):
 | `createProfile(id, jurisdiction, caseType, state)` | PUTs to `http://localhost:4453/user-profile/users` (`CFTLibApiImpl.java:126-146`). |
 | `importDefinition(File)` / `importDefinition(byte[])` | POSTs xlsx multipart to `http://localhost:4451/import`; MD5-idempotent — repeat calls with the same bytes are skipped (`CFTLibApiImpl.java:190-201`). |
 | `importJsonDefinition(File folder)` | Imports JSON definition-processor format by POSTing the folder's *canonical path* bytes to `/import`. Throws `FileNotFoundException` if the folder is missing, and — unlike `importDefinition` — does **not** consult the MD5 cache, so every call re-imports (`CFTLibApiImpl.java:211-215`). |
+| `importJsonDefinition(File folder, File template, Map<String, String> substitutions, String... excludedFilenamePatterns)` | Same import path, but nothing is discovered automatically: the substitutions map replaces every `${NAME}` placeholder (JSON fragments included), `template` is an optional spreadsheet supplying sheet names, columns and defaults, and the trailing glob patterns omit matching filenames. Pass `null` for `template` to skip it. Unlike the folder-only overload it does **not** read `CCD_DEF_*` environment variables (`CFTLibApiImpl.java:218-235`). |
 | `configureRoleAssignments(json)` | Loads JSON into the AM database via `cftlib-populate-am.sql` (`CFTLibApiImpl.java:174-186`). |
 | `createGlobalSearchIndex()` | POSTs to definition store `/elastic-support/global-search/index` to create the GlobalSearch ES index. |
-| `getConnection(Database)` | Returns a JDBC `Connection` for direct inspection of the cftlib Postgres. The `Database` enum has exactly four members — `Datastore`, `Definitionstore`, `Userprofile`, `AM` (`Database.java`) — and the name is lowercased to form the database name (`CFTLibApiImpl.java:246-251`). There is no enum member for `cft_task_db` or for any database you add yourself; connect to those with a plain `DriverManager.getConnection`. |
+| `getConnection(Database)` | Returns a JDBC `Connection` for direct inspection of the cftlib Postgres. The `Database` enum has exactly four members — `Datastore`, `Definitionstore`, `Userprofile`, `AM` (`Database.java`) — and the name is lowercased to form the database name (`CFTLibApiImpl.java:265-270`). There is no enum member for `cft_task_db` or for any database you add yourself; connect to those with a plain `DriverManager.getConnection`. |
 | `buildJwt()` / `generateDummyS2SToken(serviceName)` | Mints HS256 JWTs signed with the literal string `"secret"` — useful when scripting against the running stack (`CFTLibApiImpl.java:42-57`). |
 | `dumpDefinitionSnapshots()` | Writes every loaded case-type definition as JSON to `build/cftlib/definition-snapshots/`; called automatically when `RSE_LIB_DUMP_DEFINITIONS=true`. |
 
@@ -211,7 +214,7 @@ The first four come from the `Project` enum and are created with unquoted identi
 RSE_LIB_ADDITIONAL_DATABASES=camunda,wa_workflow_api ./gradlew bootWithCCD
 ```
 
-Connect to any of them with `jdbc:postgresql://localhost:6432/<dbname>` — the same string `lib.getConnection(Database.X)` builds (`CFTLibApiImpl.java:246-251`).
+Connect to any of them with `jdbc:postgresql://localhost:6432/<dbname>` — the same string `lib.getConnection(Database.X)` builds (`CFTLibApiImpl.java:265-270`).
 
 <!-- CONFLUENCE-ONLY: the PRL team's Local development environment page (1933968909) lists a longer set of databases, including `camunda`, `cft_task_db_replica` and `wa_workflow_api`. Those are not created by cftlib — they come from that team's own `RSE_LIB_ADDITIONAL_DATABASES` value, so treat the list as PRL's local topology rather than the cftlib baseline. -->
 

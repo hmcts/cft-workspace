@@ -23,7 +23,6 @@ sources:
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/CategoryValidator.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/RoleToAccessProfilesValidator.java
   - ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/UserRoleController.java
-  - ccd-config-generator:sdk/ccd-definition-converter/src/main/java/uk/gov/hmcts/ccd/sdk/converter/link/DefaultDefinitionLinker.java
   - ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/WizardPageParser.java
 status: confluence-augmented
 confluence:
@@ -72,6 +71,7 @@ sources_sha:
   ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/validation/RoleToAccessProfilesValidator.java"
   : "4258cd8b230205318b56fe8018880751d9c030c9"
   "ccd-definition-store-api:rest-api/src/main/java/uk/gov/hmcts/ccd/definition/store/rest/endpoint/UserRoleController.java": "bda0438d09f29d99f546185907272748a1224c49"
+  "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/parser/WizardPageParser.java": "704943e3529d5bba87cd6c005b445b773ff8fc8a"
 ---
 
 # JSON Definition Format

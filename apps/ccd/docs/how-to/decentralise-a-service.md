@@ -64,12 +64,12 @@ sources_sha:
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/DecentralisedSubmissionHandler.java": "2f14a4b0c584668faeed880627749fe0f540e95b"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/IdempotencyEnforcer.java": "3061d32495f88f2507033825cbc3341c4482e8e9"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/MessagePublisher.java": "251a3705776c4f3382f9ced6212879a83c50a4e9"
-  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "9fc415b2a5a8f0d4cba457af5b223818b4ff3ee9"
+  "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/config/DecentralisedDataConfiguration.java": "12426f7174c87f81d709ff41d2650473b67295db"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0004.sql": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   ? "ccd-config-generator:sdk/decentralised-runtime/src/main/resources/dataruntime-db/migration/V0010__rebuild_es_queue_for_revision_based_indexing.sql"
   : "85f32117928bda311dd7c752f185ba9cd47c7464"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/AuditEventService.java": "2a5833f94c41ffd6e32f473deaf910fc2ecc2a53"
-  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "bacc410a1615c85c49da358970d89f41da5f189a"
+  "ccd-config-generator:sdk/ccd-gradle-plugin/src/main/groovy/uk/gov/hmcts/ccd/sdk/CcdSdkPlugin.java": "c91b5448e2b2b796e2320cd1feb2f5b8acb884e6"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/DecentralisedConfigBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventPayload.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
@@ -84,7 +84,7 @@ sources_sha:
   "pcs-api:src/main/java/uk/gov/hmcts/reform/pcs/ccd/CaseType.java": "ea9b6604f04086472937e4df3cafb31a03b3f79f"
   "rpx-xui-webapp:common/decentralisation/decentralised-redirect.util.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
   "rpx-xui-webapp:api/noc/index.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
-  "rpx-xui-webapp:config/custom-environment-variables.json": "c081dae2e1952ed73592db1779103ffc2c7a199e"
+  "rpx-xui-webapp:config/custom-environment-variables.json": "80ffd957bb00a352500b82de63891138f6e23570"
   "rpx-xui-webapp:src/cases/components/case-task/case-task.component.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/VerifyNoCAnswersRequest.java": "dfa7debe58dc4710124070b6a29448dfda6fce67"
   "aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeRequest.java": "dfa7debe58dc4710124070b6a29448dfda6fce67"
@@ -119,7 +119,7 @@ sources_sha:
 In `build.gradle`, declare the SDK runtime modules as dependencies. The `ccd-config-generator`
 plugin imports a `com.github.hmcts:ccd-sdk-bom` platform into `implementation`,
 `configGeneration` and `cftlibImplementation`, so you do not write a version
-(`CcdSdkPlugin.java:38-41`, `:124-127`):
+(`CcdSdkPlugin.java:46-49`, `:124-127`):
 
 ```groovy
 dependencies {
@@ -133,14 +133,14 @@ This causes the plugin to wire `ServicePersistenceController` automatically.
 > `ccd-runtime-indexing` is separate from `decentralised-runtime` -- on `implementation` the
 > in-process Elasticsearch indexer runs in the deployed service; put it on
 > `cftlibImplementation` instead and it runs under cftlib only. If you declare neither, the
-> plugin adds it to `cftlibImplementation` for you (`CcdSdkPlugin.java:87-93`, `:118-122`).
+> plugin adds it to `cftlibImplementation` for you (`CcdSdkPlugin.java:98-104`, `:118-122`).
 > Decentralised case types have no Logstash pipeline, so a deployed service that needs search
 > must have it on `implementation`.
 
 > **The older `ccd { decentralised = true; runtimeIndexing = true }` flags still work** — the
 > plugin adds the same dependencies for them — but each setter now logs a deprecation warning
 > during Gradle configuration telling you to declare the dependency instead
-> (`CcdSdkPlugin.java:154-170`, `:172-175`). PCS still uses the flags, driving `runtimeIndexing`
+> (`CcdSdkPlugin.java:289-305`, `:172-175`). PCS still uses the flags, driving `runtimeIndexing`
 > from an env check so it can be switched off when running without the CCD stack
 > (`apps/pcs/pcs-api/build.gradle:102-106`).
 

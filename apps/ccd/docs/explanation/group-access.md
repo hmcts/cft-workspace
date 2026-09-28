@@ -291,7 +291,7 @@ Four details of the shipped design are worth knowing because they encode gotchas
 
 Both sheets also carry the standard `LiveTo` column, parsed by `AccessTypesParser.java:89` and `AccessTypeRolesParser.java:94`; the SDK supplies it from `CCDAccessGroup.getLiveTo()`, which defaults to null.
 
-Teams pinned to an SDK release predating #1063 still need the fallback: ship `AccessType` / `AccessTypeRole` as raw JSON fragments matching the column schema above and merge them via the SDK's `static/` directory pattern, the README's documented route for features the generator does not cover (`README.md:636-650`):
+Teams pinned to an SDK release predating #1063 still need the fallback: ship `AccessType` / `AccessTypeRole` as raw JSON fragments matching the column schema above and merge them via the SDK's `static/` directory pattern, the README's documented route for features the generator does not cover (`README.md:640-654`):
 
 ```groovy
 task generateCCDDefinition(type: Copy) {

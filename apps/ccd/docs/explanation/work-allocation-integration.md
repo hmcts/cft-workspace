@@ -50,7 +50,7 @@ title: Work Allocation Integration
 diataxis: explanation
 product: ccd
 sources_sha:
-  "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskManagementAutoConfiguration.java": "e96997b6818ee8b7d4690b2b14bcdacad85073f9"
+  "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskManagementAutoConfiguration.java": "64456f6684e999d0cebb16879229d36bae199b9b"
   "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskManagementFeignClient.java": "f21eba4c359e7630356daf50092dfbc47b6ab4ca"
   "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskManagementProperties.java": "f21eba4c359e7630356daf50092dfbc47b6ab4ca"
   "ccd-config-generator:sdk/task-management/src/main/java/uk/gov/hmcts/ccd/sdk/taskmanagement/TaskOutboxService.java": "f21eba4c359e7630356daf50092dfbc47b6ab4ca"
@@ -285,7 +285,7 @@ Services that use `ccd-config-generator` can include the optional `sdk/task-mana
 - A **transactional outbox** (`TaskOutboxService` + `TaskOutboxPoller`) that writes task operations to a JDBC table and flushes them in batches, retrying with exponential backoff on failure.
 - A **`DelayUntilResolver`** for deferred task creation based on interval or date strategies.
 
-`TaskManagementAutoConfiguration` wires all of these as Spring beans (`TaskManagementAutoConfiguration.java:27-119`). S2S auth is registered conditionally when `idam.s2s-auth.secret` and `idam.s2s-auth.microservice` are present (`TaskManagementAutoConfiguration.java:58-73`).
+`TaskManagementAutoConfiguration` wires all of these as Spring beans (`TaskManagementAutoConfiguration.java:19-85`). S2S auth is registered conditionally when `idam.s2s-auth.secret` and `idam.s2s-auth.microservice` are present (`TaskManagementAutoConfiguration.java:24-39`).
 
 ### Key configuration properties
 

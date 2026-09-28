@@ -59,7 +59,7 @@ sources_sha:
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/ColumnName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/aggregated/AbstractAuthorisedCaseViewOperation.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-viewer/case-full-access-view/case-full-access-view.component.ts"
-  : "0e06e04fea8507450dc5345137d4340d0f460fa9"
+  : "e82cedb4944dc6c4766c6f4af8bfcf11fd8c9dc9"
 ---
 
 # Add a Tab
