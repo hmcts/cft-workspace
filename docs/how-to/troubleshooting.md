@@ -16,6 +16,7 @@ audience: both
 - [VPN](#vpn)
 - [Flux and Gitops](#flux-and-gitops)
 - [Connecting to AKS Clusters](#connecting-to-aks-clusters)
+- [Application Insights and Kusto queries](#application-insights-and-kusto-queries)
 - [Golden Path](#golden-path)
 
 ## GitHub
@@ -467,6 +468,27 @@ Once you have logged in, you can switch between clusters using [kubectx](https:/
 ```shell
 kubectl config use-context cft-perftest-00-aks
 kubectl config use-context cft-aat-00-aks
+```
+
+## Application Insights and Kusto queries
+---
+
+CFT services share one Application Insights instance per environment, so a query with no scope matches every service's telemetry. Always filter by `cloud_RoleName` (the service's Kubernetes deployment name, e.g. `pcs-api`) first:
+
+```kusto
+traces
+| where timestamp > ago(24h)
+| where cloud_RoleName == "<service-name>"
+| where message has "<search-term>"
+| order by timestamp desc
+```
+
+`has` is a fast, whole-word, case-insensitive match; use `contains` for a substring match, `contains_cs` to make it case-sensitive, or `matches regex` for a pattern. If you don't know which table the string landed in (log line, exception, request, or dependency call), search across all of them at once:
+
+```kusto
+search in (traces, exceptions, requests, dependencies) "<search-term>"
+| where cloud_RoleName == "<service-name>" and timestamp > ago(24h)
+| project timestamp, itemType, message, operation_Name, operation_Id
 ```
 
 ## Golden Path
