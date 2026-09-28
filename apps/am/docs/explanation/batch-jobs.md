@@ -57,7 +57,7 @@ sources_sha:
   "am-role-assignment-refresh-batch:src/main/resources/application.yaml": "a6d293c0ed65af385cb43c6e63a53f849064e729"
   "am-role-assignment-refresh-batch:charts/am-role-assignment-refresh-batch/values.yaml": "f69f12cdfd2c865a3bb0501d84c105aad0948a51"
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.1__init_tables.sql": "4634ca2f2028547d964f2f1deb111816ffa5da75"
-  "am-org-role-mapping-service:src/main/resources/application.yaml": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
+  "am-org-role-mapping-service:src/main/resources/application.yaml": "7b0203d8966cc21d3f03dceaa2278538094db864"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/apihelper/Constants.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
 ---
 

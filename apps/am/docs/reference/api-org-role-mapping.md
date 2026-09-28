@@ -65,7 +65,7 @@ confluence:
 confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/controller/RefreshController.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
-  "am-org-role-mapping-service:src/main/resources/application.yaml": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
+  "am-org-role-mapping-service:src/main/resources/application.yaml": "7b0203d8966cc21d3f03dceaa2278538094db864"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/feignclients/CRDFeignClient.java": "00bfac76b14ef5687a04026841a511ea65ae16a0"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/feignclients/JRDFeignClient.java": "00bfac76b14ef5687a04026841a511ea65ae16a0"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/feignclients/RASFeignClient.java": "01f9d2badc46bb8aef815a44232129bdf3edbe47"
@@ -79,7 +79,7 @@ sources_sha:
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.2__new_flag_config_table.sql": "f096b045752bcaf71c4a3871bdb5dd950b7e1bbc"
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.7__iac_1_0_base_flag_deletion.sql": "7267dc8eb768dc198426de205418bba334763410"
   "am-org-role-mapping-service:src/main/resources/db/migration/V20260622_117__POFCC-117_Enable_possessions_wa_1_0_Prod.sql": "2e01f7521d23c6ba3e96cf345e68638ae4fbd02d"
-  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java": "27a9d19afb8f79cf741f06f2c8364737a300a81e"
   "am-org-role-mapping-service:src/main/resources/META-INF/kmodule.xml": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/CRDMessagingConfiguration.java": "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/servicebus/JRDMessagingConfiguration.java": "c092ca0bb3566da4b89134b0c1392d9cbca2a23b"
@@ -362,7 +362,7 @@ Replaying every `flag_config` migration in Flyway order gives the following stat
 
 | `service_name` | Prod-enabled by migration | Prod-enabled outside the migrations | Off in prod |
 |---|---|---|---|
-| `iac` | `iac_jrd_1_1`, `iac_wa_1_2`--`iac_wa_1_7` | `iac_1_1`, `iac_jrd_1_0` | `iac_wa_1_8`, `hrs_1_0` |
+| `iac` | `iac_jrd_1_1`, `iac_wa_1_2`--`iac_wa_1_8` | `iac_1_1`, `iac_jrd_1_0` | `iac_wa_1_9`, `hrs_1_0` |
 | `civil` | `civil_wa_1_1`--`civil_wa_2_5` | `civil_wa_1_0` | -- |
 | `privatelaw` | `privatelaw_wa_1_1`--`privatelaw_wa_1_9`, `privatelaw_hearing_1_0` | `privatelaw_wa_1_0` | -- |
 | `publiclaw` | `publiclaw_wa_1_0`--`publiclaw_wa_2_2`, `publiclaw_hearing_1_0` | -- | -- |

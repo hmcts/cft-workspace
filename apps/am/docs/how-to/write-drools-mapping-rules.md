@@ -62,7 +62,7 @@ sources_sha:
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/service/RequestMappingService.java": "fdc432dbe5badb633ba4e240bfc2fb2ec5453602"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/DroolConfig.java": "5123dc2c5c4d127394df67e80c538e5122088d28"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/config/DBFlagConfigurtion.java": "8cfe7e78243ad32c6ace946dbf71b253857fd487"
-  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java": "080b61f9e21bcf71d7ffef41b25dfe83dcdda889"
+  "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/domain/model/enums/FeatureFlagEnum.java": "27a9d19afb8f79cf741f06f2c8364737a300a81e"
   "am-org-role-mapping-service:src/main/java/uk/gov/hmcts/reform/orgrolemapping/helper/AssignmentRequestBuilder.java": "b829373f4c4976248de36658b4a273ae170700e0"
   "am-org-role-mapping-service:src/main/resources/db/migration/V1.2__new_flag_config_table.sql": "f096b045752bcaf71c4a3871bdb5dd950b7e1bbc"
 ---
