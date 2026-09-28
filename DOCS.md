@@ -132,6 +132,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | payment | explanation | Refunds Flow | refunds | `apps/payment/docs/explanation/refunds-flow.md` |
 | pcs | how-to | Pair pcs-api and pcs-frontend PR previews | preview-pairing | `apps/pcs/docs/how-to/pair-pcs-api-and-pcs-frontend-previews.md` |
 | pcs | explanation | Bulk Print Pack Selection and Holds | bulk-print-pack-selection | `apps/pcs/docs/explanation/bulk-print-pack-selection-and-holds.md` |
+| pcs | explanation | Test Data Payment Faking and Case History | test-data-payments | `apps/pcs/docs/explanation/test-data-payment-faking.md` |
 | pcs | explanation | Welsh Language and Wales Jurisdiction | welsh-language | `apps/pcs/docs/explanation/welsh-language-and-wales-jurisdiction.md` |
 | rd | how-to | Onboard Common Data | commondata | `apps/rd/docs/how-to/onboard-common-data.md` |
 | rd | how-to | Query Reference Data | overview | `apps/rd/docs/how-to/query-reference-data.md` |
