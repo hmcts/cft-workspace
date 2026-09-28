@@ -81,10 +81,10 @@ sources_sha:
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/automatedbundling/AutomatedStitchingExecutor.java": "6c1a512c71e548439d96afbe0645b3521685081a"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/service/dto/CcdBundleDTO.java": "ef1f0dadf296361643cc5f8744528fbaaf7300d6"
   "em-ccd-orchestrator:src/main/java/uk/gov/hmcts/reform/em/orchestrator/stitching/dto/TaskState.java": "5f104466747d04beb3cbf3af7d4d101bca610510"
-  "em-ccd-orchestrator:src/main/resources/application.yaml": "4d5317bc931857fe148d9201c4e208f7be2c61ae"
+  "em-ccd-orchestrator:src/main/resources/application.yaml": "e383b0724620544f4e78711009bcf130ecd50c48"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/callbacks/CallbackService.java": "0c5bd4c1bc52130ee793289b9d59881e999a4a6b"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
-  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "b0fce4cea53bd12e3cbc810d9d4d590100fb521b"
+  "cnp-flux-config:apps/ccd/ccd-data-store-api/prod.yaml": "db98c3756f90ca4ba18d49f8bd7b0500350eaefa"
   "cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml": "6a067bebc6c00192c4c8c66cb7dfeb55061a9419"
 ---
 
@@ -107,7 +107,7 @@ sources_sha:
 | POST | `/api/clone-ccd-bundles` | Synchronous | Clones an existing bundle (deep copy). |
 | POST | `/api/stitching-complete-callback/{caseId}/{triggerId}/{bundleId}` | Inbound callback | Called by `em-stitching-api` when an async task completes; updates CCD case data with the stitched document. |
 
-The stitching-complete-callback endpoint is gated by the feature toggle `endpoint-toggles.stitching-complete-callback` (`ENABLE_STITCHING_COMPLETE_CALLBACK`, default `true`, `application.yaml:101-102`).
+The stitching-complete-callback endpoint is gated by the feature toggle `endpoint-toggles.stitching-complete-callback` (`ENABLE_STITCHING_COMPLETE_CALLBACK`, default `true`, `application.yaml:93-94`).
 
 ## CCD Callback Request Format
 
@@ -280,7 +280,7 @@ For scenarios requiring multiple bundles, use the async path (`/api/new-bundle`)
 
 | Layer | Mechanism |
 |-------|-----------|
-| Service-to-service | S2S token validated by `ServiceAuthFilter`. In-repo default (`application.yaml:87`): `sscs, ccd, em_gw, ccd_data, iac, em_stitching_api, xui_webapp, civil_service, prl_cos_api, ethos_repl_service, et_cos`. Production replaces it wholesale via `S2S_NAMES_WHITELIST` with `sscs, ccd, ccd_data, iac, em_stitching_api, civil_service, prl_cos_api, sptribs_case_api, et_cos, ethos_repl_service` (`cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml:15`) — `em_gw` and `xui_webapp` are not accepted in production. |
+| Service-to-service | S2S token validated by `ServiceAuthFilter`. In-repo default (`application.yaml:79`): `sscs, ccd, em_gw, ccd_data, iac, em_stitching_api, xui_webapp, civil_service, prl_cos_api, ethos_repl_service, et_cos`. Production replaces it wholesale via `S2S_NAMES_WHITELIST` with `sscs, ccd, ccd_data, iac, em_stitching_api, civil_service, prl_cos_api, sptribs_case_api, et_cos, ethos_repl_service` (`cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml:15`) — `em_gw` and `xui_webapp` are not accepted in production. |
 | User identity | OAuth2 JWT validated by Spring Security resource server. |
 | Outbound to stitching-api | JWT passed as `Authorization` header; fresh S2S token generated per request (`StitchingService.java:135-136`). |
 

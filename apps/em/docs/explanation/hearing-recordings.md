@@ -67,8 +67,8 @@ sources_sha:
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/NotificationServiceImpl.java": "dca036be0df07c53e1400b3fd84572c57b37f624"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/SegmentDownloadServiceImpl.java": "711d96e5651c5f1932656ef6981ee45ea7ab10fc"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/email/MonthlyHearingReportTask.java": "772b1b78a78f8c8b1084a563cfcecbc450397504"
-  "em-hrs-api:src/main/resources/application.yaml": "679a3b9d051415424f6c824b7aafa9c049ebadd4"
-  "em-hrs-api:infrastructure/main.tf": "95fbc75a270365df1bdcd821a44892ba1451d840"
+  "em-hrs-api:src/main/resources/application.yaml": "40a3b36738d33625047310d6314ab2ab7d3e6954"
+  "em-hrs-api:infrastructure/main.tf": "ae4975687569d3f7d8c72a2123e3615ca6d3804a"
   "em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/storage/BlobstoreClientHelperImpl.java": "5cb7b79f576355a011dfaeca3f91b52abd7a6a96"
   "em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/service/DefaultIngestorService.java": "2e6246985ad922bf04b8405ca75ccac204420899"
   "em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/service/IngestionFiltererImpl.java": "528292cd6312574660ea05f4c59f705094751870"
@@ -79,11 +79,11 @@ sources_sha:
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/config/TTLMapperConfig.java": "be4b04b0cb602c671e49ed2e56813f2c9fca2c28"
   "em-hrs-api:src/main/resources/ttl_service_map.json": "22cc67abb7fca8771a32236166bc0076e616ea17"
   "em-hrs-api:src/main/resources/ttl_jurisdiction_map.json": "d01e774a5454063d4159b4bdc62caa9b41aa4381"
-  "cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml": "ff63ba17a3a90247c0f09024fcd7706a0837d12b"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml": "450413c23d7ce310eedfe5208b6fc2ceba014641"
   "cnp-flux-config:apps/em/em-hrs-ingestor/prod.yaml": "6b3ddae167745d42b28307678f3716427e7a2a21"
-  "cnp-flux-config:apps/em/em-hrs-ingestor/demo.yaml": "941aca7e7247492a758cc9a8a8f18b3f58553b70"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/demo.yaml": "969af700c9133d11cbe6b0aeb536728ddecdd20a"
   "cnp-flux-config:apps/em/em-hrs-ingestor/schedule-off.yaml": "efd8da51ac2efac7c99921ecd07c2be314bf91a6"
-  "cnp-flux-config:apps/em/em-hrs-api/em-hrs-api.yaml": "3f2c32dc5ad04dd0851dca2c16491b4c25e9ee7a"
+  "cnp-flux-config:apps/em/em-hrs-api/em-hrs-api.yaml": "8d507226738e896f34aa594abd46d5499f20cdcb"
 ---
 
 ## TL;DR
@@ -214,7 +214,7 @@ A single CCD case maps to exactly one `HearingRecording` (`ccdCaseId` unique con
 
 **Hearing sources**: the `hearingSource` field distinguishes recordings by origin. The `HearingSource` enum (`HearingSource.java`) has two values: `CVP` and `VH`. Each source has its own destination blob container (`hrs-cvp-dest-blob-container-name`, `hrs-vh-dest-blob-container-name` in `application.yaml:120-121`).
 
-The `ttl` column is populated by `TtlServiceImpl.createTtl`, which resolves the period from the service-code map first, then the jurisdiction-code map, then `ttl.default-ttl` (`TtlServiceImpl.java:25-35`, `application.yaml:211-212`). The maps ship as classpath JSON loaded through `TTLMapperConfig` (`ttl_service_map.json`, `ttl_jurisdiction_map.json`), and they are not uniformly 20 years — `CV` and `FM` jurisdictions and every `AAA*`/`ABA*` service code resolve to 6 years. A recording whose filename yields no recognised code falls through to the `P20Y` default, so a parse gap lengthens retention rather than shortening it.
+The `ttl` column is populated by `TtlServiceImpl.createTtl`, which resolves the period from the service-code map first, then the jurisdiction-code map, then `ttl.default-ttl` (`TtlServiceImpl.java:25-35`, `application.yaml:205-206`). The maps ship as classpath JSON loaded through `TTLMapperConfig` (`ttl_service_map.json`, `ttl_jurisdiction_map.json`), and they are not uniformly 20 years — `CV` and `FM` jurisdictions and every `AAA*`/`ABA*` service code resolve to 6 years. A recording whose filename yields no recognised code falls through to the `P20Y` default, so a parse gap lengthens retention rather than shortening it.
 
 ## Access control
 
@@ -224,7 +224,7 @@ All endpoints require both an S2S token (from the whitelist: `ccd_gw, em_gw, em_
 
 1. If the user holds an allowed IDAM role (`caseworker-hrs-searcher` or `caseworker-hrs`), access is granted unconditionally.
 2. Otherwise, if the user's email matches a `HearingRecordingSharee` record for the requested recording AND the share has not expired, access is granted.
-3. Sharee access expires `shareelink.ttl` hours after the `sharedOn` timestamp — default 72, overridable via `SHAREE_LINK_TTL` (`application.yaml:157-158`), compared in `SegmentDownloadServiceImpl.isAccessValid` (`:227-232`).
+3. Sharee access expires `shareelink.ttl` hours after the `sharedOn` timestamp — default 72, overridable via `SHAREE_LINK_TTL` (`application.yaml:151-152`), compared in `SegmentDownloadServiceImpl.isAccessValid` (`:227-232`).
 4. All denied attempts are audit-logged as `USER_DOWNLOAD_UNAUTHORIZED`.
 
 **DELETE endpoint** has an additional S2S whitelist (`ccd_case_disposer, em_gw`) enforced by `DeleteRequestInterceptor`, plus a feature flag (`DELETE_CASE_ENDPOINT_ENABLED`, default true).
@@ -261,7 +261,7 @@ When a recording is shared via `POST /sharees`, `NotificationServiceImpl` sends 
 
 ### SMTP operational reports
 
-Four scheduled report types, all gated by `@ConditionalOnProperty` and all disabled by default (`application.yaml:160-173`):
+Four scheduled report types, all gated by `@ConditionalOnProperty` and all disabled by default (`application.yaml:154-167`):
 
 | Report | Schedule property and default | Content |
 |--------|-------------------------------|---------|
