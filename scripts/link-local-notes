@@ -5,7 +5,7 @@ set -euo pipefail
 #
 # **Why the indirection.** The clones live on Docker named volumes, so anything untracked inside one
 # exists only in the volume: no git, no Mac backup, and gone on `docker volume prune`. These files are
-# untracked by intention — `rules-of-engagement.md` is per-engineer instruction and the `steve*` notes are
+# untracked by intention — `rules-of-engagement.md` is per-engineer instruction and `steves_notes.md` is
 # scratch — so committing them is wrong and losing them is worse. Keeping the content under
 # `local-notes/`, which is on the bind-mounted workspace repo, puts it on the host where the Mac's own
 # backup covers it, while the symlink keeps the path each file is habitually referred to by
@@ -34,8 +34,6 @@ ENTRIES=(
   "deed-poll-web:rules-of-engagement.md"
   "deed-poll-infra:rules-of-engagement.md"
   "deed-poll-admin:steves_notes.md"
-  "deed-poll-api:steve-where-to-next.md"
-  "deed-poll-web:steve_where_to_next.md"
 )
 
 linked=0
