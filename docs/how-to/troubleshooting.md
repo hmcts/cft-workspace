@@ -483,6 +483,10 @@ kubectl config use-context cft-aat-00-aks
 
 Omitting both `--start-time` and `--end-time` does not error — the query still runs, but scoped to only the last hour, so a genuine "no matching telemetry in this window" result looks identical to "you queried the wrong window entirely". An `--offset` value outside what the command accepts (e.g. `30d`) fails with a generic `BadArgumentError: The request had some invalid properties` rather than naming the bad argument. Always pass explicit `--start-time`/`--end-time` in UTC when investigating anything more than an hour old, and treat an empty result with no explicit time range as inconclusive rather than as evidence nothing happened.
 
+### `az monitor app-insights query --app <component>` returns almost nothing
+
+Check the component's `ingestionMode` first (`az monitor app-insights component show --app <component> -g <rg> --query ingestionMode`). Workspace-based components — the Azure default for new resources — ingest into a linked Log Analytics workspace rather than the classic App Insights store, so `az monitor app-insights query` against the component returns only a thin slice of data (often just the last few requests) instead of an error. Query the linked Log Analytics workspace directly with `az monitor log-analytics query --workspace <workspace-guid>` (the `AppRequests`/`AppExceptions`/`AppTraces` tables, not `requests`/`exceptions`/`traces`) to see the real telemetry.
+
 ## Golden Path
 ---
 ### IDAM / OIDC Errors
