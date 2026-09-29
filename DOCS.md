@@ -18,6 +18,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | am | explanation | Judicial Booking | judicial-booking | `apps/am/docs/explanation/judicial-booking.md` |
 | am | explanation | Org Role Mapping Flow | orm | `apps/am/docs/explanation/org-role-mapping-flow.md` |
 | am | explanation | Overview | overview | `apps/am/docs/explanation/overview.md` |
+| am | explanation | Professional Refresh Mechanism (PRM) | prm | `apps/am/docs/explanation/professional-refresh-mechanism.md` |
 | am | explanation | Role Assignment Lifecycle | role-lifecycle | `apps/am/docs/explanation/role-assignment-lifecycle.md` |
 | bulk-scan | how-to | Implement Transformation Callback | orchestration | `apps/bulk-scan/docs/how-to/implement-transformation-callback.md` |
 | bulk-scan | how-to | Onboard New Jurisdiction | overview | `apps/bulk-scan/docs/how-to/onboard-new-jurisdiction.md` |

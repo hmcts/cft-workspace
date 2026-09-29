@@ -242,6 +242,8 @@ sequenceDiagram
 
 `PersistenceStrategyResolver` (`PersistenceStrategyResolver.java:27`) loads `ccd.decentralised.case-type-service-urls` at startup — a map of case type ID prefix to base URL. Prefix matching is case-insensitive (keys are lowercased at load time, `PersistenceStrategyResolver.java:63-75`). The longest matching prefix wins; ambiguous configuration (two prefixes of equal length both matching) throws `IllegalStateException` at lookup time (`PersistenceStrategyResolver.java:143-152`).
 
+`isDecentralised()` is defined purely as "a URL match exists for this case type" — there is no separate flag. If an environment's `case-type-service-urls` map has no entry for a case type that is decentralised elsewhere (a missing per-environment config line, not a code difference), CCD raises no error: it silently treats the case type as centralised, reading and writing to its own database instead of delegating to the service. Confirm the routing entry exists in every environment (including prod) before relying on decentralised persistence for a case type — there is no startup check or log line that catches the gap.
+
 Example configuration:
 
 ```properties

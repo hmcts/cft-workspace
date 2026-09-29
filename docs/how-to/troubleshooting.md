@@ -392,6 +392,7 @@ VPN access and troubleshooting has moved to [VPN onboarding](../tutorials/cnp-on
 ---
 - By Default, all developers have read access to non-prod AKS clusters and slightly higher privileges to their namespaces.
 - You can connect to AKS clusters using `az aks get-credentials`. Below are some handy commands:
+- All CFT and SDS clusters use Entra ID (AAD) authentication, so `kubectl` needs the [`kubelogin`](https://github.com/Azure/kubelogin) credential plugin (`brew install Azure/kubelogin/kubelogin` or `az aks install-cli`) — without it you'll see `exec: executable kubelogin not found`. After every `az aks get-credentials`, run `kubelogin convert-kubeconfig -l azurecli` to switch the fetched kubeconfig from device-code login to your `az login` token. If `az aks install-cli` was used, `kubelogin` lands in `~/.azure-kubelogin/`, which is not added to `PATH` automatically.
 - CFT clusters run a Gatekeeper policy (`azurepolicy-k8sazurev1blocknakedpods`) that rejects any Pod not owned by a controller. If you want an ad-hoc container to poke around the cluster with (e.g. to check DNS or connectivity from inside the namespace), wrap it in a `Job` rather than applying a bare Pod manifest — the latter is rejected outright.
 
 ### CFT clusters
