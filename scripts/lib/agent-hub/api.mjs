@@ -124,6 +124,8 @@ export function createApi({
     subscribe: (id, topics) => request('PUT', `${a(id)}/subscriptions`, { topics }),
     unsubscribe: (id, topics) => request('DELETE', `${a(id)}/subscriptions`, { topics }),
     topics: ({ prefix, limit } = {}) => request('GET', `/api/agent/topics${qs({ prefix, limit })}`),
+    topicMessages: (slug, { since, before, limit } = {}) =>
+      request('GET', `/api/agent/topics/${encodeURIComponent(slug)}/messages${qs({ since, before, limit })}`),
     agents: () => request('GET', '/api/agent/agents'),
     message: (messageId) => request('GET', `/api/agent/messages/${encodeURIComponent(messageId)}`),
     async stream(id, { signal, lastEventId } = {}) {

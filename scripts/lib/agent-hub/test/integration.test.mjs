@@ -205,7 +205,23 @@ test('read by id and by topic', async () => {
   r = await run(['read', 'pcs-api']);
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, new RegExp(`#${other.id} \\[pcs-api\\]`));
+  assert.match(r.stdout, /Migration done/, 'a topic read includes the session\'s own posts');
+  r = await run(['read']);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, new RegExp(`#${other.id} \\[pcs-api\\]`));
   assert.doesNotMatch(r.stdout, /Migration done/, 'own posts are not in the feed');
+});
+
+test('read <topic> reads unsubscribed topics and returns the newest posts', async () => {
+  const posts = [];
+  for (let i = 0; i < 25; i++) posts.push(hub.addPost({ topics: ['zz-unsubscribed'], title: `Busy ${i}`, bodyText: 'x', fromAgent: 'dave-other' }));
+  const r = await run(['read', 'zz-unsubscribed', '--limit', '5']);
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stderr, /subscribe first/);
+  assert.deepEqual([...r.stdout.matchAll(/Busy (\d+)/g)].map((m) => Number(m[1])), [20, 21, 22, 23, 24]);
+  const since = await run(['read', 'zz-unsubscribed', '--since', posts[21].id, '--limit', '100']);
+  assert.equal(since.status, 0, since.stderr);
+  assert.deepEqual([...since.stdout.matchAll(/Busy (\d+)/g)].map((m) => Number(m[1])), [22, 23, 24]);
 });
 
 test('the Stop hook runs a detached worker that publishes and notifies through the inbox', async () => {
