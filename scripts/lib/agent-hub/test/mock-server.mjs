@@ -130,6 +130,13 @@ export function createMockHub({ pingMs = 15000 } = {}) {
       Object.assign(agent, { session_id: body.session_id, name: body.name, cwd: body.cwd, repo: body.repo, branch: body.branch, host: body.host, status: 'idle' });
       return send(res, 200, { agent_id: agent.id, name: agent.name });
     }
+    if (req.method === 'GET' && parts[2] === 'topics' && parts[4] === 'messages') {
+      const posts = messages.filter((m) => m.kind === 'post' && m.topics.includes(parts[3]));
+      const limit = Math.min(100, Number(url.searchParams.get('limit') || 100));
+      const since = url.searchParams.get('since');
+      const out = since === null ? posts.slice(-limit) : posts.filter((m) => m.id > Number(since)).slice(0, limit);
+      return send(res, 200, { messages: out.map(view) });
+    }
     if (req.method === 'GET' && parts[2] === 'topics') {
       const counts = new Map();
       for (const m of messages) for (const t of m.topics) counts.set(t, { slug: t, message_count: (counts.get(t)?.message_count || 0) + 1, last_message_at: m.created_at });

@@ -37,7 +37,8 @@ const USAGE = `usage: scripts/agent-hub <command> [args]
   unsubscribe <topic…>        remove topic subscriptions
   topics [prefix]             list topics, most recently active first
   read [<topic…>|<id…>] [--since <id>] [--limit <n>]
-                              read messages by id, or posts on subscribed topics
+                              read messages by id, the latest posts on any topics,
+                              or with no arguments the subscribed feed
   post --topics a,b --title T [--body B] [--reply-to <id>]
                               publish a post (body from stdin when --body is omitted)
   send <agent> <text…>        send a direct message to an agent (id or name)
@@ -103,6 +104,33 @@ function textArg(rest, what) {
   const text = rest.length && rest[0] !== '-' ? rest.join(' ') : readStdin();
   if (!text.trim()) throw new UsageError(`${what} is empty`);
   return text;
+}
+
+const byId = (a, b) => {
+  const [x, y] = [BigInt(a.id), BigInt(b.id)];
+  return x < y ? -1 : x > y ? 1 : 0;
+};
+
+/**
+ * The newest `limit` posts across the topics, oldest first. The topic endpoint reads any topic, subscribed or not.
+ * With `since`, it pages forward from there; without, it asks each topic for its latest posts.
+ */
+async function topicPosts(api, topics, { since, limit }) {
+  const found = new Map();
+  for (const slug of topics) {
+    if (since === undefined) {
+      for (const m of (await api.topicMessages(slug, { limit })).messages) found.set(m.id, m);
+      continue;
+    }
+    let after = since;
+    for (let page = 0; page < 10; page++) {
+      const batch = (await api.topicMessages(slug, { since: after, limit: 100 })).messages;
+      for (const m of batch) found.set(m.id, m);
+      if (batch.length < 100) break;
+      after = batch[batch.length - 1].id;
+    }
+  }
+  return [...found.values()].sort(byId).slice(-limit);
 }
 
 function printMessages(messages) {
@@ -195,24 +223,16 @@ const commands = {
       for (const id of rest) messages.push((await api.message(id.replace(/^#/, ''))).message);
       return printMessages(messages);
     }
-    const agent = requireAgent(requireSessionId());
     const limit = Math.max(1, Math.min(100, Number(flags.limit) || 20));
-    const wanted = rest.length ? topicsOrDie(rest) : null;
-    if (wanted) {
-      const subs = (await api.subscriptions(agent.agent_id)).topics;
-      const missing = wanted.filter((t) => !subs.includes(t));
-      if (missing.length) {
-        console.error(`note: only subscribed topics are readable; subscribe first: scripts/agent-hub subscribe ${missing.join(' ')}`);
-      }
-    }
-    // The feed is oldest first, so page forward and keep the newest matches.
-    let since = flags.since ?? (wanted ? '0' : undefined);
+    if (rest.length) return printMessages(await topicPosts(api, topicsOrDie(rest), { since: flags.since, limit }));
+    const agent = requireAgent(requireSessionId());
+    // The feed is oldest first, so page forward and keep the newest.
+    let since = flags.since;
     let matches = [];
     for (let page = 0; page < 10; page++) {
       const res = await api.feed(agent.agent_id, { since, limit: 100 });
       const batch = res.messages || [];
-      matches.push(...batch.filter((m) => !wanted || m.topics.some((t) => wanted.includes(t))));
-      if (matches.length > limit) matches = matches.slice(-limit);
+      matches = [...matches, ...batch].slice(-limit);
       if (batch.length < 100 || res.cursor === since) break;
       since = res.cursor;
     }
