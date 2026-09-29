@@ -129,12 +129,75 @@ export function findSessionEntry(sid) {
 
 // The token in the environment belongs to the socket in the environment, so that pair
 // wins; the registry path is the fallback for processes started without it.
+// Title entries are re-appended throughout a transcript, so the tail holds the current ones.
+const TITLE_TAIL_BYTES = 256 * 1024;
+
+export function transcriptPath(sid, entry = findSessionEntry(sid)) {
+  const recorded = readText(statePath(sid, 'transcript')).trim();
+  if (recorded) return recorded;
+  const fromWorker = readJson(statePath(sid, 'cursors.json'), {})?.transcript_path;
+  if (typeof fromWorker === 'string' && fromWorker) return fromWorker;
+  if (!entry?.cwd) return null;
+  return path.join(claudeHome(), 'projects', entry.cwd.replace(/[^A-Za-z0-9]/g, '-'), `${sid}.jsonl`);
+}
+
+// The latest `custom-title` and `ai-title` entries in the transcript, the title /resume shows.
+export function conversationTitles(file) {
+  let text;
+  try {
+    const size = fs.statSync(file).size;
+    const start = Math.max(0, size - TITLE_TAIL_BYTES);
+    const buf = Buffer.alloc(size - start);
+    const fd = fs.openSync(file, 'r');
+    try {
+      fs.readSync(fd, buf, 0, buf.length, start);
+    } finally {
+      fs.closeSync(fd);
+    }
+    text = buf.toString('utf8');
+  } catch {
+    return {};
+  }
+  const titles = {};
+  const lines = text.split('\n');
+  for (let i = lines.length - 1; i >= 0 && !(titles.custom && titles.ai); i--) {
+    const line = lines[i];
+    if (!line.includes('-title"')) continue;
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (entry.type === 'custom-title' && !titles.custom && typeof entry.customTitle === 'string') titles.custom = entry.customTitle;
+    if (entry.type === 'ai-title' && !titles.ai && typeof entry.aiTitle === 'string') titles.ai = entry.aiTitle;
+  }
+  return titles;
+}
+
+export function nameSlug(title) {
+  return String(title || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64)
+    .replace(/-+$/, '');
+}
+
+// A /rename wins, then the conversation's title, then the handle Claude Code derived for the session.
+export function agentName(sid, entry = findSessionEntry(sid)) {
+  if (entry?.nameSource === 'user' && entry.name) return entry.name;
+  const file = transcriptPath(sid, entry);
+  const titles = file ? conversationTitles(file) : {};
+  return nameSlug(titles.custom) || nameSlug(titles.ai) || entry?.name || sid.slice(0, 8);
+}
+
 export function sessionInfo(sid, env = process.env) {
   const entry = findSessionEntry(sid);
   const envPid = Number.parseInt(env.AGENT_HUB_CLAUDE_PID || '', 10);
   return {
     pid: Number.isInteger(envPid) ? envPid : Number.isInteger(entry?.pid) ? entry.pid : null,
-    name: entry?.name || sid.slice(0, 8),
+    name: agentName(sid, entry),
     cwd: entry?.cwd || null,
     socketPath: env.CLAUDE_CODE_MESSAGING_SOCKET || entry?.messagingSocketPath || null,
   };
