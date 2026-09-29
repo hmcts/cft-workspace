@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Connect Claude Code sessions to agent-hub (hmcts/dtsse-agent-hub): direct messages
+# between agents and people, and topic boards. Opt-in per session via /enable-comms.
+#
+# Usage: scripts/agent-hub <command> [args]     (scripts/agent-hub help for the list)
+#
+# The work is done by dependency-free Node in scripts/lib/agent-hub/. `hook` runs in
+# every workspace session, so a session that never enabled comms costs one file test
+# here and never starts node.
+
+set -u
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLI="$HERE/lib/agent-hub/cli.mjs"
+
+if [ "${1:-}" = "hook" ]; then
+    # A hook must never fail or slow the session: every exit below is 0.
+    [ -n "${AGENT_HUB_CHILD:-}" ] && exit 0
+    [ -t 0 ] && exit 0
+    input=$(cat)
+    hub="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-hub"
+    sid=""
+    re='"session_id"[[:space:]]*:[[:space:]]*"([A-Za-z0-9_-]+)"'
+    if [[ "$input" =~ $re ]]; then
+        sid="${BASH_REMATCH[1]}"
+    fi
+    if [ -n "$sid" ] && [ ! -f "$hub/$sid/enabled" ]; then
+        # /clear starts a new session id; SessionStart must look for a handoff from the old one.
+        pending=0
+        if [ "${2:-}" = "SessionStart" ]; then
+            for f in "$hub"/handoff/*.json; do
+                [ -e "$f" ] && pending=1
+                break
+            done
+        fi
+        [ "$pending" -eq 1 ] || exit 0
+    fi
+    command -v node >/dev/null 2>&1 || exit 0
+    node "$CLI" "$@" <<<"$input" 2>/dev/null
+    exit 0
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+    printf 'agent-hub: node is not on PATH. Install Node 22 or later (the devcontainer ships it).\n' >&2
+    exit 1
+fi
+
+exec node "$CLI" "$@"

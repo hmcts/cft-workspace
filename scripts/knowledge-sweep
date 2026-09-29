@@ -23,6 +23,7 @@
 #   scripts/knowledge-sweep --backfill > .claude/knowledge-sweep/backfill.log 2>&1
 
 source "$(dirname "$0")/lib/_common.sh"
+source "$(dirname "$0")/lib/_secret_scan.sh"
 
 # A background sweep's only record is sweep.log, and a failure there is useless
 # without knowing which run it belongs to.
@@ -589,21 +590,14 @@ discard_proposal() {
 }
 
 # This repo is public. The summary is published as the commit message, PR body
-# and PR comment, so it is scanned with the staged diff. From a file, not a pipe:
-# grep -q exiting early SIGPIPEs the writer and pipefail hides the match. Any
-# status but 1 blocks. LC_ALL=C so an invalid byte can't hide a line.
+# and PR comment, so it is scanned with the staged diff. Any status but 1 blocks;
+# see scripts/lib/_secret_scan.sh.
 SCAN="$WORK/secret-scan.txt"
 git -C "$WORKTREE" diff --cached --no-ext-diff --no-textconv --unified=0 > "$SCAN" \
     || discard_proposal "could not build the diff to scan"
 printf '%s\n' "$summary_text" >> "$SCAN"
 scan_status=0
-LC_ALL=C grep -Eq \
-    -e 'eyJ[A-Za-z0-9_-]{20,}\.' \
-    -e 'gh[pousr]_[A-Za-z0-9]{20,}' \
-    -e 'AccountKey=' \
-    -e 'BEGIN (RSA|EC|OPENSSH|PRIVATE) ' \
-    -e '(client_secret|api[_-]?key|password)["'\'':= ]+[A-Za-z0-9/+_-]{16,}' \
-    "$SCAN" || scan_status=$?
+secret_scan_file "$SCAN" || scan_status=$?
 case $scan_status in
     1) ;;
     0) discard_proposal "secret-shaped string in proposed changes" ;;
