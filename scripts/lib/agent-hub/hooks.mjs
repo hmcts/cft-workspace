@@ -10,6 +10,7 @@ import {
   pidAlive,
   readJson,
   readPidFile,
+  readText,
   removeFile,
   sessionInfo,
   spawnDetached,
@@ -72,6 +73,16 @@ function adoptHandoff(sid) {
   return adopted;
 }
 
+// The bridge names the agent from the transcript's title, and only hooks are told where it is.
+function recordTranscriptPath(sid, file) {
+  if (typeof file !== 'string' || !file) return;
+  const target = statePath(sid, 'transcript');
+  if (readText(target).trim() === file) return;
+  try {
+    fs.writeFileSync(target, `${file}\n`);
+  } catch {}
+}
+
 export async function runHook(event, input, env = process.env) {
   if (env.AGENT_HUB_CHILD) return '';
   const sid = input?.session_id;
@@ -84,6 +95,8 @@ export async function runHook(event, input, env = process.env) {
       return '';
     }
   }
+
+  recordTranscriptPath(sid, input.transcript_path);
 
   switch (event) {
     case 'SessionStart': {

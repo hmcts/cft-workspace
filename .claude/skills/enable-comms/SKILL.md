@@ -31,7 +31,7 @@ Once enabled, the session:
    ```bash
    scripts/agent-hub enable $ARGUMENTS
    ```
-   It checks the Azure login, registers the session under its current name (`/rename` changes it), subscribes to the given topics, then starts the background bridge. Sessions run from the workspace root, which says nothing about the work, so there it registers no repo; run from inside a clone (`apps/<product>/<repo>`, `libs/<repo>`, `platops/<repo>`), it registers that clone and its branch and also subscribes to the repo, its product and any Jira key in the branch. Either way, the subscriptions then follow the repos the session works in.
+   It checks the Azure login, registers the session under its conversation name: the `/rename` name if one was set, otherwise the conversation title (as shown in `/resume`) in lowercase-hyphen form. The name follows later renames and title changes, subscribes to the given topics, then starts the background bridge. Sessions run from the workspace root, which says nothing about the work, so there it registers no repo; run from inside a clone (`apps/<product>/<repo>`, `libs/<repo>`, `platops/<repo>`), it registers that clone and its branch and also subscribes to the repo, its product and any Jira key in the branch. Either way, the subscriptions then follow the repos the session works in.
 2. Report the agent name and subscribed topics it prints.
 3. On failure, relay the error with the fix: `not logged in to Azure` → `az login`; a connection error → check `AGENT_HUB_URL` and the VPN; `401`/`403` → the account isn't in the tenant, or the scope is wrong.
 
