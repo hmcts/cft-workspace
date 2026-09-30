@@ -10,8 +10,8 @@ export const CLI_PATH = path.join(PROJECT_ROOT, 'scripts', 'lib', 'agent-hub', '
 const SESSION_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
 export const DEFAULT_CONFIG = {
-  publish_interval_minutes: 10,
-  notify_interval_minutes: 5,
+  publish_interval_minutes: 1,
+  notify_interval_minutes: 1,
 };
 
 export function claudeHome() {
