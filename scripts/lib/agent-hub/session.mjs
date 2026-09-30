@@ -97,19 +97,6 @@ export function log(sid, message) {
   } catch {}
 }
 
-export function readConfig() {
-  const config = readJson(path.join(hubHome(), 'config.json'), {}) || {};
-  const out = { ...DEFAULT_CONFIG };
-  for (const key of Object.keys(DEFAULT_CONFIG)) {
-    const value = Number(config[key]);
-    if (config[key] !== undefined && Number.isFinite(value) && value >= 0) out[key] = value;
-  }
-  for (const key of ['url', 'scope', 'dev_user']) {
-    if (typeof config[key] === 'string' && config[key]) out[key] = config[key];
-  }
-  return out;
-}
-
 // ~/.claude/sessions/<pid>.json is undocumented (peerProtocol 1); treat every field as optional.
 export function findSessionEntry(sid) {
   const dir = path.join(claudeHome(), 'sessions');
