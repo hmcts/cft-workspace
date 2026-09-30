@@ -6,7 +6,12 @@ import { MAX_POST_TOPICS } from '../agent.mjs';
 
 const TOPIC_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
-export function createMockHub({ pingMs = 15000 } = {}) {
+// `maxLifetimeMs` ends each stream like the service does, with `event: reconnect` unless
+// `reconnectEvent` is false. `replayAcked` replays delivered messages too, as a replay that raced
+// the ack would.
+export function createMockHub({ pingMs = 15000, maxLifetimeMs = 0, reconnectEvent = true, replayAcked = false } = {}) {
+  const options = { maxLifetimeMs, reconnectEvent, replayAcked };
+  const failures = { stream: [], ack: [] };
   const users = new Map();
   const agents = new Map();
   const messages = [];
@@ -18,6 +23,7 @@ export function createMockHub({ pingMs = 15000 } = {}) {
   let nextId = 1000;
 
   function record(call) {
+    call.at = Date.now();
     calls.push(call);
     for (const w of [...waiters]) {
       if (w.match(call)) {
@@ -167,22 +173,33 @@ export function createMockHub({ pingMs = 15000 } = {}) {
       return send(res, 204);
     }
     if (req.method === 'GET' && action === 'stream') {
+      const status = failures.stream.shift();
+      if (status) return send(res, status, { error: 'stream refused' });
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' });
       res.flushHeaders();
       streams.set(agent.id, res);
       const ping = setInterval(() => res.write(': ping\n\n'), pingMs);
+      const lifetime = options.maxLifetimeMs
+        ? setTimeout(() => {
+            if (options.reconnectEvent) res.write('event: reconnect\ndata: {}\n\n');
+            res.end();
+          }, options.maxLifetimeMs)
+        : null;
       req.on('close', () => {
         clearInterval(ping);
+        clearTimeout(lifetime);
         if (streams.get(agent.id) === res) streams.delete(agent.id);
       });
       for (const d of deliveries.values()) {
-        if (d.agent_id === agent.id && d.state === 'queued') sendEvent(agent.id, messages.find((m) => m.id === d.message_id));
+        if (d.agent_id === agent.id && (d.state === 'queued' || options.replayAcked)) sendEvent(agent.id, messages.find((m) => m.id === d.message_id));
       }
       return;
     }
     if (req.method === 'POST' && action === 'deliveries' && parts[5] === 'ack') {
       const d = deliveries.get(`${parts[4]}:${agent.id}`);
       if (!d) return send(res, 404, { error: 'no such delivery' });
+      const status = failures.ack.shift();
+      if (status) return send(res, status, { error: 'ack failed' });
       d.state = 'delivered';
       return send(res, 204);
     }
@@ -242,6 +259,14 @@ export function createMockHub({ pingMs = 15000 } = {}) {
     messages,
     deliveries,
     streams,
+    options,
+    // The next `count` stream requests, or acks, answer `status` instead.
+    failNextStreams(count, status = 500) {
+      for (let i = 0; i < count; i++) failures.stream.push(status);
+    },
+    failNextAcks(count, status = 500) {
+      for (let i = 0; i < count; i++) failures.ack.push(status);
+    },
     async listen() {
       await new Promise((r) => server.listen(0, '127.0.0.1', r));
       return `http://127.0.0.1:${server.address().port}`;

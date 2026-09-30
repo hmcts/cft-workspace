@@ -40,3 +40,10 @@ test('id persists across events until changed', () => {
   parser.push('id: 1\ndata: a\n\ndata: b\n\n');
   assert.deepEqual(events.map((e) => e.id), ['1', '1']);
 });
+
+test('a retry field is ignored and the reconnect event is dispatched by name', () => {
+  const { parser, events, comments } = collect();
+  parser.push(': connected\n\nretry: 1000\n\nevent: reconnect\ndata: {}\n\n');
+  assert.deepEqual(comments, ['connected']);
+  assert.deepEqual(events, [{ id: '', event: 'reconnect', data: '{}' }]);
+});
