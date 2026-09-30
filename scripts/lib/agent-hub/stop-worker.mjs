@@ -8,10 +8,10 @@ import { notifyEnvelope } from './envelope.mjs';
 import { findSecret } from './secret-scan.mjs';
 import {
   acquirePidFile,
+  DEFAULT_CONFIG,
   isEnabled,
   log,
   projectDir,
-  readConfig,
   readJson,
   PROJECT_ROOT,
   releasePidFile,
@@ -649,7 +649,7 @@ export async function runStopWorker({
   haiku = runHaiku,
   deliver = deliverToSocket,
   now = Date.now,
-  config = readConfig(),
+  config = DEFAULT_CONFIG,
   root = PROJECT_ROOT,
   branchOf = gitBranch,
 }) {

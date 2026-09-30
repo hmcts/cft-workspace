@@ -1,5 +1,4 @@
 import { execFile } from 'node:child_process';
-import { readConfig } from './session.mjs';
 
 export const DEFAULT_URL = 'https://agent-hub.aat.platform.hmcts.net';
 export const DEFAULT_SCOPE = 'api://dtsse-agent-hub/.default';
@@ -65,10 +64,9 @@ export function createTokenProvider({ scope = DEFAULT_SCOPE, run = runAz, now = 
 }
 
 export function createApi({
-  config = readConfig(),
-  baseUrl = process.env.AGENT_HUB_URL || config.url || DEFAULT_URL,
-  devUser = process.env.AGENT_HUB_DEV_USER || config.dev_user || '',
-  getToken = devUser ? null : createTokenProvider({ scope: process.env.AGENT_HUB_SCOPE || config.scope || DEFAULT_SCOPE }),
+  baseUrl = process.env.AGENT_HUB_URL || DEFAULT_URL,
+  devUser = process.env.AGENT_HUB_DEV_USER || '',
+  getToken = devUser ? null : createTokenProvider({ scope: process.env.AGENT_HUB_SCOPE || DEFAULT_SCOPE }),
   fetchImpl = globalThis.fetch,
 } = {}) {
   const base = baseUrl.replace(/\/+$/, '');
