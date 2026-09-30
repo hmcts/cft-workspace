@@ -77,17 +77,17 @@ test('readTranscriptSlice keeps only the last 20 KB', () => {
 });
 
 const cfg = { ...DEFAULT_CONFIG };
-test('decide: rate limits publish at 10 minutes and notify at 5 by default', () => {
+test('decide: rate limits publish and notify at 1 minute by default', () => {
   const base = { config: cfg, sliceText: 'work', secretInSlice: false, feedCount: 2 };
   let d = decide({ ...base, now: 20 * MIN, cursors: {} });
   assert.deepEqual(d, { offerPublish: true, offerNotify: true, callHaiku: true, advanceTranscript: true, advanceFeed: true });
-  d = decide({ ...base, now: 20 * MIN, cursors: { last_publish_at: 11 * MIN, last_notify_at: 16 * MIN } });
+  d = decide({ ...base, now: 20 * MIN, cursors: { last_publish_at: 19.5 * MIN, last_notify_at: 19.5 * MIN } });
   assert.equal(d.offerPublish, false);
   assert.equal(d.offerNotify, false);
   assert.equal(d.callHaiku, false);
   assert.equal(d.advanceTranscript, false, 'held for the next allowed publish');
   assert.equal(d.advanceFeed, false, 'held for the next allowed notify');
-  d = decide({ ...base, now: 20 * MIN, cursors: { last_publish_at: 10 * MIN, last_notify_at: 15 * MIN } });
+  d = decide({ ...base, now: 20 * MIN, cursors: { last_publish_at: 19 * MIN, last_notify_at: 19 * MIN } });
   assert.equal(d.offerPublish, true);
   assert.equal(d.offerNotify, true);
 });
@@ -347,7 +347,7 @@ test('a turn started by a notify does not trigger another notify or publish', as
   });
   fs.appendFileSync(transcript, line('user', '[agent-hub] Feed notification ...') + line('assistant', 'Noted #50.'));
   let called = false;
-  await runStopWorker({ ...opts, haiku: async () => { called = true; return ''; }, now: () => 101 * MIN });
+  await runStopWorker({ ...opts, haiku: async () => { called = true; return ''; }, now: () => 100.5 * MIN });
   assert.equal(called, false);
   assert.equal(api.calls.filter((c) => c[0] === 'post').length, 1);
 });
@@ -355,7 +355,7 @@ test('a turn started by a notify does not trigger another notify or publish', as
 test('within the notify window, a pass with only feed items skips Haiku; the feed cursor holds', async () => {
   const api = fakeApi([feedItem]);
   const opts = { sid: SID, transcriptPath: transcript, api, deliver: async () => {}, config: cfg };
-  writeJson(statePath(SID, 'cursors.json'), { transcript_path: transcript, transcript_offset: fs.statSync(transcript).size, last_notify_at: 98 * MIN });
+  writeJson(statePath(SID, 'cursors.json'), { transcript_path: transcript, transcript_offset: fs.statSync(transcript).size, last_notify_at: 99.5 * MIN });
   let called = false;
   await runStopWorker({ ...opts, haiku: async () => { called = true; return ''; }, now: () => 100 * MIN });
   assert.equal(called, false);
