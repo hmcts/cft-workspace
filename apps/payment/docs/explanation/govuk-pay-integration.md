@@ -16,6 +16,7 @@ sources:
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/OnlineCardPaymentRequest.java
+  - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/mapper/ServiceRequestDtoDomainMapper.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java
   - ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientService.java
@@ -71,6 +72,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/OnlineCardPaymentRequest.java": "5c28ea10564258d9c193bead87675b85afa50c21"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/mapper/ServiceRequestDtoDomainMapper.java": "7c2fcd29deec15bd4f249f50a126a029fcfb5d9b"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientService.java": "80f0421010c7b573dc2437346c6f4ba49a8cae49"
@@ -178,6 +180,8 @@ The recommended integration pattern for new services:
 - `currency`: `@NotNull` (CurrencyCode enum)
 - `language`: `@NotNull`, `@NotEmpty`
 - `return-url`: `@NotNull`, `@NotEmpty`
+
+Validation only checks that `language` is present, not what it contains. `ServiceRequestDtoDomainMapper.createGovPayRequest` then normalises it to `cy` only when it equals `cy` case-insensitively; every other non-empty value — including a full word like `Welsh` — becomes `en` before the request reaches GOV.UK Pay. A service that sends the wrong convention gets a silent fallback to English, not an error. GOV.UK Pay itself only translates its own hosted payment page: the payment description on that page is hardcoded to `"card payment"` in `ServiceRequestDtoDomainMapper` regardless of language, and the service name shown in the page header and any payment confirmation emails are configured per GOV.UK Pay account in its admin tool, not sent on the request.
 
 ## Payment session behaviour and idempotency
 
