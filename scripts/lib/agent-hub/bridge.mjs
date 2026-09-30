@@ -17,9 +17,29 @@ import { createSseParser } from './sse.mjs';
 
 const MIN_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 60000;
+// The service ends every stream within about 25s and the client reconnects at once. A stream that
+// ends this soon after opening, this many times running, is a server that cannot hold one, so back off.
+export const RAPID_CLOSE_MS = 2000;
+export const RAPID_CLOSES_BEFORE_BACKOFF = 3;
+// Acked ids are remembered so a replay that races the ack is not written to the inbox twice.
+const DELIVERED_MEMORY = 1000;
 
 export function nextBackoff(current) {
   return Math.min(MAX_BACKOFF_MS, current ? current * 2 : MIN_BACKOFF_MS);
+}
+
+// How long to wait before the next connection. `clean` is a stream that ended without an error,
+// with or without a `reconnect` event; `lastedMs` is how long it was open.
+export function reconnectDelay({ backoff = 0, rapidCloses = 0 } = {}, { clean, lastedMs }) {
+  if (!clean) {
+    const next = nextBackoff(lastedMs > 60000 ? 0 : backoff);
+    return { delay: next, backoff: next, rapidCloses: 0 };
+  }
+  if (lastedMs >= RAPID_CLOSE_MS) return { delay: 0, backoff: 0, rapidCloses: 0 };
+  const rapid = rapidCloses + 1;
+  if (rapid < RAPID_CLOSES_BEFORE_BACKOFF) return { delay: 0, backoff: 0, rapidCloses: rapid };
+  const next = nextBackoff(backoff);
+  return { delay: next, backoff: next, rapidCloses: rapid };
 }
 
 export function readStatus(sid) {
@@ -47,6 +67,10 @@ export async function runBridge({
   let heartbeatTimer = null;
   let wake = null;
   const delivered = new Set();
+  const remember = (id) => {
+    delivered.add(id);
+    if (delivered.size > DELIVERED_MEMORY) delivered.delete(delivered.values().next().value);
+  };
   const claudePid = sessionInfo(sid, env).pid;
   if (!claudePid) log(sid, 'no Claude pid found; relying on SessionEnd to stop the bridge');
 
@@ -111,7 +135,7 @@ export async function runBridge({
       const info = sessionInfo(sid, env);
       try {
         await deliver(info.socketPath, env.CLAUDE_CODE_MESSAGING_TOKEN, directEnvelope(message));
-        delivered.add(message.id);
+        remember(message.id);
         log(sid, `delivered direct #${message.id}`);
       } catch (e) {
         // Unacked, so the service resends it on the next connection.
@@ -121,7 +145,6 @@ export async function runBridge({
     }
     try {
       await api.ack(agent.agent_id, message.id);
-      delivered.delete(message.id);
     } catch (e) {
       log(sid, `ack of #${message.id} failed: ${e.message}`);
     }
@@ -131,6 +154,7 @@ export async function runBridge({
     const decoder = new TextDecoder();
     let chain = Promise.resolve();
     let idleTimer = null;
+    let reconnect = false;
     const resetIdle = () => {
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
@@ -141,6 +165,7 @@ export async function runBridge({
     const parser = createSseParser({
       onEvent: (event) => {
         if (event.event === 'direct') chain = chain.then(() => handleDirect(event));
+        else if (event.event === 'reconnect') reconnect = true;
       },
     });
     resetIdle();
@@ -148,12 +173,13 @@ export async function runBridge({
       for await (const chunk of res.body) {
         resetIdle();
         parser.push(decoder.decode(chunk, { stream: true }));
+        if (reconnect) break;
       }
     } finally {
       clearTimeout(idleTimer);
       await chain;
     }
-    return parser.lastEventId;
+    return { lastEventId: parser.lastEventId, reconnect };
   }
 
   process.on('SIGTERM', () => shutdown('SIGTERM').then(() => process.exit(0)));
@@ -164,23 +190,31 @@ export async function runBridge({
     heartbeat().catch((e) => log(sid, `heartbeat error: ${e.message}`));
   }, heartbeatMs);
 
-  let backoff = 0;
+  let retry = {};
   let lastEventId = '';
+  let clean = false;
   while (!stopping) {
     const reason = shouldStop();
     if (reason) {
       await shutdown(reason);
       break;
     }
-    const started = Date.now();
+    let opened = Date.now();
+    const afterClean = clean;
+    clean = false;
     try {
       if (!agent?.agent_id) agent = (await registerAgent(api, sid, { cwd: agent?.cwd })).agent;
       controller = new AbortController();
       const res = await api.stream(agent.agent_id, { signal: controller.signal, lastEventId });
-      log(sid, 'stream connected');
-      await heartbeat();
-      lastEventId = (await consume(res)) || lastEventId;
-      log(sid, 'stream ended');
+      opened = Date.now();
+      if (!afterClean) {
+        log(sid, 'stream connected');
+        await heartbeat();
+      }
+      const ended = await consume(res);
+      lastEventId = ended.lastEventId || lastEventId;
+      clean = true;
+      if (!ended.reconnect) log(sid, 'stream ended without a reconnect event');
     } catch (e) {
       if (stopping) break;
       if (e instanceof ApiError && e.status === 404) {
@@ -191,9 +225,9 @@ export async function runBridge({
       }
     }
     if (stopping) break;
-    if (Date.now() - started > 60000) backoff = 0;
-    backoff = nextBackoff(backoff);
-    await sleep(backoff);
+    retry = reconnectDelay(retry, { clean, lastedMs: Date.now() - opened });
+    if (clean && retry.delay > 0) log(sid, `streams keep ending within ${RAPID_CLOSE_MS}ms; backing off ${retry.delay}ms`);
+    if (retry.delay > 0) await sleep(retry.delay);
   }
   clearInterval(heartbeatTimer);
   await stopped;

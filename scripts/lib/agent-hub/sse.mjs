@@ -1,4 +1,4 @@
-// Server-sent events parser (WHATWG event-stream rules, minus `retry` handling).
+// Server-sent events parser (WHATWG event-stream rules, minus `retry`: the bridge picks its own delay).
 export function createSseParser({ onEvent, onComment = () => {} }) {
   let buffer = '';
   let data = [];
