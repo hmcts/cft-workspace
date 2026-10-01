@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
-import { AUTO_ENABLE_RETRY_MS, autoEnableOn, markOptedOut, maybeAutoEnable, runAutoEnable } from '../enable.mjs';
+import { AUTO_ENABLE_RETRY_MS, autoEnableOn, markOptedOut, maybeAutoEnable, runAutoEnable, waitForSessionEntry } from '../enable.mjs';
 import { runHook } from '../hooks.mjs';
 import { PROJECT_ROOT } from '../session.mjs';
 import { tempClaudeHome } from './helpers.mjs';
@@ -249,4 +249,17 @@ test('end to end through the wrapper: auto-enable, opt out with disable, opt bac
   } finally {
     await hub.close();
   }
+});
+
+test('waitForSessionEntry returns the registry entry once Claude Code writes it, and gives up after the timeout', async () => {
+  const sid = 'sess-registry-wait';
+  const started = Date.now();
+  assert.equal(await waitForSessionEntry(sid, { timeoutMs: 200, intervalMs: 20 }), null);
+  assert.ok(Date.now() - started >= 200);
+
+  setTimeout(() => {
+    fs.writeFileSync(path.join(home.claude, 'sessions', '424242.json'), JSON.stringify({ pid: 424242, sessionId: sid, name: 'agent-hub', nameSource: 'user' }));
+  }, 100);
+  const entry = await waitForSessionEntry(sid, { timeoutMs: 2000, intervalMs: 20 });
+  assert.equal(entry?.name, 'agent-hub');
 });

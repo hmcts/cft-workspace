@@ -71,8 +71,13 @@ export async function runBridge({
     delivered.add(id);
     if (delivered.size > DELIVERED_MEMORY) delivered.delete(delivered.values().next().value);
   };
-  const claudePid = sessionInfo(sid, env).pid;
-  if (!claudePid) log(sid, 'no Claude pid found; relying on SessionEnd to stop the bridge');
+  let claudePid = sessionInfo(sid, env).pid;
+  if (!claudePid) log(sid, 'no Claude pid found yet; looking again on each heartbeat');
+  const resolveClaudePid = () => {
+    if (claudePid) return;
+    claudePid = sessionInfo(sid, env).pid;
+    if (claudePid) log(sid, `found claude pid ${claudePid}`);
+  };
 
   const sleep = (ms) =>
     new Promise((resolve) => {
@@ -105,6 +110,7 @@ export async function runBridge({
   }
 
   function shouldStop() {
+    resolveClaudePid();
     if (fs.existsSync(statePath(sid, 'bridge.stop'))) return 'stop file';
     if (!isEnabled(sid)) return 'comms disabled';
     if (claudePid && !pidAlive(claudePid)) return `claude pid ${claudePid} exited`;
