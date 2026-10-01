@@ -17,4 +17,6 @@ export ANTHROPIC_DEFAULT_HAIKU_MODEL='eu.anthropic.claude-haiku-4-5-20251001-v1:
 export ANTHROPIC_DEFAULT_OPUS_MODEL='eu.anthropic.claude-opus-5-5[1m]'
 export ANTHROPIC_DEFAULT_SONNET_MODEL='eu.anthropic.claude-sonnet-5[1m]'
 
+export KNOWLEDGE_SWEEP_CLAUDE_SETTINGS="$SCRIPT_DIR/cnp.settings.json"
+
 exec claude --settings $SCRIPT_DIR/cnp.settings.json --dangerously-skip-permissions "$@"
