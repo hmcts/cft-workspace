@@ -1,6 +1,8 @@
 // runBridge in-process against the mock hub, with a fake inbox, to check how it reconnects.
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { createApi } from '../api.mjs';
 import { RAPID_CLOSE_MS, RAPID_CLOSES_BEFORE_BACKOFF, reconnectDelay, runBridge } from '../bridge.mjs';
@@ -158,5 +160,31 @@ test('streams that end just after opening fall back to backoff', async () => {
     assert.ok(delays[RAPID_CLOSES_BEFORE_BACKOFF - 1] >= 1000, `backed off ${delays[RAPID_CLOSES_BEFORE_BACKOFF - 1]}ms`);
   } finally {
     await bridge.stop();
+  }
+});
+
+test('a bridge that starts before the registry entry finds the Claude pid later and stops when it exits', async () => {
+  const hub = createMockHub({ pingMs: 5000 });
+  const url = await hub.listen();
+  const api = createApi({ baseUrl: url, devUser: DEV_USER });
+  const sid = `bridge-test-${++nextSession}`;
+  const { agent_id: agentId } = await api.register({ session_id: sid, name: sid });
+  ensureStateDir(sid);
+  fs.writeFileSync(statePath(sid, 'enabled'), '');
+  writeJson(statePath(sid, 'agent.json'), { agent_id: agentId, session_id: sid, name: sid });
+  const env = { ...process.env, CLAUDE_CODE_MESSAGING_TOKEN: 'tok' };
+  delete env.AGENT_HUB_CLAUDE_PID;
+  const running = runBridge({ sid, env, api, deliver: async () => {}, heartbeatMs: 100 });
+  try {
+    await waitUntil(() => fs.readFileSync(statePath(sid, 'log'), 'utf8').includes('no Claude pid found yet'), 'the missing pid to be logged');
+    const exited = execFileSync(process.execPath, ['-e', 'process.stdout.write(String(process.pid))'], { encoding: 'utf8' });
+    writeJson(path.join(home.claude, 'sessions', `${exited}.json`), { pid: Number(exited), sessionId: sid, name: 'late-entry', kind: 'interactive' });
+    await running;
+    const log = fs.readFileSync(statePath(sid, 'log'), 'utf8');
+    assert.match(log, new RegExp(`found claude pid ${exited}`));
+    assert.match(log, new RegExp(`claude pid ${exited} exited`));
+  } finally {
+    fs.rmSync(statePath(sid, 'enabled'), { force: true });
+    await hub.close();
   }
 });

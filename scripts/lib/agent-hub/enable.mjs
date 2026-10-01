@@ -113,13 +113,24 @@ export function maybeAutoEnable(event, sid, input, { env = process.env, spawn = 
   return 'spawned';
 }
 
+// SessionStart runs before Claude Code writes the session's registry entry, which holds the name and the pid.
+export async function waitForSessionEntry(sid, { timeoutMs = 10000, intervalMs = 250 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const entry = findSessionEntry(sid);
+    if (entry?.pid || Date.now() >= deadline) return entry;
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+}
+
 // The detached half of auto-enable: quiet, one log line on failure, never a non-zero exit.
-export async function runAutoEnable({ sid, cwd, env = process.env }) {
+export async function runAutoEnable({ sid, cwd, env = process.env, registryWaitMs = Number(env.AGENT_HUB_REGISTRY_WAIT_MS) || 10000 }) {
   ensureStateDir(sid);
   const lock = statePath(sid, 'auto-enable.lock');
   if (!acquirePidFile(lock)) return;
   try {
     if (isEnabled(sid) || isOptedOut(sid)) return;
+    if (!(await waitForSessionEntry(sid, { timeoutMs: registryWaitMs }))) log(sid, 'auto-enable: no session registry entry yet; registering under the fallback name');
     const done = await enableSession(sid, { cwd, env, proceed: () => !isOptedOut(sid) && !isEnabled(sid) });
     if (done) removeFile(statePath(sid, 'auto-enable.last'));
   } catch (e) {
