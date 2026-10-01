@@ -114,6 +114,9 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | em | explanation | Media Viewer | media-viewer | `apps/em/docs/explanation/media-viewer.md` |
 | em | explanation | Overview | overview | `apps/em/docs/explanation/overview.md` |
 | em | explanation | Stitching And Bundling | stitching | `apps/em/docs/explanation/stitching-and-bundling.md` |
+| et | how-to | Find and fix concurrent-update conflict hotspots | concurrent-updates | `apps/et/docs/how-to/find-and-fix-concurrent-update-conflicts.md` |
+| et | explanation | Decentralised persistence and concurrent updates | concurrent-updates | `apps/et/docs/explanation/decentralised-persistence-and-concurrent-updates.md` |
+| et | explanation | The citizen API lives in et-cos | citizen-api | `apps/et/docs/explanation/citizen-api-in-et-cos.md` |
 | payment | how-to | Configure Pci Pal Flow | telephony | `apps/payment/docs/how-to/configure-pci-pal-flow.md` |
 | payment | how-to | Integrate From A Service | overview | `apps/payment/docs/how-to/integrate-from-a-service.md` |
 | payment | how-to | Troubleshoot Payment Status | lifecycle | `apps/payment/docs/how-to/troubleshoot-payment-status.md` |
