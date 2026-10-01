@@ -111,13 +111,18 @@ mkdir -p "$STATE_DIR"
 # Which CLI does the harvesting. Claude Code is the default because the
 # harvester is written as one of its agents; a Codex-only engineer needs
 # KNOWLEDGE_SWEEP_HARVEST_CMD, which receives the prompt on stdin.
+# It runs the launching session's binary and --settings, which are not inherited,
+# so it authenticates the same way that session did.
 HARVEST_CMD=${KNOWLEDGE_SWEEP_HARVEST_CMD:-}
 HARVEST_IS_CLAUDE=0
+CLAUDE_BIN=claude
+[[ -x "${CLAUDE_CODE_EXECPATH:-}" ]] && CLAUDE_BIN=$CLAUDE_CODE_EXECPATH
+CLAUDE_CMD=("$CLAUDE_BIN" -p --model "$MODEL")
+[[ -n "${KNOWLEDGE_SWEEP_CLAUDE_SETTINGS:-}" ]] && CLAUDE_CMD+=(--settings "$KNOWLEDGE_SWEEP_CLAUDE_SETTINGS")
 if [[ -z "$HARVEST_CMD" ]]; then
-    if command -v claude >/dev/null; then
+    if command -v "$CLAUDE_BIN" >/dev/null; then
         HARVEST_IS_CLAUDE=1
-        HARVEST_CMD="claude -p --model $MODEL --permission-mode acceptEdits"
-        HARVEST_CMD+=" --allowedTools Read Edit Write Grep Glob Bash(./scripts/docs-index)"
+        HARVEST_CMD=claude
     elif command -v codex >/dev/null; then
         # Untested: no Codex install was available to verify the invocation or
         # its sandbox flags. Override with KNOWLEDGE_SWEEP_HARVEST_CMD if wrong.
@@ -308,7 +313,7 @@ if (( BACKFILL )) && [[ "$(jq '[.[] | select(.seeded == true)] | length' "$LEDGE
     ok "backfill: reset $(jq '[.[] | select(.backfill == true)] | length' "$LEDGER") seeded session(s) to be read from the start"
 fi
 
-command -v claude >/dev/null || die "claude CLI not on PATH"
+command -v "$CLAUDE_BIN" >/dev/null || die "claude CLI not on PATH"
 command -v jq >/dev/null || die "jq not on PATH"
 
 WORK=$(mktemp -d)
@@ -488,11 +493,11 @@ fi
 if (( HARVEST_IS_CLAUDE )); then
     set +e
     probe=$(cd "$WORKSPACE_ROOT" && KNOWLEDGE_SWEEP_CHILD=1 \
-        claude -p --no-session-persistence --model "$MODEL" 'Reply with the single word ok.' </dev/null 2>&1)
+        "${CLAUDE_CMD[@]}" --no-session-persistence 'Reply with the single word ok.' </dev/null 2>&1)
     probe_status=$?
     set -e
     if (( probe_status != 0 )); then
-        die "harvester cannot reach the model — deferring this batch, nothing consumed: $(printf '%s' "$probe" | head -1)"
+        die "harvester cannot reach the model — deferring this batch, nothing consumed: $(printf '%s\n' "$probe" | grep -v '^$' | tail -1) [${CLAUDE_CMD[*]}]"
     fi
 fi
 
@@ -547,8 +552,13 @@ set +e
 (
     cd "$WORKTREE" || exit 1
     export KNOWLEDGE_SWEEP_CHILD=1
-    printf '%s\n\nThe digest is at `sweep-digest.local.md`. Write your summary to `sweep-summary.local.md`.\n' "$PROMPT_BODY" \
-    | $HARVEST_CMD > "$WORK/model.log" 2>&1
+    prompt=$(printf '%s\n\nThe digest is at `sweep-digest.local.md`. Write your summary to `sweep-summary.local.md`.\n' "$PROMPT_BODY")
+    if (( HARVEST_IS_CLAUDE )); then
+        printf '%s\n' "$prompt" | "${CLAUDE_CMD[@]}" --permission-mode acceptEdits \
+            --allowedTools Read Edit Write Grep Glob 'Bash(./scripts/docs-index)'
+    else
+        printf '%s\n' "$prompt" | $HARVEST_CMD
+    fi > "$WORK/model.log" 2>&1
 )
 model_status=$?
 set -e
