@@ -93,7 +93,7 @@ None of that applies to an ordinary stateless service, where per-cluster hostnam
 
 ## Checking it
 
-Resolution only works from the network, and a VPN split-tunnel or a devcontainer started before the VPN connected will both give you `NXDOMAIN` — see [Connect via VPN](../connect-via-vpn.md).
+Resolution only works from the network, and a VPN split-tunnel or a devcontainer started before the VPN connected will both give you `NXDOMAIN` — see [VPN connected after the devcontainer started](../connect-to-a-nonprod-database.md#vpn-connected-after-the-devcontainer-started).
 
 ```bash
 dig +short <hostname>.aat.platform.hmcts.net       # expect the gateway private IP

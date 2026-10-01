@@ -48,12 +48,12 @@ title: Debug with cftlib
 diataxis: how-to
 product: ccd
 sources_sha:
-  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "e3587808bd1477ab4a47aa39c0b6ac5468479f7d"
-  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLib.java": "71544992866ebc3f02139e17b9782c9437213a22"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "0817d783ad0e77506beb150a2dfdc6789819ab3f"
+  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLib.java": "0817d783ad0e77506beb150a2dfdc6789819ab3f"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLibConfigurer.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
-  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/CFTLibApiImpl.java": "e3587808bd1477ab4a47aa39c0b6ac5468479f7d"
+  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/CFTLibApiImpl.java": "0817d783ad0e77506beb150a2dfdc6789819ab3f"
   "rse-cft-lib:cftlib/lib/cftlib-agent/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibAgent.java": "1af3bf04972042b8b6c862d4a3dbed93c7753e29"
-  "rse-cft-lib:cftlib/lib/cftlib-agent/src/main/java/uk/gov/hmcts/rse/ccd/lib/definitionstore/JsonDefinitionReader.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
+  "rse-cft-lib:cftlib/lib/cftlib-agent/src/main/java/uk/gov/hmcts/rse/ccd/lib/definitionstore/JsonDefinitionReader.java": "0eb34d6619f68ec0412d14babece0b7366d73854"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
   "rse-cft-lib:cftlib/lib/test-runner/src/main/java/uk/gov/hmcts/rse/ccd/lib/test/CftlibTest.java": "1b82c829cfc6fb569ee0086afbbc520b27882ec4"
   "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ESIndexer.java": "cc031d19e1b4ff87cdc66c0f6609ee54241ec04b"
@@ -200,7 +200,7 @@ curl http://localhost:9200/global_search/_search?pretty
 
 ### Decentralised mode
 
-When the SDK runs in decentralised mode, the cftlib indexer is a no-op — it is annotated `@ConditionalOnProperty(value = "ccd.sdk.decentralised", havingValue = "false", matchIfMissing = true)` (`ESIndexer.java:21`), so setting `ccd.sdk.decentralised=true` removes the bean entirely. In that case ES indexing is the responsibility of your service's own logstash/indexer runtime — see [decentralised CCD](../explanation/decentralised-ccd.md).
+When the SDK runs in decentralised mode, the cftlib indexer is a no-op — it is annotated `@ConditionalOnProperty(value = "ccd.sdk.decentralised", havingValue = "false", matchIfMissing = true)` (`ESIndexer.java:21`), so setting `ccd.sdk.decentralised=true` removes the bean entirely. In that case ES indexing is the responsibility of your service's own logstash/indexer runtime — see [Decentralisation](../explanation/decentralisation.md).
 
 ### Verify
 
@@ -210,7 +210,7 @@ When the SDK runs in decentralised mode, the cftlib indexer is a no-op — it is
 
 ## Recipe 4 — Reset a definition without restarting
 
-`importDefinition` is idempotent: it MD5s the bytes, compares against a `lastImportHash` field, and prints `Definition up to date, no import necessary!` on a match (`CFTLibApiImpl.java:188-199`). Two consequences worth knowing before you try to force a re-import:
+`importDefinition` is idempotent: it MD5s the bytes, compares against a `lastImportHash` field, and prints `Definition up to date, no import necessary!` on a match (`CFTLibApiImpl.java:190-201`). Two consequences worth knowing before you try to force a re-import:
 
 - The hash is over the **file contents**, not its mtime — so `touch`ing the xlsx changes nothing and the import is still skipped. Change the definition (or a single cell) or take a different route.
 - `lastImportHash` is a plain in-memory field, so it is empty again after any JVM restart. The first `importDefinition` of a fresh `bootWithCCD` always goes through.
@@ -224,7 +224,7 @@ void reimportDefinition() throws Exception {
 }
 ```
 
-**Option B — JSON definition folder.** `importJsonDefinition` POSTs the folder's canonical *path* and calls `postDefinition` directly, bypassing the MD5 check entirely (`CFTLibApiImpl.java:209-213`) — so it **always** re-imports. That makes it the reliable way to reload a definition mid-session. The definition-processor layout also supports `${CCD_DEF_*}` variable substitution (`JsonDefinitionReader.java`), so you can change an env var and reload without touching the JSON:
+**Option B — JSON definition folder.** `importJsonDefinition` POSTs the folder's canonical *path* and calls `postDefinition` directly, bypassing the MD5 check entirely (`CFTLibApiImpl.java:211-215`) — so it **always** re-imports. That makes it the reliable way to reload a definition mid-session. The definition-processor layout also supports `${CCD_DEF_*}` variable substitution (`JsonDefinitionReader.java`), so you can change an env var and reload without touching the JSON:
 
 ```java
 cftLib.importJsonDefinition(new File("src/cftlib/definitions"));

@@ -18,7 +18,6 @@ Route an action-shaped question to the right how-to (or tutorial) page across th
 
 - The user wants a **conceptual explanation** ("what is X / how does Y work") — use `/cft-explain`.
 - The user wants a **code example** of a feature — use `/cft-find-example`.
-- The user wants a **product tour** — use `/cft-tour`.
 
 ## Procedure
 

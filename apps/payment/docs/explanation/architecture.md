@@ -69,7 +69,7 @@ confluence_checked_at: "2026-08-20T00:00:00Z"
 sources_sha:
   "ccpay-payment-app:settings.gradle": "7bafc8bc5e167ac022ea09d0d178dda6df95e09b"
   "ccpay-payment-app:api/src/main/resources/application.properties": "1908ddc16a3f086c816e17c1ff8b27bee4b8f414"
-  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-master.xml": "d186319bdd2f53eeea8c6696dcaa973b62fef4e4"
+  "ccpay-payment-app:api/src/main/resources/db/changelog/db.changelog-master.xml": "6a6c4cf0359f3db4a6849790b72ee2a84055ce48"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/CardPaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/MaintenanceJobsController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
@@ -86,7 +86,7 @@ sources_sha:
   "ccpay-bulkscanning-app:src/main/resources/db/changelog/db.changelog-master.xml": "fd081cdd4f125504a975e2d58402c7bc8d08a932"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/IdempotencyServiceImpl.java": "7a5df2f161deebfb9cf3e7e0941bd0cdc21318de"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/LiberataService.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/model/PaymentStatus.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/FeePayApportionServiceImpl.java": "445f3ac2c605bdd3fd2ff39aa1a6b7936e7b6634"
@@ -205,7 +205,7 @@ Module dependencies are declared in `ccpay-payment-app:settings.gradle:1-17`. Th
 
 The hub publishes to two ASB topics:
 
-1. **`ccpay-service-callback-topic`** -- card/PBA payment status callbacks to consuming services (civil, ia, pcs, etc.). Published by `CallbackServiceImpl` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:42-79`). No feature flag gates the publish; the method branches only on which callback URL is populated, and it cannot be switched off from the hub. `TopicClientProxy` makes up to 3 send attempts with a linear backoff of `1000ms * attempt`, so waits of 1s then 2s, and rethrows on the third failure (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java:17`, `:35-51`). `CallbackServiceImpl` catches that exception and only interrupts the thread (`:56-58`, `:75-77`), so a payment can reach a terminal status with its callback never published and nothing but a log line to show it.
+1. **`ccpay-service-callback-topic`** -- card/PBA payment status callbacks to consuming services (civil, ia, pcs, etc.). Published by `CallbackServiceImpl` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:42-85`). No feature flag gates the publish; the method branches only on which callback URL is populated, and it cannot be switched off from the hub. `TopicClientProxy` makes up to 3 send attempts with a linear backoff of `1000ms * attempt`, so waits of 1s then 2s, and rethrows on the third failure (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java:17`, `:35-51`). `CallbackServiceImpl` catches that exception, logs it at ERROR and re-raises the interrupt flag only for an `InterruptedException` (`:56-61`, `:78-83`), so a payment can reach a terminal status with its callback never published and nothing but a log line to show it.
 2. **`ccpay-service-request-cpo-update-topic`** -- service-request payment updates forwarded to the Case Payment Orders API. Published by `ServiceRequestDomainServiceImpl` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java:534-572`).
 
 The ASB subscription for the callback topic is `serviceCallbackPremiumSubscription` (`azure.servicebus.subscription-name`). Messages are consumed by `ccpay-callback-function`, an Azure Function deployed from the `ccpay/callback-function` image and KEDA-scaled on the subscription backlog, which delivers the payment status payload to each service's registered callback URL (`cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml:9`, `:16-24`). Its redelivery interval is set from the environment as `DELAY_MESSAGE_MINUTES: 30` (`:13`).
@@ -256,7 +256,7 @@ Computed dynamically by `ServiceRequestUtil` based on fee totals, remission tota
 
 When a payment reaches a terminal state (success or failure), the platform publishes a callback message to `ccpay-service-callback-topic` on Azure Service Bus. The message flow is:
 
-1. **Publisher**: `CallbackServiceImpl` in `ccpay-payment-app` publishes a JSON message with the `serviceCallbackUrl` as a message property. It checks `payment.getServiceCallbackUrl()` first, then falls back to `paymentFeeLink.getCallBackUrl()` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:42-79`). The two branches send different bodies: the per-payment URL gets a `PaymentDto`, the service-request URL gets a `PaymentStatusDto`.
+1. **Publisher**: `CallbackServiceImpl` in `ccpay-payment-app` publishes a JSON message with the `serviceCallbackUrl` as a message property. It checks `payment.getServiceCallbackUrl()` first, then falls back to `paymentFeeLink.getCallBackUrl()` (`ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java:42-85`). The two branches send different bodies: the per-payment URL gets a `PaymentDto`, the service-request URL gets a `PaymentStatusDto`.
 2. **Transport**: Azure Service Bus topic `ccpay-service-callback-topic` with subscription `serviceCallbackPremiumSubscription`.
 3. **Consumer**: `ccpay-callback-function` (an Azure Function, not in the payment repos) reads messages from the subscription and sends HTTP PUT requests to the service's callback URL.
 4. **Retry**: If the service does not respond with a 2XX, the function redelivers on a 30-minute interval — `DELAY_MESSAGE_MINUTES: 30` (`cnp-flux-config:apps/fees-pay/ccpay-callback-function/ccpay-callback-function.yaml:13`) — up to 5 further times before giving up. (Services commonly assume only 200 and 201 count as success; the Service Callback LLD is explicit that anything in `200 <= status < 300` is accepted.)
@@ -413,7 +413,7 @@ All Java services use PostgreSQL with Liquibase-managed schemas. `ccpay-bulkscan
 
 | Service | Database name | Changelog master | Notable tables |
 |---------|--------------|------------------|----------------|
-| `ccpay-payment-app` | `payment` | `db.changelog-master.xml` (32 changesets, 0.0.1 -- 0.1.16) | `payment`, `payment_fee_link`, `fee`, `remission`, `fee_pay_apportion`, `status_history`, `idempotency_keys` |
+| `ccpay-payment-app` | `payment` | `db.changelog-master.xml` (29 included changelogs, 0.0.1 -- 0.1.18) | `payment`, `payment_fee_link`, `fee`, `remission`, `fee_pay_apportion`, `status_history`, `idempotency_keys` |
 | `ccpay-refunds-app` | `refunds` | `db.changelog-master.yaml` (12 changesets, 0.1 -- 0.1.2) | `refunds`, `status_history`, `refund_reasons`, `refund_status`, `rejection_reasons`, `refund_fees` |
 | `ccpay-notifications-service` | `notifications` | `db.changelog-master.yaml` (7 changesets, 0.1 -- 0.7) | `notification`, `contact_details`, `service_contact`, `notification_refund_reasons` |
 | `ccpay-bulkscanning-app` | `bspayment` | `db.changelog-master.xml` (includes 0.1 and 0.2) | `envelope`, `envelope_case`, `envelope_payment`, `payment_metadata`, `status_history` |

@@ -94,8 +94,8 @@ sources_sha:
   "libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java": "cde80e20584d39f3f3a890f473db818f79449fae"
   "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Permission.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
-  "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
-  "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
+  "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
+  "libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java": "8bc7f5ed083cdd72928169585b9bc89819707792"
   "apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/common/AccessControlService.java": "20b95a21e98b143b1c833f84f28ee6ef8664ed66"
   "apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/common/CaseAccessService.java": "b509326d3eefbb50e825485237675ec4117beebe"
   "apps/ccd/ccd-data-store-api/src/main/java/uk/gov/hmcts/ccd/domain/service/createcase/AuthorisedCreateCaseOperation.java": "593ffa40e6cc3beac85f5afb320d0a48b8fc2ccf"
@@ -261,7 +261,7 @@ Pattern from `nfdiv-case-api:…/model/access/AosAccess.java:19–29`.
 
 State-level grants are declared on the config builder. The signature is
 `void grant(S state, Set<Permission> permissions, R... role)`
-(`ConfigBuilder.java:39`, implementation `ConfigBuilderImpl.java:253`):
+(`ConfigBuilder.java:39`, implementation `ConfigBuilderImpl.java:255`):
 
 ```java
 configBuilder.grant(State.Submitted, CREATE_READ_UPDATE, UserRole.MY_CASEWORKER);

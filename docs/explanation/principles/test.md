@@ -17,6 +17,10 @@ Tests should be automated. They should be run as part of the build process. They
 
 Tests should be reliable. They should not fail randomly. They should not fail when the system is under load.
 
+If a test compares output against a golden/expected fixture file, keep the step that regenerates that fixture separate from the `@Test` that asserts against it. A regenerator annotated as its own test will overwrite the fixture from current output on every run, before the comparison runs — so the comparison test can never fail, regardless of real regressions.
+
+For Playwright/Angular-specific browser-test gotchas (locator polling, `<select>` value diagnostics), see [Frontend applications — cross-browser and UI testing](../../reference/practices/frontend.md#cross-browser-and-ui-testing).
+
 ### Fast
 
 Tests should be fast. If they are slow, they will be ignored.

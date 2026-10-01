@@ -49,3 +49,5 @@ We currently provide 'Test' and 'Production' environments by default within Laun
 
 If your team does require additional environments, you can do this by updating your teams [terraform.tfvars](https://github.com/hmcts/launchdarkly-terraform/blob/896019ed1efdebdf9237b7811ab2b9585a7708f2/terraform.tfvars#L59-L61). 
 It is not recommended to do this as targeting rules should be simpler to manage and ensure consistency across environments.
+
+In a CNP preview PR environment, the CNP chart sets `global.environment` to the release's own name (e.g. `<service>-pr-1234`), not a shared `preview` value. If your service passes that straight through as the LaunchDarkly environment/context attribute, no targeting rule can ever match it, so every flag evaluates at its code default in preview regardless of what's configured in LaunchDarkly. Pin the LaunchDarkly environment to a real, targeted environment (e.g. `aat`) for the preview chart values, or run the SDK in offline mode against a local flags file, rather than inheriting `global.environment` directly.

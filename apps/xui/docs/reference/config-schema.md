@@ -87,7 +87,7 @@ sources_sha:
 | `microservice` | string | `xui_webapp` | S2S microservice name used for token lease (`config/default.json:120`) |
 | `protocol` | string | `https` | Protocol for constructing callback URLs |
 | `dynatraceCdn` | string | `""` (empty) | URL of the Dynatrace RUM agent script; empty disables injection (see [Dynatrace](#dynatrace)) |
-| `decentralisedCaseTypeConfig` | object | `{}` (empty) | Per-case-type decentralisation settings, served to the browser (see [Decentralised case types](#decentralised-case-types)) |
+| `decentralisedCaseTypeConfig` | object | one `PCS` entry | Per-case-type decentralisation settings, served to the browser (see [Decentralised case types](#decentralised-case-types)) |
 | `decentralisedServiceMap` | object | `{}` (empty) | Per-service decentralisation settings, also served to the browser (see [Decentralised case types](#decentralised-case-types)) |
 
 ## Cookies
@@ -153,9 +153,9 @@ These string-valued settings control which jurisdictions/services are enabled fo
 
 | Config path | Env var | Default | Description |
 |-------------|---------|---------|-------------|
-| `globalSearchServices` | `GLOBAL_SEARCH_SERVICES` | `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC` | Services enabled for global search |
-| `waSupportedJurisdictions` | `WA_SUPPORTED_JURISDICTIONS` | `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC` | Jurisdictions enabled for Work Allocation |
-| `staffSupportedJurisdictions` | `STAFF_SUPPORTED_JURISDICTIONS` | `ST_CIC,CIVIL,EMPLOYMENT,PRIVATELAW,PUBLICLAW,IA,SSCS,DIVORCE,FR,PROBATE,HRS` | Jurisdictions shown in Staff UI |
+| `globalSearchServices` | `GLOBAL_SEARCH_SERVICES` | `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC,PROBATE,PCS` | Services enabled for global search |
+| `waSupportedJurisdictions` | `WA_SUPPORTED_JURISDICTIONS` | `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC,PCS` | Jurisdictions enabled for Work Allocation |
+| `staffSupportedJurisdictions` | `STAFF_SUPPORTED_JURISDICTIONS` | `ST_CIC,CIVIL,EMPLOYMENT,PRIVATELAW,PUBLICLAW,IA,SSCS,DIVORCE,FR,PROBATE,HRS,PCS` | Jurisdictions shown in Staff UI |
 | `jurisdictions` | `JURISDICTIONS` | `DIVORCE,PROBATE,FR,PUBLICLAW,IA,SSCS,EMPLOYMENT,HRS,CIVIL,CMC,PRIVATELAW,PCS` | Full list of supported jurisdictions |
 
 ## Service-to-Reference-Data mapping
@@ -290,7 +290,9 @@ The environment is detected by inspecting the IDAM login URL for `.aat.`, `.demo
 ## Decentralised case types
 
 `decentralisedCaseTypeConfig` (`DECENTRALISED_CASE_TYPE_CONFIG`, `__format: "json"`) carries
-per-case-type settings for the decentralised-ExUI work, and defaults to `{}`. `uiConfigRouter`
+per-case-type settings for the decentralised-ExUI work. The in-repo default is no longer empty:
+it carries a single `PCS` entry giving that case type a `webUrl` and a `nocBaseUrl`
+(`config/default.json:125-127`). `uiConfigRouter`
 passes it straight through into the `/external/config/ui` payload without filtering, so whatever
 is put in this key reaches the browser verbatim. Keep it to routing/behaviour settings — it is not
 a place for anything sensitive.

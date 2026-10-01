@@ -62,7 +62,7 @@ sources_sha:
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/abstract-field-write-journey.component.ts"
   : "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
   "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "1a897e8ee004b009cea34182c5cbea4e28519688"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "fc30aea27a05689620c3f726456596869a5c871f"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/markdown/markdown-component.module.ts": "315741f6698ef3b7d46e49e27742eefae21d0e24"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/journey/multipage-component-state.service.ts": "072d9f380a9cdf4a7ac6ca3ff111a0a36d7fb239"
 ---
@@ -284,7 +284,7 @@ yarn test
 yarn build:library
 ```
 
-This invokes `ng build ccd-case-ui-toolkit-lib`, whose builder is `@angular-devkit/build-angular:ng-packagr` driven by `projects/ccd-case-ui-toolkit/ng-package.json` (`angular.json:113-130`). Output lands in `dist/ccd-case-ui-toolkit/` (`ng-package.json:3`) — bundle formats are whatever the pinned `ng-packagr` emits, so read them from the build output rather than assuming.
+This invokes `ng build ccd-case-ui-toolkit-lib`, whose builder is `@angular-devkit/build-angular:ng-packagr` driven by `projects/ccd-case-ui-toolkit/ng-package.json` (`angular.json:143-160`). Output lands in `dist/ccd-case-ui-toolkit/` (`ng-package.json:3`) — bundle formats are whatever the pinned `ng-packagr` emits, so read them from the build output rather than assuming.
 
 ## 8. Publish a new version
 

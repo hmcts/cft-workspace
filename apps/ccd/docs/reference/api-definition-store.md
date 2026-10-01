@@ -71,7 +71,7 @@ sources_sha:
   ? "ccd-definition-store-api:application/src/main/java/uk/gov/hmcts/ccd/definition/store/security/JwtGrantedAuthoritiesConverter.java"
   : "bda0438d09f29d99f546185907272748a1224c49"
   "ccd-definition-store-api:repository/src/main/java/uk/gov/hmcts/ccd/definition/store/repository/AccessProfileRepository.java": "39523b968786c57ac7735e69207717040a279ea1"
-  "ccd-api-gateway:app.js": "3f031872171ee24e8a9d026e41d57390f105de08"
+  "ccd-api-gateway:app.js": "0fafa76b24f3e02dbbb1f6b32cd5058d9c07e51c"
   "ccd-api-gateway:config/custom-environment-variables.yaml": "e7a46f5a3712f875c35ec322ce0077e80b44a4b2"
   "ccd-api-gateway:app/user/user-request-authorizer.js": "c9a09d7bde8a42c6d1f0ad4b2acec9e903bc9130"
 ---

@@ -47,6 +47,42 @@ Add an entry in the following format:
 
 Scan the organisation manually in Jenkins if it does not scan automatically.
 
+## A pull request opened before onboarding may never get built
+
+Jenkins multibranch discovery for pull requests is triggered by a `pull_request` webhook
+event, not by the org scan alone. If a pull request was opened before the repository's
+GitHub topic and allowlist entry were in place, that event carried no matching Jenkins job to
+build against — merging the allowlist PR afterwards does not retroactively pick it up, and the
+multibranch project can sit with zero indexed branches. Closing and reopening the pull request
+fires a fresh `pull_request` event and triggers discovery immediately, without waiting for the
+next scheduled organisation scan.
+
+## Watch for a duplicate SonarCloud project
+
+A newly created repository is commonly analysed by SonarCloud twice — once by the common
+pipeline, once by SonarCloud's own GitHub App "Automatic Analysis" — which can fail a PR check
+on files the pipeline never scans, or leave PR comments coming from the wrong project. See
+[Troubleshooting — SonarCloud "Automatic Analysis" creates a second, separate project](../troubleshooting.md#sonarcloud-automatic-analysis-creates-a-second-separate-project)
+for the mechanism and fix.
+
+## A new Node.js repo needs Renovate config and five yarn scripts before the build goes green
+
+Once discovery is working (see above), a new Node.js repo on the common pipeline hits a
+sequence of gates that are each only visible once the previous one is fixed:
+
+- `.github/renovate.json` must extend the org config (`local>hmcts/.github:renovate-config`)
+  and must not use `enabledManagers`, or `renovate-config-check.sh` fails the build. Copy the
+  shape from an existing frontend rather than writing it from scratch.
+- The build expects five yarn scripts to exist: `test`, `test:coverage`, `test:a11y` (run in
+  the unit-test stage, before anything is deployed, so it can't hit a URL — render templates
+  into a DOM implementation and run `axe-core` against that), plus `test:smoke` and
+  `test:functional` for the deploy stages (label-gated stages add `test:fullfunctional` and
+  `test:crossbrowser`). A repo that doesn't use one of these can stub it with
+  `echo '…' && exit 0` rather than have the build fail on "Couldn't find a script named …".
+- `yarn-audit-known-issues` needs to exist and be committed for any audit finding you can't
+  fix immediately (generate with
+  `yarn npm audit --recursive --environment production --json > yarn-audit-known-issues`).
+
 ## Allow production deployments
 
 To allow Jenkins to deploy to production, add your GitHub repository to the approved repositories list.

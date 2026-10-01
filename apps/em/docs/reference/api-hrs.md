@@ -68,7 +68,7 @@ sources_sha:
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/SegmentDownloadServiceImpl.java": "711d96e5651c5f1932656ef6981ee45ea7ab10fc"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/PermissionEvaluatorImpl.java": "dca036be0df07c53e1400b3fd84572c57b37f624"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/config/security/SecurityConfiguration.java": "af70acf0ab8b8d6cdf43b5069a3ae17e01f904c0"
-  "em-hrs-api:src/main/resources/application.yaml": "679a3b9d051415424f6c824b7aafa9c049ebadd4"
+  "em-hrs-api:src/main/resources/application.yaml": "40a3b36738d33625047310d6314ab2ab7d3e6954"
   "em-hrs-api:src/main/resources/ttl_service_map.json": "22cc67abb7fca8771a32236166bc0076e616ea17"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/HearingRecording.java": "3f8eaf52de4f1a49e891a74be2f5530425db480b"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/domain/HearingRecordingSegment.java": "d630cce32118cdb8542105f873badc789f893246"
@@ -78,9 +78,9 @@ sources_sha:
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/ccd/CaseDataContentCreator.java": "1195877a87ffdc97426c40cfe5555a9e48a1628d"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/HearingRecordingServiceImpl.java": "fe363f04c8f00149a7ef413db5de4819d13438a0"
   "em-hrs-ingestor:charts/em-hrs-ingestor/values.yaml": "36ae29fef9a7b3cb16585c2d0a66d8f7015ff342"
-  "cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml": "ef9b57513db7d9ebfff39c4f2e61d404ef75f867"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml": "450413c23d7ce310eedfe5208b6fc2ceba014641"
   "cnp-flux-config:apps/em/em-hrs-ingestor/prod.yaml": "6b3ddae167745d42b28307678f3716427e7a2a21"
-  "cnp-flux-config:apps/em/em-hrs-ingestor/demo.yaml": "d612651fc1413cc3f43b7c6a371c3a172585bbc9"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/demo.yaml": "969af700c9133d11cbe6b0aeb536728ddecdd20a"
   "cnp-flux-config:apps/em/em-hrs-ingestor/schedule-off.yaml": "efd8da51ac2efac7c99921ecd07c2be314bf91a6"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/service/impl/TtlServiceImpl.java": "1195877a87ffdc97426c40cfe5555a9e48a1628d"
   "em-hrs-api:src/main/resources/ttl_jurisdiction_map.json": "d01e774a5454063d4159b4bdc62caa9b41aa4381"
@@ -210,7 +210,7 @@ Downloads a recording segment as binary audio/video with range-request support.
 Access is evaluated by `PermissionEvaluatorImpl` (`SegmentDownloadServiceImpl.java:157`):
 
 1. If the user's IDAM roles include `caseworker-hrs-searcher` or `caseworker-hrs` — access granted unconditionally (`PermissionEvaluatorImpl.java:71-78`).
-2. Otherwise, if the user's email matches a `HearingRecordingSharee` record for the recording — access granted, subject to 72-hour expiry from `sharedOn` timestamp (`application.yaml:155`).
+2. Otherwise, if the user's email matches a `HearingRecordingSharee` record for the recording — access granted, subject to 72-hour expiry from `sharedOn` timestamp (`application.yaml:151-152`).
 3. Otherwise — `403 Forbidden`, with `AuditActions.USER_DOWNLOAD_UNAUTHORIZED` logged.
 
 ### Audit actions
@@ -253,7 +253,7 @@ The `idam.s2s-authorised.services` configuration (`application.yaml:103`) contro
 | `ccd_data` | CCD Data Store |
 | `ccd_case_disposer` | TTL-based case disposal |
 
-The DELETE endpoint has a separate, stricter whitelist (`application.yaml:217`): `ccd_case_disposer`, `em_gw`.
+The DELETE endpoint has a separate, stricter whitelist (`application.yaml:214`): `ccd_case_disposer`, `em_gw`.
 
 ## Connectivity and authorisation
 
@@ -270,7 +270,7 @@ The end-to-end solution uses these authorisation mechanisms:
 | XUI / ExUI proxy | `em-hrs-api` | REST (download, share) | S2S (`xui_webapp`) + user IDAM |
 <!-- CONFLUENCE-ONLY: not verified in source -->
 
-The Azure IAM role assignments above live in the service's infrastructure repo. The S2S half is in-repo and unqualified by environment: `em-hrs-api` accepts `ccd_gw`, `em_gw`, `em_hrs_ingestor`, `xui_webapp`, `ccd`, `ccd_data` and `ccd_case_disposer` (`em-hrs-api:application.yaml:103`), and no flux file overrides `S2S_NAMES_WHITELIST`, so that list is what runs everywhere. Case deletion is gated by a second, narrower list of `ccd_case_disposer` and `em_gw` (`em-hrs-api:application.yaml:220`).
+The Azure IAM role assignments above live in the service's infrastructure repo. The S2S half is in-repo and unqualified by environment: `em-hrs-api` accepts `ccd_gw`, `em_gw`, `em_hrs_ingestor`, `xui_webapp`, `ccd`, `ccd_data` and `ccd_case_disposer` (`em-hrs-api:application.yaml:103`), and no flux file overrides `S2S_NAMES_WHITELIST`, so that list is what runs everywhere. Case deletion is gated by a second, narrower list of `ccd_case_disposer` and `em_gw` (`em-hrs-api:application.yaml:214`).
 
 ## Domain model
 
@@ -394,7 +394,7 @@ TTL resolution has three steps, in order: the service-code map, then the jurisdi
 
 The jurisdiction-code map (`em-hrs-api:ttl_jurisdiction_map.json`) covers 25 codes. Every entry is `P20Y0M0D` except civil (`CV`) and family (`FM`), which are `P6Y0M0D` — matching the `AAA*`/`ABA*` service codes above.
 
-<!-- DIVERGENCE: Confluence "HRS - Retain & Dispose" page (1824136756) states default TTL for unknown service/jurisdiction is "7 years". But em-hrs-api:src/main/resources/application.yaml:211-212 shows `default-ttl: ${DEFAULT_TTL:P20Y}` (20 years). Source wins. -->
+<!-- DIVERGENCE: Confluence "HRS - Retain & Dispose" page (1824136756) states default TTL for unknown service/jurisdiction is "7 years". But em-hrs-api:src/main/resources/application.yaml:205-206 shows `default-ttl: ${DEFAULT_TTL:P20Y}` (20 years). Source wins. -->
 
 The Retain & Dispose integration uses `ccd_case_disposer` to call the `DELETE /delete` endpoint when a case's TTL has expired. The feature flag `DELETE_CASE_ENDPOINT_ENABLED` (default `true`) controls whether the endpoint is active.
 
@@ -420,8 +420,8 @@ Skill codes follow the pattern `SKILL:HRS:<key>` where `<key>` maps to a case ac
 | `idam.s2s-authorised.services` | `S2S_NAMES_WHITELIST` | See whitelist table above | S2S service name whitelist |
 | `endpoint.deleteCase.enabled` | `DELETE_CASE_ENDPOINT_ENABLED` | `true` | Feature flag for DELETE endpoint |
 | `authorisation.deleteCase.s2s-names-whitelist` | `DELETE_CASE_S2S_WHITELIST` | `ccd_case_disposer,em_gw` | S2S whitelist for DELETE |
-| `shareelink.ttl` | `SHAREE_LINK_TTL` | `72` | Sharee link expiry in hours (`em-hrs-api:application.yaml:157-158`); injected as the field `validityInHours` |
-| `ttl.default-ttl` | `DEFAULT_TTL` | `P20Y` | Default recording retention (`em-hrs-api:application.yaml:211-212`) |
+| `shareelink.ttl` | `SHAREE_LINK_TTL` | `72` | Sharee link expiry in hours (`em-hrs-api:application.yaml:151-152`); injected as the field `validityInHours` |
+| `ttl.default-ttl` | `DEFAULT_TTL` | `P20Y` | Default recording retention (`em-hrs-api:application.yaml:205-206`) |
 | `hrs.use-ad-auth` | `USE_AD_AUTH_FOR_SOURCE_BLOB_CONNECTION` | — | Switch to user-delegation SAS via managed identity |
 | `report.api-key` | — | — | Base64-encoded API key for `/report` endpoints |
 

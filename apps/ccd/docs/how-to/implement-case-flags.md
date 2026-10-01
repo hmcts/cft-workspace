@@ -87,7 +87,7 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-flag/enums/write-case-flag-field.enum.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-flag/utils/case-flag-priority.utils.ts": "b7aba336806a0c4f577c90503070539d052bfefd"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/case-viewer/case-full-access-view/case-full-access-view.component.ts"
-  : "0e06e04fea8507450dc5345137d4340d0f460fa9"
+  : "e82cedb4944dc6c4766c6f4af8bfcf11fd8c9dc9"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/services/fields/fields.utils.ts": "f5ef7f0613973c080398c2af7eca7c297287d907"
   "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/controllers/CaseFlagApiController.java": "713a8d70241032382965f812dcb7bb71e6b3a816"
   "rd-commondata-api:src/main/java/uk/gov/hmcts/reform/cdapi/domain/FlagDetail.java": "0e7c98cc68c8b56a7814c04552449e23061c3395"

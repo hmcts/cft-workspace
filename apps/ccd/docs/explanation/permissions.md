@@ -313,7 +313,7 @@ Teams using the `ccd-config-generator` SDK declare permissions in Java rather th
 
 - **`HasRole`** — a role enum the service team implements; each entry carries the IDAM role string and default case-type permission string.
 - **`ConfigBuilder.grant(state, permissions, roles...)`** — state-level permission (`ConfigBuilder.java:39`).
-- **`EventBuilder.grant(permissions, roles...)`** — event-level permission (`Event.java:160`).
+- **`EventBuilder.grant(permissions, roles...)`** — event-level permission (`Event.java:172`).
 - **`@CCD(access = {SomeAccess.class})`** — field-level permission declared as an annotation on the case-data class field.
 
 ### NFD example: `UserRole` enum

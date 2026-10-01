@@ -49,11 +49,11 @@ sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ComplexType.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ComplexTypeAuthorisation.java": "c7f310e6f229b8d22b82eedcd428590ab00d2f84"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Tab.java": "0115317280dd5794d0fbd0f1bf6cc21a4e013ee3"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java": "8bc7f5ed083cdd72928169585b9bc89819707792"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Address.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/AddressUK.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
-  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "f2937b890660ee43a4bf8242ea3def26cfcdf0f0"
-  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CaseworkerRoundTripData.java": "874d48775fd51be75e2f8057c34f53384fdda515"
+  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/model/CaseData.java": "53bb55a3e0367ae699595db2b3a9a0e09d7db6b7"
+  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CaseworkerRoundTripData.java": "53bb55a3e0367ae699595db2b3a9a0e09d7db6b7"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/common/ccd/PageBuilder.java": "38ed5f63d1bd4cf8871e1dd9c7d677e425a240b7"
 ---
 
@@ -213,7 +213,7 @@ To include only specific sub-fields on a page (or reorder them) the SDK exposes 
 
 ```java
 // from libs/ccd-config-generator/test-projects/e2e/src/main/java/
-//      uk/gov/hmcts/divorce/sow014/nfd/CaseworkerRoundTripData.java:49-67
+//      uk/gov/hmcts/divorce/sow014/nfd/CaseworkerRoundTripData.java:52-104
 .page("roundTripData", this::roundTripMidEvent)
     .pageLabel("Round-trip data set")
     .complex(CaseData::getApplicant1)
@@ -229,7 +229,7 @@ To include only specific sub-fields on a page (or reorder them) the SDK exposes 
 .done();
 ```
 
-<!-- source: libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CaseworkerRoundTripData.java:41-67 -->
+<!-- source: libs/ccd-config-generator/test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CaseworkerRoundTripData.java:44-104 -->
 
 Behind the scenes this records `DisplayContext = COMPLEX` on the `CaseEventToFields` row for the parent and emits one `EventToComplexTypes` row per chosen sub-field. The `FieldDisplayOrder` on each `EventToComplexTypes` row controls the order the sub-fields render in for **this event** (overriding the class-declared order).
 
@@ -287,7 +287,7 @@ configBuilder.grantComplexType(
 );
 ```
 
-<!-- source: libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java:345-353 -->
+<!-- source: libs/ccd-config-generator/sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/ConfigBuilderImpl.java:347-355 -->
 
 Behaviour rules from the CRUD-on-Complex-Types specification:
 

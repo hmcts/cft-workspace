@@ -76,11 +76,11 @@ sources_sha:
   "libs/ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/type/Document.java": "013ed140d477b8ef8ea079619d0b6e0a96d89fa2"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/palette.service.ts": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/case-file-view-field.component.ts"
-  : "335a72b64bdac28348840ca53fb03c38e4834825"
+  : "7d08d8216b35c4774c6d179e7bfa16e04b960eca"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/case-file-view-field.component.html"
   : "5f996827b783988a4425cb39a3257d49e9f5ac99"
   ? "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/case-file-view/components/case-file-view-folder/case-file-view-folder.component.ts"
-  : "a805d467a9ac1ffd57c709719912ff707854b7ca"
+  : "e82cedb4944dc6c4766c6f4af8bfcf11fd8c9dc9"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/data/documentdata/DocumentDataRequest.java": "bdc0ee9a44c328af6debe18553bee0b427f253f8"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/AuthorisedCreateEventOperation.java": "20b95a21e98b143b1c833f84f28ee6ef8664ed66"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/createevent/DefaultCreateEventOperation.java": "aa61dd252c0e9a2607835f1034c7dcf0376eebba"
@@ -266,7 +266,7 @@ The `attribute_path` is **de-indexed**: collection numeric indices are replaced 
 
 ### What the user sees when a move fails
 
-The toolkit no longer reports every failure as a permissions problem. `CaseFileViewFieldComponent.moveDocumentError` (`case-file-view-field.component.ts:155-181`) switches on the HTTP status:
+The toolkit no longer reports every failure as a permissions problem. `CaseFileViewFieldComponent.moveDocumentError` (`case-file-view-field.component.ts:159-185`) switches on the HTTP status:
 
 | Status | Message |
 |---|---|

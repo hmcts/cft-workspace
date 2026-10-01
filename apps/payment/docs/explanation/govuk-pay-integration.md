@@ -62,7 +62,7 @@ confluence_checked_at: "2026-05-13T00:00:00Z"
 sources_sha:
   "ccpay-payment-app:gov-pay-client/src/main/java/uk/gov/hmcts/payment/api/external/client/GovPayClient.java": "5c28ea10564258d9c193bead87675b85afa50c21"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/GovPayDelegatingPaymentService.java": "4ad418c9d46f4d82cf3cc50a83620cfe86a17d42"
-  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/UserAwareDelegatingPaymentService.java": "65bcad2ffb092e534b051dbb0349914658506a57"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/UserAwareDelegatingPaymentService.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/v1/model/govpay/GovPayConfig.java": "bf63d4597038e8e184cc52ab230549c3a372ec3c"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/v1/model/govpay/GovPayKeyRepository.java": "4ad418c9d46f4d82cf3cc50a83620cfe86a17d42"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/govpay/ServiceToTokenMap.java": "109655a0103cf081d4da2680872c7f77351f6e16"
@@ -71,7 +71,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/ServiceRequestController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/ServiceRequestDomainServiceImpl.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/dto/OnlineCardPaymentRequest.java": "5c28ea10564258d9c193bead87675b85afa50c21"
-  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "af2825478c26ce3bf534be6fd51c309f8f30e07e"
+  "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/CallbackServiceImpl.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientProxy.java": "eb705202fee5f0ee030daa3e71c1366be0c83a47"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/servicebus/TopicClientService.java": "80f0421010c7b573dc2437346c6f4ba49a8cae49"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/util/PayStatusToPayHubStatus.java": "1aec5909aac1e66f1cd19cbdd2aac2009c42aa68"
@@ -281,14 +281,14 @@ The `service-callback-url` is not sent to GOV.UK Pay. It is persisted and used i
 
 ### Callback message routing
 
-Both integration models publish to the same Azure Service Bus topic, `ccpay-service-callback-topic` (`application.properties:198`, injected into `TopicClientProxy` from `azure.servicebus.topic-name` at `TopicClientProxy.java:29`). What differs is the payload and the `serviceCallbackUrl` message property, which `CallbackServiceImpl.callback()` selects from wherever the callback URL was stored (`CallbackServiceImpl.java:42-79`):
+Both integration models publish to the same Azure Service Bus topic, `ccpay-service-callback-topic` (`application.properties:198`, injected into `TopicClientProxy` from `azure.servicebus.topic-name` at `TopicClientProxy.java:29`). What differs is the payload and the `serviceCallbackUrl` message property, which `CallbackServiceImpl.callback()` selects from wherever the callback URL was stored (`CallbackServiceImpl.java:42-85`):
 
 | Callback URL stored on | Payload | `serviceCallbackUrl` property |
 |------------------------|---------|-------------------------------|
 | `Payment.serviceCallbackUrl` (legacy `service-callback-url` header) | `PaymentDto` | `Payment.serviceCallbackUrl` |
 | `PaymentFeeLink.callBackUrl` (Ways2Pay `call_back_url` body field) | `PaymentStatusDto` | `PaymentFeeLink.callBackUrl` |
 
-The two branches are mutually exclusive — the Ways2Pay branch is an `else if` (`CallbackServiceImpl.java:59`). A Service Request payment created with a legacy `service-callback-url` header therefore receives the flat `PaymentDto` shape and never the `PaymentStatusDto` shape, so a service that migrated to Service Requests but kept sending the old header will not see the `service_request_status` field it expects.
+The two branches are mutually exclusive — the Ways2Pay branch is an `else if` (`CallbackServiceImpl.java:62`). A Service Request payment created with a legacy `service-callback-url` header therefore receives the flat `PaymentDto` shape and never the `PaymentStatusDto` shape, so a service that migrated to Service Requests but kept sending the old header will not see the `service_request_status` field it expects.
 
 A second topic, `ccpay-service-request-cpo-update-topic`, carries Case Payment Order updates rather than payment-status callbacks. `sendMessageTopicCPO()` publishes a `ServiceRequestCpoDto` for `ccpay-service-request-cpo-update-service` to forward to the Case Payment Orders API (`ServiceRequestDomainServiceImpl.java:101`, `:533-574`; `TopicClientService.java:17`).
 
@@ -333,7 +333,7 @@ Service callbacks are triggered by:
 
 ### Message delivery retries
 
-Delivery is retried in-process, not persisted. Each send makes up to three attempts (`MESSAGE_SEND_MAX_RETRY_COUNT = 3`, `TopicClientProxy.java:17`), waiting one second after the first failure and two after the second, then rethrowing when the third fails (`TopicClientProxy.java:36-52`). `CallbackServiceImpl` catches that throw and interrupts the calling thread without recording the message anywhere (`CallbackServiceImpl.java:56-58`, `:75-77`).
+Delivery is retried in-process, not persisted. Each send makes up to three attempts (`MESSAGE_SEND_MAX_RETRY_COUNT = 3`, `TopicClientProxy.java:17`), waiting one second after the first failure and two after the second, then rethrowing when the third fails (`TopicClientProxy.java:36-52`). `CallbackServiceImpl` catches that throw, logs it at ERROR and re-raises the interrupt flag only if the cause was an `InterruptedException`, without recording the message anywhere (`CallbackServiceImpl.java:56-61`, `:78-83`).
 
 The consequence is that a callback lost to a sustained Service Bus outage is only recovered when the payment is picked up again — for card payments that means the next `PATCH /jobs/card-payments-status-update` run, which re-retrieves any payment still in `initiated` state. A payment that has already reached a terminal status is no longer selected by that query, so its callback is not re-sent.
 
@@ -460,10 +460,10 @@ This reference is what services use to query payment status and is distinct from
 
 `POST /card-payments/{reference}/cancel` is ungated — no feature flag, no request body. It delegates straight into the payment service and returns `204 No Content` (`CardPaymentController.java:241-245`):
 
-1. The payment is loaded by its `RC` reference (`UserAwareDelegatingPaymentService.java:447-448`).
-2. The GOV.UK Pay cancel URL is **built by string concatenation**, not read from the HATEOAS `_links.cancel` returned with the payment: `govpayUrl + "/" + payment.getExternalReference() + "/cancel"` (`:449`). A change to GOV.UK Pay's URL scheme therefore breaks cancellation even though the API response still advertises the correct link.
+1. The payment is loaded by its `RC` reference (`UserAwareDelegatingPaymentService.java:452`).
+2. The GOV.UK Pay cancel URL is **built by string concatenation**, not read from the HATEOAS `_links.cancel` returned with the payment: `govpayUrl + "/" + payment.getExternalReference() + "/cancel"` (`:453`). A change to GOV.UK Pay's URL scheme therefore breaks cancellation even though the API response still advertises the correct link.
 3. `GovPayClient.cancelPayment` POSTs to that URL with the API key resolved for the calling service, and `checkNotAnError` translates a non-2xx response into an exception (`GovPayDelegatingPaymentService.java:100-102`, `GovPayClient.java:80-88`).
-4. A `CANCEL_CARD_PAYMENT` audit event is tracked with the reference, amount, CCD case number and external reference (`UserAwareDelegatingPaymentService.java:450-456`).
+4. A `CANCEL_CARD_PAYMENT` audit event is tracked with the reference, amount, CCD case number and external reference (`UserAwareDelegatingPaymentService.java:454-460`).
 
 `GovPayCancellationFailedException` — raised when the payment is in a non-cancellable state — is mapped to a bare `400 Bad Request` with no body (`CardPaymentController.java:247-250`), so a caller cannot distinguish "already captured" from "already cancelled" from a malformed reference without reading the platform logs.
 

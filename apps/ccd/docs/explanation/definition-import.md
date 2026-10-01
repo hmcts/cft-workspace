@@ -57,7 +57,7 @@ sources_sha:
   "ccd-admin-web:src/main/service/import-service.ts": "c525b01236acf627fad50d63d7125ce30dfc0dab"
   "ccd-admin-web:src/main/views/response.html": "f04af73ca5a7ce398a4c74c3c793878877e1cfb3"
   "ccd-admin-web:config/default.yaml": "c525b01236acf627fad50d63d7125ce30dfc0dab"
-  "ccd-admin-web:src/main/app.ts": "c525b01236acf627fad50d63d7125ce30dfc0dab"
+  "ccd-admin-web:src/main/app.ts": "4bcd1f2064ecb4e6912012faeac1ac1d84c611b4"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/endpoint/ImportController.java": "793bcd5000731abade5585f5dadc921ddb454fdd"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ImportServiceImpl.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
   ? "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/service/ProcessUploadServiceImpl.java"
@@ -112,7 +112,7 @@ Submitting the form triggers `POST /import`. The multer middleware validates the
 
 On a multer error the session error is set and the browser is redirected 302 back to the import page (`importDefinition.ts:31-33`). On success, `uploadFile()` (`import-service.ts:5`) POSTs the raw file as multipart `file` field to `adminWeb.import_url` with both `Authorization: Bearer <idam-token>` and `ServiceAuthorization: <s2s-token>` headers (`import-service.ts:8-17`).
 
-CSRF is intentionally not applied to `/import` (`app.ts:87`).
+CSRF is intentionally not applied to `/import` (`app.ts:90`).
 
 **User-roles prerequisite.** Any IDAM role referenced in the spreadsheet (`Authorisation*` tabs, `RoleToAccessProfiles`) must already be **replicated in CCD** via Admin Web → Manage User Roles before the import will pass. If the import fails with a missing-role error, the operator is expected to add the role using the Admin Web UI, or via the `definition_import/api/user-role` cUrl endpoint, then retry.
 

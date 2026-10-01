@@ -84,7 +84,7 @@ sources_sha:
   "rpx-xui-webapp:src/app/shared/services/environment.service.ts": "6c90fbc6b38434ad2f933356651b41f6ec813c64"
   "rpx-xui-webapp:src/app/directives/feature-toggle/feature-toggle.directive.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/cases/containers/case-viewer-container/case-viewer-container.component.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
-  "rpx-xui-webapp:package.json": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "rpx-xui-webapp:package.json": "908f0a1468e556418ea2c0ed3f50d11773ebcf4b"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/launch-darkly.service.ts": "25f44bb18010b28961e6ac3d51ba9142178a558f"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.service.ts": "6532e170c4c925fca8df630bc87efc2becfdbab0"
   "rpx-xui-common-lib:projects/exui-common-lib/src/lib/services/feature-toggle/feature-toggle.guard.ts": "46113db85da141a989d239a95168a3588512ca88"
@@ -119,7 +119,7 @@ Feature flags support trunk-based development by allowing incomplete features to
 
 ## Server-side BFF flags
 
-All BFF flags live under `feature.*` in `config/default.json:163-181` and are accessed via `showFeature(ref)` from `api/configuration/index.ts`. Those with an env var are set as JSON-encoded boolean strings (`"true"` / `"false"`) because `custom-environment-variables.json` declares `__format: "json"` for each; two (`roleEnabled`, `caseworkerRefEnabled`) are not mapped to env vars at all and can only be changed in `default.json`.
+All BFF flags live under `feature.*` in `config/default.json:165-183` and are accessed via `showFeature(ref)` from `api/configuration/index.ts`. Those with an env var are set as JSON-encoded boolean strings (`"true"` / `"false"`) because `custom-environment-variables.json` declares `__format: "json"` for each; two (`roleEnabled`, `caseworkerRefEnabled`) are not mapped to env vars at all and can only be changed in `default.json`.
 
 | Flag key (config path) | Env var | Default | Purpose |
 |---|---|---|---|
@@ -333,14 +333,16 @@ WA service configuration is not a flag. `LaunchDarklyDefaultsConstants.getWaServ
 | `localhost` | `LOCAL` |
 | Default (unrecognised) | `PROD` |
 
-Those eight environments collapse onto only three constants: `PROD` selects `WASERVICECONFIGPROD`, `DEMO` selects `WASERVICECONFIGTESTQM`, and every other value — `AAT`, `PERFTEST`, `ITHC`, `PREVIEW`, `LOCAL` — falls through to `WASERVICECONFIGTEST` (`rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts:246-254`). Each defines case-type-to-service mappings (`Asylum`/`Bail` -> `IA`, `CIVIL`/`GENERALAPPLICATION` -> `CIVIL`, and so on), and the DEMO constant carries QM-only case types such as `CaseViewCallbackMessages2` (`:225`).
+Those eight environments collapse onto only three constants: `PROD` selects `WASERVICECONFIGPROD`, `DEMO` selects `WASERVICECONFIGTESTQM`, and every other value — `AAT`, `PERFTEST`, `ITHC`, `PREVIEW`, `LOCAL` — falls through to `WASERVICECONFIGTEST` (`rpx-xui-webapp:src/app/services/ccd-config/launch-darkly-defaults.constants.ts:263-271`). Each defines case-type-to-service mappings (`Asylum`/`Bail` -> `IA`, `CIVIL`/`GENERALAPPLICATION` -> `CIVIL`, and so on), and the DEMO constant carries QM-only case types such as `CaseViewCallbackMessages2` (`:232`).
 
-The three blocks are maintained by hand and do diverge. `WASERVICECONFIGTEST` lists both `PCS` and
-`PCS-staging` (`:79-83`), `WASERVICECONFIGTESTQM` lists `PCS` (`:232-235`), and
-`WASERVICECONFIGPROD` has no PCS entry at all. Since the constant is the only input,
-`isWAEnabled` finds no matching service for a PCS case in production and Work Allocation is off
-there while working in AAT and DEMO — and no flag change can turn it on. Adding a service to Work
-Allocation means editing all three blocks.
+The three blocks are maintained by hand and do diverge. All three now carry PCS, but not
+identically: `WASERVICECONFIGTEST` lists both `PCS` and `PCS-staging` (`:79-83`), while
+`WASERVICECONFIGTESTQM` (`:239-242`) and `WASERVICECONFIGPROD` (`:152-158`) list `PCS` alone, so a
+`PCS-staging` case gets no WA config outside the AAT-style environments. PROBATE is the current
+one-sided entry: only `WASERVICECONFIGTESTQM` has it (`:244-253`), so Probate case types match no
+service on the fallback path in production. Since the constant is the only input on that path,
+`isWAEnabled` finds no matching service and Work Allocation is off there — and no flag change can
+turn it on. Adding a service to Work Allocation means editing all three blocks.
 
 ## Race conditions and initialisation ordering
 

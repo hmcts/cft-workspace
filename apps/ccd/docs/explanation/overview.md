@@ -45,14 +45,14 @@ diataxis: explanation
 product: ccd
 sources_sha:
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/ConfigBuilder.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/CCDConfig.java": "d925e0bcf4b8d40287b797d56b658cd7d044b8e5"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/HasRole.java": "d9b4098e76e1f1464e3a75bb4f37020d3e266dd4"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/EventTypeBuilder.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Webhook.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/callback/MidEvent.java": "f87e5cbc49e4bd8c9448a8d5752e805c69d16ecf"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/divorcecase/NoFaultDivorce.java": "a000eefc369f6bfa1b17291ea3c5aebbb3ebf4f7"
-  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java": "c831f1fcc6e033c87eccd503aa4076c59ea85476"
+  "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/sow014/nfd/CreateTestCase.java": "c4f550a5f0fcc1fb7ceea2f7bcf60188f2dd80f2"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/SimpleCaseConfiguration.java": "cde80e20584d39f3f3a890f473db818f79449fae"
   "ccd-config-generator:test-projects/e2e/src/main/java/uk/gov/hmcts/divorce/simplecase/model/SimpleCaseState.java": "cde80e20584d39f3f3a890f473db818f79449fae"
   "ccd-definition-store-api:excel-importer/src/main/java/uk/gov/hmcts/ccd/definition/store/excel/util/mapper/SheetName.java": "77b362ce2cfeb8c11f1a2d23e9129297aa65fd7b"
@@ -169,7 +169,7 @@ CCD's runtime access-control evaluation layers three concerns:
 2. **CRUD permissions** — for each case type / state / event / field they reach, what operations are allowed?
 3. **Data classification** — is the user's security classification at least as high as the field's? Each field carries a classification (`PUBLIC`, `PRIVATE`, `RESTRICTED`); user roles carry a maximum classification, and fields above that are filtered out of responses.
 
-In the SDK, `ConfigBuilder.grant(state, permissions, roles...)` sets state-level grants, and `EventBuilder.grant(permissions, roles...)` sets event-level grants (`ConfigBuilder.java:39`, `Event.java:160`).
+In the SDK, `ConfigBuilder.grant(state, permissions, roles...)` sets state-level grants, and `EventBuilder.grant(permissions, roles...)` sets event-level grants (`ConfigBuilder.java:39`, `Event.java:172`).
 
 ---
 

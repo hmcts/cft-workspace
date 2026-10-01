@@ -137,7 +137,7 @@ Then confirm the result is clean:
 
 ## Concurrency
 
-The CCD pipeline originally capped fan-out at 5; this skill removes that cap when the user has spare capacity. Send all subagent calls in a single assistant message with multiple tool uses so the harness parallelises them. Phase-3.5 (Confluence) should self-throttle if the Atlassian MCP returns HTTP 429 — back off and retry that page rather than failing the whole run.
+Spawn a phase's subagents in batches of about 5, each batch as a single assistant message with multiple tool uses so the harness parallelises them. Wait for every agent in a batch to report back before spawning the next batch. If the Agent tool returns immediately because the agents run in the background, wait for their completion notifications; don't read an immediate return as the batch being done. Each subagent makes its own tool calls, so a wider fan-out multiplies quickly. Phase-3.5 (Confluence) should self-throttle if the Atlassian MCP returns HTTP 429 — back off and retry that page rather than failing the whole run.
 
 Multiple products can run concurrently — each writes to its own `apps/<product>/docs/.work/` so there are no cross-product write conflicts.
 

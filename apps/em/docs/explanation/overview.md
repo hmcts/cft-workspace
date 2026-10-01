@@ -81,7 +81,7 @@ sources_sha:
   "em-stitching-api:src/main/java/uk/gov/hmcts/reform/em/stitching/domain/DocumentTask.java": "706ad3ed0c5d30ef9818dee4ae4fc72c5dde9c99"
   "em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/listener/IngestWhenApplicationReadyListener.java": "a2e92dac5c0e15635b8c03b7879c2f1a31b90db4"
   "em-hrs-ingestor:src/main/resources/application.yaml": "5fb13165c928bfd58aa97791e969016b88d3855d"
-  "em-hrs-api:src/main/resources/application.yaml": "679a3b9d051415424f6c824b7aafa9c049ebadd4"
+  "em-hrs-api:src/main/resources/application.yaml": "40a3b36738d33625047310d6314ab2ab7d3e6954"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/controller/HearingRecordingController.java": "d9c7ef9373e8c43c3e74ab89520efb383ee52c2b"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/rest/AnnotationSetResource.java": "b84e15b87ad87e891117a17c4da4085249314af5"
   "em-annotation-api:src/main/java/uk/gov/hmcts/reform/em/annotation/domain/AnnotationSet.java": "b84e15b87ad87e891117a17c4da4085249314af5"
@@ -93,17 +93,17 @@ sources_sha:
   "em-hrs-api:src/main/resources/ttl_jurisdiction_map.json": "d01e774a5454063d4159b4bdc62caa9b41aa4381"
   "em-hrs-ingestor:src/main/java/uk/gov/hmcts/reform/em/hrs/ingestor/parse/FilenameParser.java": "6d60056cc3b7383e3c68c6cc2ae8d896c1af9f78"
   "em-hrs-ingestor:charts/em-hrs-ingestor/values.yaml": "36ae29fef9a7b3cb16585c2d0a66d8f7015ff342"
-  "em-ccd-orchestrator:src/main/resources/application.yaml": "4d5317bc931857fe148d9201c4e208f7be2c61ae"
-  "cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml": "ef9b57513db7d9ebfff39c4f2e61d404ef75f867"
+  "em-ccd-orchestrator:src/main/resources/application.yaml": "e383b0724620544f4e78711009bcf130ecd50c48"
+  "cnp-flux-config:apps/em/em-hrs-ingestor/em-hrs-ingestor.yaml": "450413c23d7ce310eedfe5208b6fc2ceba014641"
   "cnp-flux-config:apps/em/em-hrs-ingestor/prod.yaml": "6b3ddae167745d42b28307678f3716427e7a2a21"
-  "cnp-flux-config:apps/em/em-hrs-api/em-hrs-api.yaml": "1c70a0a565b29875b739bb69f11bc23ae87c1079"
-  "cnp-flux-config:apps/em/em-anno/em-anno.yaml": "4f04855acaa4fc8e78bb19c2b71f0acc6752c9e9"
-  "cnp-flux-config:apps/em/em-stitching/em-stitching.yaml": "377e2f4f3772dcc9aa2ce53d8e8fe9c607ceafeb"
-  "cnp-flux-config:apps/em/em-stitching/prod.yaml": "f8c9392b084b99a982aeadfd89b758b53b05885f"
-  "cnp-flux-config:apps/em/em-ccd-orchestrator/em-ccd-orchestrator.yaml": "63740c478bc7e1845535d73b23bb0c2552b20ff0"
+  "cnp-flux-config:apps/em/em-hrs-api/em-hrs-api.yaml": "8d507226738e896f34aa594abd46d5499f20cdcb"
+  "cnp-flux-config:apps/em/em-anno/em-anno.yaml": "1cbc9cf6dce0f415a79e0bcb542f090a0a012ba2"
+  "cnp-flux-config:apps/em/em-stitching/em-stitching.yaml": "62368b307a6cc98931268dba1411031442c74cdb"
+  "cnp-flux-config:apps/em/em-stitching/prod.yaml": "057e91708d3c90ec7ad265d0afba2715c28ca65b"
+  "cnp-flux-config:apps/em/em-ccd-orchestrator/em-ccd-orchestrator.yaml": "6af66e526ad95c45771ae27f1bc1947fb2718308"
   "cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml": "6a067bebc6c00192c4c8c66cb7dfeb55061a9419"
   "em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/storage/HearingRecordingStorageImpl.java": "edbea18aa61de15d32c1ec7c7e866f53ed209fb9"
-  "em-hrs-api:infrastructure/main.tf": "95fbc75a270365df1bdcd821a44892ba1451d840"
+  "em-hrs-api:infrastructure/main.tf": "ae4975687569d3f7d8c72a2123e3615ca6d3804a"
 ---
 
 ## TL;DR
@@ -260,8 +260,8 @@ Recordings follow a naming convention parsed by the ingestor:
 **Access control:**
 
 - Allowed IDAM roles: `caseworker-hrs-searcher`, `caseworker-hrs` (`ALLOWED_ROLES`, `em-hrs-api:src/main/resources/application.yaml:149`)
-- S2S whitelist: `ccd_gw`, `em_gw`, `em_hrs_ingestor`, `xui_webapp`, `ccd`, `ccd_data`, `ccd_case_disposer` (`S2S_NAMES_WHITELIST`, `application.yaml:103`); the `DELETE /delete` endpoint applies a narrower list of `ccd_case_disposer`, `em_gw` (`application.yaml:220`)
-- Share links expire after a configurable TTL, default 72 hours (`shareelink.ttl` / `SHAREE_LINK_TTL`, `application.yaml:157-158`), compared against `sharedOn` in `SegmentDownloadServiceImpl.isAccessValid` (`:227-232`)
+- S2S whitelist: `ccd_gw`, `em_gw`, `em_hrs_ingestor`, `xui_webapp`, `ccd`, `ccd_data`, `ccd_case_disposer` (`S2S_NAMES_WHITELIST`, `application.yaml:103`); the `DELETE /delete` endpoint applies a narrower list of `ccd_case_disposer`, `em_gw` (`application.yaml:214`)
+- Share links expire after a configurable TTL, default 72 hours (`shareelink.ttl` / `SHAREE_LINK_TTL`, `application.yaml:151-152`), compared against `sharedOn` in `SegmentDownloadServiceImpl.isAccessValid` (`:227-232`)
 - Azure Managed Identity used for blob storage access: the service builds a `DefaultAzureCredential` and signs downloads with a user delegation key rather than an account key (`em-hrs-api:src/main/java/uk/gov/hmcts/reform/em/hrs/storage/HearingRecordingStorageImpl.java:266,280-296`). The identity is the shared EM one, `rpa-<env>-mi` — `rpa-prod-mi` in production (`em-hrs-api:infrastructure/main.tf:53-56`)
 <!-- CONFLUENCE-ONLY: The IAM role names granted to that identity on the CVP/VH storage account (Storage Blob Data Reader, Storage Blob Delegator) come from Confluence. They are assigned outside the cloned repos, so they cannot be verified in source. -->
 
@@ -311,13 +311,13 @@ The following HMCTS services depend on EM capabilities:
 
 The replica figure is the deployed floor, not a ceiling: each EM Java service is pinned at 2 replicas per cluster with autoscaling to 4, across two clusters (`cnp-flux-config:apps/em/em-anno/em-anno.yaml:10,13`, `apps/em/em-stitching/em-stitching.yaml:10` with `apps/em/em-stitching/prod.yaml:14`, `apps/em/em-ccd-orchestrator/em-ccd-orchestrator.yaml:10` with `apps/em/em-ccd-orchestrator/prod.yaml:11`, `apps/em/em-hrs-api/em-hrs-api.yaml:10,13-14`).
 
-Recording retention resolves in `TtlServiceImpl.createTtl` — a service-code entry wins, then a jurisdiction-code entry, then `DEFAULT_TTL` (`em-hrs-api:TtlServiceImpl.java:25-35`, `application.yaml:211-212`). Those maps are not uniformly 20 years: `CV` and `FM` get 6 years in `ttl_jurisdiction_map.json`, and every `AAA*`/`ABA*` service code gets 6 years in `ttl_service_map.json`. A recording whose filename yields no recognised service code falls through to the 20-year default, so a parse gap silently lengthens retention.
+Recording retention resolves in `TtlServiceImpl.createTtl` — a service-code entry wins, then a jurisdiction-code entry, then `DEFAULT_TTL` (`em-hrs-api:TtlServiceImpl.java:25-35`, `application.yaml:205-206`). Those maps are not uniformly 20 years: `CV` and `FM` get 6 years in `ttl_jurisdiction_map.json`, and every `AAA*`/`ABA*` service code gets 6 years in `ttl_service_map.json`. A recording whose filename yields no recognised service code falls through to the 20-year default, so a parse gap silently lengthens retention.
 
 ## Integration patterns for service teams
 
 Service teams interact with EM primarily through two integration points:
 
-**Triggering a bundle** — configure a CCD event callback to hit `em-ccd-orchestrator`. The orchestrator is an S2S-authorised service, and the whitelist is per environment. Production admits `sscs`, `ccd`, `ccd_data`, `iac`, `em_stitching_api`, `civil_service`, `prl_cos_api`, `sptribs_case_api`, `et_cos` and `ethos_repl_service` (`cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml:15`) — notably not `xui_webapp`, which the in-repo default does allow (`em-ccd-orchestrator:src/main/resources/application.yaml:87`). A new consumer needs a flux change to that list, not just a service definition. Your case definition must include a `caseBundles` complex field and a `bundleConfiguration` field that names the YAML config file.
+**Triggering a bundle** — configure a CCD event callback to hit `em-ccd-orchestrator`. The orchestrator is an S2S-authorised service, and the whitelist is per environment. Production admits `sscs`, `ccd`, `ccd_data`, `iac`, `em_stitching_api`, `civil_service`, `prl_cos_api`, `sptribs_case_api`, `et_cos` and `ethos_repl_service` (`cnp-flux-config:apps/em/em-ccd-orchestrator/prod.yaml:15`) — notably not `xui_webapp`, which the in-repo default does allow (`em-ccd-orchestrator:src/main/resources/application.yaml:79`). A new consumer needs a flux change to that list, not just a service definition. Your case definition must include a `caseBundles` complex field and a `bundleConfiguration` field that names the YAML config file.
 
 **Embedding document viewing** — add the `@hmcts/media-viewer` Angular library to your frontend. It handles PDF rendering, annotation CRUD (against `em-annotation-api`), and redaction workflows (against `em-native-pdf-annotator-app`). The library communicates with backend services via proxy routes you configure in your Express/nginx layer.
 

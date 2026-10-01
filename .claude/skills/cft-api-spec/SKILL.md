@@ -1,6 +1,6 @@
 ---
 name: cft-api-spec
-description: Summarise one HMCTS service's OpenAPI spec from cnp-api-docs. Reports title, version, auth, endpoint count by tag, owning product, hosted Swagger UI link, and local file path. Use when the user asks "what does pcs-api expose", "summarise ccd-data-store-api", "what auth does X use", "show me the endpoints of Y".
+description: Summarise one HMCTS service's OpenAPI spec from cnp-api-docs. Reports title, version, auth, endpoint count by tag, owning product, hosted API catalogue page, and local file path. Use when the user asks "what does pcs-api expose", "summarise ccd-data-store-api", "what auth does X use", "show me the endpoints of Y".
 ---
 
 # Summarise an API spec
@@ -104,7 +104,7 @@ ccd-data-store-api.v2_internal  (product: apps/ccd)
     2  Health
 
   Local file: platops/cnp-api-docs/docs/specs/ccd-data-store-api.v2_internal.json
-  Docs:       https://hmcts.github.io/cnp-api-docs/swagger.html?url=https://hmcts.github.io/cnp-api-docs/specs/ccd-data-store-api.v2_internal.json
+  Docs:       https://hmcts.github.io/cnp-api-docs/api/ccd-data-store-api.v2_internal/
 ```
 
 If multiple specs match, render each as its own block separated by a blank line.

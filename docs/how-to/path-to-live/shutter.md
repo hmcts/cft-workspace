@@ -38,6 +38,7 @@ With everything setup to render a shutter page you can now swap the DNS from Azu
 1. Clone the [azure-public-dns](https://github.com/hmcts/azure-public-dns) repository
 2. Create a branch for your change
 3. Within the `environments` and `shuttering` folders check that a file exists for the environment and DNS zone you need to change e.g. `environments/prod/platform-hmcts-net.yaml`
+    - Only the `shutter`/`shutter_all` keys under `shuttering/` are read by Terraform. A `shutter:` key set directly on a record in the matching `environments/` file (which otherwise supplies `platform`, `ttl` and `record`) is ignored — editing it has no effect.
 4. Lets assume this application needs to be shuttered `www.decree-absolute.apply-divorce.service.gov.uk`
 5. Find the relevant file relating to the DNS zone `apply-divorce-service-gov-uk` (and the environment being shuttered) and make sure there is a [record](https://github.com/hmcts/azure-public-dns/blob/a24128ffdc47687937cbab37aaa46040786c7955/environments/prod/apply-divorce-service-gov-uk.yml#L41) for the service
 6. Now check that an equivalent shuttering [configuration](https://github.com/hmcts/azure-public-dns/blob/27f3b5df3a1d3b847f2ca196e77a41c9ab896cc1/shuttering/prod/apply-divorce-service-gov-uk.yml#L20) exists for this record
@@ -58,6 +59,13 @@ With everything setup to render a shutter page you can now swap the DNS from Azu
       Setting <code>shutter: false</code> will disable the shutter page and redirect all traffic back to Azure Frontdoor.</p>
       </details>
 8. Create a PR with the changes and have it reviewed. Once merged this will update the exist record to point to the Azure Static Web App endpoint.
+
+**Verifying a shutter took effect.** The shutter target hostname is derived by the Terraform module (`cname_record.tf`) as `<name>-shutter.<zone>` — it isn't configured anywhere, so you can't grep for it. Query it directly instead of relying on a browser check, since that also distinguishes "shutter applied" from "app down":
+
+```bash
+dig +short www.decree-absolute.apply-divorce.service.gov.uk
+# -> www.decree-absolute-shutter.apply-divorce.service.gov.uk -> ...
+```
 
 #### All Records in a single DNS Zone
 

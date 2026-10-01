@@ -91,7 +91,7 @@ sources_sha:
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/directives/conditional-show/services/condition.peg.ts": "82b1a9d9b5712bae54f8cdcc18ae9950870ff428"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/domain/definition/display-context-enum.model.ts": "6a082439702a917c186720a837526f8c968c29d0"
   "ccd-case-ui-toolkit:.github/workflows/npmpublish.yml": "1a897e8ee004b009cea34182c5cbea4e28519688"
-  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "cefeb6ed1d5cbe3b3d1052e12e35c1c9aefc5637"
+  "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/package.json": "fc30aea27a05689620c3f726456596869a5c871f"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.html": "7f1b0d12f0af5a80788e266558817af09930cd4f"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-write.component.scss": "4fda645087ccabf7c77b2902b1106efc9ed9415b"
   "ccd-case-ui-toolkit:projects/ccd-case-ui-toolkit/src/lib/shared/components/palette/base-field/field-read-label.html": "5dbc31c8259c5f503b00b65476552b726b6dfd1c"
@@ -103,7 +103,7 @@ sources_sha:
   "rpx-xui-webapp:src/app/services/ccd-config/ccd-case.config.ts": "eed279a4dd5502643063241d86c2911799acac38"
   "rpx-xui-webapp:src/app/providers/providers.module.ts": "0cc0e9a4686b861db394bcc009c4b6681b24badd"
   "rpx-xui-webapp:src/cases/cases.module.ts": "496d74f0b1a66c9aae6e057558642f2f447e59d9"
-  "rpx-xui-webapp:package.json": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
+  "rpx-xui-webapp:package.json": "908f0a1468e556418ea2c0ed3f50d11773ebcf4b"
   "civil-wa-task-configuration:src/main/resources/wa-task-initiation-civil-civil.dmn": "3e1c62f5eeccd4611bcb0c203e8201b391ebc259"
   "civil-wa-task-configuration:src/main/resources/wa-task-configuration-civil-civil.dmn": "2a3ab1dec2ad1bbd323512eecf40646f4d3244cf"
 ---
@@ -216,6 +216,7 @@ Work Allocation task creation is service-side configuration rather than toolkit 
 - `Complex` type has a nested switch on `field_type.id` to distinguish `AddressGlobalUK`/`AddressUK`, `OrderSummary`, `CaseLink`, `Organisation`, `JudicialUser`, `StaffUser` from generic complex rendering (`palette.service.ts:101-118`).
 - `FieldReadComponent` defers dynamic component creation with `Promise.resolve(null).then(...)` to allow label interpolation to complete first; the field container is empty during the synchronous render pass (`field-read.component.ts:33-42`).
 - `AddressGlobal` appears in `FieldTypeEnum` but is NOT handled in the `PaletteService` switch -- it falls through to `UnsupportedFieldComponent`. Only `AddressGlobalUK`/`AddressUK` are routed to `WriteAddressFieldComponent` via the Complex branch.
+- A full-viewport loading spinner covers the page while case data loads. It only blocks Playwright actions that require pointer-event actionability -- `click`, `check`, and keyboard-triggered navigation -- which wait for the spinner to clear first; `fill` and `selectOption` don't require pointer events and proceed immediately regardless of the spinner. An E2E test that appears to wait out a loading state on a click but not on a fill into the same page is seeing this, not an inconsistency in load time.
 
 ## How case-type definitions drive the UI
 
@@ -301,7 +302,7 @@ Publishing is automated via `.github/workflows/npmpublish.yml`:
 
 | Trigger | Job | Action |
 |---------|-----|--------|
-| PR or push to `master`/`Release` | `build` | Install, audit, lint, build, test (coverage uploaded as artifact) |
+| PR or push to `master`/`Release` | `build` | Install, audit, lint (app and Playwright), Jenkins publication-contract check, build, packaged-consumer smoke test, test (coverage uploaded as artifact) |
 | PR or push to `master`/`Release` | `sonarcloud` | SonarQube analysis on coverage report |
 | GitHub Release created | `release-build` | Install, build (no test -- tests run on the prior push) |
 | GitHub Release created | `publish-npm` | Publish to npm via OIDC Trusted Publishing (no token needed) |
@@ -338,7 +339,7 @@ Version pinning is exact (not caret/tilde) because SRT validates a specific vers
 
 ### Peer dependencies
 
-`projects/ccd-case-ui-toolkit/package.json` is the manifest ng-packagr publishes, and it declares **only** peer dependencies — no runtime `dependencies` block at all. The peers cover the Angular 20 framework packages and NgRx 20, plus `rxjs`, `moment`, `underscore`, `ngx-chips`, `ngx-editor`, `ngx-markdown`, `ngx-pagination`, the ProseMirror packages and `rpx-xui-translation`. `@angular/cdk` and `@angular/material` are peers on their own earlier major lines (17 and 16), not on 20, so a consuming app has to satisfy both generations at once (`projects/ccd-case-ui-toolkit/package.json:4-37`).
+`projects/ccd-case-ui-toolkit/package.json` is the manifest ng-packagr publishes, and it declares **only** peer dependencies — no runtime `dependencies` block at all. The peers cover the Angular 20 framework packages and NgRx 20, plus `rxjs`, `moment`, `underscore`, `ngx-chips`, `ngx-editor`, `ngx-markdown`, `ngx-pagination`, the ProseMirror packages, `rpx-xui-translation`, `class-transformer` and `lodash`. `@angular/cdk` and `@angular/material` are peers on their own earlier major lines (17 and 16), not on 20, so a consuming app has to satisfy both generations at once (`projects/ccd-case-ui-toolkit/package.json:4-39`).
 
 `@hmcts/media-viewer`, `@hmcts/ccpay-web-component` and `@edium/fsm` are not declared by the published package in any form, even though library code imports them. Consuming apps install them directly and choose their own versions — `rpx-xui-webapp` lists all three in its own `dependencies` (`rpx-xui-webapp:package.json:120-124`) — which means a version skew between the app and what the toolkit was built against surfaces as a runtime error, not an install-time conflict.
 

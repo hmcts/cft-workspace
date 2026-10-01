@@ -24,6 +24,7 @@ sources:
   - aac-manage-case-assignment:src/main/java/uk/gov/hmcts/reform/managecase/api/payload/RequestNoticeOfChangeResponse.java
   - rpx-xui-manage-organisations:config/default.json
   - rpx-xui-manage-organisations:api/configuration/references.ts
+  - rpx-xui-webapp:api/documents/index.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 confluence:
@@ -57,7 +58,7 @@ sources_sha:
   "rpx-xui-webapp:api/lib/middleware/proxy.ts": "1bb90ae55466b4ca3bf2b1df1b0ac19b6fa8cd20"
   "rpx-xui-webapp:api/lib/proxy.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
   "rpx-xui-webapp:api/lib/http/index.ts": "55079aab2a3d290fb54432007a9ee7c73183e447"
-  "rpx-xui-webapp:api/workAllocation/routes.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/workAllocation/routes.ts": "82c2484c25cad7252a8cfbf71581d2c13fe20f83"
   "rpx-xui-webapp:api/hearings/services.index.ts": "e4f7e5a99239c9a585927332382aa87dae93b797"
   "rpx-xui-webapp:api/hearings/models/serviceHearingValues.model.ts": "e4f7e5a99239c9a585927332382aa87dae93b797"
   "rpx-xui-webapp:api/noc/index.ts": "37c4674e3e926f5100a3c9de0dcf8a7560df7777"
@@ -164,7 +165,7 @@ These routes are handled locally by Express controllers that make targeted Axios
 
 Work Allocation routes are handled locally by Express routing (`api/workAllocation/routes.ts`), not via prefix-based proxying. The controller makes Axios calls to the downstream WA Task Management API.
 
-**Supported WA jurisdictions** are configured via `waSupportedJurisdictions` (default: `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC`).
+**Supported WA jurisdictions** are configured via `waSupportedJurisdictions` (default: `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC,PCS`).
 
 ### Hearings (HMC)
 
@@ -208,6 +209,8 @@ Each jurisdiction also specifies `caseTypes` in config — used to match which s
 | EM Markup/NPA | `services.markup_api` (`SERVICES_MARKUP_API_URL`) | `/api/markups`, `/api/redaction` | Redaction and markup |
 | EM ICP | `services.icp_api` (`SERVICES_ICP_API_URL`) | `/icp` | In-court presentation; WebSocket proxy (`ws:true`) |
 
+The `/documents` route handler also enforces its own per-session upload throttle, independent of CDAM or DM Store: a `POST` within `INITIAL_TIMEOUT_PERIOD` (5s) of the previous upload in the same session gets a 429, and each further rate-limited hit doubles the window up to `MAX_TIMEOUT_PERIOD` (180s) (`rpx-xui-webapp:api/documents/index.ts`). CDAM and DM Store have no rate-limiting of their own on this path. The throttle is keyed on `req.session`, so parallel test workers with separate sessions never collide with each other. The timestamp used for the check is stamped after the previous upload completes, not before it starts, so retrying a 429 by re-uploading immediately pushes the window further toward its ceiling rather than escaping it -- widening the gap before the next upload attempt clears the throttle; issuing more retries does not.
+
 ### Reference Data
 
 | Service | Config key (env var) | Purpose |
@@ -236,7 +239,7 @@ Each jurisdiction also specifies `caseTypes` in config — used to match which s
 | LAU (Challenged Access) | `services.lau.specificChallengedAccessApi` (`SERVICES_LAU_SPECIFIC_CHALLENGED_ACCESS_API_PATH`) | Log and Audit challenged-access records |
 | Global Search | `services.ccd.dataApi` (same as CCD Data Store) | Cross-jurisdiction case search via CCD Data Store `/globalSearch` endpoint |
 
-**Global Search supported services:** configured via `globalSearchServices` (default: `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC`).
+**Global Search supported services:** configured via `globalSearchServices` (default: `IA,CIVIL,PRIVATELAW,PUBLICLAW,EMPLOYMENT,ST_CIC,PROBATE,PCS`).
 
 ### Authentication & Infrastructure
 
@@ -314,7 +317,7 @@ Errors come back from the downstream as free-text messages, and the BFF derives 
 - Manage Organisations references `ccd-data-store-api` in config (`services.ccdDataApi`) but does not call it directly — all CCD-related queries route through the AAC proxy path.
 - `services.hearings.employment.serviceApi` is configured but Employment is **not** in the default `hearingsJurisdictions` activation list (`SSCS,PRIVATELAW,CIVIL,IA`).
 - The API root router mounts `/locations` twice (`rpx-xui-webapp:api/routes.ts:54`, `:63`), leaving the second mount unreachable.
-- Work Allocation routes use `router.use` for action-specific endpoints instead of explicit HTTP method handlers (`get`/`post`/`put`/`delete`), allowing unintended methods to reach handlers (`rpx-xui-webapp:api/workAllocation/routes.ts:39-71`).
+- Work Allocation routes use `router.use` for action-specific endpoints instead of explicit HTTP method handlers (`get`/`post`/`put`/`delete`), allowing unintended methods to reach handlers (`rpx-xui-webapp:api/workAllocation/routes.ts:36-63`).
 
 ## See also
 

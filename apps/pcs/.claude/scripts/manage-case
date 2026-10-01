@@ -120,7 +120,7 @@ export PCS_ENV_KIND="$ENV_KIND"
 # — and it validates the case reference and the operation's own arguments, so a typo
 # fails here rather than after the VPN check and the Key Vault round trip.
 CHECK_ARGS=(--check --operation "$OPERATION" --case "$CASE_REF")
-for arg in "${OP_ARGS[@]}"; do
+for arg in ${OP_ARGS[@]+"${OP_ARGS[@]}"}; do
     CHECK_ARGS+=(--arg "$arg")
 done
 build_runner_cmd "$RUNNER" "${CHECK_ARGS[@]}"
@@ -135,7 +135,7 @@ if [[ "$NEEDS_TS" == "true" ]]; then
 fi
 
 RUNNER_ARGS=(--case "$CASE_REF" --operation "$OPERATION")
-for arg in "${OP_ARGS[@]}"; do
+for arg in ${OP_ARGS[@]+"${OP_ARGS[@]}"}; do
     RUNNER_ARGS+=(--arg "$arg")
 done
 build_runner_cmd "$RUNNER" "${RUNNER_ARGS[@]}"

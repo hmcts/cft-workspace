@@ -22,7 +22,8 @@ done
 
 cd "$WORKSPACE_ROOT"
 
-mapfile -t entries < <(manifest_tsv "$PREFIX")
+entries=()
+while IFS= read -r line || [[ -n "$line" ]]; do entries+=("$line"); done < <(manifest_tsv "$PREFIX")
 [[ ${#entries[@]} -gt 0 ]] || die "No manifest entries match prefix: $PREFIX"
 
 sync_one() {
@@ -67,6 +68,6 @@ export -f sync_one
 
 info "Syncing ${#entries[@]} repo(s) (jobs=$JOBS)…"
 printf '%s\n' "${entries[@]}" | \
-    xargs -P "$JOBS" -I{} bash -c 'IFS=$'\''\t'\'' read -r p u r d <<< "{}"; sync_one "$p" "$u" "$r"'
+    xargs -P "$JOBS" -I{} bash -c 'IFS=$'\'' \t'\'' read -r p u r d <<< "{}"; sync_one "$p" "$u" "$r"'
 
 ok "sync complete"

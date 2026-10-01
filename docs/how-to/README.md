@@ -6,6 +6,7 @@ Goal-oriented recipes for engineers who already know the basics. Each page answe
 
 - [Add a new repo to the workspace](add-a-repo.md)
 - [Set up the Atlassian and Jenkins MCP servers](set-up-mcp-servers.md)
+- [Write to Jira and Confluence through the Atlassian MCP](write-to-jira-and-confluence-via-mcp.md)
 - [Regenerate per-product CLAUDE.md taxonomy](regenerate-claude-mds.md) _(planned)_
 - [Update yq, the CFT scripts, and the devcontainer features](update-tooling.md) _(planned)_
 
@@ -13,6 +14,8 @@ Goal-oriented recipes for engineers who already know the basics. Each page answe
 
 - [Create IDAM test users in AAT and demo](create-idam-test-users.md)
 - [Create a professional organisation for testing](create-test-organisations.md)
+- [Respond to an ITHC penetration test report](respond-to-an-ithc-report.md)
+- [Escape user input in GOV.UK Frontend templates](escape-user-input-in-govuk-templates.md)
 - [Run a CCD definition import locally](run-a-ccd-import.md) _(planned)_
 - [Debug an IDAM token](debug-idam-token.md) _(planned)_
 - [Stand up a service against AAT](run-against-aat.md) _(planned)_
@@ -55,13 +58,13 @@ Build/release using the shared CNP pipeline. See [`common-pipeline/`](common-pip
 
 - [Application Gateway WAF (AFD/WAF)](afd-waf.md)
 - [Automated dependency updates](automated-dependency-updates.md)
-- [Connect via VPN](connect-via-vpn.md)
 - [Connect to a non-production database](connect-to-a-nonprod-database.md) — psql against AAT/perftest via Key Vault credentials
 - [Create a new subscription](creating-a-new-subscription.md)
 - [Database infrastructure](database-infrastructure.md) — PostgreSQL Flexible Server creation and JIT production access
 - [Federated credentials](federated-credentials.md)
 - [Flyway database migrations](flyway-database-migrations.md)
 - [Manage manual Key Vault secrets](managing-manual-key-vault-secrets.md)
+- [Make a new Virtual Network accessible over the VPN](connect-via-vpn.md)
 - [Migrate to Azure Managed Redis](migrating-to-managed-redis.md)
 - [PostgreSQL single→flexible migration (DMS)](postgresql-singleserver-to-flexibleserver-migration-dms.md)
 - [PostgreSQL single→flexible migration (Portal)](postgresql-singleserver-to-flexibleserver-migration-portal.md)

@@ -290,8 +290,7 @@ vault_secret() {
 Check your access with: az keyvault secret list --vault-name $VAULT -o tsv --query '[].name'"
 
     [[ -n "$value" ]] || die "$name is empty in vault $VAULT"
-    declare -g "$var=$value"
-    export "$var"
+    export "$var=$value"
 }
 
 # ---------------------------------------------------------------------------

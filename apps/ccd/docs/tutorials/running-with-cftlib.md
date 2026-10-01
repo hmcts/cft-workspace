@@ -18,6 +18,8 @@ sources:
   - rse-cft-lib:cftlib/lib/runtime/src/main/resources/application.yml
   - rse-cft-lib:cftlib/test-project/src/cftlib/java/uk/gov/hmcts/libconsumer/CFTLibConfig.java
   - rse-cft-lib:cftlib/lib/test-runner/src/main/java/uk/gov/hmcts/rse/ccd/lib/test/CftlibTest.java
+  - rpx-xui-webapp:api/configuration/references.ts
+  - rpx-xui-webapp:api/auth/index.ts
 status: confluence-augmented
 last_reviewed: 2026-08-20T00:00:00Z
 confluence:
@@ -42,14 +44,14 @@ title: Running with cftlib
 diataxis: tutorials
 product: ccd
 sources_sha:
-  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "e3587808bd1477ab4a47aa39c0b6ac5468479f7d"
+  "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftLibPlugin.java": "0817d783ad0e77506beb150a2dfdc6789819ab3f"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/Service.java": "732ec28c7a68359452f0e767b5bd605d10608e61"
   "rse-cft-lib:cftlib/rse-cft-lib-plugin/src/main/java/uk/gov/hmcts/rse/CftlibExec.java": "7e12e7008bf04be9b6353b576c174eb26191b561"
-  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLib.java": "71544992866ebc3f02139e17b9782c9437213a22"
+  "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLib.java": "0817d783ad0e77506beb150a2dfdc6789819ab3f"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/api/CFTLibConfigurer.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibRunner.java": "f64ba45d798a92139deb311aff036a709f8a8dd3"
   "rse-cft-lib:cftlib/lib/cftlib-agent/src/main/java/uk/gov/hmcts/rse/ccd/lib/LibAgent.java": "1af3bf04972042b8b6c862d4a3dbed93c7753e29"
-  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/CFTLibApiImpl.java": "e3587808bd1477ab4a47aa39c0b6ac5468479f7d"
+  "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/CFTLibApiImpl.java": "0817d783ad0e77506beb150a2dfdc6789819ab3f"
   "rse-cft-lib:cftlib/lib/cftlib-agent/src/main/java/uk/gov/hmcts/rse/ccd/lib/IdamInterceptor.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
   "rse-cft-lib:cftlib/lib/runtime/src/main/java/uk/gov/hmcts/rse/ccd/lib/ComposeRunner.java": "9098a05a1f349631f606f4831c0c024deb6a4b5a"
   "rse-cft-lib:cftlib/lib/bootstrapper/src/main/java/uk/gov/hmcts/rse/ccd/lib/Database.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
@@ -58,6 +60,8 @@ sources_sha:
   "rse-cft-lib:cftlib/lib/runtime/src/main/resources/application.yml": "3ba38c64b8733c7a0074f1cb54d41293b91e5f03"
   "rse-cft-lib:cftlib/test-project/src/cftlib/java/uk/gov/hmcts/libconsumer/CFTLibConfig.java": "94aa0edeb0e1a4337a411ed8e6e20f170ed30bae"
   "rse-cft-lib:cftlib/lib/test-runner/src/main/java/uk/gov/hmcts/rse/ccd/lib/test/CftlibTest.java": "1b82c829cfc6fb569ee0086afbbc520b27882ec4"
+  "rpx-xui-webapp:api/configuration/references.ts": "80ffd957bb00a352500b82de63891138f6e23570"
+  "rpx-xui-webapp:api/auth/index.ts": "d984fb0c8c433578b99d01360d669b40996a8316"
 ---
 
 # Running with cftlib
@@ -93,7 +97,7 @@ plugins {
 ## Step 1 — Create the cftlib source set
 
 The plugin creates two extra source sets: `cftlib` (boot-time config) and `cftlibTest` (integration tests).
-(`CftLibPlugin.java:156-170`)
+(`CftLibPlugin.java:138-152`)
 
 Place your configurer under:
 
@@ -142,14 +146,15 @@ Key API methods (`CFTLib.java`, implemented in `CFTLibApiImpl.java`):
 
 | Method | Effect |
 |---|---|
-| `createIdamUser(email, roles...)` | POSTs to IDAM simulator at `http://localhost:5062/testing-support/accounts`; password always `"password"`. **No-op unless `RSE_LIB_AUTH-MODE=localAuth`** (`CFTLibApiImpl.java:101-103`). |
-| `createRoles(roles...)` | PUTs each role with `security_classification: PUBLIC` to `http://localhost:4451/api/user-role` (`CFTLibApiImpl.java:147-169`). |
-| `createProfile(id, jurisdiction, caseType, state)` | PUTs to `http://localhost:4453/user-profile/users` (`CFTLibApiImpl.java:124-144`). |
-| `importDefinition(File)` / `importDefinition(byte[])` | POSTs xlsx multipart to `http://localhost:4451/import`; MD5-idempotent — repeat calls with the same bytes are skipped (`CFTLibApiImpl.java:188-199`). |
-| `importJsonDefinition(File folder)` | Imports JSON definition-processor format by POSTing the folder's *canonical path* bytes to `/import`. Throws `FileNotFoundException` if the folder is missing, and — unlike `importDefinition` — does **not** consult the MD5 cache, so every call re-imports (`CFTLibApiImpl.java:209-213`). |
-| `configureRoleAssignments(json)` | Loads JSON into the AM database via `cftlib-populate-am.sql` (`CFTLibApiImpl.java:172-184`). |
+| `createIdamUser(email, roles...)` | POSTs to IDAM simulator at `http://localhost:5062/testing-support/accounts`; password always `"password"`. **No-op unless `RSE_LIB_AUTH-MODE=localAuth`** (`CFTLibApiImpl.java:103-105`). |
+| `createRoles(roles...)` | PUTs each role with `security_classification: PUBLIC` to `http://localhost:4451/api/user-role` (`CFTLibApiImpl.java:149-171`). |
+| `createProfile(id, jurisdiction, caseType, state)` | PUTs to `http://localhost:4453/user-profile/users` (`CFTLibApiImpl.java:126-146`). |
+| `importDefinition(File)` / `importDefinition(byte[])` | POSTs xlsx multipart to `http://localhost:4451/import`; MD5-idempotent — repeat calls with the same bytes are skipped (`CFTLibApiImpl.java:190-201`). |
+| `importJsonDefinition(File folder)` | Imports JSON definition-processor format by POSTing the folder's *canonical path* bytes to `/import`. Throws `FileNotFoundException` if the folder is missing, and — unlike `importDefinition` — does **not** consult the MD5 cache, so every call re-imports (`CFTLibApiImpl.java:211-215`). |
+| `importJsonDefinition(File folder, File template, Map<String, String> substitutions, String... excludedFilenamePatterns)` | Same import path, but nothing is discovered automatically: the substitutions map replaces every `${NAME}` placeholder (JSON fragments included), `template` is an optional spreadsheet supplying sheet names, columns and defaults, and the trailing glob patterns omit matching filenames. Pass `null` for `template` to skip it. Unlike the folder-only overload it does **not** read `CCD_DEF_*` environment variables (`CFTLibApiImpl.java:218-235`). |
+| `configureRoleAssignments(json)` | Loads JSON into the AM database via `cftlib-populate-am.sql` (`CFTLibApiImpl.java:174-186`). |
 | `createGlobalSearchIndex()` | POSTs to definition store `/elastic-support/global-search/index` to create the GlobalSearch ES index. |
-| `getConnection(Database)` | Returns a JDBC `Connection` for direct inspection of the cftlib Postgres. The `Database` enum has exactly four members — `Datastore`, `Definitionstore`, `Userprofile`, `AM` (`Database.java`) — and the name is lowercased to form the database name (`CFTLibApiImpl.java:244-249`). There is no enum member for `cft_task_db` or for any database you add yourself; connect to those with a plain `DriverManager.getConnection`. |
+| `getConnection(Database)` | Returns a JDBC `Connection` for direct inspection of the cftlib Postgres. The `Database` enum has exactly four members — `Datastore`, `Definitionstore`, `Userprofile`, `AM` (`Database.java`) — and the name is lowercased to form the database name (`CFTLibApiImpl.java:265-270`). There is no enum member for `cft_task_db` or for any database you add yourself; connect to those with a plain `DriverManager.getConnection`. |
 | `buildJwt()` / `generateDummyS2SToken(serviceName)` | Mints HS256 JWTs signed with the literal string `"secret"` — useful when scripting against the running stack (`CFTLibApiImpl.java:42-57`). |
 | `dumpDefinitionSnapshots()` | Writes every loaded case-type definition as JSON to `build/cftlib/definition-snapshots/`; called automatically when `RSE_LIB_DUMP_DEFINITIONS=true`. |
 
@@ -168,10 +173,10 @@ From the root of your service repo:
 
 What happens under the hood:
 
-1. The plugin resolves eight service artifacts from HMCTS Azure Artifacts and writes per-service classpath manifests to `build/cftlib/<service-id>` (`CftLibPlugin.java:244-264`, `286`).
-2. `LibRunner` (main class `uk.gov.hmcts.rse.ccd.lib.LibRunner`) loads each service in its own `URLClassLoader` (`CftLibPlugin.java:310`).
+1. The plugin resolves eight service artifacts from HMCTS Azure Artifacts and writes per-service classpath manifests to `build/cftlib/<service-id>` (`CftLibPlugin.java:229-249`, `276`).
+2. `LibRunner` (main class `uk.gov.hmcts.rse.ccd.lib.LibRunner`) loads each service in its own `URLClassLoader` (`CftLibPlugin.java:300`).
 3. Docker Compose spins up `rse-idam-simulator` on port 5062.
-4. Your app boots alongside the embedded services; `src/main/resources` is prepended to the classpath for live resource editing (`CftLibPlugin.java:207`).
+4. Your app boots alongside the embedded services; `src/main/resources` is prepended to the classpath for live resource editing (`CftLibPlugin.java:189`).
 5. `CFTLibConfigurer.configure()` runs; your definition is imported and users seeded.
 
 Services and their default ports once running:
@@ -209,7 +214,7 @@ The first four come from the `Project` enum and are created with unquoted identi
 RSE_LIB_ADDITIONAL_DATABASES=camunda,wa_workflow_api ./gradlew bootWithCCD
 ```
 
-Connect to any of them with `jdbc:postgresql://localhost:6432/<dbname>` — the same string `lib.getConnection(Database.X)` builds (`CFTLibApiImpl.java:244-249`).
+Connect to any of them with `jdbc:postgresql://localhost:6432/<dbname>` — the same string `lib.getConnection(Database.X)` builds (`CFTLibApiImpl.java:265-270`).
 
 <!-- CONFLUENCE-ONLY: the PRL team's Local development environment page (1933968909) lists a longer set of databases, including `camunda`, `cft_task_db_replica` and `wa_workflow_api`. Those are not created by cftlib — they come from that team's own `RSE_LIB_ADDITIONAL_DATABASES` value, so treat the list as PRL's local topology rather than the cftlib baseline. -->
 
@@ -254,7 +259,7 @@ To export the currently loaded definition back to disk (useful for inspecting wh
 ./gradlew dumpCCDDefinitions
 ```
 
-This sets `RSE_LIB_DUMP_DEFINITIONS=true`, forces `AuthMode.Local`, and re-runs the stack boot (`CftLibPlugin.java:55-58`). Output lands in `build/cftlib/definition-snapshots/<caseTypeId>.json` (`CFTLibApiImpl.java:62-95`). The JVM halts via `Runtime.getRuntime().halt(0)` once all snapshots are written, so the task exits cleanly without waiting for further activity (`LibAgent.java:61-65`).
+This sets `RSE_LIB_DUMP_DEFINITIONS=true`, forces `AuthMode.Local`, and re-runs the stack boot (`CftLibPlugin.java:56-59`). Output lands in `build/cftlib/definition-snapshots/<caseTypeId>.json` (`CFTLibApiImpl.java:61-84`). The JVM halts via `Runtime.getRuntime().halt(0)` once all snapshots are written, so the task exits cleanly without waiting for further activity (`LibAgent.java:61-65`).
 
 ---
 
@@ -266,11 +271,11 @@ The plugin and runtime read several env vars at boot. The ones you'll touch most
 |---|---|
 | `RSE_LIB_CLEAN_BOOT` | Set (to any value) to add `--force-recreate --renew-anon-volumes` to the `docker compose up`, discarding the Postgres and ES volumes. It also reorders boot: normally cftlib starts monitoring the dependencies *before* compose runs, but on a clean boot it must wait for the recreate first (`ComposeRunner.java:38-50,71-73`). Set automatically when `CI` is present. |
 | `RSE_LIB_DUMP_DEFINITIONS` | Set to `true` to dump definitions then exit. The `dumpCCDDefinitions` Gradle task sets this for you. |
-| `RSE_LIB_STUB_AUTH_OUTBOUND` | When `true`, in-process AspectJ intercepts outbound IDAM token requests and returns a locally-signed JWT instead of hitting any external IDAM. Set automatically for the `cftlibTest` task (`CftLibPlugin.java:236`); set manually if you need it during `bootWithCCD`. |
-| `RSE_LIB_AUTH-MODE` | When set to `localAuth`, the IDAM simulator profile spins up and `lib.createIdamUser(...)` actually creates accounts. Otherwise `createIdamUser` is a no-op (`CFTLibApiImpl.java:101-103`). |
+| `RSE_LIB_STUB_AUTH_OUTBOUND` | When `true`, in-process AspectJ intercepts outbound IDAM token requests and returns a locally-signed JWT instead of hitting any external IDAM. Set automatically for the `cftlibTest` task (`CftLibPlugin.java:221`); set manually if you need it during `bootWithCCD`. |
+| `RSE_LIB_AUTH-MODE` | When set to `localAuth`, the IDAM simulator profile spins up and `lib.createIdamUser(...)` actually creates accounts. Otherwise `createIdamUser` is a no-op (`CFTLibApiImpl.java:103-105`). |
 | `RSE_LIB_DB_HOST` / `RSE_LIB_DB_PORT` | Override the Postgres host (default `localhost`) and port (default `6432`). Threaded through `Service.java` for WA task management and through `CFTLibApiImpl.getConnection`. |
 | `RSE_LIB_ADDITIONAL_DATABASES` | Comma-separated list of extra databases to create in the cftlib Postgres on boot, on top of the five cftlib needs (`ComposeRunner.java:233-236`). This is how teams get `camunda`, `wa_workflow_api` and similar into the shared container. |
-| `RSE_LIB_XUI_ENV_*` | Anything prefixed `RSE_LIB_XUI_ENV_` (as an env var *or* a Java system property) has the prefix stripped and is written into the `xui.env` file that the XUI manage-cases container loads via `env_file` — so `RSE_LIB_XUI_ENV_FEATURE_WORKALLOCATION_ENABLED=true` sets `FEATURE_WORKALLOCATION_ENABLED` inside manage-cases without editing any compose file (`ComposeRunner.java:30,67-68,120-168`). Blank keys and blank values are dropped; `$` is escaped to `$$` on the way out. |
+| `RSE_LIB_XUI_ENV_*` | Anything prefixed `RSE_LIB_XUI_ENV_` (as an env var *or* a Java system property) has the prefix stripped and is written into the `xui.env` file that the XUI manage-cases container loads via `env_file` — so `RSE_LIB_XUI_ENV_FEATURE_WORKALLOCATION_ENABLED=true` sets `FEATURE_WORKALLOCATION_ENABLED` inside manage-cases without editing any compose file (`ComposeRunner.java:30,67-68,120-168`). Blank keys and blank values are dropped; `$` is escaped to `$$` on the way out. Requires cftlib **≥ 0.19.2190** — on an older pin the prefix mechanism doesn't exist yet, so the variable is silently dropped with no error and never reaches the container. Bumping past that version can also require a newer Elasticsearch image than the one already running; remove the stale `ccd-elasticsearch` container so compose recreates it at the version the new cftlib expects. |
 | `RSE_LIB_S2S_PORT` | Override the in-process S2S simulator port (default `8489`, see `lib/runtime/src/main/resources/application.yml`). |
 | `LOG_CALLBACK_DETAILS` | Set to `*` to log full case-data payloads sent between callbacks. Add via `environment 'LOG_CALLBACK_DETAILS', '*'` on the `bootWithCCD` task. <!-- CONFLUENCE-ONLY: this is a CCD data store flag, surfaced via the SSCS Confluence page rather than the plugin. --> |
 | `FORCE_RECREATE_ADDITIONAL_CONTAINERS` | Forces docker compose to recreate additional containers on each boot (relevant when teams supply extra compose files). <!-- CONFLUENCE-ONLY: SSCS-specific, not in plugin source. --> |
@@ -286,7 +291,7 @@ If the stack fails to start and the failure isn't visible in any container's std
 
 ## Running integration tests
 
-The plugin creates a `cftlibTest` task that runs JUnit via `org.junit.platform.console.ConsoleLauncher`, scanning the `uk.gov.hmcts` package, with `RSE_LIB_STUB_AUTH_OUTBOUND=true` (`CftLibPlugin.java:236`).
+The plugin creates a `cftlibTest` task that runs JUnit via `org.junit.platform.console.ConsoleLauncher`, scanning the `uk.gov.hmcts` package, with `RSE_LIB_STUB_AUTH_OUTBOUND=true` (`CftLibPlugin.java:221`).
 
 Extend `CftlibTest` in your test class:
 
@@ -298,6 +303,11 @@ class MyIntegrationTest extends CftlibTest {
     // All services are guaranteed ready before your @Test methods run
 }
 ```
+
+Keep this setup logic in a JUnit test class. If you extract shared setup (e.g. minting an auth
+token) into a helper and then register that helper as a Spring bean so production code can reuse
+it, `@BeforeAll` silently never runs — Spring has no concept of JUnit lifecycle annotations, so
+any field the method was meant to populate stays permanently unset.
 
 Run with:
 
@@ -337,7 +347,7 @@ Real-world snags collected from the SSCS, PRL, and DFR teams' Confluence pages:
 |---|---|
 | `Process 'command '[…]/create-xlsx.sh'' finished with non-zero exit value 126` | Docker Desktop interfering with WSL. Switch to Docker Engine inside WSL, or run the CCD definition build manually. <!-- CONFLUENCE-ONLY: SSCS RSE CFT Library page. --> |
 | Repeated `Idam not ready...` | Printed by `ComposeRunner.authReady` when `http://localhost:5062/health` isn't returning 200 (`ComposeRunner.java:204-219`). Only ever polled when `RSE_LIB_AUTH-MODE=localAuth`, and bounded at 10 minutes before the wait fails — so an "indefinite" hang is really a 10-minute one. Usual cause is the `localAuth` compose profile not having started; a `docker-compose` older than v1.28 is one way that happens. <!-- CONFLUENCE-ONLY: the docker-compose version floor comes from the SSCS RSE CFT Library page (1604492994). --> |
-| `unauthorized` / `denied` pulling `hmctsprod.azurecr.io/...` | The XUI manage-cases, manage-org and IDAM-simulator images all come from `hmctsprod.azurecr.io` (`docker-compose.yml`), which is not a public registry. Run `az acr login --name hmctsprod` first. <!-- CONFLUENCE-ONLY: the PRL page (1933968909) also lists `hmctspublic` and `hmctsprivate`; only `hmctsprod` appears in cftlib's own compose file, so the other two are for images a team layers on itself. --> |
+| `unauthorized` / `denied` pulling `hmctsprod.azurecr.io/...` | The XUI manage-cases, manage-org and IDAM-simulator images all come from `hmctsprod.azurecr.io` (`docker-compose.yml`), which is not a public registry. Run `az acr login --name hmctsprod` first. <!-- CONFLUENCE-ONLY: the PRL page (1933968909) also lists `hmctspublic` and `hmctsprivate`; only `hmctsprod` appears in cftlib's own compose file, so the other two are for images a team layers on itself. --> On a GitHub Actions runner this doesn't fail fast: `docker compose` retries the failed pull silently, so an unauthenticated `cftlibTest` job just hangs until its `timeout-minutes` kills it. Add an OIDC login step before the test task — see [Publishing container images to ACR from GitHub Actions](../../../../docs/how-to/publishing-acr-images.md) for the mechanics (an `AcrPull`-scoped app registration is the least-privilege option for a job that only needs to pull). |
 | `java.lang.ClassNotFoundException: uk.gov.hmcts.rse.ccd.lib.Application` from `LibRunner.launchApp` | Stale per-service classpath manifests. Delete `build/cftlib/` and re-run. <!-- CONFLUENCE-ONLY: PRL Local development environment page (1933968909). --> |
 | Definition import fails with `TransactionTimedOutException` | Under cftlib the definition-store transaction timeout is already 240 s, not the service's standalone 30 s default (`LibRunner.java:92-96`). Raise it further with `DEFINITION_STORE_TX_TIMEOUT_DEFAULT`. See [Debug with cftlib — when import times out](../how-to/debug-with-cftlib.md#when-import-times-out). |
 | `DB not yet available...` on a loop | Printed whenever the `postgres`-database connection or a `create database` throws `SQLException` (`ComposeRunner.java:221-252`). Check the container is actually up on `RSE_LIB_DB_PORT`, and that nothing else already owns that port — a `psql` session held open against a *different* server on 6432 will answer the connection and then fail the DDL. |
@@ -345,6 +355,14 @@ Real-world snags collected from the SSCS, PRL, and DFR teams' Confluence pages:
 | CCD definition changes not propagating | `importDefinition` MD5s the file contents, so an unchanged file is skipped — and `touch` does not help. Either change the definition, or use `importJsonDefinition`, which bypasses the check. See [Debug with cftlib — Recipe 4](../how-to/debug-with-cftlib.md#recipe-4--reset-a-definition-without-restarting). |
 | Containers persist between runs and pollute state | cftlib extracts its compose file to a temp directory, so you cannot point `docker compose` at it by path. Use the project name instead: `docker compose -p cftlib down -v` (`ComposeRunner.java:69`). Or just set `RSE_LIB_CLEAN_BOOT`. |
 | Cases missing from Elasticsearch after a restart | Expected: the indexer marks rows `marked_by_logstash` and a restart does not clear the flag. See [Debug with cftlib — forcing a re-index](../how-to/debug-with-cftlib.md#forcing-a-re-index). |
+| A decentralised event fails with `Unrecognized field "..." (class CaseDetails), not marked as ignorable`, or `No CaseView registered for decentralised case type ...` | The `hmcts.ccd.sdk` (`ccd-config-generator`) plugin version is behind the `rse-cft-lib` version — bumping cftlib alone can move the embedded data-store ahead of what an older `decentralised-runtime` model understands. Bump the SDK plugin to a version built against the same cftlib generation; diff `generateCCDConfig` output before and after, since a major SDK jump can also add new requirements (such as a `CaseView` bean per case type). |
+| `cftlibTest` fails with `NoSuchMethodError: LoggerContext.initCollisionMaps()` or another logback clash | A dependency shipping a shaded "all" jar (e.g. a security scanning client library) can bundle its own un-relocated `logback-classic`. If that jar reaches `cftlibTestRuntimeClasspath` — which happens whenever that configuration extends `testImplementation` — its bundled class shadows the real one. The exclusion has to be declared on the *resolvable* configuration itself (`cftlibTestRuntimeClasspath`); excluding it only from `testImplementation`/`testRuntimeOnly` does not remove it from the classpath `cftlibTest` actually resolves. |
+| `cftlibTest` fails with `Unknown option: --select-package` (or another option the task's own code passes) | The `cftlibTest` task launches JUnit via `org.junit.platform.console.ConsoleLauncher`, so its CLI options are pinned to whatever `junit-platform-console` version is on the classpath. A routine dependency bump that globally overrides a JUnit BOM/platform version property (e.g. to align `junit-jupiter` across the build) can drag `junit-platform-console` up to a version whose CLI dropped an option `CftLibPlugin` still passes. The failure looks like a broken test runner, not a version-alignment side effect — check what pulled in `junit-platform-console` before assuming `cftlibTest` itself is broken. |
+| A strict OIDC client (e.g. `openid-client` v6) rejects sign-in against the local stack with "invalid response encountered" or an issuer mismatch | The relationship between `rse-idam-simulator`'s discovery-advertised issuer and the `iss` claim it signs into tokens is not a fixed contract — it has flipped between simulator versions (one version advertised the `/o`-suffixed issuer in discovery while omitting it from tokens; a later version made both consistent). A client that hardcodes either direction works until the simulator changes under it. Don't assume a shape: mint a disposable probe token against the simulator at startup and configure your OIDC client's issuer from whatever `iss` that token actually asserts. This is a local-simulator-only failure mode — real deployed AAT/demo IDAM has a different, permanent issuer split; see [Troubleshooting — IDAM / OIDC errors](../../../../docs/how-to/troubleshooting.md#golden-path). |
+| Embedded XUI (ExUI) accepts sign-in but every page after login errors | Known defect in the `rse-idam-simulator` image: `/api/v1/users/self` returns `500` while `/api/v1/users/{uid}` returns `200` for the identical token. XUI calls `self` on login, so no user can sign in until the image is fixed — this is not something your service's configuration can work around. |
+| Nobody can sign in to embedded XUI at all — the redirect to the IDAM simulator completes, but the browser just bounces back to `/login`, or XUI's own log shows `unexpected iss value, expected https://forgerock-am....internal:8443/openam/oauth2/hmcts` | The published XUI image bakes in the **production ForgeRock issuer** as the expected token `iss`, so every simulator-minted token is rejected — this happens under XUI's default legacy oauth2 strategy too, not just OIDC. Fix by passing `RSE_LIB_XUI_ENV_SERVICES_IDAM_ISS_URL=http://localhost:5062` into the container (see the `RSE_LIB_XUI_ENV_*` row below — it needs cftlib ≥ 0.19.2190). Don't also try to fix this by enabling OIDC (`RSE_LIB_XUI_ENV_FEATURE_OIDC_ENABLED=true`) to "match production": XUI ships with `oidcEnabled: false` precisely because OIDC makes it perform discovery *server-side* against `SERVICES_IDAM_LOGIN_URL` (`http://localhost:5062`), and inside the XUI container `localhost` resolves to the container itself, not the host running the simulator. cftlib's compose file hardcodes `extra_hosts` with no alias for that. The default legacy oauth2 strategy never does server-side discovery, so it works locally without that networking fix — leave it enabled and only override the issuer. |
+| Case creation 401s on the write even though the preceding event-trigger `GET` succeeded | The `GET` runs as the calling user's own token, so it can look healthy while the data store's own outbound call to IDAM (needed for the `POST`) fails. In `RSE_LIB_AUTH-MODE=localAuth`, `lib.createIdamUser(...)` only seeds the users your `CFTLibConfigurer` asks for — it does not seed CCD data store's own system user. Seed the username from `ccd-data-store-api`'s `idam.data-store.system-user.username` property (`data.store.idam.system.user@gmail.com` by default) the same way you seed your own users. |
+| A service's "High Level Data Setup" Gradle task fails against a running `bootWithCCD` stack with `Must have 1 argument` or missing IDAM/S2S env vars | That task wraps BEFTA's `DataLoaderToDefinitionStore` (see [definition import — pipeline flow](../explanation/definition-import.md)), built for the Jenkins High Level Data Setup stage on a deployed environment, not for a local stack — it takes an environment argument and expects `S2S_URL_BASE`/IDAM credentials in the process environment. It is not what makes a case type live under cftlib. `CftLibConfigurer` already imports every case type at boot (`importJsonDefinition`/`importDefinition`), so restarting `bootWithCCD` after regenerating the definition is the local equivalent — no gradle task the service defines needs to run. |
 
 ---
 

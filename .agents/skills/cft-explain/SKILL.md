@@ -1,6 +1,6 @@
 ---
 name: cft-explain
-description: Answer a "what is X" / "how does Y work" / "explain Z" question about any CFT topic — workspace, CCD, XUI, WA, AM, bulk-scan, platform/CNP. Routes via DOCS.md to the right page in either the root docs/ tree or a product-level apps/<product>/docs/ tree.
+description: Answer a "what is X" / "how does Y work" / "explain Z" question about any CFT topic — workspace, CCD, XUI, WA, AM, bulk-scan, platform/CNP — or give an orientation to a workspace product ("what is nfdiv", "tour me through civil"). Routes via DOCS.md to the right page in either the root docs/ tree or a product-level apps/<product>/docs/ tree.
 ---
 
 # Shared workflow adapter

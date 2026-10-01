@@ -43,6 +43,9 @@ entries:
   - target: tutorials/cnp-onboarding/person-github.md
     source: cloud-native-platform/onboarding/person/github.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6
+    notes: >-
+      added a local "Cannot add someone to a GitHub team" section upstream does
+      not have; keep it when re-porting
   - target: tutorials/cnp-onboarding/person-jenkins.md
     source: cloud-native-platform/onboarding/person/jenkins.html.md.erb
     synced_sha: 5eccccb862d8221a9eeb72b063fd3a057c7af7f6

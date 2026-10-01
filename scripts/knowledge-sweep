@@ -16,8 +16,19 @@
 #   scripts/knowledge-sweep --backfill     # work forward through unreviewed history
 #   scripts/knowledge-sweep --backfill --until-done   # repeat until history is exhausted
 #   scripts/knowledge-sweep --max-sessions=N          # override the per-run session cap
+#
+# A background run logs everything to .claude/knowledge-sweep/sweep.log. A
+# foreground run appends only the harvester's output and push/PR errors there,
+# so redirect it to keep the rest:
+#   scripts/knowledge-sweep --backfill > .claude/knowledge-sweep/backfill.log 2>&1
 
 source "$(dirname "$0")/lib/_common.sh"
+source "$(dirname "$0")/lib/_secret_scan.sh"
+
+# A background sweep's only record is sweep.log, and a failure there is useless
+# without knowing which run it belongs to.
+warn() { printf '%s%s %s%s\n' "$C_YELLOW" "$(date '+%F %T')" "$*" "$C_RESET" >&2; }
+err()  { printf '%s%s %s%s\n' "$C_RED"    "$(date '+%F %T')" "$*" "$C_RESET" >&2; }
 
 STATE_DIR="$WORKSPACE_ROOT/.claude/knowledge-sweep"
 LEDGER="$STATE_DIR/ledger.json"
@@ -101,8 +112,10 @@ mkdir -p "$STATE_DIR"
 # harvester is written as one of its agents; a Codex-only engineer needs
 # KNOWLEDGE_SWEEP_HARVEST_CMD, which receives the prompt on stdin.
 HARVEST_CMD=${KNOWLEDGE_SWEEP_HARVEST_CMD:-}
+HARVEST_IS_CLAUDE=0
 if [[ -z "$HARVEST_CMD" ]]; then
     if command -v claude >/dev/null; then
+        HARVEST_IS_CLAUDE=1
         HARVEST_CMD="claude -p --model $MODEL --permission-mode acceptEdits"
         HARVEST_CMD+=" --allowedTools Read Edit Write Grep Glob Bash(./scripts/docs-index)"
     elif command -v codex >/dev/null; then
@@ -225,7 +238,10 @@ if [[ $UNTIL_DONE -eq 1 ]]; then
 fi
 
 if [[ $BACKGROUND -eq 1 ]]; then
-    nohup "$0" ${FORCE:+--force} >> "$LOG" 2>&1 &
+    relaunch=()
+    (( FORCE )) && relaunch+=(--force)
+    (( DRY_RUN )) && relaunch+=(--dry-run)
+    nohup "$0" ${relaunch[@]+"${relaunch[@]}"} >> "$LOG" 2>&1 &
     exit 0
 fi
 
@@ -326,7 +342,12 @@ digest_slice() {
 }
 
 sessions_reviewed=0
-declare -A new_offsets=()
+# Tab-separated "sid<TAB>offset" lines rather than an associative array: macOS
+# ships bash 3.2, where `declare -A` is rejected outright and, under the
+# set -euo pipefail from _common.sh, takes the whole run with it — so the sweep
+# never reaches a single session.
+# Duplicate ids are harmless — commit_ledger replays them in order, last wins.
+new_offsets=""
 
 while IFS= read -r transcript; do
     (( sessions_reviewed >= MAX_SESSIONS )) && break
@@ -383,7 +404,9 @@ while IFS= read -r transcript; do
 
         next_offset=$(( offset + consumed ))
         head -c "$consumed" "$raw" | digest_slice > "$slice"
-        truncated=" (backfill: bytes $offset–$next_offset of $size)"
+        # Braces are load-bearing: with macOS's C library, bash reads the
+        # en-dash's UTF-8 bytes as part of the preceding name and set -u aborts.
+        truncated=" (backfill: bytes ${offset}–${next_offset} of ${size})"
     else
         # Forward sweeping favours recent activity; a session that grew faster
         # than the cap loses its middle, so say so rather than failing quietly.
@@ -400,7 +423,7 @@ while IFS= read -r transcript; do
         # extraction doesn't understand this client's transcript format. Say so
         # — otherwise the offset advances and the history is silently consumed.
         warn "$sid: $(( next_offset - offset ))B of new transcript produced no readable turns"
-        new_offsets[$sid]=$next_offset
+        new_offsets="${new_offsets}${sid}"$'\t'"${next_offset}"$'\n'
         continue
     fi
 
@@ -410,7 +433,7 @@ while IFS= read -r transcript; do
         cat "$slice"
     } >> "$DIGEST"
 
-    new_offsets[$sid]=$next_offset
+    new_offsets="${new_offsets}${sid}"$'\t'"${next_offset}"$'\n'
     sessions_reviewed=$(( sessions_reviewed + 1 ))
 
     if (( $(file_size "$DIGEST") > MAX_DIGEST_BYTES )); then
@@ -424,17 +447,18 @@ done < <(list_transcripts)
 commit_ledger() {
     local tmp="$WORK/ledger.json"
     cp "$LEDGER" "$tmp"
-    for sid in "${!new_offsets[@]}"; do
-        jq --arg s "$sid" --argjson o "${new_offsets[$sid]}" \
+    while IFS=$'\t' read -r sid off; do
+        [[ -n "$sid" ]] || continue
+        jq --arg s "$sid" --argjson o "$off" \
            --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
            '.[$s] = {offset: $o, reviewed_at: $t}' "$tmp" > "$tmp.next"
         mv "$tmp.next" "$tmp"
-    done
+    done <<< "$new_offsets"
     mv "$tmp" "$LEDGER"
 }
 
 if [[ ! -s "$DIGEST" ]]; then
-    commit_ledger
+    (( DRY_RUN )) || commit_ledger
     log "$(date '+%F %T') nothing new to review"
     exit 0
 fi
@@ -456,6 +480,22 @@ if [[ -z "$GH_LOGIN" ]]; then
     [[ "$MODE" == "pr" ]] && die "gh unavailable — deferring this batch, nothing consumed"
     GH_LOGIN=local
 fi
+
+# The harvester takes its API route from the launching session's environment,
+# which can point it at an endpoint it holds no credentials for. Probe before
+# building the worktree, and defer the batch the same way as a gh outage.
+# Unpersisted, or the next sweep would review the probe's own transcript.
+if (( HARVEST_IS_CLAUDE )); then
+    set +e
+    probe=$(cd "$WORKSPACE_ROOT" && KNOWLEDGE_SWEEP_CHILD=1 \
+        claude -p --no-session-persistence --model "$MODEL" 'Reply with the single word ok.' </dev/null 2>&1)
+    probe_status=$?
+    set -e
+    if (( probe_status != 0 )); then
+        die "harvester cannot reach the model — deferring this batch, nothing consumed: $(printf '%s' "$probe" | head -1)"
+    fi
+fi
+
 BRANCH="knowledge/$GH_LOGIN"
 
 git -C "$WORKSPACE_ROOT" fetch --quiet origin master 2>/dev/null || true
@@ -463,7 +503,9 @@ git -C "$WORKSPACE_ROOT" fetch --quiet origin "$BRANCH" 2>/dev/null || true
 
 EXISTING_PR=""
 if [[ "$MODE" == "pr" ]]; then
-    EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // ""' 2>/dev/null || printf '')
+    # A failed lookup would rebuild the branch from master and overwrite the open PR.
+    EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // ""' 2>/dev/null) \
+        || die "gh pr list failed — deferring this batch, nothing consumed"
 fi
 
 REBASED=0
@@ -522,25 +564,13 @@ if (( model_status != 0 )); then
     exit 1
 fi
 
-# This repo is public, so a pasted command line carrying a live token must not
-# reach a branch even though the harvester is told never to quote a transcript.
-if git -C "$WORKTREE" diff --unified=0 | rg -q \
-    -e 'eyJ[A-Za-z0-9_-]{20,}\.' \
-    -e 'gh[pousr]_[A-Za-z0-9]{20,}' \
-    -e 'AccountKey=' \
-    -e 'BEGIN (RSA|EC|OPENSSH|PRIVATE) ' \
-    -e '(client_secret|api[_-]?key|password)["'\'':= ]+[A-Za-z0-9/+_-]{16,}'; then
-    err "secret-shaped string in proposed diff — discarding branch $BRANCH"
-    cleanup_worktree
-    git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
-    # Deliberately no commit_ledger: advancing here would mark the window
-    # reviewed while throwing its content away, so it could never be revisited.
-    # A backfill will stop on the no-progress guard if the block persists, which
-    # is the right outcome — it needs a human, not a silent skip.
-    exit 1
-fi
+summary_text="(no summary written)"
+[[ -s "$SUMMARY" ]] && summary_text=$(cat "$SUMMARY")
+rm -f "$SUMMARY"
 
-if [[ -z "$(git -C "$WORKTREE" status --porcelain)" ]]; then
+git -C "$WORKTREE" add -A
+
+if git -C "$WORKTREE" diff --cached --quiet; then
     log "$(date '+%F %T') reviewed $sessions_reviewed session(s), no documentation changes proposed"
     cleanup_worktree
     git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
@@ -548,11 +578,32 @@ if [[ -z "$(git -C "$WORKTREE" status --porcelain)" ]]; then
     exit 0
 fi
 
-summary_text="(no summary written)"
-[[ -s "$SUMMARY" ]] && summary_text=$(cat "$SUMMARY")
-rm -f "$SUMMARY"
+discard_proposal() {
+    err "$1 — discarding branch $BRANCH"
+    cleanup_worktree
+    git -C "$WORKSPACE_ROOT" branch -D "$BRANCH" 2>/dev/null || true
+    # Deliberately no commit_ledger: advancing here would mark the window
+    # reviewed while throwing its content away, so it could never be revisited.
+    # A backfill will stop on the no-progress guard if the block persists, which
+    # is the right outcome — it needs a human, not a silent skip.
+    exit 1
+}
 
-git -C "$WORKTREE" add -A
+# This repo is public. The summary is published as the commit message, PR body
+# and PR comment, so it is scanned with the staged diff. Any status but 1 blocks;
+# see scripts/lib/_secret_scan.sh.
+SCAN="$WORK/secret-scan.txt"
+git -C "$WORKTREE" diff --cached --no-ext-diff --no-textconv --unified=0 > "$SCAN" \
+    || discard_proposal "could not build the diff to scan"
+printf '%s\n' "$summary_text" >> "$SCAN"
+scan_status=0
+secret_scan_file "$SCAN" || scan_status=$?
+case $scan_status in
+    1) ;;
+    0) discard_proposal "secret-shaped string in proposed changes" ;;
+    *) discard_proposal "secret scan failed (grep exit $scan_status)" ;;
+esac
+
 git -C "$WORKTREE" commit --quiet -m "docs: knowledge sweep $(date +%F)" \
     -m "Proposed from $sessions_reviewed reviewed session(s) by scripts/knowledge-sweep. Unreviewed — verify before merging." \
     -m "$summary_text"

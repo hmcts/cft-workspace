@@ -29,6 +29,7 @@ sources:
   - rpx-xui-node-lib:src/auth/auth.constants.ts
   - rpx-xui-node-lib:src/auth/s2s/s2s.constants.ts
   - rpx-xui-node-lib:src/session/session.constants.ts
+  - rpx-xui-webapp:api/lib/processError.handler.ts
 status: reviewed
 last_reviewed: "2026-05-13T00:00:00Z"
 examples_extracted_from:
@@ -78,7 +79,7 @@ sources_sha:
   "rpx-xui-node-lib:src/auth/models/strategy.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/auth/s2s/s2s.class.ts": "9d255bc1078e070cf085f9999878f5da5d46e9ef"
   "rpx-xui-node-lib:src/common/util/csp.ts": "939bf0cd095a6489151ede36ca30f89dca92cc2b"
-  "rpx-xui-webapp:api/workAllocation/routes.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
+  "rpx-xui-webapp:api/workAllocation/routes.ts": "82c2484c25cad7252a8cfbf71581d2c13fe20f83"
   "rpx-xui-webapp:api/lib/log4jui.ts": "ff76662ca439152d588ee2ff0e17025be3413fc7"
   "rpx-xui-webapp:api/health/index.ts": "a8162ca6dc81cd9756fb4e18bfb33ce02a6101ed"
   "rpx-xui-node-lib:src/auth/auth.constants.ts": "2edfb4b867b395eacf338fa79f47e5a6ddf806f3"
@@ -283,6 +284,12 @@ Error handling operates at two levels:
 
 The Express error handler (registered after all routes in `application.ts`) catches unhandled errors from route handlers and proxy failures. Errors from `http-proxy-middleware` are surfaced via the proxy's `onError` callback (`api/lib/middleware/proxy.ts:115`), which calls `onProxyError`. This handler sends `res.status(500)` with a body containing `{ error: "Error when connecting to remote server", status: 504 }` — note the mismatch between the HTTP status code (500) and the body's `status` field (504). This is a known inconsistency.
 
+### Throws inside `onReq`/`onRes` are not error handling at all
+
+A custom `onReq` or `onRes` handler passed into `applyProxy` (for example the searchCases and documents proxies) does not run inside Express's request pipeline. `http-proxy-middleware`/`httpxy` invoke it from a `proxyReq.on('socket', ...)` listener, a plain `EventEmitter` callback. A throw there never reaches Express's error middleware or the proxy's own `onError`/`onProxyError` path — Node treats it as an `uncaughtException` and, with no handler installed, kills the whole process. `api/lib/processError.handler.ts` exports `processErrorInit()` to install `uncaughtException`/`unhandledRejection` handlers, but nothing in the app calls it, so these crashes are currently silent and end only in a pod restart.
+
+The practical trap this produces: `onReq`/`onRes` code that assumes body-parser has already populated `req.body` (e.g. `body.size || 10`) worked for years because body-parser 1.x always set `req.body = req.body || {}` on a bodyless request. body-parser 2.x leaves `req.body` as `undefined` instead, so any bodyless call into that handler throws — and per the paragraph above, that throw crashes the process rather than producing a 500. Any `onReq`/`onRes` handler must guard against `req.body` being `undefined`, independent of what body-parser version is currently pinned.
+
 ### CSRF protection
 
 CSRF uses `@dr.pogodin/csurf`:
@@ -367,7 +374,7 @@ The `/workallocation/*` routes (handled locally, not proxied) use `router.use` f
 ```
 router.use('/task/:taskId/:action', postTaskAction);
 router.use('/task/:taskId', getTask);
-router.use('/caseworker/search', searchCaseWorker);
+router.use('/task', searchTask);
 ```
 
 While functionally this works because the handlers only process the expected method, it weakens the route contract — a `DELETE /workallocation/task/123` would match and invoke `getTask` rather than returning 404/405. This is flagged as a hardening item.

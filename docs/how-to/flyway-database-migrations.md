@@ -50,6 +50,8 @@ Ensure the `RUN_DB_MIGRATION_ON_STARTUP` is configured appropriately:
 - Add `RUN_DB_MIGRATION_ON_STARTUP: true` to the `values.preview.template.yaml` file - This is so that preview will migrate on startup
 - Add `RUN_DB_MIGRATION_ON_STARTUP: false` to the `values.yaml` file
 
+This only migrates when the pod actually boots. Retriggering a PR build does not restart pods that are still healthy, so if something recreates the underlying database without the pod restarting, the app comes up against a schema-less database and fails (e.g. `relation "<table>" does not exist`) on every retrigger. Force a fresh pod — a new commit, or an empty commit if there's nothing else to change — rather than retriggering the same build.
+
 Set the migration to run on app startup
 
 - In `application.yaml` set:

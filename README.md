@@ -49,7 +49,7 @@ Two layers feed the AI-assisted workflows:
 - **Product taxonomy** - every product carries a `CLAUDE.md` data file with structured frontmatter (`service`, `ccd_features`, `integrations`, `exemplar_dirs`, `repos`, …). The historical filename is retained because scripts and generated indexes depend on it; both supported clients use the content. `scripts/index` aggregates these into [`INDEX.md`](./INDEX.md). Schema in [`docs/reference/taxonomy.md`](./docs/reference/taxonomy.md).
 - **Diátaxis docs** - workspace-wide content in [`docs/`](./docs/), per-product content in [`apps/<product>/docs/`](./apps/ccd/docs/). Every page carries mandatory `title`, `topic`, `diataxis`, `product`, and `audience` frontmatter. `scripts/docs-index` aggregates the metadata into [`DOCS.md`](./DOCS.md).
 
-Cross-repo navigation skills consult these indexes rather than grepping every clone: `cft-explain`, `cft-how-to`, `cft-find-example`, `cft-tour`, `cft-find-endpoint`, `cft-api-spec`, `cft-list-integrations`, `cft-ccd-find-feature`, `cft-ccd-trace-callback`, and `cft-cross-repo-search`.
+Cross-repo navigation skills consult these indexes rather than grepping every clone: `cft-explain`, `cft-how-to`, `cft-find-example`, `cft-find-endpoint`, `cft-api-spec`, `cft-list-integrations`, `cft-ccd-find-feature`, and `cft-ccd-trace-callback`.
 
 ## AI client support
 
@@ -62,7 +62,7 @@ The workflow definitions under `.claude/` remain the single source of truth. Nat
 | Specialist roles | `.claude/agents/` | `.codex/agents/` |
 | MCP servers | `.mcp.json` | `.codex/config.toml` |
 
-For example, use `/cft-tour ccd` in Claude Code or `$cft-tour ccd` in Codex. Project-scoped Codex configuration is loaded only after the repository is trusted. The Codex guides for [project instructions](https://developers.openai.com/codex/guides/agents-md), [skills](https://developers.openai.com/codex/skills), and [configuration](https://developers.openai.com/codex/config-basic) describe these conventions.
+For example, use `/cft-explain callbacks` in Claude Code or `$cft-explain callbacks` in Codex. Project-scoped Codex configuration is loaded only after the repository is trusted. The Codex guides for [project instructions](https://developers.openai.com/codex/guides/agents-md), [skills](https://developers.openai.com/codex/skills), and [configuration](https://developers.openai.com/codex/config-basic) describe these conventions.
 
 ## Team-specific tooling
 
@@ -90,7 +90,7 @@ The MCP configuration includes Atlassian (JIRA & Confluence), Jenkins and Playwr
 | `scripts/sync [prefix]` | Fast-forward each clean clone to its remote default. Skips dirty / branched / unpushed clones. |
 | `scripts/doctor [--quiet]` | Validate auth, tooling, manifest, and clone presence. |
 | `scripts/add-repo <path> <org/repo> [ref]` | Append a new entry to the manifest and clone it. |
-| `scripts/grep <pattern>` | Ripgrep across all clones with CFT-aware excludes. |
+| `scripts/grep <pattern> [path…]` | Ripgrep across all clones, or only the given paths, with CFT-aware excludes. |
 | `scripts/index` | Regenerate `INDEX.md` from each product's `CLAUDE.md` frontmatter. |
 | `scripts/docs-index` | Regenerate `DOCS.md` from each Diátaxis doc page's frontmatter. |
 | `scripts/validate-plugins` | Check the team-plugin catalogue and every plugin it points at. Runs in CI on every PR. |

@@ -95,7 +95,7 @@ sources_sha:
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/domain/service/IdempotencyServiceImpl.java": "7a5df2f161deebfb9cf3e7e0941bd0cdc21318de"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
   "ccpay-payment-app:api/src/main/java/uk/gov/hmcts/payment/api/controllers/PaymentGroupController.java": "705ea069e3264715ed4897589ba7a3adf0ed9a8e"
-  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/UserAwareDelegatingPaymentService.java": "65bcad2ffb092e534b051dbb0349914658506a57"
+  "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/UserAwareDelegatingPaymentService.java": "e378e5f2c0167eea282d762de3daf8f3db67e165"
   "ccpay-payment-app:model/src/main/java/uk/gov/hmcts/payment/api/service/AccountServiceImpl.java": "db1fcc54a4fb30ca256c1fa1b465d65369ae653b"
   "ccpay-payment-app:charts/payment-api/values.yaml": "f4fb59095aad65f13e8673472f64f4cdb246af7a"
   "ccpay-payment-app:infrastructure/main.tf": "ee7c2d7f0f6afaf7745af97efbc2137db3fcd6c5"
@@ -419,9 +419,9 @@ The recommended flow for services integrating card payments:
 5. **User returns** — GOV.UK Pay redirects back to the service's `return-url`. The service queries payment status using the payment reference.
 6. **Fallback callback** — if the user never returns (browser closed, session timeout), the service is notified through the registered callback URL.
 
-The fallback in step 6 is delivered by the `PATCH /jobs/card-payments-status-update` job, not by the request path. The job lists every GOV.UK Pay payment still in a non-terminal state past the cutoff and calls `retrieveWithCallBack` on each (`MaintenanceJobsController:56-72`). That variant polls GOV.UK Pay and fires the callback only when two conditions hold: the status GOV.UK Pay reports is not already present in the payment's status history (`UserAwareDelegatingPaymentService:361-366`), and either the payment or its service request carries a callback URL (`:393-394`). When no callback URL is registered the job logs `Service callback url is null!` and moves on (`:396`).
+The fallback in step 6 is delivered by the `PATCH /jobs/card-payments-status-update` job, not by the request path. The job lists every GOV.UK Pay payment still in a non-terminal state past the cutoff and calls `retrieveWithCallBack` on each (`MaintenanceJobsController:56-72`). That variant polls GOV.UK Pay and fires the callback only when three conditions hold: the status GOV.UK Pay reports is not already present in the payment's status history (`UserAwareDelegatingPaymentService:361-366`), GOV.UK Pay reports the payment as `finished` (a terminal state), and either the payment or its service request carries a callback URL (`:395-397`). When the state is non-terminal or no callback URL is registered, the job logs `Service callback url is null or payment status <status> is not terminal!` and moves on (`:400`).
 
-Two consequences follow. The plain `GET /card-payments/{reference}` retrieval passes `shouldCallBack = false` (`UserAwareDelegatingPaymentService:415-417`), so polling for status never triggers a callback. And because the callback is gated on the status being new to the status history, a status the service has already been told about is not re-sent — the callback is an edge notification, not a periodic heartbeat.
+Two consequences follow. The plain `GET /card-payments/{reference}` retrieval passes `shouldCallBack = false` (`UserAwareDelegatingPaymentService:417-420`), so polling for status never triggers a callback. And because the callback is gated on the status being new to the status history, a status the service has already been told about is not re-sent — the callback is an edge notification, not a periodic heartbeat.
 
 ### POST /service-request/{reference}/card-payments
 
@@ -597,7 +597,7 @@ Every runtime toggle in this service goes through `LaunchDarklyFeatureToggler.ge
 
 | Flag | Controls |
 |---|---|
-| `apportion-feature` | Fee-payment apportioning after card and PBA payment creation (`CardPaymentController:182-186`, `CreditAccountPaymentController:174`, `PaymentGroupController:290`, `:415`, `:606`) and the SUCCESS/failure fee-amount update during status retrieval (`UserAwareDelegatingPaymentService:376-391`) |
+| `apportion-feature` | Fee-payment apportioning after card and PBA payment creation (`CardPaymentController:182-186`, `CreditAccountPaymentController:174`, `PaymentGroupController:290`, `:415`, `:606`) and the SUCCESS/failure fee-amount update during status retrieval (`UserAwareDelegatingPaymentService:378-393`) |
 | `iac-supplementary-details-feature` | IAC supplementary details on the reconciliation response (`PaymentController:215`) |
 | `payment-status-update-flag` | Kill switch for the payment-failure endpoints, returning 503 when enabled; also gates `/jobs/unprocessed-payment-update`, but with the sense inverted — the job runs when the flag is **off** (`PaymentStatusController:180`) |
 | `prod-strategic-fix` | Duplicate-DCN rejection on the two `bulk-scan-payments-strategic` endpoints (`PaymentGroupController:375-382`, `:447-455`) |

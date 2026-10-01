@@ -1,6 +1,6 @@
 ---
 name: cft-explain
-description: Answer a "what is X" / "how does Y work" / "explain Z" question about any CFT topic — workspace, CCD, XUI, WA, AM, bulk-scan, platform/CNP. Routes via DOCS.md to the right page in either the root docs/ tree or a product-level apps/<product>/docs/ tree.
+description: Answer a "what is X" / "how does Y work" / "explain Z" question about any CFT topic — workspace, CCD, XUI, WA, AM, bulk-scan, platform/CNP — or give an orientation to a workspace product ("what is nfdiv", "tour me through civil"). Routes via DOCS.md to the right page in either the root docs/ tree or a product-level apps/<product>/docs/ tree.
 ---
 
 # Explain a CFT topic
@@ -14,6 +14,7 @@ Route the user's question to the right page across the workspace doc trees (`doc
 - "What's the difference between `decentralised_ccd` and centralised CCD?"
 - "Explain the path-to-live process."
 - "What's in the workspace manifest?"
+- "What is nfdiv?", "Tour me through civil" — a product rather than a topic (see step 0).
 
 ## When NOT to use
 
@@ -21,9 +22,10 @@ Route the user's question to the right page across the workspace doc trees (`doc
 - The user wants a **how-to recipe** for a task ("how do I add an event") — use `/cft-how-to <task>`.
 - The user wants to **trace a specific CCD callback** through to a controller — use `/cft-ccd-trace-callback`.
 - The user wants to **find which products use a CCD feature** — use `/cft-ccd-find-feature`.
-- The user wants a **product tour** — use `/cft-tour <product>`.
 
 ## Procedure
+
+0. **If the question names a workspace product** ("what is nfdiv", "introduce me to wa"), read its product CLAUDE.md first: `apps/<product>/CLAUDE.md`, or `libs/CLAUDE.md` / `platops/CLAUDE.md`. The body describes the product, its repos (`repos:` frontmatter) and how they wire together, and most products have no rows in `DOCS.md`. Answer from it, adding any `DOCS.md` pages that match. If it's missing, offer `/docs-generate-product-md <product>`.
 
 1. **Look up candidate pages in `DOCS.md`** (workspace root). Each row is `| Product | Diátaxis | Title | Topic | Path |`.
    ```bash

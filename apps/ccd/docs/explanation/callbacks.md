@@ -56,7 +56,7 @@ sources_sha:
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/domain/service/validate/AuthorisedValidateCaseFieldsOperation.java": "4d82832e6bc76a8c6b1b0ebc4ab877001e1e47f3"
   "ccd-data-store-api:src/main/resources/application.properties": "a3bd23b7e2a57b903a610b651b7a6f33c1781b15"
   "ccd-data-store-api:src/main/java/uk/gov/hmcts/ccd/RestTemplateConfiguration.java": "22de17a5ced831b6f4fc98c6d35cd036819fb9f6"
-  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "ac7903028377c2d50c8f1db55c4150eae2fa7414"
+  "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/Event.java": "06b3640c7e45521d355471e3914075279f6f818c"
   "ccd-config-generator:sdk/ccd-config-generator/src/main/java/uk/gov/hmcts/ccd/sdk/api/FieldCollection.java": "fd407422cd1c80859f3374209a54562d6dbf38f3"
   "ccd-config-generator:sdk/decentralised-runtime/src/main/java/uk/gov/hmcts/ccd/sdk/impl/ServicePersistenceController.java": "54351c2ee6faec3864a4c840e80ecfc707fb4565"
   "nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/NoFaultDivorce.java": "fb336c9f82888ff8cb2f752c579c516052646c1f"
@@ -334,7 +334,7 @@ return AboutToStartOrSubmitResponse.<CaseData, State>builder()
 
 ### Mutually exclusive: webhook vs decentralised
 
-`aboutToSubmitCallback` / `submittedCallback` and `submitHandler` (decentralised) are mutually exclusive. Setting both throws `IllegalStateException` at startup (`Event.java:188-199`).
+`aboutToSubmitCallback` / `submittedCallback` and `submitHandler` (decentralised) are mutually exclusive. Setting both throws `IllegalStateException` at startup (`Event.java:200-211`).
 
 ---
 

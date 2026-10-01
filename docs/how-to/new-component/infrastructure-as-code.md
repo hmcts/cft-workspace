@@ -132,6 +132,8 @@ For [Azure Key Vault](https://github.com/hmcts/cnp-module-key-vault), you need t
 - `tenant_id`
 - `jenkins_AAD_objectId`
 
+`jenkins_AAD_objectId` also supplies the AD administrator identity for `terraform-module-postgresql-flexible` (`admin_user_object_id`), if your infrastructure uses that module. If the identity behind that variable ever changes — for example because Jenkins starts running your build on a different agent identity — Terraform has to replace the server's administrator, and a `CanNotDelete` lock on the data resource group (the standard `prod-lock` convention) blocks the destroy half of that replacement. The apply stage then fails with a Postgres `AdministratorsMicrosoftEntraDelete: 409 ScopeLocked` error even though nothing in your own Terraform changed.
+
 ## Terraform version
 
 You must specify what version of terraform you want Jenkins to use with a `.terraformversion` file in the root directory of your repository. [Example](https://github.com/hmcts/tax-tribunals-shared-infrastructure/blob/master/.terraform-version).

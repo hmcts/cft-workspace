@@ -27,6 +27,12 @@ Create PostgreSQL Flexible Server instances with the [terraform-module-postgresq
 
 Use the module README for the current inputs, examples and operational guidance.
 
+Non-production servers such as the shared per-product preview flexible server are typically provisioned differently: as an Azure Service Operator (ASO) `FlexibleServer` custom resource defined in `cnp-flux-config`, reconciled by flux rather than by this Terraform module. Check the server's `builtFrom` tag if you're unsure which route owns a given server.
+
+#### Restarting a server
+
+There is no restart action available through ASO/flux — it only reconciles desired state, and a restart is an ARM action rather than a CR property. Most engineers also lack `Contributor` on the server's resource group, so a direct `az postgres flexible-server restart` or an Azure Portal restart will fail with an authorization error rather than a useful one. The practical self-service route for a non-production server is the [Manual Start / Stop workflow](auto-shutdown.md#how-to-start-and-stop-the-resources-for-an-environment-from-pipeline) (stop then start), which runs with its own service identity — but see that page for an important caveat about its blast radius before using it to fix a single stuck server.
+
 ### Production access
 
 This section describes how to self-service the creation of access request packages for PostgreSQL database read and write access.
