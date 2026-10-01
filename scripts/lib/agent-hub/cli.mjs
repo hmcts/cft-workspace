@@ -1,16 +1,8 @@
 import fs from 'node:fs';
-import {
-  autoTopics,
-  bridgePid,
-  ensureBridge,
-  loadAgent,
-  MAX_POST_TOPICS,
-  normaliseTopics,
-  registerAgent,
-  stopBridge,
-} from './agent.mjs';
-import { ApiError, createApi, requireAzureLogin } from './api.mjs';
+import { bridgePid, loadAgent, MAX_POST_TOPICS, normaliseTopics, stopBridge } from './agent.mjs';
+import { ApiError, createApi } from './api.mjs';
 import { runBridge } from './bridge.mjs';
+import { clearOptOut, enableSession, markOptedOut, runAutoEnable } from './enable.mjs';
 import { formatMessage } from './envelope.mjs';
 import { runHook } from './hooks.mjs';
 import { findSecret } from './secret-scan.mjs';
@@ -24,7 +16,6 @@ import {
   requireSessionId,
   statePath,
   validSessionId,
-  writeJson,
 } from './session.mjs';
 import { runStopWorker } from './stop-worker.mjs';
 
@@ -47,7 +38,8 @@ const USAGE = `usage: scripts/agent-hub <command> [args]
   hook <SessionStart|UserPromptSubmit|Stop|SessionEnd>
                               Claude Code hook entry point (reads hook JSON on stdin)
 
-Environment: AGENT_HUB_URL, AGENT_HUB_SCOPE, AGENT_HUB_DEV_USER (local service only).`;
+Environment: AGENT_HUB_URL, AGENT_HUB_SCOPE, AGENT_HUB_DEV_USER (local service only),
+AGENT_HUB_AUTO_ENABLE (true/1/yes: the hooks enable interactive sessions that have not run disable).`;
 
 class UsageError extends Error {}
 
@@ -144,20 +136,10 @@ function printMessages(messages) {
 const commands = {
   async enable(args) {
     const sid = requireSessionId();
-    const requested = topicsOrDie(args, { min: 0 });
-    if (!process.env.AGENT_HUB_DEV_USER) await requireAzureLogin();
-    const api = createApi();
-    const { agent, meta } = await registerAgent(api, sid, { cwd: process.cwd() });
-    const topics = [...new Set([...autoTopics(meta), ...requested])];
-    let subscribed = topics;
-    if (topics.length) subscribed = (await api.subscribe(agent.agent_id, topics))?.topics || topics;
-    agent.topics = [...new Set([...(agent.topics || []), ...topics])];
-    writeJson(statePath(sid, 'agent.json'), agent);
-    fs.writeFileSync(statePath(sid, 'status'), 'busy\n');
-    fs.writeFileSync(statePath(sid, 'enabled'), `${new Date().toISOString()}\n`);
-    const { pid, started } = ensureBridge(sid);
-    log(sid, `enabled as ${agent.name} (${agent.agent_id})`);
-    console.log(`agent-hub: enabled as @${agent.name} (agent ${agent.agent_id}) at ${api.baseUrl}`);
+    const topics = topicsOrDie(args, { min: 0 });
+    clearOptOut(sid);
+    const { agent, subscribed, pid, started, baseUrl } = await enableSession(sid, { cwd: process.cwd(), topics });
+    console.log(`agent-hub: enabled as @${agent.name} (agent ${agent.agent_id}) at ${baseUrl}`);
     console.log(`subscribed topics: ${subscribed.join(', ') || '(none)'}`);
     console.log(`bridge: ${started ? 'started' : 'already running'} (pid ${pid}); log: ${logPath(sid)}`);
   },
@@ -174,6 +156,7 @@ const commands = {
         console.error(`warning: could not mark the agent offline: ${e.message}`);
       }
     }
+    markOptedOut(sid);
     removeFile(statePath(sid, 'enabled'));
     log(sid, 'disabled');
     console.log(`agent-hub: disabled for this session${hadBridge && !stopped ? ' (bridge did not exit in time; it stops on its next heartbeat)' : ''}.`);
@@ -311,6 +294,13 @@ const commands = {
     const sid = flags.session || requireSessionId();
     ensureStateDir(sid);
     await runBridge({ sid });
+  },
+
+  async 'auto-enable'(argv) {
+    const { flags } = parseFlags(argv, ['session', 'cwd']);
+    const sid = flags.session || requireSessionId();
+    ensureStateDir(sid);
+    await runAutoEnable({ sid, cwd: flags.cwd });
   },
 
   async 'stop-worker'(argv) {
