@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Connect Claude Code sessions to agent-hub (hmcts/dtsse-agent-hub): direct messages
-# between agents and people, and topic boards. Opt-in per session via /enable-comms.
+# between agents and people, and topic boards. Opt-in per session via /enable-comms, or
+# automatic for interactive sessions when AGENT_HUB_AUTO_ENABLE is true.
 #
 # Usage: scripts/agent-hub <command> [args]     (scripts/agent-hub help for the list)
 #
 # The work is done by dependency-free Node in scripts/lib/agent-hub/. `hook` runs in
 # every workspace session, so a session that never enabled comms costs one file test
-# here and never starts node.
+# here and never starts node. With auto-enable on, SessionStart and UserPromptSubmit
+# start node for a session that is neither enabled nor opted out.
 
 set -u
 
@@ -25,9 +27,15 @@ if [ "${1:-}" = "hook" ]; then
         sid="${BASH_REMATCH[1]}"
     fi
     if [ -n "$sid" ] && [ ! -f "$hub/$sid/enabled" ]; then
-        # /clear starts a new session id; SessionStart must look for a handoff from the old one.
         pending=0
-        if [ "${2:-}" = "SessionStart" ]; then
+        case "${2:-}:${AGENT_HUB_AUTO_ENABLE:-}" in
+            SessionStart:[Tt][Rr][Uu][Ee] | SessionStart:1 | SessionStart:[Yy][Ee][Ss] | \
+            UserPromptSubmit:[Tt][Rr][Uu][Ee] | UserPromptSubmit:1 | UserPromptSubmit:[Yy][Ee][Ss])
+                [ -f "$hub/$sid/opted-out" ] || pending=1
+                ;;
+        esac
+        # /clear starts a new session id; SessionStart must look for a handoff from the old one.
+        if [ "$pending" -eq 0 ] && [ "${2:-}" = "SessionStart" ]; then
             for f in "$hub"/handoff/*.json; do
                 [ -e "$f" ] && pending=1
                 break

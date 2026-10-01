@@ -118,3 +118,57 @@ test('a handoff from a different Claude process is not adopted', () => {
   assert.equal(r.stdout, '');
   assert.ok(!fs.existsSync(path.join(home.hub, 'unrelated-sess', 'enabled')));
 });
+
+function fakeNode() {
+  const bin = path.join(home.root, 'fake-node-bin');
+  const marker = path.join(home.root, 'fake-node-ran');
+  fs.mkdirSync(bin, { recursive: true });
+  fs.writeFileSync(path.join(bin, 'node'), `#!/bin/sh\necho "$@" >> "${marker}"\n`, { mode: 0o755 });
+  fs.rmSync(marker, { force: true });
+  fs.rmSync(path.join(home.hub, 'handoff'), { recursive: true, force: true });
+  return { PATH: `${bin}:${process.env.PATH}`, ran: () => (fs.existsSync(marker) ? fs.readFileSync(marker, 'utf8') : '') };
+}
+
+test('auto-enable unset, false or junk: the wrapper never starts node for a session that is not enabled', () => {
+  const node = fakeNode();
+  for (const value of [undefined, 'false', '0', 'no', 'on']) {
+    for (const event of ['SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd']) {
+      const extra = { PATH: node.PATH };
+      if (value !== undefined) extra.AGENT_HUB_AUTO_ENABLE = value;
+      const r = hook(event, { session_id: 'auto-off', source: 'startup' }, extra);
+      assert.equal(r.status, 0);
+      assert.equal(r.stdout, '');
+    }
+  }
+  assert.equal(node.ran(), '');
+});
+
+test('auto-enable on: only SessionStart and UserPromptSubmit start node, and not for an opted-out session', () => {
+  const node = fakeNode();
+  for (const value of ['true', 'TRUE', '1', 'Yes']) {
+    for (const event of ['Stop', 'SessionEnd']) {
+      hook(event, { session_id: 'auto-on' }, { PATH: node.PATH, AGENT_HUB_AUTO_ENABLE: value });
+    }
+  }
+  assert.equal(node.ran(), '');
+  for (const event of ['SessionStart', 'UserPromptSubmit']) {
+    const r = hook(event, { session_id: 'auto-on', source: 'startup' }, { PATH: node.PATH, AGENT_HUB_AUTO_ENABLE: 'Yes' });
+    assert.equal(r.status, 0);
+  }
+  assert.equal(node.ran().trim().split('\n').length, 2);
+  assert.match(node.ran(), /hook SessionStart\n.*hook UserPromptSubmit/);
+
+  const dir = path.join(home.hub, 'auto-opted-out');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'opted-out'), 'x');
+  const before = node.ran();
+  for (const event of ['SessionStart', 'UserPromptSubmit']) {
+    hook(event, { session_id: 'auto-opted-out', source: 'resume' }, { PATH: node.PATH, AGENT_HUB_AUTO_ENABLE: 'true' });
+  }
+  assert.equal(node.ran(), before);
+});
+
+test('the wrapper parses under bash 3.2', { skip: spawnSync('docker', ['info'], { stdio: 'ignore', timeout: 10000 }).status !== 0 && 'docker is not available' }, () => {
+  const r = spawnSync('docker', ['run', '--rm', '-v', `${PROJECT_ROOT}:/w`, '-w', '/w', 'bash:3.2', 'bash', '-n', 'scripts/agent-hub'], { encoding: 'utf8', timeout: 120000 });
+  assert.equal(r.status, 0, r.stderr);
+});

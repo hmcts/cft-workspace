@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { bridgePid, ensureBridge, loadAgent, stopBridge } from './agent.mjs';
 import { createApi } from './api.mjs';
+import { maybeAutoEnable } from './enable.mjs';
 import {
   ensureStateDir,
   hubHome,
@@ -83,7 +84,7 @@ function recordTranscriptPath(sid, file) {
   } catch {}
 }
 
-export async function runHook(event, input, env = process.env) {
+export async function runHook(event, input, env = process.env, { spawn = spawnDetached } = {}) {
   if (env.AGENT_HUB_CHILD) return '';
   const sid = input?.session_id;
   if (!validSessionId(sid)) return '';
@@ -92,6 +93,7 @@ export async function runHook(event, input, env = process.env) {
     if (event === 'SessionStart' && input.source === 'clear' && adoptHandoff(sid)) {
       log(sid, 'SessionStart: adopted comms from the session before /clear');
     } else {
+      if (maybeAutoEnable(event, sid, input, { env, spawn }) === 'spawned') log(sid, `${event}: started auto-enable`);
       return '';
     }
   }
@@ -119,7 +121,7 @@ export async function runHook(event, input, env = process.env) {
       }
       const args = ['stop-worker', '--session', sid];
       if (input.transcript_path) args.push('--transcript', input.transcript_path);
-      const pid = spawnDetached(sid, args, { env });
+      const pid = spawn(sid, args, { env });
       log(sid, `Stop: spawned stop-worker pid ${pid}`);
       return '';
     }

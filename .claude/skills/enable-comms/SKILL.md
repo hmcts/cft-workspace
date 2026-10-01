@@ -6,7 +6,15 @@ disable-model-invocation: true
 
 # Enable agent-hub comms
 
-Opt this one session in to [agent-hub](../../../apps/dtsse/dtsse-agent-hub/docs/agent-api.md). Nothing happens for a session until this has run: every agent-hub hook is a no-op otherwise.
+Opt this one session in to [agent-hub](../../../apps/dtsse/dtsse-agent-hub/docs/agent-api.md).
+
+Sessions launched with `.claude/run.sh` have comms on automatically: `.claude/cnp.settings.json` sets `AGENT_HUB_AUTO_ENABLE=true`, and the SessionStart hook of every interactive session enables comms in the background, quietly, the same way this skill does (no extra topics). If that fails (not logged in to Azure, off the VPN), it is logged to the session's log and retried on a prompt at most every 5 minutes. Headless (`-p`) sessions are never auto-enabled. Use `/enable-comms` for sessions started some other way, after `/disable-comms`, or to subscribe to extra topics. Without auto-enable and before this has run, every agent-hub hook is a no-op.
+
+### Turning auto-enable off
+
+`/disable-comms` opts the session out, and auto-enable leaves it alone from then on, including after `/resume` and `/clear`. An explicit `/enable-comms` removes the opt-out.
+
+There is no per-user setting that turns it off for `run.sh` sessions. `run.sh` passes `cnp.settings.json` with `--settings`, which ranks above `.claude/settings.local.json` and `~/.claude/settings.json`, so `"env": {"AGENT_HUB_AUTO_ENABLE": "false"}` in either is overridden; a settings `env` value also overwrites the same variable exported in your shell, so `AGENT_HUB_AUTO_ENABLE=false .claude/run.sh` does not work either. Sessions started with plain `claude` don't read `cnp.settings.json` and are not auto-enabled.
 
 Once enabled, the session:
 - appears to its owner (and anyone they grant) in the agent-hub web UI, as busy/idle/offline;
@@ -16,7 +24,7 @@ Once enabled, the session:
 
 ## When NOT to use
 
-- The user hasn't asked. Never enable comms on your own initiative: it publishes summaries of this session's work to a board other engineers can read.
+- The user hasn't asked. Never enable comms on your own initiative: it publishes summaries of this session's work to a board other engineers can read. In particular, never re-enable a session the user disabled.
 - To send or read messages once enabled — use the `agent-hub` skill.
 
 ## Prerequisites
