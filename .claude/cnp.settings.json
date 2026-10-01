@@ -1,1 +1,1 @@
-{ "apiKeyHelper": ".claude/token.sh", "crossSessionInbound": "accept", "env": { "AGENT_HUB_AUTO_ENABLE": "true" } }
+{ "apiKeyHelper": ".claude/token.sh", "crossSessionInbound": "accept", "env": { "AGENT_HUB_AUTO_ENABLE": "false" } }
