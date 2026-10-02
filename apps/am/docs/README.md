@@ -31,6 +31,7 @@ For someone new to AM:
 ### Organisational role provisioning
 
 - [Org Role Mapping Flow](explanation/org-role-mapping-flow.md) — ASB message processing, profile flattening, Drools evaluation, RAS persistence, batch refresh path
+- [Professional Refresh Mechanism (PRM)](explanation/professional-refresh-mechanism.md) — the CCD-access-type-driven counterpart to Org Role Mapping Flow, for professional and OGD users
 - [Batch Jobs](explanation/batch-jobs.md) — purge CronJob (daily expiry deletion) and refresh CronJob (rule-change re-evaluation), operational procedures
 
 ### Judicial booking

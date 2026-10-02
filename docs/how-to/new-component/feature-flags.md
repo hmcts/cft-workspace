@@ -51,3 +51,9 @@ If your team does require additional environments, you can do this by updating y
 It is not recommended to do this as targeting rules should be simpler to manage and ensure consistency across environments.
 
 In a CNP preview PR environment, the CNP chart sets `global.environment` to the release's own name (e.g. `<service>-pr-1234`), not a shared `preview` value. If your service passes that straight through as the LaunchDarkly environment/context attribute, no targeting rule can ever match it, so every flag evaluates at its code default in preview regardless of what's configured in LaunchDarkly. Pin the LaunchDarkly environment to a real, targeted environment (e.g. `aat`) for the preview chart values, or run the SDK in offline mode against a local flags file, rather than inheriting `global.environment` directly.
+
+### Rolling out a flag change
+
+Saving a targeting change on the flag's **Targeting** page pushes it to every connected SDK over its streaming connection, typically within a second, with no pod restart or deploy required — this is the default and applies to 100% of matching contexts immediately. A change only ramps gradually if the flag has a percentage rollout, a scheduled change, or an approval requirement configured on that rule; with none of those set, toggling on (or pointing a rule at a single variation) is instant.
+
+The **Release** button is a separate mechanism from the on/off toggle: it advances the flag through whatever release pipeline is attached to it, and each phase of that pipeline is configured independently as immediate (equivalent to a plain toggle), progressive (ramps a percentage over a schedule), or guarded (ramps while monitoring a metric, with auto-rollback). Check the flag's **History** tab to see whether a past change was a plain save or a pipeline release, and check **View targeting rules** before saving to confirm the rule serves a single variation rather than a percentage split.

@@ -122,6 +122,12 @@ See: [Org Role Mapping Flow](../explanation/org-role-mapping-flow.md)
 
 ---
 
+**PRM (Professional Refresh Mechanism)**
+ORM's organisational-role pipeline for professional and OGD users, derived from CCD's per-case-type access types rather than CRD/JRD. Runs as six numbered, independently-scheduled stages (PRM-1 through PRM-6) rather than a single service-bus-triggered flow.
+See: [Professional Refresh Mechanism](../explanation/professional-refresh-mechanism.md)
+
+---
+
 **`process` / `reference`**
 Two string fields on a role assignment request that group related assignments for bulk replacement or deletion. ORM uses `process="staff-organisational-role-mapping"` and `reference=<userId>`. When `replaceExisting=true`, RAS deletes all existing assignments sharing the same `process`+`reference` before inserting the new set.
 See: [Role Assignment Lifecycle](../explanation/role-assignment-lifecycle.md)
