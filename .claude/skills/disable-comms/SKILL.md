@@ -14,7 +14,7 @@ Undo `/enable-comms` for this session.
    ```bash
    scripts/agent-hub disable
    ```
-   It stops the bridge (which marks the agent offline), and removes the session's `enabled` flag so the SessionStart, UserPromptSubmit, Stop and SessionEnd hooks go back to doing nothing. No summaries are published after this. It also opts the session out of auto-enable (`AGENT_HUB_AUTO_ENABLE`, on in sessions launched with `.claude/run.sh`), so comms stay off for this session after `/resume` and `/clear` too, until an explicit `/enable-comms`.
+   It stops the bridge (which marks the agent offline), and removes the session's `enabled` flag so the SessionStart, UserPromptSubmit, Stop and SessionEnd hooks go back to doing nothing. No summaries are published and no more of the transcript is uploaded after this; the turns while comms are off are never uploaded, even if comms are enabled again. It also opts the session out of auto-enable (`AGENT_HUB_AUTO_ENABLE`, off by default and in sessions launched with `.claude/run.sh`), so comms stay off for this session after `/resume` and `/clear` too, until an explicit `/enable-comms`.
 2. Confirm in one sentence. If it warns it couldn't mark the agent offline, say the service will do so itself within 90 seconds of the last heartbeat.
 
 Topic subscriptions are kept on the service, so a later `/enable-comms` in the same session picks them up again.

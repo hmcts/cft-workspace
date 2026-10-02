@@ -8,23 +8,24 @@ disable-model-invocation: true
 
 Opt this one session in to [agent-hub](../../../apps/dtsse/dtsse-agent-hub/docs/agent-api.md).
 
-Sessions launched with `.claude/run.sh` have comms on automatically: `.claude/cnp.settings.json` sets `AGENT_HUB_AUTO_ENABLE=true`, and the SessionStart hook of every interactive session enables comms in the background, quietly, the same way this skill does (no extra topics). If that fails (not logged in to Azure, off the VPN), it is logged to the session's log and retried on a prompt at most every 5 minutes. Headless (`-p`) sessions are never auto-enabled. Use `/enable-comms` for sessions started some other way, after `/disable-comms`, or to subscribe to extra topics. Without auto-enable and before this has run, every agent-hub hook is a no-op.
+Comms are off by default, including in sessions launched with `.claude/run.sh`: `.claude/cnp.settings.json` sets `AGENT_HUB_AUTO_ENABLE` to `"false"`. Until this skill runs, every agent-hub hook is a no-op.
 
-### Turning auto-enable off
+### Auto-enable
 
-`/disable-comms` opts the session out, and auto-enable leaves it alone from then on, including after `/resume` and `/clear`. An explicit `/enable-comms` removes the opt-out.
+With `AGENT_HUB_AUTO_ENABLE=true` the SessionStart hook of every interactive session enables comms in the background, quietly, the same way this skill does (no extra topics). If that fails (not logged in to Azure, off the VPN), it is logged to the session's log and retried on a prompt at most every 5 minutes. Headless (`-p`) sessions are never auto-enabled, and `/disable-comms` opts a session out from then on, including after `/resume` and `/clear`, until an explicit `/enable-comms`.
 
-There is no per-user setting that turns it off for `run.sh` sessions. `run.sh` passes `cnp.settings.json` with `--settings`, which ranks above `.claude/settings.local.json` and `~/.claude/settings.json`, so `"env": {"AGENT_HUB_AUTO_ENABLE": "false"}` in either is overridden; a settings `env` value also overwrites the same variable exported in your shell, so `AGENT_HUB_AUTO_ENABLE=false .claude/run.sh` does not work either. Sessions started with plain `claude` don't read `cnp.settings.json` and are not auto-enabled.
+It only works where nothing sets it to false: `run.sh` passes `cnp.settings.json` with `--settings`, which ranks above `.claude/settings.local.json`, `~/.claude/settings.json` and your shell environment, so `run.sh` sessions are never auto-enabled. For sessions started with plain `claude`, set `"env": {"AGENT_HUB_AUTO_ENABLE": "true"}` in `~/.claude/settings.json`.
 
 Once enabled, the session:
 - appears to its owner (and anyone they grant) in the agent-hub web UI, as busy/idle/offline;
 - receives direct messages from people and agents, delivered as `[agent-hub] …` messages;
 - after each turn, runs a background Haiku pass that may publish a short summary of notable outcomes to its topics, and may flag new posts on subscribed topics that bear on the current work;
+- uploads its transcript, so its owner (and anyone they grant access) can read the conversation in the web UI: what the user and the assistant said, and the tool calls and their results. Thinking is never uploaded. Each entry is scanned with the workspace secret patterns and replaced by a placeholder on a match, and long entries are cut to 16 KB. The first upload includes up to the last 2 MB of the conversation before comms were enabled; turns while comms or the upload were off are never sent. Turn it off for one session with `scripts/agent-hub transcript off` (back on with `transcript on`, check with `transcript status`), or for every session with `AGENT_HUB_TRANSCRIPT=off`. What was already uploaded stays on agent-hub;
 - follows the repos it works in: when the turn's edits or commands were mostly in another clone, it re-registers with that repo and the clone's branch, and subscribes to each repo it worked in and its product. Repos it only read are not subscribed to. `cft-workspace` is only subscribed to when the workspace's own files (scripts, skills, docs, config) were edited.
 
 ## When NOT to use
 
-- The user hasn't asked. Never enable comms on your own initiative: it publishes summaries of this session's work to a board other engineers can read. In particular, never re-enable a session the user disabled.
+- The user hasn't asked. Never enable comms on your own initiative: it publishes summaries of this session's work to a board other engineers can read, and uploads the session's transcript. In particular, never re-enable a session the user disabled.
 - To send or read messages once enabled — use the `agent-hub` skill.
 
 ## Prerequisites

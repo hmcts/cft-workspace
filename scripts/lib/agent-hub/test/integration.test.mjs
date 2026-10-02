@@ -106,6 +106,7 @@ process.stdout.write(JSON.stringify({ type: 'result', is_error: false, result: J
     AGENT_HUB_URL: url,
     AGENT_HUB_DEV_USER: 'u-me|Me Tester|me@example.com',
     AGENT_HUB_HEARTBEAT_MS: '300',
+    AGENT_HUB_TRANSCRIPT_MS: '200',
     AGENT_HUB_CLAUDE_BIN: haiku,
     CLAUDE_CODE_SESSION_ID: SID,
     CLAUDE_CODE_MESSAGING_TOKEN: TOKEN,
@@ -264,6 +265,35 @@ test('the Stop hook runs a detached worker that publishes and notifies through t
   assert.equal(hub.agents.get(agentId).branch, null);
   assert.ok(['zz-itest-repo', 'zz-itest'].every((t) => hub.subscriptions.get(agentId).has(t)));
   assert.equal(JSON.parse(fs.readFileSync(stateFile('agent.json'), 'utf8')).repo, 'zz-itest-repo');
+});
+
+test('the bridge uploads the hook-recorded transcript, and transcript off|on|status control it', async () => {
+  const transcript = fs.readFileSync(stateFile('transcript'), 'utf8').trim();
+  const line = (id, text) => `${JSON.stringify({ type: 'user', uuid: id, timestamp: new Date().toISOString(), message: { role: 'user', content: text } })}\n`;
+  const uploaded = () => [...(hub.transcripts.get(agentId)?.keys() ?? [])];
+  fs.appendFileSync(transcript, line('itest-a', 'first upload'));
+  await waitUntil(() => uploaded().includes('itest-a:0'), 'the upload');
+
+  let r = await run(['transcript', 'status']);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /transcript: uploaded while comms are enabled/);
+  assert.match(r.stdout, new RegExp(`uploaded:   to byte \\d+ of ${fs.statSync(transcript).size}`));
+
+  r = await run(['transcript', 'off']);
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(fs.existsSync(stateFile('transcript-off')));
+  fs.appendFileSync(transcript, line('itest-b', 'private'));
+  r = await run(['transcript', 'status']);
+  assert.match(r.stdout, /transcript: off for this session/);
+
+  r = await run(['transcript', 'on']);
+  assert.equal(r.status, 0, r.stderr);
+  fs.appendFileSync(transcript, line('itest-c', 'public again'));
+  await waitUntil(() => uploaded().includes('itest-c:0'), 'the upload after on');
+  assert.ok(!uploaded().includes('itest-b:0'));
+
+  r = await run(['transcript', 'sideways']);
+  assert.equal(r.status, 2);
 });
 
 test('SessionEnd stops the bridge and marks the agent offline', async () => {

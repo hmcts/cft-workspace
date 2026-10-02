@@ -40,7 +40,7 @@ async function waitUntil(fn, what, timeoutMs = 8000) {
 }
 
 // Registers an agent on a fresh mock hub and runs a bridge for it until `stop` is called.
-async function startBridge(hubOptions) {
+async function startBridge(hubOptions, bridgeOptions = {}) {
   const hub = createMockHub({ pingMs: 5000, ...hubOptions });
   const url = await hub.listen();
   const api = createApi({ baseUrl: url, devUser: DEV_USER });
@@ -54,10 +54,11 @@ async function startBridge(hubOptions) {
     socketWrites.push(content);
   };
   const env = { ...process.env, AGENT_HUB_CLAUDE_PID: String(process.pid), CLAUDE_CODE_MESSAGING_TOKEN: 'tok' };
-  const running = runBridge({ sid, env, api, deliver, heartbeatMs: 100 });
+  const running = runBridge({ sid, env, api, deliver, heartbeatMs: 100, ...bridgeOptions });
   const streamOpens = () => hub.calls.filter((c) => c.method === 'GET' && c.path === `/api/agent/${agentId}/stream`);
   return {
     hub,
+    sid,
     agentId,
     socketWrites,
     streamOpens,
@@ -187,4 +188,31 @@ test('a bridge that starts before the registry entry finds the Claude pid later 
     fs.rmSync(statePath(sid, 'enabled'), { force: true });
     await hub.close();
   }
+});
+
+test('a running bridge uploads the transcript as lines are appended, and once more as it stops', async () => {
+  const line = (text) => `${JSON.stringify({ type: 'user', uuid: `u-${text}`, timestamp: new Date().toISOString(), message: { role: 'user', content: text } })}\n`;
+  const bridge = await startBridge({ pingMs: 5000 }, { transcriptMs: 50 });
+  const file = path.join(home.root, `${bridge.sid}.jsonl`);
+  fs.writeFileSync(file, line('first'));
+  fs.writeFileSync(statePath(bridge.sid, 'transcript'), `${file}\n`);
+  const uploaded = () => [...(bridge.hub.transcripts.get(bridge.agentId)?.keys() ?? [])];
+  try {
+    await waitUntil(() => uploaded().includes('u-first:0'), 'the existing line');
+    fs.appendFileSync(file, line('second'));
+    await waitUntil(() => uploaded().includes('u-second:0'), 'the appended line');
+  } finally {
+    await bridge.stop();
+  }
+  assert.deepEqual(uploaded(), ['u-first:0', 'u-second:0']);
+});
+
+test('the final upload on shutdown sends the last turn', async () => {
+  const bridge = await startBridge({ pingMs: 5000 }, { transcriptMs: 60000 });
+  const file = path.join(home.root, `${bridge.sid}.jsonl`);
+  fs.writeFileSync(file, `${JSON.stringify({ type: 'assistant', uuid: 'u-last', timestamp: new Date().toISOString(), message: { role: 'assistant', content: [{ type: 'text', text: 'done' }] } })}\n`);
+  fs.writeFileSync(statePath(bridge.sid, 'transcript'), `${file}\n`);
+  await waitUntil(() => bridge.streamOpens().length >= 1, 'the stream');
+  await bridge.stop();
+  assert.deepEqual([...bridge.hub.transcripts.get(bridge.agentId).keys()], ['u-last:0']);
 });

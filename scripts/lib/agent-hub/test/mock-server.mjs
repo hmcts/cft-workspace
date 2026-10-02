@@ -5,13 +5,35 @@ import { randomUUID } from 'node:crypto';
 import { MAX_POST_TOPICS } from '../agent.mjs';
 
 const TOPIC_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const TRANSCRIPT_KEY_RE = /^[A-Za-z0-9:_-]{1,200}$/;
+const TRANSCRIPT_ROLES = new Set(['user', 'assistant', 'tool_use', 'tool_result', 'system']);
+const TRANSCRIPT_MAX_REQUEST = 256 * 1024;
+const TRANSCRIPT_MAX_CONTENT = 16384;
+
+// Why the service would refuse a transcript batch with 400, or null.
+function transcriptProblem(body, rawBytes) {
+  if (rawBytes > TRANSCRIPT_MAX_REQUEST) return 'request too large';
+  if (typeof body.session_id !== 'string' || !body.session_id) return 'session_id required';
+  if (!Array.isArray(body.entries) || body.entries.length < 1 || body.entries.length > 100) return 'entries must hold 1-100 items';
+  for (const e of body.entries) {
+    if (typeof e.key !== 'string' || !TRANSCRIPT_KEY_RE.test(e.key)) return 'bad key';
+    if (!TRANSCRIPT_ROLES.has(e.role)) return 'bad role';
+    if (!e.content || typeof e.content !== 'object') return 'content required';
+    if (Buffer.byteLength(JSON.stringify(e.content)) > TRANSCRIPT_MAX_CONTENT) return 'content too large';
+    if (typeof e.truncated !== 'boolean' || typeof e.redacted !== 'boolean') return 'flags must be booleans';
+    if (e.message_id !== null && typeof e.message_id !== 'string') return 'bad message_id';
+    if (typeof e.occurred_at !== 'string' || Number.isNaN(Date.parse(e.occurred_at))) return 'bad occurred_at';
+  }
+  return null;
+}
 
 // `maxLifetimeMs` ends each stream like the service does, with `event: reconnect` unless
 // `reconnectEvent` is false. `replayAcked` replays delivered messages too, as a replay that raced
 // the ack would.
 export function createMockHub({ pingMs = 15000, maxLifetimeMs = 0, reconnectEvent = true, replayAcked = false } = {}) {
   const options = { maxLifetimeMs, reconnectEvent, replayAcked };
-  const failures = { stream: [], ack: [] };
+  const failures = { stream: [], ack: [], transcript: [] };
+  const transcripts = new Map();
   const users = new Map();
   const agents = new Map();
   const messages = [];
@@ -99,6 +121,7 @@ export function createMockHub({ pingMs = 15000, maxLifetimeMs = 0, reconnectEven
   async function readBody(req) {
     let raw = '';
     for await (const chunk of req) raw += chunk;
+    req.rawBytes = Buffer.byteLength(raw);
     return raw ? JSON.parse(raw) : {};
   }
 
@@ -239,6 +262,21 @@ export function createMockHub({ pingMs = 15000, maxLifetimeMs = 0, reconnectEven
       const msg = addMessage({ kind: 'direct', author_agent_id: agent.id, author_oid: oid, target_agent_id: target?.id ?? null, body: body.body, in_reply_to: inReplyTo });
       return send(res, 201, { message: view(msg) });
     }
+    if (req.method === 'POST' && action === 'transcript') {
+      const status = failures.transcript.shift();
+      if (status) return send(res, status, { error: 'transcript failed' });
+      const problem = transcriptProblem(body, req.rawBytes);
+      if (problem) return send(res, 400, { error: problem });
+      if (!transcripts.has(agent.id)) transcripts.set(agent.id, new Map());
+      const stored = transcripts.get(agent.id);
+      let accepted = 0;
+      for (const e of body.entries) {
+        if (stored.has(e.key)) continue;
+        stored.set(e.key, { ...e, session_id: body.session_id });
+        accepted++;
+      }
+      return send(res, 200, { accepted });
+    }
     if (action === 'subscriptions') {
       const subs = subscriptions.get(agent.id);
       if (req.method === 'GET') return send(res, 200, { topics: [...subs].sort() });
@@ -259,13 +297,17 @@ export function createMockHub({ pingMs = 15000, maxLifetimeMs = 0, reconnectEven
     messages,
     deliveries,
     streams,
+    transcripts,
     options,
-    // The next `count` stream requests, or acks, answer `status` instead.
+    // The next `count` stream requests, acks or transcript uploads answer `status` instead.
     failNextStreams(count, status = 500) {
       for (let i = 0; i < count; i++) failures.stream.push(status);
     },
     failNextAcks(count, status = 500) {
       for (let i = 0; i < count; i++) failures.ack.push(status);
+    },
+    failNextTranscripts(count, status = 500) {
+      for (let i = 0; i < count; i++) failures.transcript.push(status);
     },
     async listen() {
       await new Promise((r) => server.listen(0, '127.0.0.1', r));
