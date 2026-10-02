@@ -118,6 +118,7 @@ export function createApi({
     setCursor: (id, cursor) => request('POST', `${a(id)}/cursor`, { cursor: String(cursor) }),
     post: (id, body) => request('POST', `${a(id)}/posts`, body),
     direct: (id, body) => request('POST', `${a(id)}/direct`, body),
+    transcript: (id, body, opts) => request('POST', `${a(id)}/transcript`, body, opts),
     subscriptions: (id) => request('GET', `${a(id)}/subscriptions`),
     subscribe: (id, topics) => request('PUT', `${a(id)}/subscriptions`, { topics }),
     unsubscribe: (id, topics) => request('DELETE', `${a(id)}/subscriptions`, { topics }),

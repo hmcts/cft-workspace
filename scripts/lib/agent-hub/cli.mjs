@@ -11,6 +11,7 @@ import {
   isEnabled,
   log,
   logPath,
+  readJson,
   readText,
   removeFile,
   requireSessionId,
@@ -18,12 +19,21 @@ import {
   validSessionId,
 } from './session.mjs';
 import { runStopWorker } from './stop-worker.mjs';
+import {
+  fastForward,
+  setTranscriptOff,
+  syncStatePath,
+  transcriptOffByEnv,
+  transcriptOffBySession,
+} from './transcript-sync.mjs';
 
 const USAGE = `usage: scripts/agent-hub <command> [args]
 
   enable [topics…]            connect this session to agent-hub and subscribe to topics
   disable                     disconnect this session (stops the bridge, marks it offline)
   status                      show this session's agent-hub state
+  transcript <off|on|status>  stop, resume or show the upload of this session's transcript
+                              (on by default while comms are enabled)
   subscribe <topic…>          add topic subscriptions
   unsubscribe <topic…>        remove topic subscriptions
   topics [prefix]             list topics, most recently active first
@@ -39,7 +49,8 @@ const USAGE = `usage: scripts/agent-hub <command> [args]
                               Claude Code hook entry point (reads hook JSON on stdin)
 
 Environment: AGENT_HUB_URL, AGENT_HUB_SCOPE, AGENT_HUB_DEV_USER (local service only),
-AGENT_HUB_AUTO_ENABLE (true/1/yes: the hooks enable interactive sessions that have not run disable).`;
+AGENT_HUB_AUTO_ENABLE (true/1/yes: the hooks enable interactive sessions that have not run disable),
+AGENT_HUB_TRANSCRIPT (off: upload no session's transcript).`;
 
 class UsageError extends Error {}
 
@@ -158,6 +169,8 @@ const commands = {
     }
     markOptedOut(sid);
     removeFile(statePath(sid, 'enabled'));
+    // What happens while comms are off is never uploaded, even if they are enabled again.
+    fastForward(sid);
     log(sid, 'disabled');
     console.log(`agent-hub: disabled for this session${hadBridge && !stopped ? ' (bridge did not exit in time; it stops on its next heartbeat)' : ''}.`);
   },
@@ -171,6 +184,7 @@ const commands = {
     console.log(`agent:    @${agent.name} (${agent.agent_id})`);
     console.log(`bridge:   ${bridgePid(sid) ? `running (pid ${bridgePid(sid)})` : 'not running'}`);
     console.log(`status:   ${readText(statePath(sid, 'status')) || 'idle'}`);
+    console.log(`upload:   transcript ${transcriptOffByEnv() || transcriptOffBySession(sid) ? 'off' : 'on'} (scripts/agent-hub transcript status)`);
     try {
       const subs = await createApi().subscriptions(agent.agent_id);
       console.log(`topics:   ${subs.topics.join(', ') || '(none)'}`);
@@ -178,6 +192,44 @@ const commands = {
       console.log(`topics:   (unavailable: ${e.message})`);
     }
     console.log(`log:      ${logPath(sid)}`);
+  },
+
+  async transcript(args) {
+    const sid = requireSessionId();
+    const action = args[0] || 'status';
+    if (action === 'off') {
+      ensureStateDir(sid);
+      setTranscriptOff(sid, true);
+      fastForward(sid);
+      log(sid, 'transcript upload turned off');
+      console.log('agent-hub: this session\'s transcript is no longer uploaded. What was already uploaded stays on agent-hub.');
+    } else if (action === 'on') {
+      ensureStateDir(sid);
+      fastForward(sid);
+      setTranscriptOff(sid, false);
+      log(sid, 'transcript upload turned on');
+      console.log('agent-hub: this session\'s transcript is uploaded again while comms are enabled, from now on (not the turns while it was off).');
+      if (transcriptOffByEnv()) console.log('note: AGENT_HUB_TRANSCRIPT=off is set in the environment, which still stops it.');
+    } else if (action === 'status') {
+      const offEnv = transcriptOffByEnv();
+      const offSession = transcriptOffBySession(sid);
+      let state = 'uploaded while comms are enabled';
+      if (offEnv) state = 'off (AGENT_HUB_TRANSCRIPT=off)';
+      else if (offSession) state = 'off for this session (scripts/agent-hub transcript on to resume)';
+      console.log(`transcript: ${state}`);
+      console.log(`comms:      ${isEnabled(sid) ? 'enabled' : 'not enabled'}`);
+      const saved = readJson(syncStatePath(sid));
+      if (saved?.path) {
+        let size = null;
+        try {
+          size = fs.statSync(saved.path).size;
+        } catch {}
+        console.log(`file:       ${saved.path}`);
+        console.log(`uploaded:   to byte ${saved.offset}${size === null ? '' : ` of ${size}`}`);
+      }
+    } else {
+      throw new UsageError('transcript takes off, on or status');
+    }
   },
 
   async subscribe(args) {

@@ -14,6 +14,7 @@ import {
 } from './session.mjs';
 import { deliverToSocket } from './socket.mjs';
 import { createSseParser } from './sse.mjs';
+import { createTranscriptSync } from './transcript-sync.mjs';
 
 const MIN_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 60000;
@@ -53,6 +54,8 @@ export async function runBridge({
   deliver = deliverToSocket,
   heartbeatMs = Number(env.AGENT_HUB_HEARTBEAT_MS) || 30000,
   idleTimeoutMs = Number(env.AGENT_HUB_STREAM_IDLE_MS) || 45000,
+  transcriptMs = Number(env.AGENT_HUB_TRANSCRIPT_MS) || 3000,
+  transcriptSync,
 }) {
   const pidFile = statePath(sid, 'bridge.pid');
   if (!acquirePidFile(pidFile)) {
@@ -65,6 +68,8 @@ export async function runBridge({
   let stopped = null;
   let controller = null;
   let heartbeatTimer = null;
+  let transcriptTimer = null;
+  let transcriptRun = null;
   let wake = null;
   const delivered = new Set();
   const remember = (id) => {
@@ -78,6 +83,20 @@ export async function runBridge({
     claudePid = sessionInfo(sid, env).pid;
     if (claudePid) log(sid, `found claude pid ${claudePid}`);
   };
+
+  const transcript = transcriptSync || createTranscriptSync({ sid, api, env, agentId: () => agent?.agent_id });
+
+  // Runs never overlap: a tick still uploading when the next is due makes that one a no-op.
+  function syncTranscript(opts) {
+    if (transcriptRun) return transcriptRun;
+    transcriptRun = transcript
+      .tick(opts)
+      .catch((e) => log(sid, `transcript sync error: ${e.message}`))
+      .finally(() => {
+        transcriptRun = null;
+      });
+    return transcriptRun;
+  }
 
   const sleep = (ms) =>
     new Promise((resolve) => {
@@ -97,8 +116,13 @@ export async function runBridge({
     stopping = true;
     log(sid, `bridge stopping: ${reason}`);
     clearInterval(heartbeatTimer);
+    clearInterval(transcriptTimer);
     controller?.abort();
     wake?.();
+    // A final upload of the last turn, bounded so the stop still finishes within stopBridge's wait.
+    const deadline = Date.now() + 1500;
+    if (transcriptRun) await Promise.race([transcriptRun, new Promise((r) => setTimeout(r, 1500).unref())]);
+    if (!transcriptRun && Date.now() < deadline) await syncTranscript({ deadline });
     if (agent?.agent_id) {
       try {
         await api.offline(agent.agent_id, { timeoutMs: 5000 });
@@ -195,6 +219,7 @@ export async function runBridge({
   heartbeatTimer = setInterval(() => {
     heartbeat().catch((e) => log(sid, `heartbeat error: ${e.message}`));
   }, heartbeatMs);
+  transcriptTimer = setInterval(() => syncTranscript(), transcriptMs);
 
   let retry = {};
   let lastEventId = '';
@@ -236,5 +261,6 @@ export async function runBridge({
     if (retry.delay > 0) await sleep(retry.delay);
   }
   clearInterval(heartbeatTimer);
+  clearInterval(transcriptTimer);
   await stopped;
 }

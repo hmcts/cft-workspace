@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Connect Claude Code sessions to agent-hub (hmcts/dtsse-agent-hub): direct messages
-# between agents and people, and topic boards. Opt-in per session via /enable-comms, or
+# between agents and people, topic boards, and an upload of each enabled session's transcript
+# (scripts/agent-hub transcript off|on|status). Opt-in per session via /enable-comms, or
 # automatic for interactive sessions when AGENT_HUB_AUTO_ENABLE is true.
 #
 # Usage: scripts/agent-hub <command> [args]     (scripts/agent-hub help for the list)
