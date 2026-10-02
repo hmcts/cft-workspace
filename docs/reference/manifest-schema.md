@@ -32,6 +32,7 @@ repos:
 - **Default branch by default.** Most entries omit `ref` so each clone tracks the upstream default. Pin a `ref` only when working on a long-running feature branch (e.g. `libs/ccd-config-generator: { ref: noc-part2 }`).
 - **No depth except for huge repos.** `depth: 1` is fine for a Terraform repo you only read; never use shallow clones for repos you might commit to.
 - **Group by section comments.** The manifest is hand-readable — use `# ─── apps/<product> ─────` blocks for navigation. `scripts/add-repo` appends without disrupting these.
+- **Independent clones, not submodules.** Entries track a branch, not a pinned commit, so a submodule's gitlink-SHA model doesn't fit: syncing hundreds of clones would dirty the workspace repo's own tree on every pull, which breaks the invariant that this repo never records anything about clone contents.
 
 ## Adding entries
 
