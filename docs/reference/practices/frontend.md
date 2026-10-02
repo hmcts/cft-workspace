@@ -78,6 +78,16 @@ assertion's failure will never fire — the catch only reacts to a thrown error,
 one. This applies to any accessibility audit helper (such as axe-based ones) built on
 `expect.soft`, not just to test assertions written directly.
 
+### Monitoring and logging
+
+Node frontends instrumented with `@azure/monitor-opentelemetry` must not create a winston
+logger, or import anything that does, before the telemetry bootstrap (`useAzureMonitor()`)
+runs. The Azure Monitor OpenTelemetry distro disables the OpenTelemetry logs API while it
+registers its own provider, so a logger or transport created earlier stays bound to a no-op
+logger for the lifetime of the process — there is no way to re-attach it afterwards. Add the
+OpenTelemetry transport to the logger (or load the logger module at all) only once telemetry
+has finished initialising.
+
 ### Security
 
 Configure the Content Security Policy headers to prevent XSS attacks.
