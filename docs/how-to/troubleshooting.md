@@ -16,6 +16,7 @@ audience: both
 - [VPN](#vpn)
 - [Flux and Gitops](#flux-and-gitops)
 - [Connecting to AKS Clusters](#connecting-to-aks-clusters)
+- [Application Insights and Kusto queries](#application-insights-and-kusto-queries)
 - [Golden Path](#golden-path)
 
 ## GitHub
@@ -391,6 +392,7 @@ VPN access and troubleshooting has moved to [VPN onboarding](../tutorials/cnp-on
 ---
 - By Default, all developers have read access to non-prod AKS clusters and slightly higher privileges to their namespaces.
 - You can connect to AKS clusters using `az aks get-credentials`. Below are some handy commands:
+- All CFT and SDS clusters use Entra ID (AAD) authentication, so `kubectl` needs the [`kubelogin`](https://github.com/Azure/kubelogin) credential plugin (`brew install Azure/kubelogin/kubelogin` or `az aks install-cli`) — without it you'll see `exec: executable kubelogin not found`. After every `az aks get-credentials`, run `kubelogin convert-kubeconfig -l azurecli` to switch the fetched kubeconfig from device-code login to your `az login` token. If `az aks install-cli` was used, `kubelogin` lands in `~/.azure-kubelogin/`, which is not added to `PATH` automatically.
 - CFT clusters run a Gatekeeper policy (`azurepolicy-k8sazurev1blocknakedpods`) that rejects any Pod not owned by a controller. If you want an ad-hoc container to poke around the cluster with (e.g. to check DNS or connectivity from inside the namespace), wrap it in a `Job` rather than applying a bare Pod manifest — the latter is rejected outright.
 
 ### CFT clusters
@@ -467,6 +469,27 @@ Once you have logged in, you can switch between clusters using [kubectx](https:/
 ```shell
 kubectl config use-context cft-perftest-00-aks
 kubectl config use-context cft-aat-00-aks
+```
+
+## Application Insights and Kusto queries
+---
+
+CFT services share one Application Insights instance per environment, so a query with no scope matches every service's telemetry. Always filter by `cloud_RoleName` (the service's Kubernetes deployment name, e.g. `pcs-api`) first:
+
+```kusto
+traces
+| where timestamp > ago(24h)
+| where cloud_RoleName == "<service-name>"
+| where message has "<search-term>"
+| order by timestamp desc
+```
+
+`has` is a fast, whole-word, case-insensitive match; use `contains` for a substring match, `contains_cs` to make it case-sensitive, or `matches regex` for a pattern. If you don't know which table the string landed in (log line, exception, request, or dependency call), search across all of them at once:
+
+```kusto
+search in (traces, exceptions, requests, dependencies) "<search-term>"
+| where cloud_RoleName == "<service-name>" and timestamp > ago(24h)
+| project timestamp, itemType, message, operation_Name, operation_Id
 ```
 
 ## Golden Path

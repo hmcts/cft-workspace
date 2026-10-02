@@ -10,6 +10,7 @@ sources:
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/divorcecase/NoFaultDivorce.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/caseworker/event/CaseworkerConfirmService.java
   - nfdiv-case-api:src/main/java/uk/gov/hmcts/divorce/noticeofchange/event/SystemApplyNoticeOfChange.java
+  - pcs-api:Jenkinsfile_CNP
 status: confluence-augmented
 last_reviewed: 2026-04-29T00:00:00Z
 confluence_checked_at: 2026-04-29T00:00:00Z
@@ -81,6 +82,20 @@ configBuilder.event("my-event")
 
 The callback host is set once on the case-type config, not per-event
 (`NoFaultDivorce.java:38` sets it from the `CASE_API_URL` environment variable).
+
+In production, this value must resolve from inside the cluster — the usual pattern is an
+internal service address such as `http://<service>-prod.service.core-compute-prod.internal`,
+not a public hostname. CCD data store calls the callback directly from within AKS; a public
+hostname with no matching DNS record and ingress fails every callback with a 502
+`CallbackException`, and the data store reports this as a resolution failure in under 20 ms,
+not a slow or erroring service. If the case type is shuttered, no event can be started, so
+there is no callback traffic to expose a wrong host — the misconfiguration only surfaces once
+the case type is unshuttered.
+
+<!-- REVIEW: the production-host-resolution paragraph above cites pcs-api:Jenkinsfile_CNP as a
+     source, but that's a different product's pipeline file, not CCD data-store source. The
+     core-compute-prod.internal convention is corroborated elsewhere (api-data-store.md,
+     xui/send-letter docs), but this specific source attribution could not be verified here. -->
 
 For `mid_event`, the URL is taken from the `WizardPage` definition, not the event definition
 (`CallbackInvoker.java:182`).

@@ -18,6 +18,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | am | explanation | Judicial Booking | judicial-booking | `apps/am/docs/explanation/judicial-booking.md` |
 | am | explanation | Org Role Mapping Flow | orm | `apps/am/docs/explanation/org-role-mapping-flow.md` |
 | am | explanation | Overview | overview | `apps/am/docs/explanation/overview.md` |
+| am | explanation | Professional Refresh Mechanism (PRM) | prm | `apps/am/docs/explanation/professional-refresh-mechanism.md` |
 | am | explanation | Role Assignment Lifecycle | role-lifecycle | `apps/am/docs/explanation/role-assignment-lifecycle.md` |
 | bulk-scan | how-to | Implement Transformation Callback | orchestration | `apps/bulk-scan/docs/how-to/implement-transformation-callback.md` |
 | bulk-scan | how-to | Onboard New Jurisdiction | overview | `apps/bulk-scan/docs/how-to/onboard-new-jurisdiction.md` |
@@ -133,6 +134,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | payment | explanation | Pci Pal Telephony | telephony | `apps/payment/docs/explanation/pci-pal-telephony.md` |
 | payment | explanation | Reconciliation | reconciliation | `apps/payment/docs/explanation/reconciliation.md` |
 | payment | explanation | Refunds Flow | refunds | `apps/payment/docs/explanation/refunds-flow.md` |
+| pcs | reference | General Application Email Notifications | general-applications | `apps/pcs/docs/reference/general-application-notifications.md` |
 | pcs | explanation | Welsh Language and Wales Jurisdiction | welsh-language | `apps/pcs/docs/explanation/welsh-language-and-wales-jurisdiction.md` |
 | rd | how-to | Onboard Common Data | commondata | `apps/rd/docs/how-to/onboard-common-data.md` |
 | rd | how-to | Query Reference Data | overview | `apps/rd/docs/how-to/query-reference-data.md` |
@@ -263,6 +265,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | reference | Technology stack | technology-stack | `docs/reference/technology-stack.md` |
 | workspace | reference | TypeScript | typescript | `docs/reference/standards/typescript.md` |
 | workspace | reference | `workspace.yaml` schema | manifest-schema | `docs/reference/manifest-schema.md` |
+| workspace | explanation | Azure Monitor alerts to Slack | alerting | `docs/explanation/azure-alerts-to-slack.md` |
 | workspace | explanation | Cloud Native Platform | cloud-native-platform | `docs/explanation/cloud-native-platform.md` |
 | workspace | explanation | Code in the Open | coding-in-the-open | `docs/explanation/principles/coding-in-the-open.md` |
 | workspace | explanation | Continuous delivery | continuous-delivery | `docs/explanation/principles/continuous-delivery.md` |
