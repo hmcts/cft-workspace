@@ -561,6 +561,7 @@ SET DEFAULT nextval('JOB_ID_SEQ');
 
 ## See also
 
+- [Professional Refresh Mechanism (PRM)](professional-refresh-mechanism.md) — ORM's parallel pipeline for professional/OGD users, driven by CCD access types rather than CRD/JRD
 - [Drools Rules](drools-rules.md) — detailed explanation of ORM mapping rule structure, fact types, and feature flag patterns
 - [Judicial Booking](judicial-booking.md) — how JBS bookings interact with fee-paid judicial role mapping
 - [Batch Jobs](batch-jobs.md) — the refresh batch CronJob that triggers ORM re-evaluation after rule changes
