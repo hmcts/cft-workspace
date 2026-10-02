@@ -92,6 +92,11 @@ not a slow or erroring service. If the case type is shuttered, no event can be s
 there is no callback traffic to expose a wrong host — the misconfiguration only surfaces once
 the case type is unshuttered.
 
+<!-- REVIEW: the production-host-resolution paragraph above cites pcs-api:Jenkinsfile_CNP as a
+     source, but that's a different product's pipeline file, not CCD data-store source. The
+     core-compute-prod.internal convention is corroborated elsewhere (api-data-store.md,
+     xui/send-letter docs), but this specific source attribution could not be verified here. -->
+
 For `mid_event`, the URL is taken from the `WizardPage` definition, not the event definition
 (`CallbackInvoker.java:182`).
 
