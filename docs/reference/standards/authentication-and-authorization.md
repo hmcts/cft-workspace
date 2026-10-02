@@ -27,6 +27,13 @@ callback (expiry, a replayed callback URL, or two concurrent logins sharing one 
 not a PKCE implementation bug — guard for a missing verifier before calling the token endpoint
 so the failure is visible and actionable instead of surfacing only as an opaque IDAM error.
 
+The `uid` claim in an IDAM token is a plain string and is not guaranteed to be UUID-shaped. A
+minority of legacy accounts — old caseworker, admin and test users created before IDAM moved to
+UUID-based ids — still carry short numeric ids. Code that parses the uid with a UUID constructor
+to compare it against a stored owner or party id will throw for those accounts instead of simply
+failing the comparison; treat the uid as an opaque string unless every account in scope has been
+verified to be UUID-shaped.
+
 Use client credentials only for service-to-service authentication where no user is involved.
 
 Avoid password and implicit grants for new integrations.
