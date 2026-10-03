@@ -263,6 +263,7 @@ Skills `/cft-explain` and `/cft-how-to` grep this file to route questions.
 | workspace | reference | Technology stack | technology-stack | `docs/reference/technology-stack.md` |
 | workspace | reference | TypeScript | typescript | `docs/reference/standards/typescript.md` |
 | workspace | reference | `workspace.yaml` schema | manifest-schema | `docs/reference/manifest-schema.md` |
+| workspace | explanation | Azure Monitor alerts to Slack | alerting | `docs/explanation/azure-alerts-to-slack.md` |
 | workspace | explanation | Cloud Native Platform | cloud-native-platform | `docs/explanation/cloud-native-platform.md` |
 | workspace | explanation | Code in the Open | coding-in-the-open | `docs/explanation/principles/coding-in-the-open.md` |
 | workspace | explanation | Continuous delivery | continuous-delivery | `docs/explanation/principles/continuous-delivery.md` |
