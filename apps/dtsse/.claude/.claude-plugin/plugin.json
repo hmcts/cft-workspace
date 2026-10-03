@@ -1,0 +1,6 @@
+{
+  "name": "dtsse",
+  "description": "DTSSE / Decentralisation team: work-in-progress documentation for unreleased platform work, kept outside the core docs until promoted",
+  "version": "0.1.0",
+  "author": { "name": "DTSSE team" }
+}

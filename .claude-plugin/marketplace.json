@@ -12,6 +12,11 @@
       "name": "pcs",
       "source": "./apps/pcs/.claude",
       "description": "PCS team workflows: environment operations and local-stack tooling for the possession claims service"
+    },
+    {
+      "name": "dtsse",
+      "source": "./apps/dtsse/.claude",
+      "description": "DTSSE / Decentralisation team: work-in-progress documentation for unreleased platform work, kept outside the core docs until promoted"
     }
   ]
 }

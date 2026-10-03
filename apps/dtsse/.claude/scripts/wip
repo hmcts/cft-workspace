@@ -1,0 +1,330 @@
+#!/usr/bin/env bash
+# wip — manage the DTSSE team's work-in-progress documentation.
+#
+# WIP pages are Markdown under apps/dtsse/docs/wip/. That directory is not one
+# of the four Diátaxis quadrants, so scripts/docs-index never indexes it: a
+# WIP page is invisible to /cft-explain and /cft-how-to until it is promoted
+# into a real docs tree with `wip promote`.
+#
+# Usage:
+#   wip new <slug> --title "…" [--topic t] [--owner login] [--promote-to ccd/explanation]
+#                  [--tracking URL] [--status exploratory|in-progress|ready]
+#   wip list [--status s] [--json]
+#   wip stale [--days N]            # pages not updated in N days (default 30)
+#   wip index                       # regenerate apps/dtsse/docs/wip/README.md
+#   wip check <slug>                # validate a page and report promotion readiness
+#   wip promote <slug> [--to apps/<product>/docs/<quadrant>/<name>.md] [--dry-run]
+#   wip touch <slug> [--status s]   # bump last_updated (and optionally status)
+#
+# Runs from an installed plugin copy, so nothing here is cwd-relative.
+
+set -euo pipefail
+
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+ROOT="${CLAUDE_PROJECT_DIR:-$(git -C "$PLUGIN_ROOT" rev-parse --show-toplevel 2>/dev/null || pwd)}"
+WIP_DIR="$ROOT/apps/dtsse/docs/wip"
+TEMPLATE="$PLUGIN_ROOT/templates/wip-page.md"
+STATUSES="exploratory in-progress ready"
+QUADRANTS="tutorials how-to reference explanation"
+
+if [[ -t 1 ]]; then C_RESET=$'\033[0m'; C_DIM=$'\033[2m'; C_RED=$'\033[31m'; C_GREEN=$'\033[32m'; C_YELLOW=$'\033[33m'
+else C_RESET=''; C_DIM=''; C_RED=''; C_GREEN=''; C_YELLOW=''; fi
+ok()   { printf '%s%s%s\n' "$C_GREEN" "$*" "$C_RESET"; }
+warn() { printf '%s%s%s\n' "$C_YELLOW" "$*" "$C_RESET" >&2; }
+err()  { printf '%s%s%s\n' "$C_RED" "$*" "$C_RESET" >&2; }
+die()  { err "$*"; exit 1; }
+usage() { sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+need_yq() {
+    command -v yq >/dev/null || die "yq (mikefarah) not on PATH — the workspace devcontainer provides it."
+    yq --version 2>&1 | grep -q mikefarah || die "yq on PATH is not mikefarah/yq."
+}
+
+frontmatter() { awk '/^---[[:space:]]*$/{c++; if(c==2)exit; if(c>0)next} c==1{print}' "$1"; }
+body()        { awk '/^---[[:space:]]*$/{c++; if(c==2){f=1;next}} f{print}' "$1"; }
+field()       { printf '%s' "$1" | yq -r ".$2 // \"\"" - 2>/dev/null; }
+page_of()     { printf '%s/%s.md' "$WIP_DIR" "${1%.md}"; }
+today()       { date +%F; }
+in_list()     { local x="$1"; shift; for i in "$@"; do [[ "$i" == "$x" ]] && return 0; done; return 1; }
+
+default_owner() {
+    gh api user -q .login 2>/dev/null || git -C "$ROOT" config user.name 2>/dev/null || echo "unknown"
+}
+
+pages() { find "$WIP_DIR" -maxdepth 1 -name '*.md' ! -name 'README.md' -type f 2>/dev/null | sort; }
+
+# Emit one TSV row per page: slug status owner since last_updated integrate_now promote_to title path
+rows() {
+    need_yq
+    local f fm
+    while IFS= read -r f; do
+        [[ -n "$f" ]] || continue
+        fm=$(frontmatter "$f")
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s/%s\t%s\t%s\n' \
+            "$(basename "${f%.md}")" \
+            "$(field "$fm" status)" "$(field "$fm" owner)" "$(field "$fm" since)" \
+            "$(field "$fm" last_updated)" "$(printf '%s' "$fm" | yq -r '(.integrate_now // false) | tostring' -)" \
+            "$(field "$fm" promote_to.product)" "$(field "$fm" promote_to.diataxis)" \
+            "$(field "$fm" title)" "${f#"$ROOT"/}"
+    done < <(pages)
+}
+
+# ---------------------------------------------------------------- new
+cmd_new() {
+    local slug="${1:-}"; shift || true
+    [[ -n "$slug" ]] || die "usage: wip new <slug> --title \"…\" [options]"
+    [[ "$slug" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || die "slug must be kebab-case: $slug"
+    local title="" topic="$slug" owner="" promote="ccd/explanation" tracking="" status="exploratory"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --title) title="$2"; shift 2;;
+            --topic) topic="$2"; shift 2;;
+            --owner) owner="$2"; shift 2;;
+            --promote-to) promote="$2"; shift 2;;
+            --tracking) tracking="$2"; shift 2;;
+            --status) status="$2"; shift 2;;
+            *) die "unknown option: $1";;
+        esac
+    done
+    [[ -n "$title" ]] || die "--title is required"
+    in_list "$status" $STATUSES || die "status must be one of: $STATUSES"
+    local product="${promote%%/*}" quadrant="${promote#*/}"
+    [[ "$product" != "$quadrant" && -n "$product" ]] || die "--promote-to must be <product>/<quadrant>, e.g. ccd/explanation"
+    in_list "$quadrant" $QUADRANTS || die "quadrant must be one of: $QUADRANTS"
+    [[ -d "$ROOT/apps/$product" || "$product" == workspace ]] || die "no such product: apps/$product"
+    [[ -n "$owner" ]] || owner=$(default_owner)
+    local out; out=$(page_of "$slug")
+    [[ -e "$out" ]] && die "already exists: ${out#"$ROOT"/}"
+    [[ -f "$TEMPLATE" ]] || die "template missing: $TEMPLATE"
+    mkdir -p "$WIP_DIR"
+    sed -e "s|__TITLE__|$title|g" -e "s|__TOPIC__|$topic|g" -e "s|__OWNER__|$owner|g" \
+        -e "s|__DATE__|$(today)|g" -e "s|__PRODUCT__|$product|g" -e "s|__DIATAXIS__|$quadrant|g" \
+        -e "s|__TRACKING__|$tracking|g" "$TEMPLATE" > "$out"
+    if [[ "$status" != exploratory ]]; then
+        need_yq; yq -i --front-matter=process ".status = \"$status\"" "$out"
+    fi
+    cmd_index >/dev/null
+    ok "created ${out#"$ROOT"/}"
+    printf '%s\n' "${out#"$ROOT"/}"
+}
+
+# ---------------------------------------------------------------- list / stale
+cmd_list() {
+    local want="" json=0
+    while [[ $# -gt 0 ]]; do
+        case "$1" in --status) want="$2"; shift 2;; --json) json=1; shift;; *) die "unknown option: $1";; esac
+    done
+    local out; out=$(rows | { if [[ -n "$want" ]]; then awk -F'\t' -v s="$want" '$2==s'; else cat; fi; })
+    if [[ $json -eq 1 ]]; then
+        printf '%s\n' "$out" | awk -F'\t' 'BEGIN{printf "["} NF{if(n++)printf ","; printf "{\"slug\":\"%s\",\"status\":\"%s\",\"owner\":\"%s\",\"since\":\"%s\",\"last_updated\":\"%s\",\"integrate_now\":%s,\"promote_to\":\"%s\",\"title\":\"%s\",\"path\":\"%s\"}", $1,$2,$3,$4,$5,($6=="true"?"true":"false"),$7,$8,$9} END{printf "]\n"}'
+        return
+    fi
+    if [[ -z "$out" ]]; then echo "no WIP pages under ${WIP_DIR#"$ROOT"/}"; return; fi
+    { printf 'SLUG\tSTATUS\tOWNER\tUPDATED\tINTEGRATE\tPROMOTE TO\tTITLE\n'; printf '%s\n' "$out" | cut -f1-3,5,6,7,8; } | column -t -s$'\t'
+}
+
+cmd_stale() {
+    local days=30
+    while [[ $# -gt 0 ]]; do case "$1" in --days) days="$2"; shift 2;; --quiet) shift;; *) die "unknown option: $1";; esac; done
+    local cutoff; cutoff=$(date -v-"${days}"d +%F 2>/dev/null || date -d "-${days} days" +%F)
+    local out; out=$(rows | awk -F'\t' -v c="$cutoff" '$5 < c && $2 != "ready"')
+    [[ -n "$out" ]] || return 0
+    warn "WIP pages not touched since $cutoff (${days}d):"
+    printf '%s\n' "$out" | awk -F'\t' '{printf "  %-32s %-12s %-14s %s\n", $1, $2, $3, $5}'
+    return 3
+}
+
+# ---------------------------------------------------------------- index
+cmd_index() {
+    mkdir -p "$WIP_DIR"
+    local readme="$WIP_DIR/README.md" table
+    table=$(rows | awk -F'\t' '{
+        i = ($6=="true") ? "yes" : "no"
+        printf "| [%s](%s.md) | `%s` | %s | %s | %s | %s |\n", $8, $1, $2, i, $3, $5, $7
+    }')
+    [[ -n "$table" ]] || table='| _none yet_ | | | | | | |'
+    cat > "$readme" <<HDR
+# DTSSE work-in-progress documentation
+
+Unreleased or exploratory platform work from the DTSSE / Decentralisation team, written up
+early so service teams can see what is coming and start integrating before it is fully
+productionised. **Nothing here is in the core docs yet.** \`scripts/docs-index\` only scans
+the four Diátaxis quadrants, so these pages never appear in \`DOCS.md\` and are not found by
+\`/cft-explain\` or \`/cft-how-to\`. When a piece of work is productionised its page is moved
+into the target product's docs tree with \`/dtsse:wip-promote\`.
+
+Managed by the \`dtsse\` team plugin (\`apps/dtsse/.claude/\`): \`/dtsse:wip-add\`,
+\`/dtsse:wip-status\`, \`/dtsse:wip-promote\`. Without the plugin, run
+\`apps/dtsse/.claude/scripts/wip --help\` directly.
+
+## Status vocabulary
+
+| \`status\` | Meaning | Safe to integrate? |
+|---|---|---|
+| \`exploratory\` | A design or spike. The shape may still change. | No. Talk to the owner first. |
+| \`in-progress\` | Being built; the contract is mostly settled. | Only where \`integrate_now: true\`. |
+| \`ready\` | Merged and deployed; waiting to be promoted to core docs. | Yes. |
+
+\`integrate_now\` is the owner's explicit statement that a service team can build against the
+current contract. Treat it as the answer to "can we start yet?".
+
+## Pages
+
+_Generated by \`wip index\` — do not edit the table by hand._
+
+| Page | Status | Integrate now | Owner | Updated | Promotes to |
+|---|---|---|---|---|---|
+$table
+
+## Owners
+
+| Login | Role |
+|---|---|
+| \`ed14537\` | Decentralisation team |
+| \`jasonpaige\` | Decentralisation team |
+
+\`wip new\` defaults \`owner\` to the GitHub CLI's current login; pass \`--owner\` to override.
+
+## Lifecycle
+
+1. \`wip new <slug>\` scaffolds a page from the template with the frontmatter below.
+2. The owner keeps the page current, bumping \`last_updated\` (\`wip touch\`) as the work changes.
+   \`wip stale\` lists pages that have gone quiet.
+3. When the promotion criteria at the foot of the page are met, set \`status: ready\`.
+4. \`wip promote <slug>\` moves the page into \`apps/<product>/docs/<quadrant>/\`, rewrites the
+   frontmatter to the core schema, regenerates this index and \`DOCS.md\`. Prose that hedges
+   ("this may change", "not yet deployed") is removed as part of promotion, and the page is
+   linked from the product's \`docs/README.md\`.
+
+## Frontmatter
+
+\`\`\`yaml
+---
+title: <human-readable title>
+topic: <kebab-case slug>
+status: exploratory | in-progress | ready
+owner: <GitHub login>
+since: <YYYY-MM-DD>
+last_updated: <YYYY-MM-DD>
+integrate_now: true | false
+promote_to:
+  product: ccd | xui | wa | am | workspace | …
+  diataxis: tutorials | how-to | reference | explanation
+tracking: <Jira or GitHub issue URL>
+audience: service-team | platform | both
+sources: []          # <repo>:<path> pointers, same form as core docs
+---
+\`\`\`
+HDR
+    ok "index written: ${readme#"$ROOT"/}"
+}
+
+# ---------------------------------------------------------------- check
+cmd_check() {
+    local slug="${1:-}"; [[ -n "$slug" ]] || die "usage: wip check <slug>"
+    local f; f=$(page_of "$slug"); [[ -f "$f" ]] || die "no such page: ${f#"$ROOT"/}"
+    need_yq
+    local fm; fm=$(frontmatter "$f"); [[ -n "$fm" ]] || die "$slug: no frontmatter"
+    local problems=0
+    p() { err "  ✗ $*"; problems=$((problems+1)); }
+    local k v
+    for k in title topic status owner since last_updated promote_to.product promote_to.diataxis audience; do
+        v=$(field "$fm" "$k"); [[ -n "$v" ]] || p "missing $k"
+    done
+    local status product quadrant
+    status=$(field "$fm" status); product=$(field "$fm" promote_to.product); quadrant=$(field "$fm" promote_to.diataxis)
+    in_list "$status" $STATUSES || p "status \"$status\" not one of: $STATUSES"
+    in_list "$quadrant" $QUADRANTS || p "promote_to.diataxis \"$quadrant\" not one of: $QUADRANTS"
+    local target_dir
+    if [[ "$product" == workspace ]]; then target_dir="$ROOT/docs/$quadrant"; else target_dir="$ROOT/apps/$product/docs/$quadrant"; fi
+    [[ -d "$(dirname "$target_dir")" ]] || p "target docs tree does not exist: ${target_dir#"$ROOT"/} (product dir missing)"
+    [[ -e "$target_dir/$slug.md" ]] && p "a core page already exists at ${target_dir#"$ROOT"/}/$slug.md"
+    grep -q '^- \[ \]' "$f" && warn "  · unticked promotion criteria remain"
+    grep -qiE 'work in progress|may still change|not yet deployed|unreleased' "$f" && warn "  · WIP hedging language present — rewrite on promotion"
+    [[ "$(field "$fm" 'sources | length')" == "0" ]] && warn "  · sources: is empty — core pages cite source files for /docs-drift"
+    if [[ $problems -gt 0 ]]; then err "$slug: $problems problem(s)"; return 1; fi
+    if [[ "$status" == ready ]]; then ok "$slug: ready to promote → ${target_dir#"$ROOT"/}/$slug.md"
+    else ok "$slug: valid (status $status — set status: ready before promoting)"; fi
+}
+
+# ---------------------------------------------------------------- touch
+cmd_touch() {
+    local slug="${1:-}"; shift || true; [[ -n "$slug" ]] || die "usage: wip touch <slug> [--status s]"
+    local f; f=$(page_of "$slug"); [[ -f "$f" ]] || die "no such page: ${f#"$ROOT"/}"
+    local status=""
+    while [[ $# -gt 0 ]]; do case "$1" in --status) status="$2"; shift 2;; *) die "unknown option: $1";; esac; done
+    need_yq
+    yq -i --front-matter=process ".last_updated = \"$(today)\"" "$f"
+    if [[ -n "$status" ]]; then
+        in_list "$status" $STATUSES || die "status must be one of: $STATUSES"
+        yq -i --front-matter=process ".status = \"$status\"" "$f"
+    fi
+    cmd_index >/dev/null
+    ok "touched ${f#"$ROOT"/}$( [[ -n "$status" ]] && printf ' (status %s)' "$status")"
+}
+
+# ---------------------------------------------------------------- promote
+cmd_promote() {
+    local slug="${1:-}"; shift || true; [[ -n "$slug" ]] || die "usage: wip promote <slug> [--to path] [--dry-run] [--force]"
+    local to="" dry=0 force=0
+    while [[ $# -gt 0 ]]; do
+        case "$1" in --to) to="$2"; shift 2;; --dry-run) dry=1; shift;; --force) force=1; shift;; *) die "unknown option: $1";; esac
+    done
+    local f; f=$(page_of "$slug"); [[ -f "$f" ]] || die "no such page: ${f#"$ROOT"/}"
+    need_yq
+    local fm; fm=$(frontmatter "$f")
+    local status product quadrant
+    status=$(field "$fm" status); product=$(field "$fm" promote_to.product); quadrant=$(field "$fm" promote_to.diataxis)
+    if [[ -z "$to" ]]; then
+        if [[ "$product" == workspace ]]; then to="docs/$quadrant/$slug.md"; else to="apps/$product/docs/$quadrant/$slug.md"; fi
+    fi
+    [[ "$to" =~ ^(docs|apps/[^/]+/docs)/(tutorials|how-to|reference|explanation)/[^/]+\.md$ ]] ||
+        die "--to must be docs/<quadrant>/<name>.md or apps/<product>/docs/<quadrant>/<name>.md"
+    local dest="$ROOT/$to" dest_quadrant dest_product
+    dest_quadrant=$(printf '%s' "$to" | awk -F/ '{print $(NF-1)}')
+    case "$to" in docs/*) dest_product=workspace;; *) dest_product=$(printf '%s' "$to" | cut -d/ -f2);; esac
+    [[ -e "$dest" ]] && die "destination exists: $to"
+    if [[ "$status" != ready && $force -eq 0 ]]; then
+        die "$slug has status \"$status\" — set status: ready (wip touch $slug --status ready) or pass --force"
+    fi
+    cmd_check "$slug" >/dev/null 2>&1 || warn "check reported problems; continuing because promote was requested"
+
+    # Core frontmatter: title/topic/diataxis/product/audience, plus sources if any. WIP-only keys are dropped.
+    local new_fm
+    new_fm=$(printf '%s' "$fm" | yq -r '
+        {"title": .title, "topic": .topic, "diataxis": "'"$dest_quadrant"'", "product": "'"$dest_product"'",
+         "audience": (.audience // "both"), "sources": (.sources // []), "status": "drafted"}
+        | del(.sources | select(length == 0))' -)
+    if [[ $dry -eq 1 ]]; then
+        echo "would move ${f#"$ROOT"/} → $to with frontmatter:"; printf '%s\n' "$new_fm" | sed 's/^/  /'
+        return
+    fi
+    mkdir -p "$(dirname "$dest")"
+    { printf -- '---\n%s\n---\n' "$new_fm"; body "$f"; } > "$dest"
+    rm -f "$f"   # git detects the rename when both sides are staged
+    cmd_index >/dev/null
+    if [[ -x "$ROOT/scripts/docs-index" ]]; then
+        (cd "$ROOT" && ./scripts/docs-index) || warn "docs-index failed — fix the new page's frontmatter and re-run ./scripts/docs-index"
+    fi
+    ok "promoted → $to"
+    cat <<TODO
+Still to do by hand (the skill walks through these):
+  - strip WIP hedging from the prose and the '> Work in progress' banner
+  - remove the 'Promotion criteria' section
+  - link the page from $(dirname "$(dirname "$to")")/README.md
+  - fill 'sources:' if empty, then raise a PR
+TODO
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+    new)     cmd_new "$@";;
+    list)    cmd_list "$@";;
+    stale)   cmd_stale "$@";;
+    index)   cmd_index "$@";;
+    check)   cmd_check "$@";;
+    touch)   cmd_touch "$@";;
+    promote) cmd_promote "$@";;
+    -h|--help|help|"") usage 0;;
+    *) err "unknown command: $cmd"; usage 1;;
+esac
